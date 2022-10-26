@@ -1,0 +1,17 @@
+source "https://rubygems.org"
+
+# TODO remove once this once load error is solved for activesupport 7
+# ...xml_mini.rb:184:in `current_thread_backend': uninitialized constant ActiveSupport::XmlMini::IsolatedExecutionState (NameError)
+gem 'activesupport', '< 7.0.0'
+
+gem 'dalli'
+
+gem 'grape'
+gem 'rack' # , '~> 2.0.8'
+
+gem 'padrino', '>= 0.14.4' # need to force this, it sometimes defaults to 0.9.21
+
+eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile')))
+
+gemspec :path => File.expand_path(File.dirname(__FILE__) + '/../')
+# vim:syntax=ruby

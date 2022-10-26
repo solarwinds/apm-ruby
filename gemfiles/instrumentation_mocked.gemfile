@@ -1,0 +1,20 @@
+source "https://rubygems.org"
+
+gem 'rest-client'
+
+gem 'curb'
+gem 'excon'
+gem 'faraday', '~> 1.0'
+
+# next versions of faraday will need these separate adapter gems
+# gem 'faraday-excon'  # if still buggy use: gem "faraday-excon", github: "lostisland/faraday-excon"
+# gem 'faraday-httpclient'
+# gem 'faraday-patron'
+
+gem 'httpclient'
+gem 'typhoeus'
+gem 'patron' # not instrumented, to test non-instrumented faraday adapter
+
+eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile')))
+gemspec :path => File.expand_path(File.dirname(__FILE__) + '/../')
+# vim:syntax=ruby
