@@ -169,4 +169,3 @@ end
 # rubocop:enable Style/Documentation
 
 SolarWindsOTelAPM.loaded = true
-SolarWindsOTelAPM.config_lock = Mutex.new

@@ -30,6 +30,6 @@ module SolarWindsOTelAPM
   end
 end
 
-if SolarWindsOTelAPM.loaded && !SolarWindsOTelAPM.framework?
+if SolarWindsOTelAPM.loaded
   SolarWindsOTelAPM::Ruby.load
 end

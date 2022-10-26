@@ -5,6 +5,7 @@ begin
   require 'openssl'
   require 'solarwinds_otel_apm/version'
   require 'solarwinds_otel_apm/logger'
+  require 'solarwinds_otel_apm/util'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/base'
   SolarWindsOTelAPM.loaded = false
