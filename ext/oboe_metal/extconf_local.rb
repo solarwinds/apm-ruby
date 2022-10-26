@@ -60,7 +60,7 @@ if have_library('oboe', 'oboe_config_get_revision', 'oboe.h')
   CONFIG["debugflags"] = "-ggdb3 "
   CONFIG["optflags"] = "-O0"
 
-  create_makefile('libsolarwinds_otel_apm', 'src')
+  create_makefile('libsolarwinds_apm', 'src')
 else
   $stderr.puts   '== ERROR ========================================================='
   if have_library('oboe')

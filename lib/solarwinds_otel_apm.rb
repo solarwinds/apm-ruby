@@ -14,7 +14,7 @@ begin
 
   begin
     if RUBY_PLATFORM =~ /linux/
-      require_relative './libsolarwinds_otel_apm.so'
+      require_relative './libsolarwinds_apm.so'
       require 'solarwinds_otel_apm/oboe_init_options'
       require 'oboe_metal.rb'  # sets SolarWindsOTelAPM.loaded = true if successful
     else

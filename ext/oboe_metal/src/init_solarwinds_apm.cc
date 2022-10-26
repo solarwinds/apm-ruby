@@ -11,7 +11,7 @@ void Init_oboe_metal(void);
 
 void Init_profiling(void);
 
-void Init_libsolarwinds_otel_apm() {
+void Init_libsolarwinds_apm() {
     Init_oboe_metal();
 
     // * create SolarWindsAPM::CProfiler module for enabling SolarWindsAPM::Profiling

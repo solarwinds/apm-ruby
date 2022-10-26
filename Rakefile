@@ -256,8 +256,8 @@ task :compile do
 
   pwd      = Dir.pwd
   ext_dir  = File.expand_path('ext/oboe_metal')
-  final_so = File.expand_path('lib/libsolarwinds_otel_apm.so')
-  so_file  = File.expand_path('ext/oboe_metal/libsolarwinds_otel_apm.so')
+  final_so = File.expand_path('lib/libsolarwinds_apm.so')
+  so_file  = File.expand_path('ext/oboe_metal/libsolarwinds_apm.so')
 
   Dir.chdir ext_dir
   if ENV['OBOE_LOCAL']
@@ -286,7 +286,7 @@ task :clean do
   pwd     = Dir.pwd
   ext_dir = File.expand_path('ext/oboe_metal')
   symlinks = [
-    File.expand_path('lib/libsolarwinds_otel_apm.so'),
+    File.expand_path('lib/libsolarwinds_apm.so'),
     File.expand_path('ext/oboe_metal/lib/liboboe.so'),
     File.expand_path('ext/oboe_metal/lib/liboboe-1.0.so.0')
   ]
@@ -307,7 +307,7 @@ task :distclean do
   ext_dir = File.expand_path('ext/oboe_metal')
   mkmf_log = File.expand_path('ext/oboe_metal/mkmf.log')
   symlinks = [
-    File.expand_path('lib/libsolarwinds_otel_apm.so'),
+    File.expand_path('lib/libsolarwinds_apm.so'),
     File.expand_path('ext/oboe_metal/lib/liboboe.so'),
     File.expand_path('ext/oboe_metal/lib/liboboe-1.0.so.0')
   ]

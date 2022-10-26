@@ -38,7 +38,7 @@ ext/oboe_metal/.DS_Store
 gemfiles/*.lock
 gemfiles/.bundle/
 gemfiles/vendor*
-lib/libsolarwinds_otel_apm.so
+lib/libsolarwinds_apm.so
 vendor/
 
 # github action
