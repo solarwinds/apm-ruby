@@ -55,9 +55,9 @@ fi
 if [ "$1" == "test" ]; then
   echo "Running tests ..."
   if [ "$2" == "copy" ]; then
-    test/run_tests/run_tests.sh -c
+    test/run_otel_tests/run_tests.sh -c
   else
-    test/run_tests/run_tests.sh
+    test/run_otel_tests/run_tests.sh
   fi
 else
   /bin/bash

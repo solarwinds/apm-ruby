@@ -40,7 +40,13 @@ gemfiles/.bundle/
 gemfiles/vendor*
 lib/libsolarwinds_apm.so
 vendor/
+.DS_Store
+apm.collector.st-ssp.solarwinds.com
+
+# test script
+install_gem.sh
 
 # github action
 .github/.DS_Store
 .github/workflows/.DS_Store
+

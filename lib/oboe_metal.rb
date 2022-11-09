@@ -26,11 +26,8 @@ module SolarWindsOTelAPM
 
           SolarWindsOTelAPM.reporter = Oboe_metal::Reporter.new(*options)
 
-          # Only report __Init from here if we are not instrumenting a framework.
-          # Otherwise, frameworks will handle reporting __Init after full initialization
-          unless defined?(::Rails) || defined?(::Sinatra) || defined?(::Padrino) || defined?(::Grape)
-            SolarWindsOTelAPM::API.report_init
-          end
+          # report __Init
+          SolarWindsOTelAPM::API.report_init
 
         rescue => e
           $stderr.puts e.message

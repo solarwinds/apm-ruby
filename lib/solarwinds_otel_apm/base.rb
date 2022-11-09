@@ -21,9 +21,28 @@ SW_APM_STR_LABEL = 'Label'.freeze
 # This module is the base module for SolarWindsOTelAPM reporting.
 #
 module SolarWindsOTelAPMBase
+  extend SolarWindsOTelAPM::ThreadLocal
 
   attr_accessor :reporter
   attr_accessor :loaded
+  
+  thread_local :sample_source
+  thread_local :sample_rate
+  thread_local :layer
+  thread_local :layer_op
+
+  # trace context is used to store incoming w3c trace information
+  thread_local :trace_context
+
+  # transaction_name is used for custom transaction naming
+  # It needs to be globally accessible, but is only set by the request processors of the different frameworks
+  # and read by rack
+  thread_local :transaction_name
+
+  # Semaphore used during the test suite to test
+  # global config options.
+  thread_local :config_lock
+
 
   ##
   # tracing_layer?
@@ -82,6 +101,7 @@ module SolarWindsOTelAPMBase
   # False otherwise
   #
   def tracing?
+    SolarWindsOTelAPM.logger.debug "#{SolarWindsOTelAPM.loaded} #{SolarWindsOTelAPM::Context.isSampled} result======#######"
     return false if !SolarWindsOTelAPM.loaded # || SolarWindsOTelAPM.tracing_disabled?
     SolarWindsOTelAPM::Context.isSampled
   end

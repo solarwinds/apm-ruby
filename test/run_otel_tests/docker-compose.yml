@@ -17,8 +17,8 @@ x-ao-env: &ao-env
   SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
   OBOE_STAGING: "true"
   SW_APM_GEM_TEST: "true"
-  MONGO_SERVER: "ao-ruby-mongo"
-  RABBITMQ_SERVER: "ao-ruby-rabbitmq"
+  MONGO_SERVER: "ao-otel-ruby-mongo"
+  RABBITMQ_SERVER: "ao-otel-ruby-rabbitmq"
   SW_APM_REPORTER: "file"
   SW_APM_REPORTER_FILE_SINGLE: "false"
   SW_APM_SERVICE_KEY: "${SW_APM_SERVICE_KEY}"
@@ -30,11 +30,11 @@ x-ao-env: &ao-env
   DOCKER_PSQL_PASS: "docker"
   MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
   MYSQL_ROOT_PASSWORD: "admin"
-  MYSQL_HOST: "ao-ruby-mysql"
+  MYSQL_HOST: "ao-otel-ruby-mysql"
 #  OBOE_VERSION: "10.1.0"
   POSTGRES_PASSWORD: "docker"
   POSTGRES_USER: "docker"
-  POSTGRES_HOST: "ao-ruby-postgres"
+  POSTGRES_HOST: "ao-otel-ruby-postgres"
   QUERY_LOG_FILE: "/tmp/sw_apm_query_logs.txt"
   RUBY_ENV: "test"
   TEST_RUNS_TO_FILE: "true"
@@ -51,15 +51,15 @@ x-ao-shared: &ao-shared
   ports:
     - "3000"
   depends_on:
-    - ao_ruby_wait
+    - ao_otel_ruby_wait
   links:
-    - ao_ruby_wait
+    - ao_otel_ruby_wait
   stdin_open: true
   tty: true
   working_dir: /code/ruby-solarwinds
 
 services:
-  ruby_sw_apm_ubuntu:
+  ruby_sw_otel_apm_ubuntu:
     container_name: ruby_sw_apm_ubuntu
     image: ruby_sw_apm_ubuntu
     platform: linux/amd64
@@ -82,7 +82,7 @@ services:
       << : *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_UBUNTU"
 
-  ruby_sw_apm_alpine:
+  ruby_sw_otel_apm_alpine:
     container_name: ruby_sw_apm_alpine
     image: ruby_sw_apm_alpine
     build:
@@ -100,7 +100,7 @@ services:
       <<: *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_ALPINE"
 
-  ruby_sw_apm_debian:
+  ruby_sw_otel_apm_debian:
     container_name: ruby_sw_apm_debian
     image: ruby_sw_apm_debian
     build:
@@ -117,7 +117,7 @@ services:
       << : *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_DEBIAN"
 
-  ruby_sw_apm_centos:
+  ruby_sw_otel_apm_centos:
     container_name: ruby_sw_apm_centos
     image: ruby_sw_apm_centos
     build:
@@ -136,12 +136,12 @@ services:
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_CENTOS"
     privileged: true
 
-  ao-ruby-rabbitmq:
-    container_name: ao-ruby-rabbitmq
+  ao-otel-ruby-rabbitmq:
+    container_name: ao-otel-ruby-rabbitmq
     image: rabbitmq:3-management
 
-  ao-ruby-mysql:
-    container_name: ao-ruby-mysql
+  ao-otel-ruby-mysql:
+    container_name: ao-otel-ruby-mysql
     platform: linux/amd64
     image: mysql:5.7.33
     command: --init-file /data/application/mysql_init.sql
@@ -151,12 +151,12 @@ services:
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
       - MYSQL_ROOT_PASSWORD=admin
 
-  ao-ruby-mongo:
-    container_name: ao-ruby-mongo
+  ao-otel-ruby-mongo:
+    container_name: ao-otel-ruby-mongo
     image: mongo:5
 
-  ao-ruby-postgres:
-    container_name: ao-ruby-postgres
+  ao-otel-ruby-postgres:
+    container_name: ao-otel-ruby-postgres
     image: postgres:latest
     environment:
       POSTGRES_DB: "test_db"
@@ -168,17 +168,17 @@ services:
       - ../../log/postgresql:/var/log/postgresql
     command: postgres -c config_file=/postgresql.conf
 
-  ao_ruby_wait:
-    container_name: ao_ruby_wait
+  ao_otel_ruby_wait:
+    container_name: ao_otel_ruby_wait
     image: waisbrot/wait
     depends_on:
-      - ao-ruby-rabbitmq
-      - ao-ruby-mysql
-      - ao-ruby-mongo
-      - ao-ruby-postgres
+      - ao-otel-ruby-rabbitmq
+      - ao-otel-ruby-mysql
+      - ao-otel-ruby-mongo
+      - ao-otel-ruby-postgres
     links:
-      - ao-ruby-rabbitmq
-      - ao-ruby-mysql
-      - ao-ruby-mongo
-      - ao-ruby-postgres
+      - ao-otel-ruby-rabbitmq
+      - ao-otel-ruby-mysql
+      - ao-otel-ruby-mongo
+      - ao-otel-ruby-postgres
 

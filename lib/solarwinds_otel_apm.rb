@@ -4,6 +4,7 @@
 begin
   require 'openssl'
   require 'solarwinds_otel_apm/version'
+  require 'solarwinds_otel_apm/thread_local'
   require 'solarwinds_otel_apm/logger'
   require 'solarwinds_otel_apm/util'
   require 'solarwinds_otel_apm/support_report'
@@ -40,21 +41,7 @@ begin
   require 'solarwinds_otel_apm/loading'
 
   if SolarWindsOTelAPM.loaded
-
-    require 'opentelemetry/sdk'
-    require 'opentelemetry/exporter/otlp'
-    require 'opentelemetry/instrumentation/all'
-
-    # override
-    require_relative './configurator.rb'
-    require 'solarwinds_otel_apm/opentelemetry/solarwinds_exporter'
-
-    if defined?(OpenTelemetry::SDK::Configurator)
-      OpenTelemetry::SDK.configure do |c|
-        c.service_name = ENV['SERVICE_NAME'] || ""
-        c.use_all() # enables all instrumentation! or use logic to determine which module to require
-      end
-    end
+    require 'solarwinds_otel_apm/load_opentelemetry'
     
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
@@ -66,13 +53,7 @@ begin
     require 'solarwinds_otel_apm/noop/metadata'
   end
 
-  
-
-  # Load Ruby module last.  If there is no framework detected,
-  # it will load all of the Ruby instrumentation
-  require 'solarwinds_otel_apm/ruby'
-
-  require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
+  # require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
 rescue => e
   $stderr.puts "[solarwinds_otel_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace
