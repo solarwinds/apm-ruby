@@ -24,7 +24,6 @@ module SolarWindsOTelAPM
         return FAILURE if @shutdown
         span_data.each do |data|
           log_span_data(data)
-          break
         end
         span_data = span_data.first
         SUCCESS
@@ -102,23 +101,6 @@ module SolarWindsOTelAPM
           evt.addInfo(key, value)
         end
         SolarWindsOTelAPM::Reporter.sendReport(evt)
-      end
-
-      def encoded_batches(span_data)
-        span_data.group_by(&:resource).map do |resource, spans|
-          process = Encoder.encoded_process(resource)
-          spans.map! { |span| Encoder.encoded_span(span) }
-          Thrift::Batch.new('process' => process, 'spans' => spans)
-        end
-      end
-
-      def measure_request_duration
-        start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        yield
-      ensure
-        stop = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        duration_ms = 1000.0 * (stop - start)
-        @metrics_reporter.record_value('solarwinds_apm.request_duration', value: duration_ms)
       end
 
     end
