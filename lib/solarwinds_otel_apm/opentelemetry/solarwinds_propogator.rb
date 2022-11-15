@@ -96,7 +96,7 @@ module SolarWindsOTelAPM
       #
       # @return [Array<String>] a list of fields that will be used by this propagator.
       def fields
-        FIELDS
+        TRACESTATE_HEADER_NAME
       end
 
     end
