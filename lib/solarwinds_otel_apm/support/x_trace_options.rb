@@ -33,6 +33,9 @@ module SolarWindsOTelAPM
     # - ts (unix timestamp)
     # - other keys will be reported in the response options as ignored
 
+    SW_XTRACEOPTIONS_RESPONSE_KEY = "xtrace_options_response"
+
+    
     def initialize(options, signature = nil)
       @options = options.dup
       @signature = signature.dup
@@ -107,6 +110,10 @@ module SolarWindsOTelAPM
       end
 
       headers['X-Trace-Options-Response'] = response.join(';')
+    end
+
+    def get_sw_xtraceoptions_response_key
+      SW_XTRACEOPTIONS_RESPONSE_KEY
     end
 
   end
