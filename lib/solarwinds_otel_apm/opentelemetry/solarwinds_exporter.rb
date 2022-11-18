@@ -25,7 +25,6 @@ module SolarWindsOTelAPM
         span_data.each do |data|
           log_span_data(data)
         end
-        span_data = span_data.first
         SUCCESS
       end
 
@@ -43,8 +42,7 @@ module SolarWindsOTelAPM
       def log_span_data(span_data)
 
         begin
-          flag = 0
-          flag = 1 if span_data.trace_flags.sampled?
+          flag = span_data.trace_flags.sampled?? 1 : 0
           version = "00"
           xtr = "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_span_id}-0#{flag}"
           md = SolarWindsOTelAPM::Metadata.fromString(xtr)
@@ -83,7 +81,6 @@ module SolarWindsOTelAPM
         evt.addInfo('ErrorClass', span_data.attributes['exception.type'])
         evt.addInfo('ErrorMsg', span_data.attributes['exception.message'])
         evt.addInfo('Backtrace', span_data.attributes['exception.stacktrace'])
-        # add remaining attributes, if any
         span_data.resource.attribute_enumerator.each do |key, value|
           unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
             evt.addInfo(key, value)
@@ -94,7 +91,6 @@ module SolarWindsOTelAPM
       end
 
       def report_info_event(span_data)
-        
         evt = SolarWindsOTelAPM::Context.createEvent(span_data.end_timestamp.to_i / 1000 )
         evt.addInfo('Label', 'info')
         span_data.resource.attribute_enumerator.each do |key, value|

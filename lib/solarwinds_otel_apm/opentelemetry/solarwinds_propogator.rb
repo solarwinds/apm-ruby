@@ -27,20 +27,23 @@ module SolarWindsOTelAPM
       # @return [Context] context updated with extracted baggage, or the original context
       #   if extraction fails
       def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
-        if context.nil?
-          context = ::OpenTelemetry::Context.new(Hash.new)
+        
+        context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
 
         xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
 
         return context if xtraceoptions_header.nil?
-            
-        context.update({"#{INTL_SWO_X_OPTIONS_KEY}": xtraceoptions_header[0]})
+        
+        hash_value = Hash.new
+        hash_value[INTL_SWO_X_OPTIONS_KEY] = xtraceoptions_header[0]
+        context.update(hash_value)
 
         signature_header = getter.get(carrier, XTRACEOPTIONS_SIGNATURE_HEADER_NAME)
 
-        if signature_header
-            context.set_values({"#{INTL_SWO_SIGNATURE_KEY}": signature_header[0]})
-
+        hash_value = Hash.new
+        hash_value[INTL_SWO_SIGNATURE_KEY] = signature_header[0]
+        context.set_values(hash_value) if signature_header
+          
         return context
 
       end
@@ -63,31 +66,35 @@ module SolarWindsOTelAPM
         # Prepare carrier with carrier's or new tracestate
         trace_state = None
         if trace_state_header.nil?
-            # Only create new trace state if valid span_id
-            if span_context.span_id == INVALID_SPAN_ID:
-                return
-            else:
-                SolarWindsOTelAPM.logger.debug "Creating new trace state for injection with #{sw_value}"
-                trace_state = ::OpenTelemetry::Trace::Tracestate.create({"#{INTL_SWO_TRACESTATE_KEY}": sw_value})
-        else:
-            trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
-            # Check if trace_state already contains sw KV
-            if trace_state.keys.include? INTL_SWO_TRACESTATE_KEY
-                # If so, modify current span_id and trace_flags, and move to beginning of list
-                SolarWindsOTelAPM.logger.debug "Updating trace state for injection with #{sw_value}"
-                trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+          # Only create new trace state if valid span_id
+          if span_context.span_id == INVALID_SPAN_ID
+            return
+          else
+            SolarWindsOTelAPM.logger.debug "Creating new trace state for injection with #{sw_value}"
+            trace_state_hash = Hash.new
+            trace_state_hash[INTL_SWO_TRACESTATE_KEY] = sw_value
+            trace_state = ::OpenTelemetry::Trace::Tracestate.create(trace_state_hash)
+          end
 
-            else:
-                # If not, add sw KV to beginning of list
-                SolarWindsOTelAPM.logger.debug "Adding KV to trace state for injection with #{sw_value}"
-                trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+        else
+          trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
+          # Check if trace_state already contains sw KV
+          if trace_state.keys.include? INTL_SWO_TRACESTATE_KEY
+            # If so, modify current span_id and trace_flags, and move to beginning of list
+            SolarWindsOTelAPM.logger.debug "Updating trace state for injection with #{sw_value}"
+            trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+          else
+            # If not, add sw KV to beginning of list
+            SolarWindsOTelAPM.logger.debug "Adding KV to trace state for injection with #{sw_value}"
+            trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+          end
+        end
 
         if trace_state.defined_method?(:to_header)
           setter.set(carrier, "#{TRACESTATE_HEADER_NAME}", trace_state.to_header)
         else
           setter.set(carrier, "#{TRACESTATE_HEADER_NAME}", Transformer.trace_state_header(trace_state))
         end
-        
 
       end
 

@@ -36,16 +36,17 @@ module SolarWindsOTelAPM
     SW_XTRACEOPTIONS_RESPONSE_KEY = "xtrace_options_response"
 
     
-    def initialize(options, signature = nil)
-      @options = options.dup
-      @signature = signature.dup
+    def initialize(context, signature = nil)
+      @context = context.dup
       @trigger_trace = false
       @custom_kvs = {}
       @sw_keys = nil
       @ignored = []
       @timestamp = 0
+      @options = options_header
+      @signature = get_signature
 
-      options&.split(/;+/)&.each do |val|
+      @options&.split(/;+/)&.each do |val|
         k = val.split('=', 2)
 
         next unless k[0] # it can be nil, eg when the header starts with ';'
@@ -95,7 +96,7 @@ module SolarWindsOTelAPM
     end
 
     def add_response_header(headers, settings)
-      return unless options
+      return unless @options
 
       response = []
       response << "auth=#{settings.auth_msg}" if @signature
@@ -114,6 +115,24 @@ module SolarWindsOTelAPM
 
     def get_sw_xtraceoptions_response_key
       SW_XTRACEOPTIONS_RESPONSE_KEY
+    end
+
+    def get_signature
+      signature = nil
+      option_signature = @context[SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY)]
+      signature = option_signature if option_signature
+      return signature
+    end
+
+    def options_header
+      options_header = ""
+      header = @context[SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY)]
+      options_header = header if header
+      return options_header
+    end
+
+    def intify_trigger_trace
+      (@trigger_trace == true)? 1 : 0
     end
 
   end

@@ -1,5 +1,7 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
+    
+    # reference: OpenTelemetry::SDK::Trace::SpanProcessor
     class SolarWindsProcessor
 
 
@@ -7,21 +9,7 @@ module SolarWindsOTelAPM
       HTTP_ROUTE = "http.route"
       HTTP_STATUS_CODE = "http.status_code"
       HTTP_URL = "http.url"
-
       LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE = 0
-
-      # def __init__(
-      #     self,
-      #     apm_txname_manager: "SolarWindsTxnNameManager",
-      #     agent_enabled: bool,
-      # ) -> None:
-      #     self._apm_txname_manager = apm_txname_manager
-      #     if agent_enabled:
-      #         from solarwinds_apm.extension.oboe import Span
-      #         self._span = Span
-      #     else:
-      #         from solarwinds_apm.apm_noop import Span
-      #         self._span = Span
 
       def initialize(exporter, txn_manager, agent_enabled)
         @exporter = exporter
@@ -50,7 +38,7 @@ module SolarWindsOTelAPM
       def on_finish(span) 
 
         parent_span_context = span.parent
-        return if !parent_span_context.nil? && parent_span_context.valid? and !parent_span_context.remote?
+        return if !parent_span_context.nil? && parent_span_context.valid? && !parent_span_context.remote?
 
         is_span_http = is_span_http(span)
         span_time    = calculate_span_time(span.start_timestamp, span.end_timestamp)
@@ -106,17 +94,17 @@ module SolarWindsOTelAPM
         Export::SUCCESS
       end
 
-
       private
-
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def is_span_http span
-        return (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes["#{HTTP_METHOD}"].nil?)
+        (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes["#{HTTP_METHOD}"].nil?)
+      end
 
       # Calculate if this span instance has_error
       def has_error span
-        return (span.status.code == ::OpenTelemetry::Trace::Status::ERROR)
+        (span.status.code == ::OpenTelemetry::Trace::Status::ERROR)
+      end
 
       # Calculate HTTP status_code from span or default to UNAVAILABLE
       # Something went wrong in OTel or instrumented service crashed early
@@ -125,6 +113,7 @@ module SolarWindsOTelAPM
         status_code = span.attributes["#{HTTP_STATUS_CODE}"]
         status_code = LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE if status_code.nil?
         status_code
+      end
 
       # Get trans_name and url_tran of this span instance.
       def calculate_transaction_names span
@@ -132,13 +121,14 @@ module SolarWindsOTelAPM
         trans_name = span.attributes["#{HTTP_ROUTE}"] if span.attributes["#{HTTP_ROUTE}"]
         trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
         return trans_name, span.attributes["#{HTTP_URL}"]
+      end
 
       # Calculate span time in microseconds (us) using start and end time
       # in nanoseconds (ns). OTel span start/end_time are optional.
-      def calculate_span_time start_time=nil, end_time=nil)
-        if start_time.nil? || end_time.nil?
-          return 0
+      def calculate_span_time start_time=nil, end_time=nil
+        return 0 if start_time.nil? || end_time.nil?
         return ((end_time.to_i - start_time.to_i) / 1e3).round
+      end
 
     end
   end

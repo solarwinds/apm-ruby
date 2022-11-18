@@ -45,6 +45,7 @@ apm.collector.st-ssp.solarwinds.com
 
 # test script
 install_gem.sh
+sample_start.rb
 
 # github action
 .github/.DS_Store

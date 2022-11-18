@@ -7,8 +7,10 @@ begin
   require 'solarwinds_otel_apm/thread_local'
   require 'solarwinds_otel_apm/logger'
   require 'solarwinds_otel_apm/util'
+  require 'solarwinds_otel_apm/support'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/base'
+  require 'solarwinds_otel_apm/constants'
   SolarWindsOTelAPM.loaded = false
 
   require 'solarwinds_otel_apm/config'

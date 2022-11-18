@@ -36,13 +36,14 @@ module SolarWindsOTelAPM
       # @api private
       #
       # See {Samplers}.
+      # trace_id
+      # parent_context: OpenTelemetry::Context
       def should_sample?(trace_id:, parent_context:, links:, name:, kind:, attributes:)
 
-        #### seems missing get_current_span methods from otel
-        parent_span_context = get_current_span(parent_context).get_span_context
-        ###
+        SolarWindsOTelAPM.logger.debug "#{trace_id.unpack1("H*")}\n#{parent_context}\n#{links}\n#{name}\n#{kind}\n#{attributes}"
+        parent_span_context = Transformer.get_current_span(parent_context).context
 
-        xtraceoptions       = XTraceOptions(parent_context.value("sw_xtraceoptions"))
+        xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
         liboboe_decision    = calculate_liboboe_decision(parent_span_context,xtraceoptions)
 
         # Always calculate trace_state for propagation
@@ -68,7 +69,7 @@ module SolarWindsOTelAPM
       private
 
       def init_context
-        context = SolarWindsOTelAPM.loaded?? SolarWindsOTelAPM::Context : nil
+        context = (SolarWindsOTelAPM.loaded == true)? SolarWindsOTelAPM::Context : nil
       end
 
       # return Hash
@@ -79,38 +80,38 @@ module SolarWindsOTelAPM
           tracestring = Transformer.traceparent_from_context(parent_span_context)
         end
 
-        sw_member_value = parent_span_context.tracestate.value(Constants::INTL_SWO_TRACESTATE_KEY)
-
+        sw_member_value = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
         tracing_mode = UNSET # 'tracing_mode' is not supported in NH Python, so give as unset
 
-        # apm_config.get("trigger_trace") determine if the trigger_trace is set by either default value or custom value
         # need to create the config class
-        trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(apm_config.get("trigger_trace"))
+        trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
         sample_rate = UNSET
 
         options = nil
-        trigger_trace_request = 0
+        trigger_trace = 0
         signature = nil
         timestamp = nil
         if xtraceoptions
-          options = xtraceoptions.options_header
-          trigger_trace_request = xtraceoptions.trigger_trace
+          options = xtraceoptions.options
+          trigger_trace = xtraceoptions.intify_trigger_trace
           signature = xtraceoptions.signature
-          timestamp = xtraceoptions.ts
+          timestamp = xtraceoptions.timestamp
         end
 
-        do_metrics, do_sample, \
-            rate, source, bucket_rate, bucket_cap, decision_type, \
-            auth, status_msg, auth_msg, status = SolarWindsOTelAPM::Context.getDecisions(
-                                                                                tracestring,
-                                                                                sw_member_value,
-                                                                                tracing_mode,
-                                                                                sample_rate,
-                                                                                trigger_trace_request,
-                                                                                trigger_trace_mode,
-                                                                                options,
-                                                                                signature,
-                                                                                timestamp)
+        SolarWindsOTelAPM.logger.debug "decision parameters \n 
+                                         tracestring     #{tracestring}\n
+                                         sw_member_value #{sw_member_value}\n
+                                         tracing_mode    #{tracing_mode}\n
+                                         sample_rate     #{sample_rate}\n
+                                         trigger_trace   #{trigger_trace}\n
+                                         trigger_trace_mode    #{trigger_trace_mode}\n
+                                         options      #{options}\n
+                                         signature    #{signature}\n
+                                         timestamp    #{timestamp}\n"
+
+        args = [tracestring,sw_member_value,tracing_mode,sample_rate,trigger_trace,trigger_trace_mode,options,signature,timestamp] 
+        do_metrics, do_sample, rate, source, bucket_rate, \
+            bucket_cap, decision_type, auth, status_msg, auth_msg, status = SolarWindsOTelAPM::Context.getDecisions(*args)
 
         decision = {
             "do_metrics": do_metrics,
@@ -149,7 +150,7 @@ module SolarWindsOTelAPM
         response = Array.new
 
         if xtraceoptions.signature && decision["auth_msg"]
-          response << [XTRACEOPTIONS_RESP_AUTH,decision["auth_msg"]].join(Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          response << [XTRACEOPTIONS_RESP_AUTH,decision["auth_msg"]].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
         end
 
         if !decision["auth"] || decision["auth"] < 1
@@ -169,12 +170,12 @@ module SolarWindsOTelAPM
             trigger_msg = XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED
           end
 
-          response << [XTRACEOPTIONS_RESP_TRIGGER_TRACE, trigger_msg].join(Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          response << [XTRACEOPTIONS_RESP_TRIGGER_TRACE, trigger_msg].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
         end
 
         if xtraceoptions.ignored
-          ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
-          response << ignored_response.join(Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
+          response << ignored_response.join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
         end
 
         response.join(";")
@@ -184,8 +185,10 @@ module SolarWindsOTelAPM
 
       def create_new_trace_state decision, parent_span_context, xtraceoptions
 
-        decision = Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"])
-        trace_state = ::OpenTelemetry::Trace::Tracestate.new({"#{Constants::INTL_SWO_TRACESTATE_KEY}": decision})
+        decision = Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"]))
+        trace_state_hash = Hash.new
+        trace_state_hash[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY] = decision
+        trace_state = ::OpenTelemetry::Trace::Tracestate.new(trace_state_hash)
 
         if xtraceoptions && xtraceoptions.trigger_trace
           trace_state = trace_state.set_value(
@@ -211,7 +214,7 @@ module SolarWindsOTelAPM
           else
             # Update trace_state with span_id and sw trace_flags
             trace_state = trace_state.set_value(
-              "#{Constants::INTL_SWO_TRACESTATE_KEY}",
+              "#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}",
               Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"]))
             )
             # Update trace_state with x-trace-options-response
@@ -293,7 +296,7 @@ module SolarWindsOTelAPM
 
         if attributes.nil?
           # _SW_TRACESTATE_ROOT_KEY is set once per trace, if possible
-          sw_value = parent_span_context.tracestate.value("#{Constants::INTL_SWO_TRACESTATE_KEY}")
+          sw_value = parent_span_context.tracestate.value("#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}")
           if sw_value
             new_attributes[SW_TRACESTATE_ROOT_KEY]= Transformer.span_id_from_sw(sw_value)
           end
