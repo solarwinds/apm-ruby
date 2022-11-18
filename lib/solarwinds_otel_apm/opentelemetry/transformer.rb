@@ -35,14 +35,12 @@ module SolarWindsOTelAPM
       # Formats tracestate sw value from span_id and liboboe decision as 16-byte span_id with 8-bit trace_flags
       # e.g. 1a2b3c4d5e6f7g8h-01
       def self.sw_from_span_and_decision span_id, decision
-        "-".join([span_id, decision])
+        [span_id, decision].join("-")
       end
 
-      # Formats trace flags as 8-bit field
-      # or use trace_flags.unpack1('H*')
+      # trace_flags [Integer]
       def self.trace_flags_from_int trace_flags
-        flag = trace_flags.sampled?? 1 : 0
-        "0#{flag}"
+        "0#{trace_flags}"
       end
 
       def self.is_sampled? decision

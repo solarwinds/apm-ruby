@@ -20,11 +20,12 @@ module SolarWindsOTelAPM
       end
 
       def export(span_data, timeout: nil)
-        SolarWindsOTelAPM.logger.debug "#{@shutdown}" 
         return FAILURE if @shutdown
         span_data.each do |data|
+          SolarWindsOTelAPM.logger.debug "span_data: #{data}" 
           log_span_data(data)
         end
+        
         SUCCESS
       end
 

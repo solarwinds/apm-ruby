@@ -35,11 +35,13 @@ if defined?(OpenTelemetry::SDK::Configurator)
     # OpenTelemetry.propagation = Context::Propagation::CompositeTextMapPropagator.compose_propagators((@propagators || propagators).compact)
     # propagation will add either @propagators or propagators (local)
     # c.propagators = [OpenTelemetry::Propagator::XRay::TextMapPropagator.new] 
-    c.propagators = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator]
+    c.propagators = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]
 
     c.use_all() # enables all instrumentation! or use logic to determine which module to require
   end
 end
+
+puts OpenTelemetry.propagation
 
 # configure sampler afterwards (sampler is a standalone beast)
 sampler_config = Hash.new

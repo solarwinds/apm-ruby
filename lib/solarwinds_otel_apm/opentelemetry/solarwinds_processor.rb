@@ -36,8 +36,7 @@ module SolarWindsOTelAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span) 
-
-        parent_span_context = span.parent
+        parent_span_context = span.instance_variable_get(:@parent_span)
         return if !parent_span_context.nil? && parent_span_context.valid? && !parent_span_context.remote?
 
         is_span_http = is_span_http(span)
@@ -48,25 +47,25 @@ module SolarWindsOTelAPM
         has_error = has_error(span)
         trans_name, url_tran = calculate_transaction_names(span)
 
-        liboboe_txn_name = None
+        liboboe_txn_name = nil
         if is_span_http
           
           status_code = get_http_status_code(span)
           request_method = span.attributes["#{HTTP_METHOD}"]
 
-          SolarWindsOTelAPM::Logger.debug "createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, 
+          SolarWindsOTelAPM.logger.debug "createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, 
                                               span_time: #{span_time}, status_code: #{status_code}, request_method: #{request_method},
                                               has_error: #{has_error}"
           liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name,url_tran,domain,
                                                                     span_time,status_code,request_method,has_error)
   
         else
-          SolarWindsOTelAPM::Logger.debug "createHttpSpan with trans_name: #{trans_name}, domain: #{domain}, 
+          SolarWindsOTelAPM.logger.debug "createHttpSpan with trans_name: #{trans_name}, domain: #{domain}, 
                                               span_time: #{span_time}, has_error: #{has_error}"
-          liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name, domain, span_time, has_error)
+          liboboe_txn_name = SolarWindsOTelAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 
-        @txn_manager["#{span.hex_trace_id}-#{span.hex_span_id}"] = liboboe_txn_name if span.trace_flags.sampled?
+        @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
         
       end
 
@@ -102,8 +101,9 @@ module SolarWindsOTelAPM
       end
 
       # Calculate if this span instance has_error
+      # return [Integer]
       def has_error span
-        (span.status.code == ::OpenTelemetry::Trace::Status::ERROR)
+        (span.status.code == ::OpenTelemetry::Trace::Status::ERROR)? 1 : 0
       end
 
       # Calculate HTTP status_code from span or default to UNAVAILABLE

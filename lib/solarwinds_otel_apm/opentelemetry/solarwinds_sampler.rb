@@ -53,9 +53,9 @@ module SolarWindsOTelAPM
 
         sampling_result = nil
         if Transformer.is_sampled?(otel_decision)
-          sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(otel_decision, new_attributes, new_trace_state)
+          sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
         else
-          sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(otel_decision, nil, new_trace_state)
+          sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: nil, tracestate: new_trace_state)
         end
 
         return sampling_result
@@ -113,19 +113,19 @@ module SolarWindsOTelAPM
         do_metrics, do_sample, rate, source, bucket_rate, \
             bucket_cap, decision_type, auth, status_msg, auth_msg, status = SolarWindsOTelAPM::Context.getDecisions(*args)
 
-        decision = {
-            "do_metrics": do_metrics,
-            "do_sample": do_sample,
-            "rate": rate,
-            "source": source,
-            "bucket_rate": bucket_rate,
-            "bucket_cap": bucket_cap,
-            "decision_type": decision_type,
-            "auth": auth,
-            "status_msg": status_msg,
-            "auth_msg": auth_msg,
-            "status": status,
-        }
+        decision = Hash.new
+        decision["do_metrics"]    = do_metrics
+        decision["do_sample"]     = do_sample
+        decision["rate"]          = rate
+        decision["source"]        = source
+        decision["bucket_rate"]   = bucket_rate
+        decision["bucket_cap"]    = bucket_cap
+        decision["decision_type"] = decision_type
+        decision["auth"]          = auth
+        decision["status_msg"]    = status_msg
+        decision["auth_msg"]      = auth_msg
+        decision["status"]        = status
+
         SolarWindsOTelAPM.logger.debug "Got liboboe decision outputs: #{decision.inspect}"
         return decision
 
@@ -188,7 +188,7 @@ module SolarWindsOTelAPM
         decision = Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"]))
         trace_state_hash = Hash.new
         trace_state_hash[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY] = decision
-        trace_state = ::OpenTelemetry::Trace::Tracestate.new(trace_state_hash)
+        trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash(trace_state_hash)
 
         if xtraceoptions && xtraceoptions.trigger_trace
           trace_state = trace_state.set_value(

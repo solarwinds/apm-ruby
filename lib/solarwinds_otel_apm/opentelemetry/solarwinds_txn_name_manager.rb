@@ -18,6 +18,8 @@ module SolarWindsOTelAPM
         @cache[key] = value
       end
 
+      alias []= set
+
     end
   end
 end
