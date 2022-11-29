@@ -33,40 +33,43 @@ module SolarWindsOTelAPM
       #
       # This method is called synchronously on the execution thread, should
       # not throw or block the execution thread.
+      # Only calculate inbound metrics for service root spans
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span) 
-        parent_span_context = span.instance_variable_get(:@parent_span)
-        return if !parent_span_context.nil? && parent_span_context.valid? && !parent_span_context.remote?
+        
+        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+          @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
+          return
+        end
 
-        is_span_http = is_span_http(span)
-        span_time    = calculate_span_time(span.start_timestamp, span.end_timestamp)
+        http_span = is_span_http(span)
+        span_time = calculate_span_time(span.start_timestamp, span.end_timestamp)
 
-        # TODO Use `domain` for custom transaction naming after alpha/beta
         domain = nil
         has_error = has_error(span)
         trans_name, url_tran = calculate_transaction_names(span)
 
         liboboe_txn_name = nil
-        if is_span_http
-          
+        if http_span
           status_code = get_http_status_code(span)
           request_method = span.attributes["#{HTTP_METHOD}"]
 
-          SolarWindsOTelAPM.logger.debug "createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, 
-                                              span_time: #{span_time}, status_code: #{status_code}, request_method: #{request_method},
+          SolarWindsOTelAPM.logger.debug "####### createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, \
+                                              span_time: #{span_time}, status_code: #{status_code}, request_method: #{request_method}, \
                                               has_error: #{has_error}"
-          liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name,url_tran,domain,
-                                                                    span_time,status_code,request_method,has_error)
+          liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,
+                                                                                                request_method,has_error)
   
         else
-          SolarWindsOTelAPM.logger.debug "createHttpSpan with trans_name: #{trans_name}, domain: #{domain}, 
-                                              span_time: #{span_time}, has_error: #{has_error}"
+          SolarWindsOTelAPM.logger.debug "####### createSpan with trans_name: #{trans_name}, domain: #{domain}, span_time: #{span_time}, has_error: #{has_error}"
           liboboe_txn_name = SolarWindsOTelAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 
+        SolarWindsOTelAPM.logger.debug "####### liboboe_txn_name: #{liboboe_txn_name}"
         @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
-        
+
+        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
       end
 
       # Export all ended spans to the configured `Exporter` that have not yet
@@ -81,7 +84,7 @@ module SolarWindsOTelAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def force_flush(timeout: nil)
-        Export::SUCCESS
+        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
       end
 
       # Called when {TracerProvider#shutdown} is called.
@@ -90,13 +93,14 @@ module SolarWindsOTelAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def shutdown(timeout: nil)
-        Export::SUCCESS
+        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
       end
 
       private
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def is_span_http span
+        SolarWindsOTelAPM.logger.debug "######## span.kind #{span.kind}  span.attributes: #{span.attributes["#{HTTP_METHOD}"]}"
         (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes["#{HTTP_METHOD}"].nil?)
       end
 

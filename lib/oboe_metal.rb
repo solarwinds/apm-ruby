@@ -41,8 +41,8 @@ module SolarWindsOTelAPM
       #
       # Send the report for the given event
       #
-      def sendReport(evt)
-        SolarWindsOTelAPM.reporter.sendReport(evt)
+      def sendReport(evt, with_system_timestamp=true)
+        SolarWindsOTelAPM.reporter.sendReport(evt, with_system_timestamp)
       end
 
       ##
@@ -50,8 +50,8 @@ module SolarWindsOTelAPM
       #
       # Send the report for the given event
       #
-      def sendStatus(evt, context = nil)
-        SolarWindsOTelAPM.reporter.sendStatus(evt, context)
+      def sendStatus(evt, context = nil, with_system_timestamp=true)
+        SolarWindsOTelAPM.reporter.sendStatus(evt, context, with_system_timestamp)
       end
 
       ##
