@@ -26,7 +26,8 @@ if defined?(OpenTelemetry::SDK::Configurator)
 
     #* we have added the propagators in override
     #* propagators use this way to add data to span: setter.set(carrier, B3_TRACE_ID_KEY, span_context.hex_trace_id)
-    c.propagators = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]
+    c.propagators = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new,
+                     SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
 
     c.use_all() # enables all instrumentation! or use logic to determine which module to require
   end
