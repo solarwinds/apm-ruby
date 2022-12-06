@@ -3,7 +3,6 @@ module SolarWindsOTelAPM
     module SolarWindsPropagator
       class TextMapPropagator
 
-        INVALID_SPAN_ID = 0x0000000000000000
         TRACESTATE_HEADER_NAME = "tracestate"
         XTRACEOPTIONS_HEADER_NAME = "x-trace-options"
         XTRACEOPTIONS_SIGNATURE_HEADER_NAME = "x-trace-options-signature"
@@ -12,7 +11,7 @@ module SolarWindsOTelAPM
         INTL_SWO_TRACESTATE_KEY = "sw"
 
         private_constant \
-          :INVALID_SPAN_ID, :TRACESTATE_HEADER_NAME, :XTRACEOPTIONS_HEADER_NAME, 
+          :TRACESTATE_HEADER_NAME, :XTRACEOPTIONS_HEADER_NAME, 
           :XTRACEOPTIONS_SIGNATURE_HEADER_NAME, :INTL_SWO_X_OPTIONS_KEY, :INTL_SWO_SIGNATURE_KEY
 
         # Extract trace context from the supplied carrier.
@@ -32,6 +31,7 @@ module SolarWindsOTelAPM
           context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
 
           xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
+          SolarWindsOTelAPM.logger.debug "####### xtraceoptions_header: #{xtraceoptions_header}"
 
           return context if xtraceoptions_header.nil?
           
@@ -40,11 +40,13 @@ module SolarWindsOTelAPM
           context.update(hash_value)
 
           signature_header = getter.get(carrier, XTRACEOPTIONS_SIGNATURE_HEADER_NAME)
+          SolarWindsOTelAPM.logger.debug "####### signature_header: #{signature_header}"
 
           hash_value = Hash.new
           hash_value[INTL_SWO_SIGNATURE_KEY] = signature_header[0]
           context.set_values(hash_value) if signature_header
-            
+          
+          SolarWindsOTelAPM.logger.debug "####### context: #{context}"
           return context
 
         end
@@ -68,7 +70,7 @@ module SolarWindsOTelAPM
           trace_state = nil
           if trace_state_header.nil?
             # Only create new trace state if valid span_id
-            if span_context.span_id == INVALID_SPAN_ID
+            if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
               return
             else
               SolarWindsOTelAPM.logger.debug "Creating new trace state for injection with #{sw_value}"

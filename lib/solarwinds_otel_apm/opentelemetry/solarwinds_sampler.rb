@@ -40,11 +40,19 @@ module SolarWindsOTelAPM
       # parent_context: OpenTelemetry::Context
       def should_sample?(trace_id:, parent_context:, links:, name:, kind:, attributes:)
 
-        SolarWindsOTelAPM.logger.debug "#{trace_id.unpack1("H*")}\n#{parent_context}\n#{links}\n#{name}\n#{kind}\n#{attributes}"
+        SolarWindsOTelAPM.logger.debug "####### should_sample? parameters trace_id: #{trace_id.unpack1("H*")} \
+                                                                          parent_context:  #{parent_context} \
+                                                                          parent_context.inspect:  #{parent_context.inspect} \
+                                                                          links: #{links} \
+                                                                          name: #{name} \
+                                                                          kind: #{kind} \
+                                                                          attributes: #{attributes}"
         parent_span_context = Transformer.get_current_span(parent_context).context
-
+        SolarWindsOTelAPM.logger.debug "####### parent_span_context: #{parent_span_context.inspect}"
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
+        SolarWindsOTelAPM.logger.debug "####### xtraceoptions: #{xtraceoptions.inspect}"
         liboboe_decision    = calculate_liboboe_decision(parent_span_context,xtraceoptions)
+        SolarWindsOTelAPM.logger.debug "####### liboboe_decision: #{liboboe_decision.inspect}"
 
         # Always calculate trace_state for propagation
         new_trace_state = calculate_trace_state(liboboe_decision,parent_span_context,xtraceoptions)
@@ -98,16 +106,15 @@ module SolarWindsOTelAPM
           timestamp = xtraceoptions.timestamp
         end
 
-        SolarWindsOTelAPM.logger.debug "decision parameters \n 
-                                         tracestring     #{tracestring}\n
-                                         sw_member_value #{sw_member_value}\n
-                                         tracing_mode    #{tracing_mode}\n
-                                         sample_rate     #{sample_rate}\n
-                                         trigger_trace   #{trigger_trace}\n
-                                         trigger_trace_mode    #{trigger_trace_mode}\n
-                                         options      #{options}\n
-                                         signature    #{signature}\n
-                                         timestamp    #{timestamp}\n"
+        SolarWindsOTelAPM.logger.debug "####### decision parameters tracestring: #{tracestring} \
+                                         sw_member_value: #{sw_member_value} \
+                                         tracing_mode:    #{tracing_mode} \
+                                         sample_rate:     #{sample_rate} \
+                                         trigger_trace:   #{trigger_trace} \
+                                         trigger_trace_mode:    #{trigger_trace_mode} \
+                                         options:      #{options} \
+                                         signature:    #{signature} \
+                                         timestamp:    #{timestamp}"
 
         args = [tracestring,sw_member_value,tracing_mode,sample_rate,trigger_trace,trigger_trace_mode,options,signature,timestamp] 
         do_metrics, do_sample, rate, source, bucket_rate, \
@@ -125,10 +132,7 @@ module SolarWindsOTelAPM
         decision["status_msg"]    = status_msg
         decision["auth_msg"]      = auth_msg
         decision["status"]        = status
-
-        SolarWindsOTelAPM.logger.debug "Got liboboe decision outputs: #{decision.inspect}"
         return decision
-
       end
 
 
@@ -260,10 +264,10 @@ module SolarWindsOTelAPM
       end
 
       def calculate_attributes span_name, attributes, decision, trace_state, parent_span_context, xtraceoptions
-        SolarWindsOTelAPM.logger.debug "Received attributes: #{attributes}"
+        SolarWindsOTelAPM.logger.debug "Received attributes: #{attributes} decision:#{decision} trace_state:#{trace_state} parent_span_context:#{parent_span_context} xtraceoptions:#{xtraceoptions}"
         # Don't set attributes if not tracing
         otel_decision = otel_decision_from_liboboe(decision)
-        if Transformer.is_sampled?(otel_decision)
+        if Transformer.is_sampled?(otel_decision) == false
           SolarWindsOTelAPM.logger.debug("Trace decision not is_sampled - not setting attributes")
           return nil
         end
@@ -280,14 +284,10 @@ module SolarWindsOTelAPM
         new_attributes[INTERNAL_SAMPLE_SOURCE]   = decision["source"]
         SolarWindsOTelAPM.logger.debug "Set attributes with service entry internal KVs: #{new_attributes}"
 
-        # Trace's root span has no valid traceparent nor tracestate
-        # so we can't calculate remaining attributes
-        if !parent_span_context.valid? or trace_state.nil?
+        # Trace's root span has no valid traceparent nor tracestate so we can't calculate remaining attributes
+        if !parent_span_context.valid? || trace_state.nil?
           SolarWindsOTelAPM.logger.debug "No valid traceparent or no tracestate - returning attributes: #{new_attributes}"
           if new_attributes
-            # attributes must be immutable for SamplingResult
-            # MappingProxyType is a readonly key value object data structure
-            # need to create one in ruby
             return new_attributes.freeze
           else
             return nil
@@ -309,11 +309,8 @@ module SolarWindsOTelAPM
         end
 
         new_attributes = add_tracestate_capture_to_attributes_dict(new_attributes,decision,trace_state,parent_span_context)
-
-        SolarWindsOTelAPM.logger.debug "Setting attributes: #{new_attributes}"
-
-        # attributes must be immutable for SamplingResult
-        return new_attributes.freeze
+        SolarWindsOTelAPM.logger.debug "####### new_attributes: #{new_attributes}"
+        return new_attributes.freeze         # attributes must be immutable for SamplingResult
       end
 
 
