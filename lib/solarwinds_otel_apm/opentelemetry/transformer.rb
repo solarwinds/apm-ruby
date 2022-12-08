@@ -51,7 +51,6 @@ module SolarWindsOTelAPM
         sw_value.split("-")[0]
       end
 
-
       def self.get_current_span context
         span_key = self.create_key('current-span')
         SolarWindsOTelAPM.logger.debug "span_key = #{span_key}"

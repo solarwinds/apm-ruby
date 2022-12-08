@@ -24,6 +24,13 @@ require 'minitest'
 require 'minitest/focus'
 require 'minitest/debugger' if ENV['DEBUG']
 require 'minitest/hooks/default'  # adds after(:all)
+require 'opentelemetry'
+require 'opentelemetry/sdk'
+require 'opentelemetry-sdk'
+require 'opentelemetry-common'
+require 'opentelemetry-api'
+require 'bson'
+
 
 # write to a file as well as STDOUT (comes in handy with docker runs)
 # This approach preserves the coloring of pass fail, which the cli
@@ -79,17 +86,17 @@ ENV['RACK_ENV'] = 'test'
 # ENV['SW_APM_REPORTER_FILE_SINGLE'] = 'false'
 # ENV['SW_APM_GEM_TEST'] = 'true'
 
-# ENV['SW_APM_GEM_VERBOSE'] = 'true' # currently redundant as we are setting SolarWindsAPM::Config[:verbose] = true
+# ENV['SW_APM_GEM_VERBOSE'] = 'true' # currently redundant as we are setting SolarWindsOTelAPM::Config[:verbose] = true
 
 MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 
 Bundler.require(:default, :test)
 
-# Configure SolarWindsAPM
-SolarWindsAPM::Config[:verbose] = true
-SolarWindsAPM::Config[:tracing_mode] = :enabled
-SolarWindsAPM::Config[:sample_rate] = 1000000
-# SolarWindsAPM.logger.level = Logger::DEBUG
+# Configure SolarWindsOTelAPM
+SolarWindsOTelAPM::Config[:verbose] = true
+SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
+SolarWindsOTelAPM::Config[:sample_rate] = 1000000
+# SolarWindsOTelAPM.logger.level = Logger::DEBUG
 
 # Pre-create test databases (see also .travis.yml)
 # puts "Pre-creating test databases"
@@ -126,10 +133,9 @@ end
 # Truncates the trace output file to zero
 #
 def clear_all_traces
-  if SolarWindsAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
-    SolarWindsAPM::Reporter.clear_all_traces
-    # SolarWindsAPM.trace_context = nil
-    sleep 0.2 # it seems like the docker file system needs a bit of time to clear the file
+  if SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+    SolarWindsOTelAPM::Reporter.clear_all_traces
+    sleep 0.2
   end
 end
 
@@ -139,9 +145,9 @@ end
 # Retrieves all traces written to the trace file
 #
 def get_all_traces
-  if SolarWindsAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+  if SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
     sleep 0.5
-    SolarWindsAPM::Reporter.get_all_traces
+    SolarWindsOTelAPM::Reporter.get_all_traces
   else
     []
   end
@@ -207,18 +213,18 @@ end
 #
 def has_edge?(edge, traces)
   traces.each do |t|
-    if SolarWindsAPM::TraceString.span_id(t["sw.trace_context"]) == edge
+    if SolarWindsOTelAPM::TraceString.span_id(t["sw.trace_context"]) == edge
       return true
     end
   end
-  SolarWindsAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
+  SolarWindsOTelAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
   false
 end
 
 def assert_entry_exit(traces, num = nil, check_trace_id = true)
   if check_trace_id
-    trace_id = SolarWindsAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
-    refute traces.find { |tr| SolarWindsAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, "trace ids not matching"
+    trace_id = SolarWindsOTelAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
+    refute traces.find { |tr| SolarWindsOTelAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, "trace ids not matching"
   end
   num_entries = traces.select { |tr| tr ['Label'] == 'entry' }.size
   num_exits = traces.select { |tr| tr ['Label'] == 'exit' }.size
@@ -273,7 +279,7 @@ end
 # 
 def same_trace_id?(traces)
   traces.map do |t|
-    SolarWindsAPM::TraceString.trace_id(t["sw.trace_context"])
+    SolarWindsOTelAPM::TraceString.trace_id(t["sw.trace_context"])
   end.uniq.count == 1
 end
 
@@ -348,7 +354,7 @@ def not_sampled?(tracestring)
 end
 
 def sampled?(tracestring)
-  SolarWindsAPM::TraceString.sampled?(tracestring)
+  SolarWindsOTelAPM::TraceString.sampled?(tracestring)
 end
 
 #########################            ###            ###            ###            ###            ###
@@ -425,15 +431,15 @@ def assert_trace_headers(headers, sampled = nil)
   # and it is not available in Ruby 2.4
   headers = headers.transform_keys(&:downcase)
   assert headers['traceparent'], "traceparent header missing"
-  assert SolarWindsAPM::TraceString.valid?(headers['traceparent']), "traceparent header not valid"
-  assert SolarWindsAPM::TraceString.sampled?(headers['traceparent']), "traceparent should have sampled flag" if sampled
-  refute SolarWindsAPM::TraceString.sampled?(headers['traceparent']), "traceparent should NOT have sampled flag" if sampled == false
+  assert SolarWindsOTelAPM::TraceString.valid?(headers['traceparent']), "traceparent header not valid"
+  assert SolarWindsOTelAPM::TraceString.sampled?(headers['traceparent']), "traceparent should have sampled flag" if sampled
+  refute SolarWindsOTelAPM::TraceString.sampled?(headers['traceparent']), "traceparent should NOT have sampled flag" if sampled == false
 
   assert headers['tracestate'], "tracestate header missing"
   assert_match /#{SW_APM_TRACESTATE_ID}=/, headers['tracestate'], "tracestate header missing #{SW_APM_TRACESTATE_ID}"
 
   assert sw_tracestate(headers['tracestate']), "tracestate header not starting with correct sw member"
-  assert_equal SolarWindsAPM::TraceString.span_id_flags(headers['traceparent']),
+  assert_equal SolarWindsOTelAPM::TraceString.span_id_flags(headers['traceparent']),
                sw_value(headers['tracestate']), "edge_id and flags not matching"
 end
 
