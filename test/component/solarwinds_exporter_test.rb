@@ -5,15 +5,7 @@ require 'minitest_helper'
 
 describe 'SolarWindsExporterTest' do
   before do
-    # make sure these settings are
-    # SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
-    # SW_APM_REPORTER: "file"
-    # SW_APM_REPORTER_FILE_SINGLE: "false"
-    # set up this collector to file and file single works
-    # require 'bson'
-    # SolarWindsOTelAPM::Reporter.get_all_traces return traces
-    # this is also good for integration and regression test
-
+    
     # create sample span
     status = ::OpenTelemetry::Trace::Status.ok("good") 
     attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
