@@ -103,29 +103,29 @@ SolarWindsOTelAPM::Config[:sample_rate] = 1000000
 # puts %x{mysql -u root -e 'create database test_db;'}
 # puts %x{psql -c 'create database test_db;' -U postgres}
 
-# Our background Rack-app for http client testing
-if ENV['BUNDLE_GEMFILE'] && File.basename(ENV['BUNDLE_GEMFILE']) =~ /libraries|frameworks|instrumentation|noop/
-  require './test/servers/rackapp_8101'
-end
+# # Our background Rack-app for http client testing
+# if ENV['BUNDLE_GEMFILE'] && File.basename(ENV['BUNDLE_GEMFILE']) =~ /libraries|frameworks|instrumentation|noop/
+#   require './test/servers/rackapp_8101'
+# end
 #
 # # Conditionally load other background servers
 # # depending on what we're testing
-# #
-case File.basename(ENV['BUNDLE_GEMFILE'])
-when /delayed_job/
-  require './test/servers/delayed_job'
-when /rails/
-  require './test/servers/rails5x_8140'
-when /frameworks/
-when /libraries/
-  # Load Sidekiq for libraries tests
-  # use `export NO_SIDEKIQ=true` to stop sidekiq from loading
-  # when running individual test files
-  # starting sidekiq slows down the startup and doesn't shut down properly
-  unless (ENV.key?('TEST') && ENV['TEST'] =~ /sidekiq/) || (/benchmark/ =~ $0) || ENV['NO_SIDEKIQ']
-    require './test/servers/sidekiq.rb'
-  end
-end
+# # #
+# case File.basename(ENV['BUNDLE_GEMFILE'])
+# when /delayed_job/
+#   require './test/servers/delayed_job'
+# when /rails/
+#   require './test/servers/rails5x_8140'
+# when /frameworks/
+# when /libraries/
+#   # Load Sidekiq for libraries tests
+#   # use `export NO_SIDEKIQ=true` to stop sidekiq from loading
+#   # when running individual test files
+#   # starting sidekiq slows down the startup and doesn't shut down properly
+#   unless (ENV.key?('TEST') && ENV['TEST'] =~ /sidekiq/) || (/benchmark/ =~ $0) || ENV['NO_SIDEKIQ']
+#     require './test/servers/sidekiq.rb'
+#   end
+# end
 
 ##
 # clear_all_traces

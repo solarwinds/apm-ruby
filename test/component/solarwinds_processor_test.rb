@@ -37,7 +37,7 @@ describe 'SolarWindsProcessor' do
 
     txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
     exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new("",nil,"",txn_name_manager)
-    @processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_name_manager, true))
+    @processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_name_manager, true)
                                                 
   end
 

@@ -36,17 +36,7 @@
 rubies=("3.1.0" "3.0.3" "2.7.5" "2.6.9" "2.5.9")
 
 gemfiles=(
-  "gemfiles/libraries.gemfile"
   "gemfiles/unit.gemfile"
-  "gemfiles/instrumentation_mocked.gemfile"
-  "gemfiles/instrumentation_mocked_oldgems.gemfile"
-  "gemfiles/frameworks.gemfile"
-  "gemfiles/rails70.gemfile"
-  "gemfiles/rails61.gemfile"
-  "gemfiles/rails52.gemfile"
-  "gemfiles/delayed_job.gemfile"
-  "gemfiles/noop.gemfile"
-# "gemfiles/profiling.gemfile"
 )
 
 dbtypes=("mysql" "postgresql")
@@ -171,36 +161,13 @@ for ruby in ${rubies[@]} ; do
       continue
     fi
 
-    # run only the rails tests with all databases
-    if [[ $gemfile =~ .*rails.* ]] ; then
-      dbs=(${dbtypes[*]})
-      preps=(${prep_stmts[*]})
-    else
-      dbs=(${dbtypes[0]})
-      preps=(${prep_stmts[0]})
-    fi
+    # and here we are finally running the tests!!!
+    bundle exec rake test
+    status=$?
+    [[ $status -gt $exit_status ]] && exit_status=$status
+    [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby !!!"
 
-    for dbtype in ${dbs[@]} ; do
-#      echo "Current database type $dbtype"
-      export DBTYPE=$dbtype
-
-      for prep_stmt in ${preps[@]} ; do
-#        echo "Using prepared statements: $prep_stmt"
-        if [ $prep_stmt = '0' ]; then
-          export TEST_PREPARED_STATEMENT=false
-        elif [ $prep_stmt = '1' ]; then
-          export TEST_PREPARED_STATEMENT=true
-        fi
-
-        # and here we are finally running the tests!!!
-        bundle exec rake test
-        status=$?
-        [[ $status -gt $exit_status ]] && exit_status=$status
-        [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby !!!"
-
-        pkill -f sidekiq
-      done
-    done
+    pkill -f sidekiq
   done
 done
 
