@@ -134,8 +134,10 @@ SolarWindsOTelAPM::Config[:sample_rate] = 1000000
 #
 def clear_all_traces
   if SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
-    SolarWindsOTelAPM::Reporter.clear_all_traces
-    sleep 0.2
+    while SolarWindsOTelAPM::Reporter.get_all_traces.size != 0
+      SolarWindsOTelAPM::Reporter.clear_all_traces
+      sleep 0.2
+    end
   end
 end
 

@@ -2,6 +2,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'net/http'
 
 describe 'SolarWindsExporterTest' do
   before do
@@ -42,7 +43,6 @@ describe 'SolarWindsExporterTest' do
   it 'integration test' do 
 
     clear_all_traces
-    require 'net/http'
     Net::HTTP.get(URI('https://www.google.com'))
     traces = get_all_traces
 
@@ -86,6 +86,7 @@ describe 'SolarWindsExporterTest' do
 
   it 'test report_exception_event' do
 
+    Net::HTTP.get(URI('https://www.google.com'))
     clear_all_traces
     @exporter.send(:report_exception_event, @span_data)
     traces = get_all_traces
@@ -93,10 +94,9 @@ describe 'SolarWindsExporterTest' do
 
     _(traces[0]["Label"]).must_equal "error"
     _(traces[0]["Spec"]).must_equal "error"
-    _(traces[0]["Edge"]).must_equal "0000000000000000"
-    _(traces[0]["sw.trace_context"]).must_equal "00-32c45e377a528ec9161631f7f758e1a7-b785d34a4943817d-01"
+    _(traces[0]["Edge"].size).must_equal 16
+    _(traces[0]["sw.trace_context"].split("-").size).must_equal 4
     _(traces[0]["Timestamp_u"]).must_equal 1669317386298642
-    _(traces[0]["Label"]).must_equal "entry"
 
   end
 

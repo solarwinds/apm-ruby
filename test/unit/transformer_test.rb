@@ -48,16 +48,22 @@ describe 'TransformerTest' do
   end
 
   it 'test span_id_from_sw' do 
-    result = @transformer.pan_id_from_sw("a-b")
+    result = @transformer.span_id_from_sw("a-b")
     _(result).must_equal "a"
   end
 
-  it 'test get_current_span' do 
-    context = OpenTelemetry::Context.create_key("current-span")
+  it 'test get_current_span current-span' do 
+    context_hash = Hash.new
+    context_hash["current-span"] = "keys"
+    context = OpenTelemetry::Context.new(context_hash)
     result = @transformer.get_current_span(context)
-    _(result.name).must_equal "current-span"
+    _(result.context.trace_id).must_equal "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+  end
 
-    context = OpenTelemetry::Context.create_key("last-span")
+  it 'test get_current_span last-span' do 
+    context_hash = Hash.new
+    context_hash["last-span"] = "keys"
+    context = OpenTelemetry::Context.new(context_hash)
     result = @transformer.get_current_span(context)
     _(result.context.span_id).must_equal "\x00\x00\x00\x00\x00\x00\x00\x00"
   end
