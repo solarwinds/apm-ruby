@@ -29,7 +29,7 @@ module SolarWindsOTelAPM
       # Pass <tt>name</tt> as the gemfile name only (without the
       # .gemfile extension)
       #
-      # returns true or fase depending on result
+      # returns true or false depending on result
       #
       def gemfile?(name)
         File.basename(ENV['BUNDLE_GEMFILE']) == (name.to_s + '.gemfile')

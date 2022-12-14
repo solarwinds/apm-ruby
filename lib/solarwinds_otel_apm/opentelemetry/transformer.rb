@@ -53,13 +53,13 @@ module SolarWindsOTelAPM
 
       def self.get_current_span context
         span_key = self.create_key('current-span')
-        span = context.value(span_key)
+        span = context.value(span_key.name)
         return ::OpenTelemetry::Trace::Span::INVALID if span.nil?
         return span
       end
 
-      def self.create_key name
-        ::OpenTelemetry::Context.create_key(name)
+      def self.create_key name_
+        ::OpenTelemetry::Context.create_key(name_)
       end
 
     end

@@ -41,6 +41,10 @@ describe 'SolarWindsExporterTest' do
 
 
   it 'integration test' do 
+    """
+    Intergration test is to test the entire trace workflow from sampler to exporter
+      1. instrument the net/http simple call (e.g. call https://www.google.com)
+    """
 
     clear_all_traces
     Net::HTTP.get(URI('https://www.google.com'))
@@ -52,19 +56,45 @@ describe 'SolarWindsExporterTest' do
     _(traces[0]["Layer"]).must_equal "connect"
     _(traces[0]["Kind"]).must_equal "internal"
     _(traces[0]["Label"]).must_equal "entry"
+    _(traces[0]["Timestamp_u"].to_s.length).must_equal 16
+    _(traces[0]["sw.trace_context"].split("-").size).must_equal 4
 
     _(traces[1]["telemetry.sdk.name"]).must_equal "opentelemetry"
+    _(traces[1]["sw.trace_context"].split("-").size).must_equal 4
     _(traces[1]["Label"]).must_equal "info"
+    _(traces[1]["Edge"].size).must_equal 16
+    _(traces[1]["Timestamp_u"].to_s.length).must_equal 16
+    assert_equal(traces[0]["TID"], traces[1]["TID"])
 
+    _(traces[2]["sw.trace_context"].split("-").size).must_equal 4
     _(traces[2]["Label"]).must_equal "exit"
     _(traces[2]["Layer"]).must_equal "connect"
+    _(traces[2]["Edge"].size).must_equal 16
+    _(traces[2]["Timestamp_u"].to_s.length).must_equal 16
+    assert_equal(traces[0]["TID"], traces[2]["TID"])
 
+    _(traces[3]["sw.trace_context"].split("-").size).must_equal 4
     _(traces[3]["TransactionName"]).must_equal "HTTP GET"
     _(traces[3]["Layer"]).must_equal  "HTTP GET"
     _(traces[3]["Kind"]).must_equal  "client"
+    _(traces[3]["Language"]).must_equal  "Ruby"
+    _(traces[3]["Timestamp_u"].to_s.length).must_equal 16
+    assert_equal(traces[0]["TID"], traces[3]["TID"])
 
+    _(traces[4]["sw.trace_context"].split("-").size).must_equal 4
+    _(traces[4]["Label"]).must_equal "info"
+    _(traces[4]["Edge"].size).must_equal 16
+    _(traces[4]["process.runtime.name"]).must_equal  "ruby"
+    _(traces[4]["telemetry.sdk.language"]).must_equal  "ruby"
+    _(traces[4]["Timestamp_u"].to_s.length).must_equal 16
+    assert_equal(traces[0]["TID"], traces[4]["TID"])
+
+    _(traces[5]["sw.trace_context"].split("-").size).must_equal 4
     _(traces[5]["Label"]).must_equal "exit"
     _(traces[5]["Layer"]).must_equal  "HTTP GET"
+    _(traces[5]["sw.parent_span_id"].size).must_equal 16
+    _(traces[5]["Timestamp_u"].to_s.length).must_equal 16
+    assert_equal(traces[0]["TID"], traces[5]["TID"])
 
   end
 

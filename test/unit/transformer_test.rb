@@ -57,7 +57,7 @@ describe 'TransformerTest' do
     context_hash["current-span"] = "keys"
     context = OpenTelemetry::Context.new(context_hash)
     result = @transformer.get_current_span(context)
-    _(result.context.trace_id).must_equal "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+    _(result).must_equal "keys"
   end
 
   it 'test get_current_span last-span' do 

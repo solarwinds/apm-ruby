@@ -115,14 +115,14 @@ module SolarWindsOTelAPM
 
     def get_signature
       signature = nil
-      option_signature = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY))
+      option_signature = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY).name)
       signature = option_signature if option_signature
       return signature
     end
 
     def options_header
       options_header = ""
-      header = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY))
+      header = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY).name)
       options_header = header if header
       return options_header
     end

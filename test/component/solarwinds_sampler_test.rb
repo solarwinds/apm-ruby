@@ -58,11 +58,32 @@ describe 'SolarWindsSamplerTest' do
   it 'test calculate_trace_state' do 
     trace_state = @sampler.send(:calculate_trace_state, @decision, @parent_context, @xtraceoptions)
     _(trace_state.to_h.keys.size).must_equal 1
+    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-0"
   end
 
   it 'test create_xtraceoptions_response_value' do 
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
+    _(response).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
+  end
+
+  it 'test create_xtraceoptions_response_value 2' do
+    otel_context = ::OpenTelemetry::Context.new(Hash.new)
+    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested;ignored####"
+  end
+
+  it 'test create_xtraceoptions_response_value 3' do
+    @decision["status_msg"] = "status"
+    @decision["auth"] = 0
+
+    context_value = Hash.new
+    context_value["sw_xtraceoptions"] = "trigger-trace"
+    otel_context = ::OpenTelemetry::Context.new(context_value)
+    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+
+    response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
+    _(response).must_equal "trigger-trace####status;ignored####"
   end
 
   it 'test otel_decision_from_liboboe' do 
@@ -86,9 +107,13 @@ describe 'SolarWindsSamplerTest' do
     
     decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions)
     _(decision["do_metrics"]).must_equal 1
-    _(decision["do_sample"]).must_equal 1
+    _(decision["do_sample"]).must_equal 0
     _(decision["rate"]).must_equal 1000000
-    _(decision["status_msg"]).must_equal "ok"
+    _(decision["status_msg"]).must_equal "auth-failed"
+    _(decision["auth_msg"]).must_equal "bad-signature"   
+    _(decision["source"]).must_equal 1
+    _(decision["bucket_rate"]).must_equal 0.0
+    _(decision["status"]).must_equal -5
 
   end
 
