@@ -61,6 +61,17 @@ describe 'SolarWindsSamplerTest' do
     _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-0"
   end
 
+  it 'test calculate_trace_state with parent_context contains different kv' do 
+    content = Hash.new
+    content["abc"] = "cba"
+    tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash(content)
+    parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", tracestate: tracestate)
+    trace_state = @sampler.send(:calculate_trace_state, @decision, parent_context, @xtraceoptions)
+    _(trace_state.to_h.keys.size).must_equal 2
+    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-0"
+    _(trace_state.value("abc")).must_equal "cba"
+  end
+
   it 'test create_xtraceoptions_response_value' do 
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
