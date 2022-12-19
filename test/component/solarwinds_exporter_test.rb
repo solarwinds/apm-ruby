@@ -44,6 +44,9 @@ describe 'SolarWindsExporterTest' do
     """
     Intergration test is to test the entire trace workflow from sampler to exporter
       1. instrument the net/http simple call (e.g. call https://www.google.com)
+    There will be two spans. 
+      a. The one is connect which contains 3 entries (i.e. entry, info, exit). 
+      b. The second one is HTTP GET, which contains 3 entries (i.e. entry, info, exit).
     """
 
     clear_all_traces
