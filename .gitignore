@@ -51,3 +51,6 @@ sample_start.rb
 .github/.DS_Store
 .github/workflows/.DS_Store
 
+# test
+test/.DS_Store
+

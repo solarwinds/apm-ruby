@@ -11,7 +11,23 @@ require 'digest'
 require 'open-uri'
 require 'bundler/setup'
 require 'rake/testtask'
-# require 'solarwinds_otel_apm/test'
+require 'solarwinds_otel_apm/test'
+
+
+Rake::TestTask.new do |t|
+  t.verbose = false
+  t.warning = false
+  t.ruby_opts = []
+  t.libs << 'test'
+
+  case SolarWindsOTelAPM::Test.gemfile
+  when /unit/
+    t.test_files = FileList['test/unit/*_test.rb'] +
+                   FileList['test/component/*_test.rb']
+  end
+
+end
+
 
 desc 'Run all test suites defined by travis'
 task :docker_tests, :environment do

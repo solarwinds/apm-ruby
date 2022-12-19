@@ -248,10 +248,11 @@ module SolarWindsOTelAPM
           trace_state_no_response = remove_response_from_sw(trace_state)
         else
           # Must retain all potential tracestate pairs for attributes
+          tracestate_capture = Hash.new
           attr_trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash(tracestate_capture)
 
           new_attr_trace_state = attr_trace_state.set_value(
-              "#{INTL_SWO_TRACESTATE_KEY}",
+              "#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}",
               Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id,Transformer.trace_flags_from_int(decision["do_sample"]))
           )
           trace_state_no_response = remove_response_from_sw(new_attr_trace_state)
