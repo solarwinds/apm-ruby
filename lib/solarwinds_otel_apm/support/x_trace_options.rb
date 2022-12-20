@@ -113,20 +113,16 @@ module SolarWindsOTelAPM
       headers['X-Trace-Options-Response'] = response.join(';')
     end
 
-    def get_sw_xtraceoptions_response_key
-      SW_XTRACEOPTIONS_RESPONSE_KEY
-    end
-
     def get_signature
       signature = nil
-      option_signature = @context[SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY)]
+      option_signature = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY).name)
       signature = option_signature if option_signature
       return signature
     end
 
     def options_header
       options_header = ""
-      header = @context[SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY)]
+      header = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY).name)
       options_header = header if header
       return options_header
     end
@@ -135,5 +131,9 @@ module SolarWindsOTelAPM
       (@trigger_trace == true)? 1 : 0
     end
 
+    def self.get_sw_xtraceoptions_response_key
+      SW_XTRACEOPTIONS_RESPONSE_KEY
+    end
+    
   end
 end

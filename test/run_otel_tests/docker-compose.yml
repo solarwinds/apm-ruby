@@ -25,7 +25,7 @@ x-ao-env: &ao-env
   SW_APM_TOKEN_BUCKET_CAPACITY: 10000
   SW_APM_TOKEN_BUCKET_RATE: 10000
 
-  BUNDLE_GEMFILE: "gemfiles/libraries.gemfile"
+  BUNDLE_GEMFILE: "gemfiles/unit.gemfile"
   DOCKER_MYSQL_PASS: "admin"
   DOCKER_PSQL_PASS: "docker"
   MYSQL_ALLOW_EMPTY_PASSWORD: "yes"

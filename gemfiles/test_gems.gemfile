@@ -10,7 +10,7 @@ group :development, :test do
   gem 'e2mmap'
   gem 'get_process_mem'
   gem 'irb', '>= 1.0.0'
-  # gem 'memory_profiler'
+  gem 'memory_profiler'
   gem 'minitest'
   gem 'minitest-debugger', :require => false
   gem 'minitest-focus', '>=1.1.2'
@@ -29,6 +29,5 @@ group :development, :test do
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-exporter-otlp'
   gem 'opentelemetry-instrumentation-all'
-
-  gem 'sinatra'
+  
 end

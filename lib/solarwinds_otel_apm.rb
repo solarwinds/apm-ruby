@@ -55,7 +55,7 @@ begin
     require 'solarwinds_otel_apm/noop/metadata'
   end
 
-  # require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
+  require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
 rescue => e
   $stderr.puts "[solarwinds_otel_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace
