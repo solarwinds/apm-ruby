@@ -1,0 +1,6 @@
+### New settings format (double quotes human readable args)
+00000000-0000-0000-0000-000000000000	__DEFAULT__	DEFAULT_SAMPLE_RATE	SAMPLE_START,SAMPLE_THROUGH,SAMPLE_THROUGH_ALWAYS,SAMPLE_BUCKET_ENABLED,TRIGGER_TRACE,OVERRIDE	0	1000000	default	135	BucketCapacity="16.2",BucketRate="8.1",TriggerRelaxedBucketCapacity="7",TriggerRelaxedBucketRate="2",TriggerStrictBucketCapacity="6.5",TriggerStrictBucketRate="1.8",SignatureKey="8mZ98ZnZhhggcsUmdMbS"
+### Older settings format below (bytebuffer as args) - they should still work. But they are all commented out by default
+#00000000-0000-0000-0000-000000000000	__DEFAULT__	DEFAULT_SAMPLE_RATE	SAMPLE_START,SAMPLE_THROUGH,SAMPLE_THROUGH_ALWAYS,SAMPLE_AVW_ALWAYS,SAMPLE_BUCKET_ENABLED,TRIGGER_TRACE	0	1000000	default	135	BucketCapacity=AAAAAAAAMEA=,BucketRate=AAAAAAAAIEA=
+#9e8c3394-c625-4cb3-a2b2-1c7bfe02e3f1	daniel-deploy	LAYER_SAMPLE_RATE	SAMPLE_BUCKET_ENABLED	0	1000000	testlayer	135	BucketCapacity=AAAAAAAAMEA=,BucketRate=AAAAAAAAIEA=
+#9e8c3394-c625-4cb3-a2b2-1c7bfe02e3f1    daniel-deploy   LAYER_SAMPLE_RATE   SAMPLE_BUCKET_ENABLED   0   1000000 testlayer   135 BucketCapacity=mpmZmZkZPUA=,BucketRate=mpmZmZmZF0A=

@@ -13,13 +13,13 @@ version: "2.1"
 #
 ########################################################################################################
 x-ao-env: &ao-env
-#  SW_APM_COLLECTOR: "apm.collector.st-ssp.solarwinds.com"
   SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
   OBOE_STAGING: "true"
   SW_APM_GEM_TEST: "true"
   MONGO_SERVER: "ao-otel-ruby-mongo"
   RABBITMQ_SERVER: "ao-otel-ruby-rabbitmq"
   SW_APM_REPORTER: "file"
+  # SW_APM_REPORTER: "ssl"   # only for java-collector
   SW_APM_REPORTER_FILE_SINGLE: "false"
   SW_APM_SERVICE_KEY: "${SW_APM_SERVICE_KEY}"
   SW_APM_TOKEN_BUCKET_CAPACITY: 10000
@@ -71,13 +71,8 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
       - ./.ruby_version_ubuntu:/code/ruby-solarwinds/.ruby-version
-      # and for OBOE_WIP ...
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
-#      - ../../../../repos/sequel:/code/sequel
-    #       - ../../../opentelemetry-exporter-solarwinds:/code/opentelemetry-exporter-solarwinds
-    #       - ../../../graphql-ruby-clone/:/code/graphql-ruby
-    #       - /Users/maiaengeli/workspace/repos/grpc:/grpc_ruby
     environment:
       << : *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_UBUNTU"
@@ -95,7 +90,6 @@ services:
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
       - ./.ruby_version_alpine:/code/ruby-solarwinds/.ruby-version
-#      - ../../../../repos/sequel:/code/sequel
     environment:
       <<: *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_ALPINE"
@@ -168,6 +162,24 @@ services:
       - ../../log/postgresql:/var/log/postgresql
     command: postgres -c config_file=/postgresql.conf
 
+  java-collector:
+    container_name: java-collector
+    image: "traceqa/test-collector:java-collector"
+    platform: linux/amd64
+    volumes:
+      - ./../java_collector/settings.db:/settings.db
+      - ./../java_collector/cert/server-grpc.pem:/server-grpc.pem
+      - ./../java_collector/cert/server-grpc.crt:/server-grpc.crt
+      - ./../java_collector/config-proxy-ao.json:/config.json
+    logging:
+      options:
+        max-file: "1"
+        max-size: 50m
+    ports:
+      - "8181:8181"
+      - "12224:12224"
+    command: java -jar apm-agent-test-collector.jar
+    
   ao_otel_ruby_wait:
     container_name: ao_otel_ruby_wait
     image: waisbrot/wait
@@ -176,9 +188,11 @@ services:
       - ao-otel-ruby-mysql
       - ao-otel-ruby-mongo
       - ao-otel-ruby-postgres
+      - java-collector
     links:
       - ao-otel-ruby-rabbitmq
       - ao-otel-ruby-mysql
       - ao-otel-ruby-mongo
       - ao-otel-ruby-postgres
+      - java-collector
 

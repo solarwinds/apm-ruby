@@ -1,0 +1,17 @@
+{
+  "port": 8181,
+  "settingsLocation": "settings.db",
+  "defaultCollectors": [
+    {
+      "port": 12224,
+      "protocol": "grpc",
+      "output": {
+        "console": {
+          "EVENT": {},
+          "METRIC": {},
+          "STATUS": {}
+        }
+      }
+    }
+  ]
+}
