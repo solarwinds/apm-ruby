@@ -62,6 +62,10 @@ module SolarWindsOTelAPM
         ::OpenTelemetry::Context.create_key(name_)
       end
 
+      def self.test_case
+        puts "abc"
+      end
+
     end
 
   end

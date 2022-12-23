@@ -31,20 +31,12 @@ module SolarWindsOTelAPM
           context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
 
           xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
+          context = context.set_value(INTL_SWO_X_OPTIONS_KEY, xtraceoptions_header) if xtraceoptions_header
           SolarWindsOTelAPM.logger.debug "####### xtraceoptions_header: #{xtraceoptions_header}"
 
-          return context if xtraceoptions_header.nil?
-          
-          hash_value = Hash.new
-          hash_value[INTL_SWO_X_OPTIONS_KEY] = xtraceoptions_header[0]
-          context.update(hash_value)
-
           signature_header = getter.get(carrier, XTRACEOPTIONS_SIGNATURE_HEADER_NAME)
+          context = context.set_value(INTL_SWO_SIGNATURE_KEY, signature_header) if signature_header
           SolarWindsOTelAPM.logger.debug "####### signature_header: #{signature_header}"
-
-          hash_value = Hash.new
-          hash_value[INTL_SWO_SIGNATURE_KEY] = signature_header[0]
-          context.set_values(hash_value) if signature_header
           
           SolarWindsOTelAPM.logger.debug "####### context: #{context}"
           return context
@@ -60,8 +52,12 @@ module SolarWindsOTelAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
-          span_context = ::OpenTelemetry::Trace.current_span(context).context
-          return unless span_context.valid?
+          SolarWindsOTelAPM.logger.debug "context #{context}"
+          cspan = ::OpenTelemetry::Trace.current_span(context)
+          SolarWindsOTelAPM.logger.debug "current_span #{cspan}"
+          span_context = cspan&.context
+          SolarWindsOTelAPM.logger.debug "span_context #{span_context} #{span_context&.valid?}"
+          return unless span_context&.valid?
 
           sw_value = Transformer.sw_from_context(span_context)  # sw_value is a string
           trace_state_header = carrier["#{TRACESTATE_HEADER_NAME}"].nil?? nil : carrier["#{TRACESTATE_HEADER_NAME}"]
@@ -80,9 +76,10 @@ module SolarWindsOTelAPM
             end
 
           else
+            SolarWindsOTelAPM.logger.debug "trace_state_header: #{trace_state_header}"
             trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
             # Check if trace_state already contains sw KV
-            if trace_state.keys.include? INTL_SWO_TRACESTATE_KEY
+            if trace_state.to_h.keys.include? INTL_SWO_TRACESTATE_KEY
               # If so, modify current span_id and trace_flags, and move to beginning of list
               SolarWindsOTelAPM.logger.debug "Updating trace state for injection with #{sw_value}"
               trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
