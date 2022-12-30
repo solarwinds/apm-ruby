@@ -141,7 +141,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "auth####auth;trigger-trace####not-requested;ignored####"
   end
 
-  it 'test create_xtraceoptions_response_value with signature' do
+  it 'test create_xtraceoptions_response_value without signature' do
     @decision["auth"] = nil
 
     context_value = Hash.new

@@ -135,7 +135,7 @@ describe 'OboeInitOptions' do
     _(options[20]).must_equal 1
   end
 
-  it 'checks for metric mode nighthack' do
+  it 'checks for metric mode nighthawk' do
     ENV.delete('SW_APM_COLLECTOR')
     ENV['SW_APM_COLLECTOR'] = 'collector.abc.bbc.solarwinds.com'
     
