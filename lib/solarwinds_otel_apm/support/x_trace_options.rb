@@ -61,19 +61,19 @@ module SolarWindsOTelAPM
           end
         when 'sw-keys'
           if @sw_keys
-            SolarWindsOTelAPM.logger.info "[solarwinds_apm/x-trace-options] Duplicate key: #{k[0]}"
+            SolarWindsOTelAPM.logger.info "[solarwinds_otel_apm/x-trace-options] Duplicate key: #{k[0]}"
           else
             @sw_keys = k[1].strip
           end
         when /^custom-[^\s]*$/
           if @custom_kvs[k[0]]
-            SolarWindsOTelAPM.logger.info "[solarwinds_apm/x-trace-options] Duplicate key: #{k[0]}"
+            SolarWindsOTelAPM.logger.info "[solarwinds_otel_apm/x-trace-options] Duplicate key: #{k[0]}"
           else
             @custom_kvs[k[0]] = k[1].strip
           end
         when 'ts'
           if @timestamp > 0
-            SolarWindsOTelAPM.logger.info "[solarwinds_apm/x-trace-options] Duplicate key: #{k[0]}"
+            SolarWindsOTelAPM.logger.info "[solarwinds_otel_apm/x-trace-options] Duplicate key: #{k[0]}"
           else
             @timestamp = k[1].to_i
           end
@@ -82,7 +82,7 @@ module SolarWindsOTelAPM
         end
       end
       unless @ignored.empty?
-        msg = "[solarwinds_apm/x-trace-options] Some keys were ignored: #{@ignored.join(',')}"
+        msg = "[solarwinds_otel_apm/x-trace-options] Some keys were ignored: #{@ignored.join(',')}"
         SolarWindsOTelAPM.logger.info(msg)
       end
     end

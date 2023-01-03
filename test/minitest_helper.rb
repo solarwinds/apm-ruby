@@ -445,6 +445,23 @@ def assert_trace_headers(headers, sampled = nil)
                sw_value(headers['tracestate']), "edge_id and flags not matching"
 end
 
+def create_context(trace_id:,
+                   span_id:,
+                   trace_flags: OpenTelemetry::Trace::TraceFlags::DEFAULT)
+  context = OpenTelemetry::Trace.context_with_span(
+    OpenTelemetry::Trace.non_recording_span(
+      OpenTelemetry::Trace::SpanContext.new(
+        trace_id: Array(trace_id).pack('H*'),
+        span_id: Array(span_id).pack('H*'),
+        trace_flags: trace_flags
+      )
+    )
+  )
+  conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
+  context = context.set_value(conext_key, true)
+  context
+end
+
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
   require "sinatra"
   ##
