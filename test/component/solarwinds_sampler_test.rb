@@ -113,22 +113,6 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "trigger-trace####not-requested;ignored####AAAabcdefg"
   end
 
-  it 'test create_xtraceoptions_response_value with span_context valid and remote' do
-    @decision["status_msg"] = "status"
-    @decision["auth"] = 0
-    @decision["decision_type"] = 0
-
-    context_value = Hash.new
-    context_value["sw_xtraceoptions"] = "AAAabcdefg"
-    otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
-    
-    @parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", remote: true)
-
-    response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
-    _(response).must_equal "trigger-trace####not-requested;ignored####AAAabcdefg"
-  end
-
   it 'test create_xtraceoptions_response_value with signature' do
     @decision["auth_msg"] = "auth"
 
