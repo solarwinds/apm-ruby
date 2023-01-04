@@ -17,7 +17,12 @@ module SolarWindsOTelAPM
         # isn't fully loaded (e.g. missing c-extension)
         return if ENV.key?('SW_APM_GEM_TEST') || !SolarWindsOTelAPM.loaded
 
-        platform_info = SolarWindsOTelAPM::Util.build_init_report
+        if ENV.key?('SW_APM_COLLECTOR') and ENV['SW_APM_COLLECTOR']&.include? "appoptics.com"
+          platform_info = SolarWindsOTelAPM::Util.build_init_report 
+        else
+          platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
+        end
+        
         log_init(layer, platform_info)
       end
 

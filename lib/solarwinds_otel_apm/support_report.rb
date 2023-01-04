@@ -95,7 +95,11 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* Raw __Init KVs'
     SolarWindsOTelAPM.logger.warn '********************************************************'
-    platform_info = SolarWindsOTelAPM::Util.build_init_report
+    if ENV.key?('SW_APM_COLLECTOR') and ENV['SW_APM_COLLECTOR']&.include? "appoptics.com"
+      platform_info = SolarWindsOTelAPM::Util.build_init_report 
+    else
+      platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
+    end
     platform_info.each { |k,v|
       SolarWindsOTelAPM.logger.warn "#{k}: #{v}"
     }
