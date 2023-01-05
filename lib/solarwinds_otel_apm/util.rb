@@ -265,49 +265,6 @@ module SolarWindsOTelAPM
       # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
       ##
-      #  build_init_report
-      #
-      # Internal: Build a hash of KVs that reports on the status of the
-      # running environment.  This is used on stack boot in __Init reporting
-      # and for SolarWindsOTelAPM.support_report.
-      #
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
-      def build_init_report
-        platform_info = { '__Init' => 1 }
-
-        begin
-          platform_info['Force']                        = true
-          platform_info['Ruby.Platform.Version']        = RUBY_PLATFORM
-          platform_info['Ruby.Version']                 = RUBY_VERSION
-          platform_info['Ruby.SolarWindsOTelAPM.Version']       = SolarWindsOTelAPM::Version::STRING
-
-          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = get_extension_lib_version
-          platform_info['RubyHeroku.SolarWindsOTelAPM.Version'] = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
-          platform_info['Ruby.TraceMode.Version']          = SolarWindsOTelAPM::Config[:tracing_mode]
-
-          gem_full_path = Gem::Specification.find_by_name('solarwinds_otel_apm')&.full_gem_path
-          platform_info["Ruby.InstallDirectory"] = gem_full_path
-          platform_info["Ruby.InstallTimestamp"] = File.mtime(File.join(gem_full_path,'ext', 'oboe_metal', 'src', 'VERSION')).to_i
-          platform_info["Ruby.LastRestart"]      = Time.now.to_i
-
-          platform_info.merge!(report_gem_in_use)
-          platform_info.merge!(report_server_in_use)
-
-        rescue StandardError, ScriptError => e
-          # Also rescue ScriptError (aka SyntaxError) in case one of the expected
-          # version defines don't exist
-
-          platform_info['Error'] = "Error in build_report: #{e.message}"
-
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
-          SolarWindsOTelAPM.logger.debug e.backtrace
-        end
-        print_out_report(platform_info)
-        platform_info
-      end
-
-
-      ##
       #  build_swo_init_report
       #
       # Internal: Build a hash of KVs that reports on the status of the
@@ -317,31 +274,34 @@ module SolarWindsOTelAPM
       # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_swo_init_report
 
-        platform_info = { '__Init' => 1 }
+        platform_info = { '__Init' => true }
 
         begin
           platform_info['APM.Version']                  = SolarWindsOTelAPM::Version::STRING
+          platform_info['APM.Extension.Version']        = get_extension_lib_version
           platform_info['process.runtime.name']         = RUBY_ENGINE
           platform_info['process.runtime.version']      = RUBY_VERSION
           platform_info['process.runtime.description']  = RUBY_DESCRIPTION
-          platform_info['APM.Extension.Version']        = get_extension_lib_version
 
           # OTel Resource Attributes (Optional)
-          platform_info['os.type']                 = RUBY_PLATFORM
-          platform_info['os.description']          = `uname -a`.gsub("\n","")
           platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
           platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
           platform_info['process.command_line']    = $PROGRAM_NAME
           platform_info['process.telemetry.path']  = Gem::Specification.find_by_name('solarwinds_otel_apm')&.full_gem_path
+          platform_info['os.type']                 = RUBY_PLATFORM
+          platform_info['os.description']          = `uname -a`.gsub("\n","")
           # platform_info['process.detailed_command_line'] = `ps axw`.split("\n").select{ |ps| ps[ /\A#{ $$ }/ ] }[0]
 
           platform_info.merge!(report_gem_in_use)
 
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
-          if defined?(::OpenTelemetry) && defined?(::OpenTelemetry::SDK)
+          begin
+            otel_gem = Gem::Specification.find_by_name('opentelemetry-sdk')
             platform_info['telemetry.sdk.language'] = RUBY_ENGINE
-            platform_info['telemetry.sdk.name'] = OpenTelemetry::SDK.to_s
-            platform_info['telemetry.sdk.version'] = OpenTelemetry::SDK::VERSION
+            platform_info['telemetry.sdk.name']     = otel_gem.name
+            platform_info['telemetry.sdk.version']  = otel_gem.version.to_s
+          rescue StandardError => e
+            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] opentelemetry-sdk is not installed"
           end
 
         rescue StandardError, ScriptError => e
