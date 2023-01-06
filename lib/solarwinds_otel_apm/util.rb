@@ -279,10 +279,7 @@ module SolarWindsOTelAPM
         begin
           platform_info['APM.Version']                  = SolarWindsOTelAPM::Version::STRING
           platform_info['APM.Extension.Version']        = get_extension_lib_version
-          platform_info['process.runtime.name']         = RUBY_ENGINE
-          platform_info['process.runtime.version']      = RUBY_VERSION
-          platform_info['process.runtime.description']  = RUBY_DESCRIPTION
-
+          
           # OTel Resource Attributes (Optional)
           platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
           platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
@@ -296,12 +293,10 @@ module SolarWindsOTelAPM
 
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
           begin
-            otel_gem = Gem::Specification.find_by_name('opentelemetry-sdk')
-            platform_info['telemetry.sdk.language'] = RUBY_ENGINE
-            platform_info['telemetry.sdk.name']     = otel_gem.name
-            platform_info['telemetry.sdk.version']  = otel_gem.version.to_s
+            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each do |key, value| platform_info[key] = value end
+            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each do |key, value| platform_info[key] = value end
           rescue StandardError => e
-            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] opentelemetry-sdk is not installed"
+            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes."
           end
 
         rescue StandardError, ScriptError => e
