@@ -265,6 +265,35 @@ module SolarWindsOTelAPM
       # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
       ##
+      #  build_init_report
+      #
+      # Internal: Build a hash of KVs that reports on the status of the
+      # running environment.  This is used on stack boot in __Init reporting
+      # and for SolarWindsOTelAPM.support_report.
+      #
+      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+      def build_init_report
+        platform_info = { '__Init' => 1 }
+        begin
+          platform_info['Force']                                = true
+          platform_info['Ruby.Platform.Version']                = RUBY_PLATFORM
+          platform_info['Ruby.Version']                         = RUBY_VERSION
+          platform_info['Ruby.SolarWindsOTelAPM.Version']       = SolarWindsOTelAPM::Version::STRING
+          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = get_extension_lib_version
+          platform_info['RubyHeroku.SolarWindsOTelAPM.Version']    = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
+          platform_info['Ruby.TraceMode.Version']                  = SolarWindsOTelAPM::Config[:tracing_mode]
+          platform_info.merge!(report_gem_in_use)
+          platform_info.merge!(report_server_in_use)
+
+        rescue StandardError, ScriptError => e
+          platform_info['Error'] = "Error in build_report: #{e.message}"
+          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
+          SolarWindsOTelAPM.logger.debug e.backtrace
+        end
+        platform_info
+      end
+
+      ##
       #  build_swo_init_report
       #
       # Internal: Build a hash of KVs that reports on the status of the
@@ -308,9 +337,7 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
           SolarWindsOTelAPM.logger.debug e.backtrace
         end
-        print_out_report(platform_info)
         platform_info
-
       end
       # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
@@ -370,13 +397,6 @@ module SolarWindsOTelAPM
           platform_info['Ruby.AppContainer.Version'] = File.basename($PROGRAM_NAME)
         end
         platform_info
-      end
-
-
-      def print_out_report platform_info
-        platform_info.each do |k,v|
-          puts "#{k}: #{v}"
-        end
       end
 
     end
