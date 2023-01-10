@@ -274,47 +274,58 @@ module SolarWindsOTelAPM
       # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_init_report
         platform_info = { '__Init' => 1 }
+        begin
+          platform_info['Force']                                = true
+          platform_info['Ruby.Platform.Version']                = RUBY_PLATFORM
+          platform_info['Ruby.Version']                         = RUBY_VERSION
+          platform_info['Ruby.SolarWindsOTelAPM.Version']       = SolarWindsOTelAPM::Version::STRING
+          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = get_extension_lib_version
+          platform_info['RubyHeroku.SolarWindsOTelAPM.Version']    = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
+          platform_info['Ruby.TraceMode.Version']                  = SolarWindsOTelAPM::Config[:tracing_mode]
+          platform_info.merge!(report_gem_in_use)
+          platform_info.merge!(report_server_in_use)
+
+        rescue StandardError, ScriptError => e
+          platform_info['Error'] = "Error in build_report: #{e.message}"
+          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
+          SolarWindsOTelAPM.logger.debug e.backtrace
+        end
+        platform_info
+      end
+
+      ##
+      #  build_swo_init_report
+      #
+      # Internal: Build a hash of KVs that reports on the status of the
+      # running environment for swo only. This is used on stack boot in __Init reporting
+      # and for SolarWindsOTelAPM.support_report.
+      #
+      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+      def build_swo_init_report
+
+        platform_info = { '__Init' => true }
 
         begin
-          platform_info['Force']                        = true
-          platform_info['Ruby.Platform.Version']        = RUBY_PLATFORM
-          platform_info['Ruby.Version']                 = RUBY_VERSION
-          platform_info['Ruby.SolarWindsOTelAPM.Version']       = SolarWindsOTelAPM::Version::STRING
+          platform_info['APM.Version']                  = SolarWindsOTelAPM::Version::STRING
+          platform_info['APM.Extension.Version']        = get_extension_lib_version
+          
+          # OTel Resource Attributes (Optional)
+          platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
+          platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
+          platform_info['process.command_line']    = $PROGRAM_NAME
+          platform_info['process.telemetry.path']  = Gem::Specification.find_by_name('solarwinds_otel_apm')&.full_gem_path
+          platform_info['os.type']                 = RUBY_PLATFORM
+          platform_info['os.description']          = `uname -a`.gsub("\n","")
+          # platform_info['process.detailed_command_line'] = `ps axw`.split("\n").select{ |ps| ps[ /\A#{ $$ }/ ] }[0]
 
-          # oboe not loaded yet, can't use oboe_api function to read oboe VERSION
-          clib_version_file = File.join(Gem::Specification.find_by_name('solarwinds_otel_apm').gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
-          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = File.read(clib_version_file).strip
-          platform_info['RubyHeroku.SolarWindsOTelAPM.Version'] = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
-          platform_info['Ruby.TraceMode.Version']          = SolarWindsOTelAPM::Config[:tracing_mode]
+          platform_info.merge!(report_gem_in_use)
 
-          # Collect up the loaded gems
-          if defined?(Gem) && Gem.respond_to?(:loaded_specs)
-            Gem.loaded_specs.each_pair { |k, v|
-              platform_info["Ruby.#{k}.Version"] = v.version.to_s
-            }
-          else
-            platform_info.merge!(legacy_build_init_report)
-          end
-
-          # Report the server in use (if possible)
-          if defined?(::Unicorn::Const::UNICORN_VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "Unicorn-#{::Unicorn::Const::UNICORN_VERSION}"
-          elsif defined?(::Puma::Const::PUMA_VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "Puma-#{::Puma::Const::PUMA_VERSION} (#{::Puma::Const::CODE_NAME})"
-          elsif defined?(::PhusionPassenger::PACKAGE_NAME)
-            platform_info['Ruby.AppContainer.Version'] = "#{::PhusionPassenger::PACKAGE_NAME}-#{::PhusionPassenger::VERSION_STRING}"
-          elsif defined?(::Thin::VERSION::STRING)
-            platform_info['Ruby.AppContainer.Version'] = "Thin-#{::Thin::VERSION::STRING} (#{::Thin::VERSION::CODENAME})"
-          elsif defined?(::Mongrel::Const::MONGREL_VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "Mongrel-#{::Mongrel::Const::MONGREL_VERSION}"
-          elsif defined?(::Mongrel2::VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "Mongrel2-#{::Mongrel2::VERSION}"
-          elsif defined?(::Trinidad::VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "Trinidad-#{::Trinidad::VERSION}"
-          elsif defined?(::WEBrick::VERSION)
-            platform_info['Ruby.AppContainer.Version'] = "WEBrick-#{::WEBrick::VERSION}"
-          else
-            platform_info['Ruby.AppContainer.Version'] = File.basename($PROGRAM_NAME)
+          # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
+          begin
+            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each do |key, value| platform_info[key] = value end
+            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each do |key, value| platform_info[key] = value end
+          rescue StandardError => e
+            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes."
           end
 
         rescue StandardError, ScriptError => e
@@ -329,6 +340,67 @@ module SolarWindsOTelAPM
         platform_info
       end
       # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+
+      private
+
+      ##
+      # Collect up the loaded gems
+      ##
+      def report_gem_in_use
+        platform_info = {}
+        if defined?(Gem) && Gem.respond_to?(:loaded_specs)
+          Gem.loaded_specs.each_pair { |k, v|
+            platform_info["Ruby.#{k}.Version"] = v.version.to_s
+          }
+        else
+          platform_info.merge!(legacy_build_init_report)
+        end
+        platform_info
+      end
+
+      ##
+      # get extension library version by looking at the VERSION file
+      # oboe not loaded yet, can't use oboe_api function to read oboe VERSION
+      ##
+      def get_extension_lib_version
+        gem_location = Gem::Specification.find_by_name('solarwinds_otel_apm')
+        clib_version_file = File.join(gem_location&.gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
+        version = File.read(clib_version_file).strip
+        version
+      end
+
+      ##
+      # build_init_report
+      #
+      # Internal: Build a hash of KVs that reports on the server in use
+      ##
+      def report_server_in_use
+        platform_info = {}
+        # Report the server in use (if possible)
+        if defined?(::Unicorn::Const::UNICORN_VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "Unicorn-#{::Unicorn::Const::UNICORN_VERSION}"
+        elsif defined?(::Puma::Const::PUMA_VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "Puma-#{::Puma::Const::PUMA_VERSION} (#{::Puma::Const::CODE_NAME})"
+        elsif defined?(::PhusionPassenger::PACKAGE_NAME)
+          platform_info['Ruby.AppContainer.Version'] = "#{::PhusionPassenger::PACKAGE_NAME}-#{::PhusionPassenger::VERSION_STRING}"
+        elsif defined?(::Thin::VERSION::STRING)
+          platform_info['Ruby.AppContainer.Version'] = "Thin-#{::Thin::VERSION::STRING} (#{::Thin::VERSION::CODENAME})"
+        elsif defined?(::Mongrel::Const::MONGREL_VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "Mongrel-#{::Mongrel::Const::MONGREL_VERSION}"
+        elsif defined?(::Mongrel2::VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "Mongrel2-#{::Mongrel2::VERSION}"
+        elsif defined?(::Trinidad::VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "Trinidad-#{::Trinidad::VERSION}"
+        elsif defined?(::WEBrick::VERSION)
+          platform_info['Ruby.AppContainer.Version'] = "WEBrick-#{::WEBrick::VERSION}"
+        else
+          platform_info['Ruby.AppContainer.Version'] = File.basename($PROGRAM_NAME)
+        end
+        platform_info
+      end
+
     end
+
+    
   end
 end

@@ -95,7 +95,7 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* Raw __Init KVs'
     SolarWindsOTelAPM.logger.warn '********************************************************'
-    platform_info = SolarWindsOTelAPM::Util.build_init_report
+    platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
     platform_info.each { |k,v|
       SolarWindsOTelAPM.logger.warn "#{k}: #{v}"
     }

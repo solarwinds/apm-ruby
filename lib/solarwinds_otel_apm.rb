@@ -40,12 +40,10 @@ begin
   end
 
   # solarwinds_otel_apm/loading can set SolarWindsOTelAPM.loaded = false if the service key is not working
+  require 'solarwinds_otel_apm/load_opentelemetry'
   require 'solarwinds_otel_apm/loading'
 
-  if SolarWindsOTelAPM.loaded
-    require 'solarwinds_otel_apm/load_opentelemetry'
-    
-  else
+  if !SolarWindsOTelAPM.loaded
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'
     SolarWindsOTelAPM.logger.warn 'There may be a problem with the service key or other settings.'
