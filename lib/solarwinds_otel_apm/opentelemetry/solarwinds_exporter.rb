@@ -44,30 +44,33 @@ module SolarWindsOTelAPM
       private
 
       def log_span_data(span_data)
-        
+
         begin
           md = build_meta_data(span_data)
           event = nil
-          if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
 
-            parent_md = build_meta_data(span_data,true)
-            SolarWindsOTelAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}"
+          if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+            # child span
+
+            parent_md = build_meta_data(span_data, true)
+            SolarWindsOTelAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
-            add_info_transaction_name(span_data, event) # if parent_span_context.remote?
+            # if parent_span_context.remote?
+            #   add_info_transaction_name(span_data, event) 
 
           else
 
-            SolarWindsOTelAPM.logger.debug "Start a new trace."
+            SolarWindsOTelAPM.logger.debug "#######  Start a new trace."
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
             add_info_transaction_name(span_data, event)
-
           end
           
           event.addInfo('Layer', span_data.name)
           event.addInfo('Kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
 
-          SolarWindsOTelAPM.logger.debug "####### event (entry): #{event.metadataString}"
+          # info event
+          SolarWindsOTelAPM.logger.debug "####### event (info/error event): #{event.metadataString}"
           @reporter.sendReport(event, false)
           if span_data.name == 'exception'
             report_exception_event(span_data)
@@ -75,6 +78,7 @@ module SolarWindsOTelAPM
             report_info_event(span_data)
           end
 
+          # exit event
           event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
           event.addInfo('Layer', span_data.name)
           SolarWindsOTelAPM.logger.debug "####### event (exit): #{event.metadataString}"
@@ -89,6 +93,7 @@ module SolarWindsOTelAPM
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name span_data, evt
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
+        SolarWindsOTelAPM.logger.debug "#{@apm_txname_manager.inspect},\n span_data: #{span_data.inspect}"
         txname = @apm_txname_manager.get(trace_span_id).nil?? "" : @apm_txname_manager.get(trace_span_id)
         SolarWindsOTelAPM.logger.debug "######## txname #{txname} ########"
         evt.addInfo("TransactionName", txname)

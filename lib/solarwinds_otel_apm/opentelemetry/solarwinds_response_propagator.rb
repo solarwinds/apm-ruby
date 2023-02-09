@@ -12,6 +12,11 @@ module SolarWindsOTelAPM
           :HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, :XTRACE_HEADER_NAME, 
           :XTRACEOPTIONS_RESPONSE_HEADER_NAME
 
+
+        def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter);
+          return context
+        end
+
         # Inject trace context into the supplied carrier.
         #
         # @param [Carrier] carrier The mutable carrier to inject trace context into
@@ -21,7 +26,7 @@ module SolarWindsOTelAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
-          SolarWindsOTelAPM.logger.debug "####### SolarWindsResponsePropagator"
+          SolarWindsOTelAPM.logger.debug "####### response propagator context: #{context.inspect}"
           span_context = ::OpenTelemetry::Trace.current_span(context).context
           return unless span_context.valid?
           

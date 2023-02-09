@@ -23,10 +23,10 @@ if defined?(OpenTelemetry::SDK::Configurator)
                                   Kernel.const_get("SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter").new(apm_txname_manager: txn_name_manager), 
                                   txn_name_manager,
                                   true))
-
-    #* we have added the propagators in override
-    #* propagators use this way to add data to span: setter.set(carrier, B3_TRACE_ID_KEY, span_context.hex_trace_id)
-    c.propagators = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new,
+    # propagator setup: must include otel's tracecontext propagator
+    c.propagators = [::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new,
+                     ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
+                     SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new,
                      SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
 
     c.use_all() # enables all instrumentation! or use logic to determine which module to require
@@ -37,10 +37,6 @@ end
 # configure sampler afterwards (sampler is a standalone beast)
 sampler_config = Hash.new
 sampler_config["trigger_trace"] =  "enabled"
-OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))
-
-
-# configure propogator afterwards
-# this will overwrite the configurator.configure_propagation method
-# if we want to have multiple propagators, then we can use this for easy customization
-# OpenTelemetry.propagation = Context::Propagation::CompositeTextMapPropagator.compose_propagators([Kernel.const_get("SolarWindsOTelAPM::OpenTelemetry").solarwinds_propogator])
+OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+                                                                                          remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+                                                                                          remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))

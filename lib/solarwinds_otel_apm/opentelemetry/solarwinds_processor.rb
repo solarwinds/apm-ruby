@@ -37,7 +37,7 @@ module SolarWindsOTelAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span) 
-        
+
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
           @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
           return
@@ -55,14 +55,26 @@ module SolarWindsOTelAPM
           status_code = get_http_status_code(span)
           request_method = span.attributes["#{HTTP_METHOD}"]
 
-          SolarWindsOTelAPM.logger.debug "####### createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, \
-                                              span_time: #{span_time}, status_code: #{status_code}, request_method: #{request_method}, \
-                                              has_error: #{has_error}"
+          SolarWindsOTelAPM.logger.debug "####### createHttpSpan with\n
+                                          trans_name: #{trans_name}\n
+                                          url_tran: #{url_tran}\n
+                                          domain: #{domain}\n
+                                          span_time: #{span_time}\n
+                                          status_code: #{status_code}\n
+                                          request_method: #{request_method}\n
+                                          has_error: #{has_error}"
+
           liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,
                                                                                                 request_method,has_error)
   
         else
-          SolarWindsOTelAPM.logger.debug "####### createSpan with trans_name: #{trans_name}, domain: #{domain}, span_time: #{span_time}, has_error: #{has_error}"
+          
+          SolarWindsOTelAPM.logger.debug "####### createSpan with \n
+                                          trans_name: #{trans_name}\n
+                                          domain: #{domain}\n
+                                          span_time: #{span_time}\n
+                                          has_error: #{has_error}"
+
           liboboe_txn_name = SolarWindsOTelAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 

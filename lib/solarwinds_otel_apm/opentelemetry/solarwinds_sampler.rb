@@ -40,18 +40,19 @@ module SolarWindsOTelAPM
       # parent_context: OpenTelemetry::Context
       def should_sample?(trace_id:, parent_context:, links:, name:, kind:, attributes:)
 
-        SolarWindsOTelAPM.logger.debug "####### should_sample? parameters trace_id: #{trace_id.unpack1("H*")} \
-                                                                          parent_context:  #{parent_context} \
-                                                                          parent_context.inspect:  #{parent_context.inspect} \
-                                                                          links: #{links} \
-                                                                          name: #{name} \
-                                                                          kind: #{kind} \
-                                                                          attributes: #{attributes}"
+        SolarWindsOTelAPM.logger.debug "####### should_sample? parameters \n
+                                        trace_id: #{trace_id.unpack1("H*")}\n
+                                        parent_context:  #{parent_context}\n
+                                        parent_context.inspect:  #{parent_context.inspect}\n
+                                        links: #{links}\n
+                                        name: #{name}\n
+                                        kind: #{kind}\n
+                                        attributes: #{attributes}"
+
         parent_span_context = Transformer.get_current_span(parent_context).context
-        SolarWindsOTelAPM.logger.debug "####### parent_span_context: #{parent_span_context.inspect}"
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
         SolarWindsOTelAPM.logger.debug "####### xtraceoptions: #{xtraceoptions.inspect}"
-        liboboe_decision    = calculate_liboboe_decision(parent_span_context,xtraceoptions)
+        liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions)
         SolarWindsOTelAPM.logger.debug "####### liboboe_decision: #{liboboe_decision.inspect}"
 
         # Always calculate trace_state for propagation
@@ -85,6 +86,7 @@ module SolarWindsOTelAPM
 
         tracestring = nil
         if parent_span_context.valid? && parent_span_context.remote?
+          SolarWindsOTelAPM.logger.debug "####### parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
           tracestring = Transformer.traceparent_from_context(parent_span_context)
         end
 
@@ -106,14 +108,15 @@ module SolarWindsOTelAPM
           timestamp = xtraceoptions.timestamp
         end
 
-        SolarWindsOTelAPM.logger.debug "####### decision parameters tracestring: #{tracestring} \
-                                         sw_member_value: #{sw_member_value} \
-                                         tracing_mode:    #{tracing_mode} \
-                                         sample_rate:     #{sample_rate} \
-                                         trigger_trace:   #{trigger_trace} \
-                                         trigger_trace_mode:    #{trigger_trace_mode} \
-                                         options:      #{options} \
-                                         signature:    #{signature} \
+        SolarWindsOTelAPM.logger.debug "####### decision parameters \n
+                                         tracestring: #{tracestring}\n
+                                         sw_member_value: #{sw_member_value}\n
+                                         tracing_mode:    #{tracing_mode}\n
+                                         sample_rate:     #{sample_rate}\n
+                                         trigger_trace:   #{trigger_trace}\n
+                                         trigger_trace_mode:    #{trigger_trace_mode}\n
+                                         options:      #{options}\n
+                                         signature:    #{signature}\n
                                          timestamp:    #{timestamp}"
 
         args = [tracestring,sw_member_value,tracing_mode,sample_rate,trigger_trace,trigger_trace_mode,options,signature,timestamp] 
@@ -164,6 +167,7 @@ module SolarWindsOTelAPM
             tracestring = nil
             if parent_span_context.valid? && parent_span_context.remote?
               tracestring = Transformer.traceparent_from_context(parent_span_context)
+              SolarWindsOTelAPM.logger.debug "####### parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
             end
             if tracestring && decision["decision_type"] == 0
               trigger_msg = XTRACEOPTIONS_RESP_TRIGGER_IGNORED

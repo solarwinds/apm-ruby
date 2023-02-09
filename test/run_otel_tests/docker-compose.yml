@@ -162,6 +162,7 @@ services:
       - ../../log/postgresql:/var/log/postgresql
     command: postgres -c config_file=/postgresql.conf
 
+  # the name has to be java-collector to make it work
   java-collector:
     container_name: java-collector
     image: "traceqa/test-collector:java-collector"
