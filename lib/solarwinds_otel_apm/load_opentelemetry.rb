@@ -37,6 +37,7 @@ end
 # configure sampler afterwards (sampler is a standalone beast)
 sampler_config = Hash.new
 sampler_config["trigger_trace"] =  "enabled"
-OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-                                                                                          remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-                                                                                          remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))
+OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+                root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+                remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+                remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))

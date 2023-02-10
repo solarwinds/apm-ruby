@@ -124,8 +124,8 @@ module SolarWindsOTelAPM
             bucket_cap, decision_type, auth, status_msg, auth_msg, status = SolarWindsOTelAPM::Context.getDecisions(*args)
 
         decision = Hash.new
-        decision["do_metrics"]    = do_metrics
-        decision["do_sample"]     = do_sample
+        decision["do_metrics"]    = do_metrics > 0
+        decision["do_sample"]     = do_sample > 0 
         decision["rate"]          = rate
         decision["source"]        = source
         decision["bucket_rate"]   = bucket_rate
