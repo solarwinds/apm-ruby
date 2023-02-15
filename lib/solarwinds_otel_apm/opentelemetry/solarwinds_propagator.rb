@@ -27,6 +27,8 @@ module SolarWindsOTelAPM
         #   if extraction fails
         def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
 
+          SolarWindsOTelAPM.logger.debug "####### context(before): #{context.inspect} #{context.nil?}"
+
           context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
 
           xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
@@ -50,6 +52,8 @@ module SolarWindsOTelAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
+          SolarWindsOTelAPM.logger.debug "####### inject context: #{context.inspect}"
+          
           cspan = ::OpenTelemetry::Trace.current_span(context)
           span_context = cspan&.context
           SolarWindsOTelAPM.logger.debug "####### cspan #{cspan.inspect}; span_context #{span_context.inspect}"

@@ -43,6 +43,14 @@ module SolarWindsOTelAPM
         "0#{trace_flags}"
       end
 
+      def self.trace_flags_from_boolean trace_flags
+        trace_flag = (trace_flags == true)? "01" : "00"
+      end
+
+      def trace_flags_from_boolean trace_flags
+        trace_flag = (trace_flags == true)? "01" : "00"
+      end
+
       def self.is_sampled? decision
         (decision == ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
       end
@@ -51,11 +59,23 @@ module SolarWindsOTelAPM
         sw_value.split("-")[0]
       end
 
+      # def self.get_current_span context
+      #   span_key = self.create_key('current-span')
+      #   span = context.value(span_key.name)
+      #   return ::OpenTelemetry::Trace::Span::INVALID if span.nil?
+      #   return span
+      # end
+
       def self.get_current_span context
-        span_key = self.create_key('current-span')
-        span = context.value(span_key.name)
-        return ::OpenTelemetry::Trace::Span::INVALID if span.nil?
-        return span
+        span = ::OpenTelemetry::Trace::Span::INVALID
+        instance_variable = context&.instance_variable_get("@entries")
+        instance_variable&.each do |key, value|
+          if key.class == ::OpenTelemetry::Context::Key
+            span = value if key.name == "current-span"  
+            SolarWindsOTelAPM.logger.debug "####### instance_variable value: #{value.inspect}"
+          end
+        end
+        span
       end
 
       def self.create_key name_

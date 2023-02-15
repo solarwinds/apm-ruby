@@ -50,14 +50,18 @@ module SolarWindsOTelAPM
                                         attributes: #{attributes}"
 
         parent_span_context = Transformer.get_current_span(parent_context).context
+        SolarWindsOTelAPM.logger.debug "####### should_sample? parent_span_context: #{parent_span_context.inspect}"
+        
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
         SolarWindsOTelAPM.logger.debug "####### xtraceoptions: #{xtraceoptions.inspect}"
+        
         liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions)
         SolarWindsOTelAPM.logger.debug "####### liboboe_decision: #{liboboe_decision.inspect}"
 
-        # Always calculate trace_state for propagation
         new_trace_state = calculate_trace_state(liboboe_decision,parent_span_context,xtraceoptions)
+
         new_attributes  = calculate_attributes(name,attributes,liboboe_decision,new_trace_state,parent_span_context,xtraceoptions)
+
         otel_decision   = otel_decision_from_liboboe(liboboe_decision)
 
         sampling_result = nil
@@ -86,8 +90,8 @@ module SolarWindsOTelAPM
 
         tracestring = nil
         if parent_span_context.valid? && parent_span_context.remote?
-          SolarWindsOTelAPM.logger.debug "####### parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
           tracestring = Transformer.traceparent_from_context(parent_span_context)
+          SolarWindsOTelAPM.logger.debug "####### calculate_liboboe_decision parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
         end
 
         sw_member_value = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
@@ -157,7 +161,7 @@ module SolarWindsOTelAPM
         response = Array.new
 
         if xtraceoptions.signature && decision["auth_msg"]
-          response << [XTRACEOPTIONS_RESP_AUTH,decision["auth_msg"]].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          response << [XTRACEOPTIONS_RESP_AUTH, decision["auth_msg"]].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
         end
 
         if !decision["auth"] || decision["auth"] < 1
@@ -167,7 +171,7 @@ module SolarWindsOTelAPM
             tracestring = nil
             if parent_span_context.valid? && parent_span_context.remote?
               tracestring = Transformer.traceparent_from_context(parent_span_context)
-              SolarWindsOTelAPM.logger.debug "####### parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
+              SolarWindsOTelAPM.logger.debug "####### create_xtraceoptions_response_value parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
             end
             if tracestring && decision["decision_type"] == 0
               trigger_msg = XTRACEOPTIONS_RESP_TRIGGER_IGNORED
@@ -182,8 +186,10 @@ module SolarWindsOTelAPM
         end
 
         if xtraceoptions.ignored
-          ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
-          response << ignored_response.join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          if xtraceoptions.ignored.size != 0
+            ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
+            response << ignored_response.join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          end
         end
 
         response.join(";")
@@ -193,14 +199,14 @@ module SolarWindsOTelAPM
 
       def create_new_trace_state decision, parent_span_context, xtraceoptions
 
-        decision = Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"]))
+        decision = Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_boolean(decision["do_sample"]))
         trace_state_hash = Hash.new
         trace_state_hash[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY] = decision
         trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash(trace_state_hash)
 
         if xtraceoptions && xtraceoptions.trigger_trace
           trace_state = trace_state.set_value(
-            "#{XTraceOptions.get_sw_xtraceoptions_response_key}",
+            "#{XTraceOptions.get_sw_xtraceoptions_response_key}", # SW_XTRACEOPTIONS_RESPONSE_KEY=xtrace_options_response
             create_xtraceoptions_response_value(decision,parent_span_context,xtraceoptions)
           )
         end
@@ -212,6 +218,7 @@ module SolarWindsOTelAPM
 
       def calculate_trace_state decision, parent_span_context, xtraceoptions
 
+        SolarWindsOTelAPM.logger.debug "calculate_trace_state parent_span_context: #{parent_span_context.inspect}"
         if !parent_span_context.valid?
           trace_state = create_new_trace_state(decision,parent_span_context,xtraceoptions)
         else
@@ -223,7 +230,7 @@ module SolarWindsOTelAPM
             # Update trace_state with span_id and sw trace_flags
             trace_state = trace_state.set_value(
               "#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}",
-              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_int(decision["do_sample"]))
+              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_boolean(decision["do_sample"]))
             )
             # Update trace_state with x-trace-options-response
             # Not a propagated header, so always an add
@@ -257,7 +264,7 @@ module SolarWindsOTelAPM
 
           new_attr_trace_state = attr_trace_state.set_value(
               "#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}",
-              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id,Transformer.trace_flags_from_int(decision["do_sample"]))
+              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id,Transformer.trace_flags_from_boolean(decision["do_sample"]))
           )
           trace_state_no_response = remove_response_from_sw(new_attr_trace_state)
         end
