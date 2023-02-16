@@ -51,10 +51,6 @@ describe 'SolarWindsSamplerTest' do
     _(attributes_dict["a"]).must_equal "b"
   end
 
-  it 'test remove_response_from_sw' do 
-    skip
-  end
-
   it 'test calculate_trace_state' do 
     trace_state = @sampler.send(:calculate_trace_state, @decision, @parent_context, @xtraceoptions)
     _(trace_state.to_h.keys.size).must_equal 1

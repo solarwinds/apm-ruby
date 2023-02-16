@@ -36,6 +36,7 @@ module SolarWindsOTelAPM
 
           xtraceoptions_response = recover_response_from_tracestate(span_context.tracestate)
 
+          SolarWindsOTelAPM.logger.debug "####### response propagator xtraceoptions_response: #{xtraceoptions_response.inspect}"
           if xtraceoptions_response
             exposed_headers << XTRACEOPTIONS_RESPONSE_HEADER_NAME
             setter.set(carrier, XTRACEOPTIONS_RESPONSE_HEADER_NAME, xtraceoptions_response)

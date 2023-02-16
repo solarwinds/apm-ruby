@@ -28,7 +28,7 @@ module SolarWindsOTelAPM
       def self.traceparent_from_context span_context
         flag = span_context.trace_flags.sampled?? 1 : 0
         xtr = "#{VERSION}-#{span_context.hex_trace_id}-#{span_context.hex_span_id}-0#{flag}"
-        SolarWindsOTelAPM.logger.debug("Generated traceparent #{xtr}, #{span_context}")
+        SolarWindsOTelAPM.logger.debug("Generated traceparent #{xtr} from #{span_context.inspect}")
         xtr
       end
 
@@ -58,13 +58,6 @@ module SolarWindsOTelAPM
       def self.span_id_from_sw sw_value
         sw_value.split("-")[0]
       end
-
-      # def self.get_current_span context
-      #   span_key = self.create_key('current-span')
-      #   span = context.value(span_key.name)
-      #   return ::OpenTelemetry::Trace::Span::INVALID if span.nil?
-      #   return span
-      # end
 
       def self.get_current_span context
         span = ::OpenTelemetry::Trace::Span::INVALID
