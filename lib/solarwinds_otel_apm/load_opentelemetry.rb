@@ -13,6 +13,11 @@ Dir.glob(pattern) do |f|
   end
 end
 
+
+config_map = Hash.new
+config_map["OpenTelemetry::Instrumentation::Rack"] = { response_propagators: 
+                    [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new] }
+
 if defined?(OpenTelemetry::SDK::Configurator)
   OpenTelemetry::SDK.configure do |c|
     
@@ -26,10 +31,9 @@ if defined?(OpenTelemetry::SDK::Configurator)
     # propagator setup: must include otel's tracecontext propagator
     c.propagators = [::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new,
                      ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
-                     SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new,
-                     SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
+                     SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]
 
-    c.use_all() # enables all instrumentation! or use logic to determine which module to require
+    c.use_all(config_map)
   end
 end
 
