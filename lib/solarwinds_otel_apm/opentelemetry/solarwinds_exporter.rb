@@ -7,6 +7,10 @@ module SolarWindsOTelAPM
 
       SUCCESS = ::OpenTelemetry::SDK::Trace::Export::SUCCESS # ::OpenTelemetry  #=> the OpenTelemetry at top level (to ignore SolarWindsOTelAPM)
       FAILURE = ::OpenTelemetry::SDK::Trace::Export::FAILURE
+
+      INTL_SWO_OTEL_SCOPE_NAME = "otel.scope.name"
+      INTL_SWO_OTEL_SCOPE_VERSION = "otel.scope.version"
+
       private_constant(:SUCCESS, :FAILURE)
     
       def initialize(endpoint: ENV['SW_APM_EXPORTER'],
@@ -68,14 +72,21 @@ module SolarWindsOTelAPM
           event.addInfo('Layer', span_data.name)
           event.addInfo('Kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
+          
+          add_info_instrumentation_scope(event, span_data)
+          add_info_instrumented_framework(event, span_data)
+
+          span_data.attributes.each {|k,v| event.addInfo(k, v) } if span_data.attributes
+          @reporter.sendReport(event, false)
+          SolarWindsOTelAPM.logger.debug "####### event (entry): #{event.metadataString}"
 
           # info event
-          SolarWindsOTelAPM.logger.debug "####### event (info/error event): #{event.metadataString}"
-          @reporter.sendReport(event, false)
-          if span_data.name == 'exception'
-            report_exception_event(span_data)
-          else
-            report_info_event(span_data)
+          span_data.events&.each do |event|
+            if event.name == 'exception'
+              report_exception_event(event)
+            else
+              report_info_event(event)
+            end
           end
 
           # exit event
@@ -90,6 +101,45 @@ module SolarWindsOTelAPM
 
       end
 
+      def add_info_instrumentation_scope event, span_data
+        scope_name = ""
+        scope_version = ""
+        if span_data.instrumentation_scope
+          scope_name = span_data.instrumentation_scope.name if span_data.instrumentation_scope.name
+          scope_version = span_data.instrumentation_scope.version if span_data.instrumentation_scope.version
+        end
+        event.addInfo(INTL_SWO_OTEL_SCOPE_NAME, scope_name) 
+        event.addInfo(INTL_SWO_OTEL_SCOPE_VERSION, scope_version)
+      end
+
+      # 
+      # get the framework version (the real version not the sdk instrumentation version)
+      # 
+      def add_info_instrumented_framework event, span_data
+        SolarWindsOTelAPM.logger.debug "####### add_info_instrumented_framework: #{span_data.instrumentation_scope.name}"
+        scope_name = span_data.instrumentation_scope.name
+        scope_name = scope_name.downcase if scope_name
+        if scope_name and scope_name.include? "opentelemetry::instrumentation"
+          framework = scope_name.split("::")[2]
+          instr_key = "Ruby.#{framework}.Version"
+          framwork_version = nil
+          begin
+            require framework
+            framwork_version = Gem.loaded_specs[framework].version.to_s
+          rescue
+            SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework}; skip ########" 
+          end
+
+          if framwork_version.nil?
+            SolarWindsOTelAPM.logger.debug "######## framework version can't be found for #{scope_name}; skip ########" 
+          else
+            event.addInfo(instr_key,framwork_version)
+            SolarWindsOTelAPM.logger.debug "######## added framework version: #{instr_key}: #{framwork_version}"
+          end
+        end
+
+      end
+
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name span_data, evt
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
@@ -100,27 +150,29 @@ module SolarWindsOTelAPM
         @apm_txname_manager.del(trace_span_id)
       end
 
-      def report_exception_event(span_data)
-
-        evt = @context.createEvent((span_data.end_timestamp.to_i / 1000).to_i)
+      def report_exception_event(span_event)
+        evt = @context.createEvent((span_event.timestamp.to_i / 1000).to_i)
         evt.addInfo('Label', 'error')
         evt.addInfo('Spec', 'error')
-        evt.addInfo('ErrorClass', span_data.attributes['exception.type'])
-        evt.addInfo('ErrorMsg', span_data.attributes['exception.message'])
-        evt.addInfo('Backtrace', span_data.attributes['exception.stacktrace'])
-        span_data.resource.attribute_enumerator.each do |key, value|
-          unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
-            evt.addInfo(key, value)
+
+        unless span_event.attributes.nil?
+          evt.addInfo('ErrorClass', span_event.attributes['exception.type'])
+          evt.addInfo('ErrorMsg', span_event.attributes['exception.message'])
+          evt.addInfo('Backtrace', span_event.attributes['exception.stacktrace'])
+          span_event.attributes.each do |key, value|
+            unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
+              evt.addInfo(key, value)
+            end
           end
         end
-        @reporter.sendReport(evt, false)
 
+        @reporter.sendReport(evt, false)
       end
 
-      def report_info_event(span_data)
-        evt = SolarWindsOTelAPM::Context.createEvent((span_data.end_timestamp.to_i / 1000).to_i)
+      def report_info_event(span_event)
+        evt = SolarWindsOTelAPM::Context.createEvent((span_event.timestamp.to_i / 1000).to_i)
         evt.addInfo('Label', 'info')
-        span_data.resource.attribute_enumerator.each do |key, value|
+        span_event.attributes&.each do |key, value|
           evt.addInfo(key, value)
         end
         @reporter.sendReport(evt, false)

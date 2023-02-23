@@ -27,6 +27,8 @@ module SolarWindsOTelAPM
         #   if extraction fails
         def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
 
+          SolarWindsOTelAPM.logger.debug "####### carrier: #{carrier.inspect}"
+
           SolarWindsOTelAPM.logger.debug "####### context(before): #{context.inspect} #{context.nil?}"
 
           context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?

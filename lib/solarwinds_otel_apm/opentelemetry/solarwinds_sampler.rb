@@ -16,6 +16,7 @@ module SolarWindsOTelAPM
       XTRACEOPTIONS_RESP_TRIGGER_IGNORED = "ignored"
       XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED = "not-requested"
       XTRACEOPTIONS_RESP_TRIGGER_TRACE = "trigger-trace"
+      INTERNAL_TRIGGERED_TRACE = "TriggeredTrace"
 
 
       attr_reader :description
@@ -49,7 +50,9 @@ module SolarWindsOTelAPM
                                         kind: #{kind}\n
                                         attributes: #{attributes}"
 
-        parent_span_context = Transformer.get_current_span(parent_context).context
+        # if the upstream has tracestate: sw=.... then it should capture it 
+
+        parent_span_context = ::OpenTelemetry::Trace.current_span(parent_context).context
         SolarWindsOTelAPM.logger.debug "####### should_sample? parent_span_context: #{parent_span_context.inspect}"
         
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
@@ -160,7 +163,7 @@ module SolarWindsOTelAPM
 
         response = Array.new
 
-        SolarWindsOTelAPM.logger.debug  "####### create_xtraceoptions_response_value decision[auth]: #{decision["auth"]}; decision[auth_msg]: #{decision["auth_msg"]}"
+        SolarWindsOTelAPM.logger.debug  "####### create_xtraceoptions_response_value decision[auth]: #{decision["auth"]}; decision[auth_msg]: #{decision["auth_msg"]}; xtraceoptions.trigger_trace: #{xtraceoptions.trigger_trace}"
 
         if xtraceoptions.signature && decision["auth_msg"]
           response << [XTRACEOPTIONS_RESP_AUTH, decision["auth_msg"]].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
@@ -245,6 +248,7 @@ module SolarWindsOTelAPM
       def add_tracestate_capture_to_attributes_dict attributes_dict, decision, trace_state, parent_span_context
 
         tracestate_capture = attributes_dict[SW_TRACESTATE_CAPTURE_KEY]
+        SolarWindsOTelAPM.logger.debug "####### tracestate_capture #{tracestate_capture.inspect}"
         if tracestate_capture
           trace_state_no_response = trace_state.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
         else
@@ -254,14 +258,14 @@ module SolarWindsOTelAPM
 
           new_attr_trace_state = attr_trace_state.set_value(
               "#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}",
-              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id,Transformer.trace_flags_from_boolean(decision["do_sample"]))
+              Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, Transformer.trace_flags_from_boolean(decision["do_sample"]))
           )
           trace_state_no_response = new_attr_trace_state.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
         end
 
-        attributes_dict["#{SW_TRACESTATE_CAPTURE_KEY}"] = Transformer.trace_state_header(trace_state_no_response)
+        attributes_dict[SW_TRACESTATE_CAPTURE_KEY] = Transformer.trace_state_header(trace_state_no_response)
+        SolarWindsOTelAPM.logger.debug "####### attributes_dict #{attributes_dict.inspect}"
         return attributes_dict
-
       end
 
       ##
@@ -276,11 +280,17 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.debug("Trace decision not is_sampled - not setting attributes")
           return nil
         end
-        
+
         new_attributes = {}
+
+        # Copy existing MappingProxyType KV into new_attributes for modification.
+        attributes.each {|k,v| new_attributes[k] = v } if attributes
 
         # Always (root or is_remote) set _INTERNAL_SW_KEYS if injected
         new_attributes[INTERNAL_SW_KEYS] = xtraceoptions.sw_keys if xtraceoptions.sw_keys
+
+        # Always (root or is_remote) set custom KVs if extracted from x-trace-options
+        xtraceoptions.custom_kvs.each { |k,v| new_attributes[k] = v } if xtraceoptions.custom_kvs
 
         # Always (root or is_remote) set service entry internal KVs       
         new_attributes[INTERNAL_BUCKET_CAPACITY] = "#{decision["bucket_cap"]}"
@@ -289,28 +299,19 @@ module SolarWindsOTelAPM
         new_attributes[INTERNAL_SAMPLE_SOURCE]   = decision["source"]
         SolarWindsOTelAPM.logger.debug "Set attributes with service entry internal KVs: #{new_attributes}"
 
+        # set sw.tracestate_parent_id:
+        sw_value = parent_span_context.tracestate.value("#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}")
+        SolarWindsOTelAPM.logger.debug "####### calculate_attributes sw_value: #{sw_value.inspect} parent_span_context.tracestate #{parent_span_context.tracestate.inspect}"
+        new_attributes[SW_TRACESTATE_ROOT_KEY]= Transformer.span_id_from_sw(sw_value) if sw_value && parent_span_context.remote?
+
+        # If unsigned or signed TT (root or is_remote), set TriggeredTrace
+        new_attributes[INTERNAL_TRIGGERED_TRACE] = true if xtraceoptions.trigger_trace
+
         # Trace's root span has no valid traceparent nor tracestate so we can't calculate remaining attributes
         if !parent_span_context.valid? || trace_state.nil?
           SolarWindsOTelAPM.logger.debug "No valid traceparent or no tracestate - returning attributes: #{new_attributes}"
-          if new_attributes
-            return new_attributes.freeze
-          else
-            return nil
-          end
-        end
-
-        if attributes.nil?
-          # _SW_TRACESTATE_ROOT_KEY is set once per trace, if possible
-          sw_value = parent_span_context.tracestate.value("#{SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY}")
-          if sw_value
-            new_attributes[SW_TRACESTATE_ROOT_KEY]= Transformer.span_id_from_sw(sw_value)
-          end
-        else
-          # Copy existing MappingProxyType KV into new_attributes for modification.
-          # attributes may have other vendor info etc
-          attributes.each do |k,v|
-            new_attributes[k] = v
-          end
+          return new_attributes.freeze if new_attributes
+          return nil
         end
 
         new_attributes = add_tracestate_capture_to_attributes_dict(new_attributes,decision,trace_state,parent_span_context)
