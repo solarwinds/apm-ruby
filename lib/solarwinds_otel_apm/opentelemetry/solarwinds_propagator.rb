@@ -27,8 +27,6 @@ module SolarWindsOTelAPM
         #   if extraction fails
         def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
 
-          SolarWindsOTelAPM.logger.debug "####### carrier: #{carrier.inspect}"
-
           SolarWindsOTelAPM.logger.debug "####### context(before): #{context.inspect} #{context.nil?}"
 
           context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
@@ -73,23 +71,14 @@ module SolarWindsOTelAPM
             if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
               return
             else
-              trace_state_hash = Hash.new
-              trace_state_hash[INTL_SWO_TRACESTATE_KEY] = sw_value
-              trace_state = ::OpenTelemetry::Trace::Tracestate.create(trace_state_hash)
+              trace_state = ::OpenTelemetry::Trace::Tracestate.create({INTL_SWO_TRACESTATE_KEY => sw_value})
               SolarWindsOTelAPM.logger.debug "####### creating new trace state: #{trace_state.inspect}"
             end
 
           else
-            
-            trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
-            
-            if trace_state.to_h.keys.include? INTL_SWO_TRACESTATE_KEY   # check if trace_state already contains sw kv            
-              trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
-              SolarWindsOTelAPM.logger.debug "Updating trace state for injection #{trace_state.inspect}"
-            else              
-              trace_state = trace_state.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
-              SolarWindsOTelAPM.logger.debug "Adding KV to trace state for injection #{trace_state.inspect}"
-            end
+            trace_state_from_string = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
+            trace_state = trace_state_from_string.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+            SolarWindsOTelAPM.logger.debug "Updating/Adding trace state for injection #{trace_state.inspect}"
           end
 
           setter.set(carrier, "#{TRACESTATE_HEADER_NAME}", Transformer.trace_state_header(trace_state))

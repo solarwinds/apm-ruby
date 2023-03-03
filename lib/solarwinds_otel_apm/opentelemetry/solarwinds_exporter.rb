@@ -120,14 +120,19 @@ module SolarWindsOTelAPM
         scope_name = span_data.instrumentation_scope.name
         scope_name = scope_name.downcase if scope_name
         if scope_name and scope_name.include? "opentelemetry::instrumentation"
+          
           framework = scope_name.split("::")[2]
+          framework = normalize_framework_name(framework)
+
           instr_key = "Ruby.#{framework}.Version"
           framwork_version = nil
           begin
             require framework
             framwork_version = Gem.loaded_specs[framework].version.to_s
-          rescue
-            SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework}; skip ########" 
+          rescue LoadError
+            SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
+          rescue StandardError => e
+            SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
           end
 
           if framwork_version.nil?
@@ -138,6 +143,16 @@ module SolarWindsOTelAPM
           end
         end
 
+      end
+
+      def normalize_framework_name framework
+        case framework
+        when "net"
+          normalized = "net/http"
+        else
+          normalized = framework
+        end
+        normalized
       end
 
       # Add transaction name from cache to root span then removes from cache

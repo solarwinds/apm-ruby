@@ -61,7 +61,6 @@ module SolarWindsOTelAPM
 
         # get_sw_xtraceoptions_response_key -> xtrace_options_response
         def recover_response_from_tracestate tracestate
-
           sanitized = tracestate.value(XTraceOptions.get_sw_xtraceoptions_response_key)
           sanitized = "" if sanitized.nil?
           sanitized = sanitized.gsub(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED, SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS)
