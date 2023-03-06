@@ -66,7 +66,9 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.logger.debug "####### new_trace_state: #{new_trace_state.inspect}"
 
         new_attributes  = calculate_attributes(name,attributes,liboboe_decision,new_trace_state,parent_span_context,xtraceoptions)
+        SolarWindsOTelAPM.logger.debug "####### new_attributes: #{new_attributes.inspect}"
         sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
+        SolarWindsOTelAPM.logger.debug "####### sampling_result: #{sampling_result.inspect}"
 
         return sampling_result
       end

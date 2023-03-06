@@ -22,6 +22,7 @@ module SolarWindsOTelAPM
         @context = SolarWindsOTelAPM::Context
         @metadata = SolarWindsOTelAPM::Metadata
         @reporter = SolarWindsOTelAPM::Reporter
+        @version_cache = Hash.new
       end
 
       def export(span_data, timeout: nil)
@@ -81,11 +82,10 @@ module SolarWindsOTelAPM
             end
           end
 
-          # exit event
           event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
           event.addInfo('Layer', span_data.name)
-          SolarWindsOTelAPM.logger.debug "####### event (exit): #{event.metadataString}"
           @reporter.sendReport(event, false)
+          SolarWindsOTelAPM.logger.debug "####### Exit a trace: #{event.metadataString}"
         rescue Exception => e
           SolarWindsOTelAPM.logger.debug "######## \n\n #{e.message} #{e.backtrace}\n\n ########"
           raise
@@ -115,9 +115,26 @@ module SolarWindsOTelAPM
           
           framework = scope_name.split("::")[2]
           framework = normalize_framework_name(framework)
+          framwork_version = check_framework_version(framework)
 
-          instr_key = "Ruby.#{framework}.Version"
-          framwork_version = nil
+          if framwork_version.nil?
+            SolarWindsOTelAPM.logger.debug "######## framework version can't be found for #{scope_name}; skip ########" 
+          else
+            event.addInfo("Ruby.#{framework}.Version",framwork_version)
+            SolarWindsOTelAPM.logger.debug "######## added framework version: #{"Ruby.#{framework}.Version"}: #{framwork_version}"
+          end
+        end
+
+      end
+
+      def check_framework_version framework
+
+        framwork_version = nil
+        if @version_cache.keys.include? framework
+
+          framwork_version = @version_cache[framework]
+        else
+
           begin
             require framework
             framwork_version = Gem.loaded_specs[framework].version.to_s
@@ -125,16 +142,12 @@ module SolarWindsOTelAPM
             SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
           rescue StandardError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
-          end
-
-          if framwork_version.nil?
-            SolarWindsOTelAPM.logger.debug "######## framework version can't be found for #{scope_name}; skip ########" 
-          else
-            event.addInfo(instr_key,framwork_version)
-            SolarWindsOTelAPM.logger.debug "######## added framework version: #{instr_key}: #{framwork_version}"
+          ensure
+            @version_cache[framework] = framwork_version
           end
         end
-
+        SolarWindsOTelAPM.logger.debug "######## Current framework version cached: #{@version_cache.inspect}"
+        framwork_version
       end
 
       def normalize_framework_name framework
