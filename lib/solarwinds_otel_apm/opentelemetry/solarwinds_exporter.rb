@@ -55,9 +55,6 @@ module SolarWindsOTelAPM
             parent_md = build_meta_data(span_data, true)
             SolarWindsOTelAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
-            # if parent_span_context.remote?
-            #   add_info_transaction_name(span_data, event) 
-
           else
 
             SolarWindsOTelAPM.logger.debug "#######  Start a new trace."
