@@ -73,7 +73,7 @@ module SolarWindsOTelAPM
           span_data.attributes.each {|k,v| event.addInfo(k, v) } if span_data.attributes
           @reporter.sendReport(event, false)
 
-          # info event
+          # info / exception event
           span_data.events&.each do |event|
             if event.name == 'exception'
               report_exception_event(event)
@@ -113,7 +113,9 @@ module SolarWindsOTelAPM
         scope_name = scope_name.downcase if scope_name
         if scope_name and scope_name.include? "opentelemetry::instrumentation"
           
-          framework = scope_name.split("::")[2]
+          framework = scope_name.split("::")[2..-1]&.join("::")
+          return if framework.nil? || framework.empty?
+          
           framework = normalize_framework_name(framework)
           framwork_version = check_framework_version(framework)
 
@@ -152,7 +154,7 @@ module SolarWindsOTelAPM
 
       def normalize_framework_name framework
         case framework
-        when "net"
+        when "net::http"
           normalized = "net/http"
         else
           normalized = framework
