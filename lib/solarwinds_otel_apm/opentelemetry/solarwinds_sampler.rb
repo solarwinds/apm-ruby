@@ -16,8 +16,6 @@ module SolarWindsOTelAPM
       XTRACEOPTIONS_RESP_TRIGGER_IGNORED = "ignored"
       XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED = "not-requested"
       XTRACEOPTIONS_RESP_TRIGGER_TRACE = "trigger-trace"
-      INTERNAL_TRIGGERED_TRACE = "TriggeredTrace"
-      INTL_SWO_TRACESTATE_KEY = "sw"
 
       attr_reader :description
 
@@ -92,7 +90,7 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.debug "####### calculate_liboboe_decision parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
         end
 
-        sw_member_value = parent_span_context.tracestate[INTL_SWO_TRACESTATE_KEY]
+        sw_member_value = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
         tracing_mode = UNSET # 'tracing_mode' is not supported in NH Python, so give as unset
 
         # need to create the config class
@@ -198,7 +196,7 @@ module SolarWindsOTelAPM
 
       def create_new_trace_state parent_span_context, decision, xtraceoptions
         decision = sw_from_span_and_decision(parent_span_context, decision)
-        trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash({INTL_SWO_TRACESTATE_KEY => decision}) # e.g. sw=3e222c863a04123a-01
+        trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => decision}) # e.g. sw=3e222c863a04123a-01
         SolarWindsOTelAPM.logger.debug "Created new trace_state: #{trace_state.inspect}"
         return trace_state
       end
@@ -220,7 +218,7 @@ module SolarWindsOTelAPM
           if parent_trace_state.nil?
             trace_state = create_new_trace_state(parent_span_context, decision, xtraceoptions)
           else
-            trace_state = parent_trace_state.set_value(INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context, decision))
+            trace_state = parent_trace_state.set_value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context, decision))
             SolarWindsOTelAPM.logger.debug "Updated trace_state with span_id and sw trace_flags: #{trace_state.inspect}"
           end
         end
@@ -258,7 +256,7 @@ module SolarWindsOTelAPM
           attr_trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(tracestate_capture)
 
           # This step generated the new sw=key for tracestate based on root parent_span_id
-          new_attr_trace_state = attr_trace_state.set_value(INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context,decision))
+          new_attr_trace_state = attr_trace_state.set_value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context,decision))
           
           trace_state_no_response = new_attr_trace_state.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
         end
@@ -305,12 +303,12 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.logger.debug "Set attributes with service entry internal KVs: #{new_attributes}"
 
         # set sw.tracestate_parent_id if its tracestate contains "sw"
-        sw_value = parent_span_context.tracestate.value(INTL_SWO_TRACESTATE_KEY)
+        sw_value = parent_span_context.tracestate.value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY)
         SolarWindsOTelAPM.logger.debug "####### calculate_attributes sw_value: #{sw_value.inspect} parent_span_context.tracestate #{parent_span_context.tracestate.inspect}"
         new_attributes[SW_TRACESTATE_ROOT_KEY]= Transformer.span_id_from_sw(sw_value) if sw_value && parent_span_context.remote?
 
         # If unsigned or signed TT (root or is_remote), set TriggeredTrace
-        new_attributes[INTERNAL_TRIGGERED_TRACE] = true if xtraceoptions.trigger_trace
+        new_attributes[SolarWindsOTelAPM::Constants::INTERNAL_TRIGGERED_TRACE] = true if xtraceoptions.trigger_trace
 
         # Trace's root span has no valid traceparent nor tracestate so we can't calculate remaining attributes
         if !parent_span_context.valid? || trace_state.nil?

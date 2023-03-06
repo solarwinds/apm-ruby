@@ -52,22 +52,6 @@ describe 'TransformerTest' do
     _(result).must_equal "a"
   end
 
-  it 'test get_current_span current-span' do 
-    context_hash = Hash.new
-    context_hash["current-span"] = "keys"
-    context = OpenTelemetry::Context.new(context_hash)
-    result = @transformer.get_current_span(context)
-    _(result).must_equal "keys"
-  end
-
-  it 'test get_current_span last-span' do 
-    context_hash = Hash.new
-    context_hash["last-span"] = "keys"
-    context = OpenTelemetry::Context.new(context_hash)
-    result = @transformer.get_current_span(context)
-    _(result.context.span_id).must_equal "\x00\x00\x00\x00\x00\x00\x00\x00"
-  end
-
   it 'test create_key' do 
     result = @transformer.create_key("current-span")
     _(result.name).must_equal "current-span"

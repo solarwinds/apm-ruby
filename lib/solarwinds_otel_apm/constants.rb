@@ -27,5 +27,10 @@ module SolarWindsOTelAPM
     INTL_SWO_DOC_TRACING_PYTHON = 'https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=app-add-python-agent'
     INTL_SWO_SUPPORT_EMAIL = 'SWO-support@solarwinds.com'
 
+    INTL_SWO_OTEL_SCOPE_NAME = "otel.scope.name"
+    INTL_SWO_OTEL_SCOPE_VERSION = "otel.scope.version"
+
+    INTERNAL_TRIGGERED_TRACE = "TriggeredTrace"
+
   end
 end

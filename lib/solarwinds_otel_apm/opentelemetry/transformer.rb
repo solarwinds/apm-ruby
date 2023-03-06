@@ -59,18 +59,6 @@ module SolarWindsOTelAPM
         sw_value.split("-")[0]
       end
 
-      def self.get_current_span context
-        span = ::OpenTelemetry::Trace::Span::INVALID
-        instance_variable = context&.instance_variable_get("@entries")
-        instance_variable&.each do |key, value|
-          if key.class == ::OpenTelemetry::Context::Key
-            span = value if key.name == "current-span"  
-            SolarWindsOTelAPM.logger.debug "####### instance_variable value: #{value.inspect}"
-          end
-        end
-        span
-      end
-
       def self.create_key name_
         ::OpenTelemetry::Context.create_key(name_)
       end

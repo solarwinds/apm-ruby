@@ -53,8 +53,10 @@ describe 'SolarWindsSamplerTest' do
 
   it 'test calculate_trace_state' do 
     trace_state = @sampler.send(:calculate_trace_state, @decision, @parent_context, @xtraceoptions)
-    _(trace_state.to_h.keys.size).must_equal 1
-    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-0"
+
+    _(trace_state.to_h.keys.size).must_equal 2
+    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-00"
+    _(trace_state.value("xtrace_options_response")).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
   end
 
   it 'test calculate_trace_state with parent_context contains different kv' do 
@@ -63,9 +65,11 @@ describe 'SolarWindsSamplerTest' do
     tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash(content)
     parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", tracestate: tracestate)
     trace_state = @sampler.send(:calculate_trace_state, @decision, parent_context, @xtraceoptions)
-    _(trace_state.to_h.keys.size).must_equal 2
-    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-0"
+    puts "trace_state #{trace_state.inspect}"
+    _(trace_state.to_h.keys.size).must_equal 3
+    _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-00"
     _(trace_state.value("abc")).must_equal "cba"
+    _(trace_state.value("xtrace_options_response")).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
   end
 
   it 'test create_xtraceoptions_response_value default setting' do 
@@ -77,7 +81,7 @@ describe 'SolarWindsSamplerTest' do
     otel_context = ::OpenTelemetry::Context.new(Hash.new)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
-    _(response).must_equal "trigger-trace####not-requested;ignored####"
+    _(response).must_equal "trigger-trace####not-requested"
   end
 
   it 'test create_xtraceoptions_response_value with decision and sw_xtraceoptions setup' do
@@ -90,7 +94,7 @@ describe 'SolarWindsSamplerTest' do
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
 
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
-    _(response).must_equal "trigger-trace####status;ignored####"
+    _(response).must_equal "trigger-trace####status"
   end
 
   it 'test create_xtraceoptions_response_value with span_context valid and remote' do
@@ -118,7 +122,7 @@ describe 'SolarWindsSamplerTest' do
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
     
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
-    _(response).must_equal "auth####auth;trigger-trace####not-requested;ignored####"
+    _(response).must_equal "auth####auth;trigger-trace####not-requested"
   end
 
   it 'test create_xtraceoptions_response_value without signature' do
@@ -149,7 +153,7 @@ describe 'SolarWindsSamplerTest' do
     _(@xtraceoptions.sw_keys).must_equal "hereiskeyyyy"
     _(@xtraceoptions.trigger_trace).must_equal true
     _(@xtraceoptions.custom_kvs["custom-key"]).must_equal "12345"
-    _(response).must_equal "trigger-trace####status;ignored####"
+    _(response).must_equal "trigger-trace####status"
   end
 
   it 'test otel_decision_from_liboboe' do 
@@ -172,8 +176,8 @@ describe 'SolarWindsSamplerTest' do
   it 'test calculate_liboboe_decision' do 
     
     decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions)
-    _(decision["do_metrics"]).must_equal 1
-    _(decision["do_sample"]).must_equal 0
+    _(decision["do_metrics"]).must_equal true
+    _(decision["do_sample"]).must_equal false
     _(decision["rate"]).must_equal 1000000
     _(decision["status_msg"]).must_equal "auth-failed"
     _(decision["auth_msg"]).must_equal "bad-signature"   

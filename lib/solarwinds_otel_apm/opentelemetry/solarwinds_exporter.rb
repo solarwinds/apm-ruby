@@ -8,9 +8,6 @@ module SolarWindsOTelAPM
       SUCCESS = ::OpenTelemetry::SDK::Trace::Export::SUCCESS # ::OpenTelemetry  #=> the OpenTelemetry at top level (to ignore SolarWindsOTelAPM)
       FAILURE = ::OpenTelemetry::SDK::Trace::Export::FAILURE
 
-      INTL_SWO_OTEL_SCOPE_NAME = "otel.scope.name"
-      INTL_SWO_OTEL_SCOPE_VERSION = "otel.scope.version"
-
       private_constant(:SUCCESS, :FAILURE)
     
       def initialize(endpoint: ENV['SW_APM_EXPORTER'],
@@ -54,7 +51,6 @@ module SolarWindsOTelAPM
           event = nil
 
           if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
-            # child span
 
             parent_md = build_meta_data(span_data, true)
             SolarWindsOTelAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"
@@ -70,7 +66,7 @@ module SolarWindsOTelAPM
           end
           
           event.addInfo('Layer', span_data.name)
-          event.addInfo('Kind', span_data.kind.to_s)
+          event.addInfo('sw.span_kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
           
           add_info_instrumentation_scope(event, span_data)
@@ -78,7 +74,6 @@ module SolarWindsOTelAPM
 
           span_data.attributes.each {|k,v| event.addInfo(k, v) } if span_data.attributes
           @reporter.sendReport(event, false)
-          SolarWindsOTelAPM.logger.debug "####### event (entry): #{event.metadataString}"
 
           # info event
           span_data.events&.each do |event|
@@ -108,8 +103,8 @@ module SolarWindsOTelAPM
           scope_name = span_data.instrumentation_scope.name if span_data.instrumentation_scope.name
           scope_version = span_data.instrumentation_scope.version if span_data.instrumentation_scope.version
         end
-        event.addInfo(INTL_SWO_OTEL_SCOPE_NAME, scope_name) 
-        event.addInfo(INTL_SWO_OTEL_SCOPE_VERSION, scope_version)
+        event.addInfo(SolarWindsOTelAPM::Constants::INTL_SWO_OTEL_SCOPE_NAME, scope_name) 
+        event.addInfo(SolarWindsOTelAPM::Constants::INTL_SWO_OTEL_SCOPE_VERSION, scope_version)
       end
 
       # 
@@ -180,7 +175,7 @@ module SolarWindsOTelAPM
             end
           end
         end
-
+        SolarWindsOTelAPM.logger.debug "######## exception event #{evt.metadataString} ########"
         @reporter.sendReport(evt, false)
       end
 
@@ -190,6 +185,7 @@ module SolarWindsOTelAPM
         span_event.attributes&.each do |key, value|
           evt.addInfo(key, value)
         end
+        SolarWindsOTelAPM.logger.debug "######## info event #{evt.metadataString} ########"
         @reporter.sendReport(evt, false)
       end
 

@@ -8,7 +8,6 @@ module SolarWindsOTelAPM
         XTRACEOPTIONS_SIGNATURE_HEADER_NAME = "x-trace-options-signature"
         INTL_SWO_X_OPTIONS_KEY = "sw_xtraceoptions"
         INTL_SWO_SIGNATURE_KEY = "sw_signature"
-        INTL_SWO_TRACESTATE_KEY = "sw"
 
         private_constant \
           :TRACESTATE_HEADER_NAME, :XTRACEOPTIONS_HEADER_NAME, 
@@ -71,13 +70,13 @@ module SolarWindsOTelAPM
             if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
               return
             else
-              trace_state = ::OpenTelemetry::Trace::Tracestate.create({INTL_SWO_TRACESTATE_KEY => sw_value})
+              trace_state = ::OpenTelemetry::Trace::Tracestate.create({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => sw_value})
               SolarWindsOTelAPM.logger.debug "####### creating new trace state: #{trace_state.inspect}"
             end
 
           else
             trace_state_from_string = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
-            trace_state = trace_state_from_string.set_value("#{INTL_SWO_TRACESTATE_KEY}", sw_value)
+            trace_state = trace_state_from_string.set_value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_value)
             SolarWindsOTelAPM.logger.debug "Updating/Adding trace state for injection #{trace_state.inspect}"
           end
 
