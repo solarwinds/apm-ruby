@@ -15,10 +15,4 @@ unless SolarWindsOTelAPM::SDK.solarwinds_ready?(10_000)
   exit false
 end
 
-op = lambda { 10.times {[9, 6, 12, 2, 7, 1, 9, 3, 4, 14, 5, 8].sort} }
-
-SolarWindsOTelAPM.support_report
-
-# no profiling yet for NH, but it shouldn't choke on Profiling.run
-SolarWindsOTelAPM::Config[:profiling] = :disabled
 Net::HTTP.get(URI('https://www.google.com'))

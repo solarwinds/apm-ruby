@@ -2,7 +2,6 @@
 # All rights reserved.
 
 begin
-  require 'openssl'
   require 'solarwinds_otel_apm/version'
   require 'solarwinds_otel_apm/thread_local'
   require 'solarwinds_otel_apm/logger'
@@ -10,14 +9,15 @@ begin
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
-  SolarWindsOTelAPM.loaded = false
-
   require 'solarwinds_otel_apm/config'
-  SolarWindsOTelAPM::Config.load_config_file
+  
+  SolarWindsOTelAPM::Config.set_log_level
 
+  SolarWindsOTelAPM.loaded = false
   begin
     if RUBY_PLATFORM =~ /linux/
       require_relative './libsolarwinds_apm.so'
+      require 'solarwinds_otel_apm/layerinit'
       require 'solarwinds_otel_apm/oboe_init_options'
       require 'oboe_metal.rb'  # sets SolarWindsOTelAPM.loaded = true if successful
     else
@@ -38,14 +38,13 @@ begin
     end
   end
 
-  # solarwinds_otel_apm/loading can set SolarWindsOTelAPM.loaded = false if the service key is not working
-  require 'solarwinds_otel_apm/loading'
-
+  # Auto-start the Reporter unless we are running Unicorn on Heroku
+  # In that case, we start the reporters after fork
+  unless SolarWindsOTelAPM.heroku? && SolarWindsOTelAPM.forking_webserver?
+    SolarWindsOTelAPM::Reporter.start if SolarWindsOTelAPM.loaded
+  end
   if SolarWindsOTelAPM.loaded
-
     require 'solarwinds_otel_apm/load_opentelemetry'
-    require 'solarwinds_otel_apm/support'
-
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'

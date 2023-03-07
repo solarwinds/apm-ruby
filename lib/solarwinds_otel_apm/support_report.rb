@@ -80,7 +80,6 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* SolarWindsOTelAPM::Config Values'
     SolarWindsOTelAPM.logger.warn '********************************************************'
-    SolarWindsOTelAPM::Config.print_config
 
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* OS, Platform + Env'

@@ -1,8 +1,6 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-require_relative 'support/transaction_settings'
-
 module SolarWindsOTelAPM
   ##
   # This module exposes a nested configuration hash that can be used to
@@ -12,23 +10,6 @@ module SolarWindsOTelAPM
   #
   module Config
     @@config = {}
-
-    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
-                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
-                         :dalli, :delayed_jobclient, :delayed_jobworker,
-                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
-                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
-                         :resqueclient, :resqueworker, :rest_client,
-                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus]
-
-    # ignore configs for instrumentations we don't have anymore
-    # can't remove because the config may still be present in configs created
-    # with previous gem versions
-    @@ignore = [:em_http_request]
-
-    # Subgrouping of instrumentation
-    @@http_clients = [:curb, :excon,
-                      :faraday, :httpclient, :nethttp, :rest_client, :typhoeus]
 
     ##
     # load_config_file
@@ -84,12 +65,12 @@ module SolarWindsOTelAPM
     end
 
     def self.set_log_level
-      unless (-1..6).include?(SolarWindsOTelAPM::Config[:debug_level])
-        SolarWindsOTelAPM::Config[:debug_level] = 3
-      end
+      # unless (-1..6).include?(SolarWindsOTelAPM::Config[:debug_level])
+      #   SolarWindsOTelAPM::Config[:debug_level] = 3
+      # end
 
       # let's find and use the equivalent debug level for ruby
-      debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
+      debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i #|| SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       if debug_level < 0
         # there should be no logging if SW_APM_DEBUG_LEVEL == -1
         # In Ruby level 5 is UNKNOWN and it can log, but level 6 is quiet
@@ -97,42 +78,7 @@ module SolarWindsOTelAPM
       else
         SolarWindsOTelAPM.logger.level = [4 - debug_level, 0].max
       end
-      SolarWindsOTelAPM::Config[:debug_level] = debug_level
-    end
-
-    ##
-    # print_config
-    #
-    # print configurations one per line
-    # to create an output similar to the content of the config file
-    #
-    def self.print_config
-      SolarWindsOTelAPM.logger.warn "# General configurations"
-      non_instrumentation = @@config.keys - @@instrumentation
-      non_instrumentation.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}] = #{@@config[config]}"
-      end
-
-      SolarWindsOTelAPM.logger.warn "\n# Instrumentation specific configurations"
-      SolarWindsOTelAPM.logger.warn "# Enabled/Disabled Instrumentation"
-      @@instrumentation.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}][:enabled] = #{@@config[config][:enabled]}"
-      end
-
-      SolarWindsOTelAPM.logger.warn "\n# Enabled/Disabled Backtrace Collection"
-      @@instrumentation.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}][:collect_backtraces] = #{@@config[config][:collect_backtraces]}"
-      end
-
-      SolarWindsOTelAPM.logger.warn "\n# Logging of outgoing HTTP query args"
-      @@instrumentation.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}][:log_args] = #{@@config[config][:log_args] || false}"
-      end
-
-      SolarWindsOTelAPM.logger.warn "\n# Bunny Controller and Action"
-      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:bunnyconsumer][:controller] = #{@@config[:bunnyconsumer][:controller].inspect}"
-      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:bunnyconsumer][:action] = #{@@config[:bunnyconsumer][:action].inspect}"
-      nil
+      # SolarWindsOTelAPM::Config[:debug_level] = debug_level
     end
 
     ##
@@ -143,7 +89,7 @@ module SolarWindsOTelAPM
     #
     # rubocop:disable Metrics/AbcSize
     def self.initialize(_data = {})
-      (@@instrumentation+@@ignore).each { |k| @@config[k] = {} }
+      # (@@instrumentation+@@ignore).each { |k| @@config[k] = {} }
       @@config[:transaction_name] = {}
 
       @@config[:profiling] = :disabled
@@ -151,8 +97,7 @@ module SolarWindsOTelAPM
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
-      load(File.join(File.dirname(File.dirname(__FILE__)),
-                    'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
+      # load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
     end
     # rubocop:enable Metrics/AbcSize
 
@@ -245,12 +190,12 @@ module SolarWindsOTelAPM
         # after it is loaded
         SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
 
-      elsif key == :transaction_settings
-        if value.is_a?(Hash)
-          SolarWindsOTelAPM::TransactionSettings.compile_url_settings(value[:url])
-        else
-          SolarWindsOTelAPM::TransactionSettings.reset_url_regexps
-        end
+      # elsif key == :transaction_settings
+      #   if value.is_a?(Hash)
+      #     SolarWindsOTelAPM::TransactionSettings.compile_url_settings(value[:url])
+      #   else
+      #     SolarWindsOTelAPM::TransactionSettings.reset_url_regexps
+      #   end
 
       elsif key == :resque
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker."

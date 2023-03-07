@@ -93,9 +93,9 @@ MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 Bundler.require(:default, :test)
 
 # Configure SolarWindsOTelAPM
-SolarWindsOTelAPM::Config[:verbose] = true
-SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
-SolarWindsOTelAPM::Config[:sample_rate] = 1000000
+# SolarWindsOTelAPM::Config[:verbose] = true
+# SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
+# SolarWindsOTelAPM::Config[:sample_rate] = 1000000
 # SolarWindsOTelAPM.logger.level = Logger::DEBUG
 
 # Pre-create test databases (see also .travis.yml)
