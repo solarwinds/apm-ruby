@@ -181,7 +181,7 @@ describe 'SolarWindsSamplerTest' do
     _(decision["rate"]).must_equal 1000000
     _(decision["status_msg"]).must_equal "auth-failed"
     _(decision["auth_msg"]).must_equal "bad-signature"   
-    _(decision["source"]).must_equal 1
+    _(decision["source"]).must_equal 6
     _(decision["bucket_rate"]).must_equal 0.0
     _(decision["status"]).must_equal -5
 

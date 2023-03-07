@@ -80,52 +80,10 @@ end
 puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime("%Y-%m-%d %H:%M")} ===\033[0m\n"
 
 ENV['RACK_ENV'] = 'test'
-# The following should be set in docker, so that tests can use different reporters
-# ENV['SW_APM_REPORTER'] = 'file'
-# ENV['SW_APM_COLLECTOR'] = '/tmp/sw_apm_traces.bson'.freeze
-# ENV['SW_APM_REPORTER_FILE_SINGLE'] = 'false'
-# ENV['SW_APM_GEM_TEST'] = 'true'
-
-# ENV['SW_APM_GEM_VERBOSE'] = 'true' # currently redundant as we are setting SolarWindsOTelAPM::Config[:verbose] = true
-
 MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 
 Bundler.require(:default, :test)
-
-# Configure SolarWindsOTelAPM
-# SolarWindsOTelAPM::Config[:verbose] = true
-# SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
-# SolarWindsOTelAPM::Config[:sample_rate] = 1000000
-# SolarWindsOTelAPM.logger.level = Logger::DEBUG
-
-# Pre-create test databases (see also .travis.yml)
-# puts "Pre-creating test databases"
-# puts %x{mysql -u root -e 'create database test_db;'}
-# puts %x{psql -c 'create database test_db;' -U postgres}
-
-# # Our background Rack-app for http client testing
-# if ENV['BUNDLE_GEMFILE'] && File.basename(ENV['BUNDLE_GEMFILE']) =~ /libraries|frameworks|instrumentation|noop/
-#   require './test/servers/rackapp_8101'
-# end
-#
-# # Conditionally load other background servers
-# # depending on what we're testing
-# # #
-# case File.basename(ENV['BUNDLE_GEMFILE'])
-# when /delayed_job/
-#   require './test/servers/delayed_job'
-# when /rails/
-#   require './test/servers/rails5x_8140'
-# when /frameworks/
-# when /libraries/
-#   # Load Sidekiq for libraries tests
-#   # use `export NO_SIDEKIQ=true` to stop sidekiq from loading
-#   # when running individual test files
-#   # starting sidekiq slows down the startup and doesn't shut down properly
-#   unless (ENV.key?('TEST') && ENV['TEST'] =~ /sidekiq/) || (/benchmark/ =~ $0) || ENV['NO_SIDEKIQ']
-#     require './test/servers/sidekiq.rb'
-#   end
-# end
+SolarWindsOTelAPM.logger.level = 1
 
 ##
 # clear_all_traces
