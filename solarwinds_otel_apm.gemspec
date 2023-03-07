@@ -43,9 +43,9 @@ Automatic tracing and metrics for Ruby applications. Get started at cloud.solarw
   s.extensions = ['ext/oboe_metal/extconf.rb']
 
   # OTEL dependencies
-  s.add_dependency('opentelemetry-sdk')
-  s.add_dependency('opentelemetry-exporter-otlp')
-  s.add_dependency('opentelemetry-instrumentation-all')
+  s.add_dependency('opentelemetry-sdk', '~> 1.2.0')
+  s.add_dependency('opentelemetry-exporter-otlp', '~> 0.24.0')
+  s.add_dependency('opentelemetry-instrumentation-all', '~> 0.31.0')
 
   # this still gives a warning, would have to be pinned to a minor version
   # but that is not necessary and may restrict other gems

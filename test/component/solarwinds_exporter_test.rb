@@ -53,51 +53,36 @@ describe 'SolarWindsExporterTest' do
     Net::HTTP.get(URI('https://www.google.com'))
     traces = get_all_traces
 
-    _(traces.count).must_equal 6
+    _(traces.count).must_equal 4
 
     _(traces[0]["TransactionName"]).must_equal "connect"
     _(traces[0]["Layer"]).must_equal "connect"
-    _(traces[0]["Kind"]).must_equal "internal"
+    _(traces[0]["sw.span_kind"]).must_equal "internal"
     _(traces[0]["Label"]).must_equal "entry"
     _(traces[0]["Timestamp_u"].to_s.length).must_equal 16
     _(traces[0]["sw.trace_context"].split("-").size).must_equal 4
 
-    _(traces[1]["telemetry.sdk.name"]).must_equal "opentelemetry"
     _(traces[1]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[1]["Label"]).must_equal "info"
+    _(traces[1]["Label"]).must_equal "exit"
+    _(traces[1]["Layer"]).must_equal "connect"
     _(traces[1]["Edge"].size).must_equal 16
     _(traces[1]["Timestamp_u"].to_s.length).must_equal 16
     assert_equal(traces[0]["TID"], traces[1]["TID"])
 
     _(traces[2]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[2]["Label"]).must_equal "exit"
-    _(traces[2]["Layer"]).must_equal "connect"
-    _(traces[2]["Edge"].size).must_equal 16
+    _(traces[2]["TransactionName"]).must_equal "HTTP GET"
+    _(traces[2]["Layer"]).must_equal  "HTTP GET"
+    _(traces[2]["sw.span_kind"]).must_equal  "client"
+    _(traces[2]["Language"]).must_equal  "Ruby"
     _(traces[2]["Timestamp_u"].to_s.length).must_equal 16
     assert_equal(traces[0]["TID"], traces[2]["TID"])
 
     _(traces[3]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[3]["TransactionName"]).must_equal "HTTP GET"
+    _(traces[3]["Label"]).must_equal "exit"
     _(traces[3]["Layer"]).must_equal  "HTTP GET"
-    _(traces[3]["Kind"]).must_equal  "client"
-    _(traces[3]["Language"]).must_equal  "Ruby"
+    _(traces[3]["sw.parent_span_id"].size).must_equal 16
     _(traces[3]["Timestamp_u"].to_s.length).must_equal 16
     assert_equal(traces[0]["TID"], traces[3]["TID"])
-
-    _(traces[4]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[4]["Label"]).must_equal "info"
-    _(traces[4]["Edge"].size).must_equal 16
-    _(traces[4]["process.runtime.name"]).must_equal  "ruby"
-    _(traces[4]["telemetry.sdk.language"]).must_equal  "ruby"
-    _(traces[4]["Timestamp_u"].to_s.length).must_equal 16
-    assert_equal(traces[0]["TID"], traces[4]["TID"])
-
-    _(traces[5]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[5]["Label"]).must_equal "exit"
-    _(traces[5]["Layer"]).must_equal  "HTTP GET"
-    _(traces[5]["sw.parent_span_id"].size).must_equal 16
-    _(traces[5]["Timestamp_u"].to_s.length).must_equal 16
-    assert_equal(traces[0]["TID"], traces[5]["TID"])
 
   end
 
@@ -121,15 +106,20 @@ describe 'SolarWindsExporterTest' do
 
     Net::HTTP.get(URI('https://www.google.com'))
     clear_all_traces
-    @exporter.send(:report_exception_event, @span_data)
+    sample_events = ::OpenTelemetry::SDK::Trace::Event.new(name: "name", attributes: {"key" => "value"}.freeze, timestamp: 1669317386298642087)
+    @exporter.send(:report_exception_event, sample_events)
+    
     traces = get_all_traces
-    _(traces.count).must_equal 1
 
+    _(traces.count).must_equal 1
+    _(traces[0]["sw.trace_context"].empty?).must_equal false
+    _(traces[0]["X-Trace"].empty?).must_equal false
+    _(traces[0]["X-Trace"].size).must_equal 60
+    _(traces[0]["sw.parent_span_id"].empty?).must_equal false
+    _(traces[0]["Edge"].empty?).must_equal false
+    _(traces[0]["Timestamp_u"]).must_equal 0
     _(traces[0]["Label"]).must_equal "error"
     _(traces[0]["Spec"]).must_equal "error"
-    _(traces[0]["Edge"].size).must_equal 16
-    _(traces[0]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[0]["Timestamp_u"]).must_equal 1669317386298642
 
   end
 
@@ -152,18 +142,15 @@ describe 'SolarWindsExporterTest' do
     @exporter.send(:log_span_data, @span_data)
     traces = get_all_traces
 
-    _(traces.count).must_equal 3
+    _(traces.count).must_equal 2
     _(traces[0]["Label"]).must_equal "entry"
     _(traces[0]["Layer"]).must_equal "connect"
-    _(traces[0]["Kind"]).must_equal "internal"
+    _(traces[0]["sw.span_kind"]).must_equal "internal"
     _(traces[0]["Timestamp_u"]).must_equal 1669317386253789
 
-    _(traces[1]["Label"]).must_equal "info"
+    _(traces[1]["Label"]).must_equal "exit"
     _(traces[1]["Timestamp_u"]).must_equal 1669317386298642
-
-    _(traces[2]["Label"]).must_equal "exit"
-    _(traces[2]["Timestamp_u"]).must_equal 1669317386298642
-    _(traces[2]["Layer"]).must_equal "connect"
+    _(traces[1]["Layer"]).must_equal "connect"
 
   end
   

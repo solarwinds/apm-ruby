@@ -7,7 +7,6 @@ begin
   require 'solarwinds_otel_apm/thread_local'
   require 'solarwinds_otel_apm/logger'
   require 'solarwinds_otel_apm/util'
-  require 'solarwinds_otel_apm/support'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
@@ -40,10 +39,14 @@ begin
   end
 
   # solarwinds_otel_apm/loading can set SolarWindsOTelAPM.loaded = false if the service key is not working
-  require 'solarwinds_otel_apm/load_opentelemetry'
   require 'solarwinds_otel_apm/loading'
 
-  if !SolarWindsOTelAPM.loaded
+  if SolarWindsOTelAPM.loaded
+
+    require 'solarwinds_otel_apm/load_opentelemetry'
+    require 'solarwinds_otel_apm/support'
+
+  else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'
     SolarWindsOTelAPM.logger.warn 'There may be a problem with the service key or other settings.'

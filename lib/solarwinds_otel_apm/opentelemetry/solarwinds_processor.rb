@@ -37,7 +37,7 @@ module SolarWindsOTelAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span) 
-        
+
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
           @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
           return
@@ -53,16 +53,28 @@ module SolarWindsOTelAPM
         liboboe_txn_name = nil
         if http_span
           status_code = get_http_status_code(span)
-          request_method = span.attributes["#{HTTP_METHOD}"]
+          request_method = span.attributes["#{}"]
 
-          SolarWindsOTelAPM.logger.debug "####### createHttpSpan with trans_name: #{trans_name}, url_tran: #{url_tran}, domain: #{domain}, \
-                                              span_time: #{span_time}, status_code: #{status_code}, request_method: #{request_method}, \
-                                              has_error: #{has_error}"
+          SolarWindsOTelAPM.logger.debug "####### createHttpSpan with\n
+                                          trans_name: #{trans_name}\n
+                                          url_tran: #{url_tran}\n
+                                          domain: #{domain}\n
+                                          span_time: #{span_time}\n
+                                          status_code: #{status_code}\n
+                                          request_method: #{request_method}\n
+                                          has_error: #{has_error}"
+
           liboboe_txn_name = SolarWindsOTelAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,
                                                                                                 request_method,has_error)
   
         else
-          SolarWindsOTelAPM.logger.debug "####### createSpan with trans_name: #{trans_name}, domain: #{domain}, span_time: #{span_time}, has_error: #{has_error}"
+          
+          SolarWindsOTelAPM.logger.debug "####### createSpan with \n
+                                          trans_name: #{trans_name}\n
+                                          domain: #{domain}\n
+                                          span_time: #{span_time}\n
+                                          has_error: #{has_error}"
+
           liboboe_txn_name = SolarWindsOTelAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 
@@ -100,8 +112,8 @@ module SolarWindsOTelAPM
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def is_span_http span
-        SolarWindsOTelAPM.logger.debug "######## span.kind #{span.kind}  span.attributes: #{span.attributes["#{HTTP_METHOD}"]}"
-        (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes["#{HTTP_METHOD}"].nil?)
+        SolarWindsOTelAPM.logger.debug "######## span.kind #{span.kind}  span.attributes: #{span.attributes[HTTP_METHOD]}"
+        (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
       end
 
       # Calculate if this span instance has_error
@@ -122,9 +134,9 @@ module SolarWindsOTelAPM
       # Get trans_name and url_tran of this span instance.
       def calculate_transaction_names span
         trans_name = nil
-        trans_name = span.attributes["#{HTTP_ROUTE}"] if span.attributes["#{HTTP_ROUTE}"]
+        trans_name = span.attributes[HTTP_ROUTE] if span.attributes[HTTP_ROUTE]
         trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
-        return trans_name, span.attributes["#{HTTP_URL}"]
+        return trans_name, span.attributes[HTTP_URL]
       end
 
       # Calculate span time in microseconds (us) using start and end time

@@ -37,6 +37,8 @@ module SolarWindsOTelAPM
 
     
     def initialize(context, signature = nil)
+
+      SolarWindsOTelAPM.logger.debug "####### x_trace_options context: #{context.inspect}"
       @context = context.dup
       @trigger_trace = false
       @custom_kvs = {}
@@ -114,17 +116,29 @@ module SolarWindsOTelAPM
     end
 
     def get_signature
-      signature = nil
-      option_signature = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY).name)
-      signature = option_signature if option_signature
+      # INTL_SWO_SIGNATURE_KEY = sw_signature
+      signature = get_sw_value(SolarWindsOTelAPM::Constants::INTL_SWO_SIGNATURE_KEY)
+      SolarWindsOTelAPM.logger.debug "####### x_trace_options option_signature: #{signature}"
       return signature
     end
 
     def options_header
-      options_header = ""
-      header = @context.value(SolarWindsOTelAPM::OpenTelemetry::Transformer.create_key(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY).name)
-      options_header = header if header
-      return options_header
+      # INTL_SWO_X_OPTIONS_KEY = sw_xtraceoptions 
+      header = get_sw_value(SolarWindsOTelAPM::Constants::INTL_SWO_X_OPTIONS_KEY)
+      SolarWindsOTelAPM.logger.debug "####### x_trace_options option_header: #{header}"
+      return header
+    end
+
+    def get_sw_value type
+      sw_value = nil
+      instance_variable = @context&.instance_variable_get("@entries")
+      instance_variable&.each do |key, value|
+        if key.class == ::String
+          sw_value = value if key == type
+          SolarWindsOTelAPM.logger.debug "####### #{type} #{key}: #{value.inspect}"
+        end
+      end
+      sw_value
     end
 
     def intify_trigger_trace

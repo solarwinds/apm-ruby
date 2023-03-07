@@ -45,6 +45,7 @@ apm.collector.st-ssp.solarwinds.com
 
 # test script
 install_gem.sh
+push_to_packgecloud.sh
 sample_start.rb
 
 # github action

@@ -414,7 +414,7 @@ task :build_gem_push_to_packagecloud, [:version] do |t, args|
   abort("Couldn't find the required gem file.") if gem_to_push.nil? || gem_to_push_version != args[:version]
     
   cli = PackageCloud::CLI::Entry.new
-  cli.push("solarwinds/solarwinds-apm-ruby", gem_to_push.strip())
+  cli.push("solarwinds/solarwinds-apm-otel-ruby", gem_to_push.strip())
 
   puts "\n=== Finished ===\n"
 
