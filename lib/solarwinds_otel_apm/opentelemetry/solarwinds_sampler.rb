@@ -93,7 +93,7 @@ module SolarWindsOTelAPM
         end
 
         sw_member_value = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
-        tracing_mode = UNSET # 'tracing_mode' is not supported in NH Python, so give as unset
+        tracing_mode = UNSET
 
         # need to create the config class
         trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])

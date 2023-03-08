@@ -65,10 +65,6 @@ module SolarWindsOTelAPM
     end
 
     def self.set_log_level
-      # unless (-1..6).include?(SolarWindsOTelAPM::Config[:debug_level])
-      #   SolarWindsOTelAPM::Config[:debug_level] = 3
-      # end
-
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i #|| SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       if debug_level < 0
@@ -78,7 +74,6 @@ module SolarWindsOTelAPM
       else
         SolarWindsOTelAPM.logger.level = [4 - debug_level, 0].max
       end
-      # SolarWindsOTelAPM::Config[:debug_level] = debug_level
     end
 
     ##
@@ -189,13 +184,6 @@ module SolarWindsOTelAPM
         # CProfiler may not be loaded yet, the profiler will send the value
         # after it is loaded
         SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
-
-      # elsif key == :transaction_settings
-      #   if value.is_a?(Hash)
-      #     SolarWindsOTelAPM::TransactionSettings.compile_url_settings(value[:url])
-      #   else
-      #     SolarWindsOTelAPM::TransactionSettings.reset_url_regexps
-      #   end
 
       elsif key == :resque
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker."
