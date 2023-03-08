@@ -14,7 +14,7 @@ module SolarWindsOTelAPM
       # optional hostname alias
       @hostname_alias = ENV['SW_APM_HOSTNAME_ALIAS'] || ''
       # level at which log messages will be written to log file (0-6)
-      @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || 3).to_i # SolarWindsOTelAPM::Config[:debug_level] 
+      @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || 3).to_i
       # file name including path for log file
       # TODO eventually find better way to combine ruby and oboe logs
       @log_file_path = ENV['SW_APM_LOGFILE'] || ''

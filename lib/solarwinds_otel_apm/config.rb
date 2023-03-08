@@ -66,7 +66,7 @@ module SolarWindsOTelAPM
 
     def self.set_log_level
       # let's find and use the equivalent debug level for ruby
-      debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i #|| SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
+      debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i
       if debug_level < 0
         # there should be no logging if SW_APM_DEBUG_LEVEL == -1
         # In Ruby level 5 is UNKNOWN and it can log, but level 6 is quiet
@@ -84,7 +84,6 @@ module SolarWindsOTelAPM
     #
     # rubocop:disable Metrics/AbcSize
     def self.initialize(_data = {})
-      # (@@instrumentation+@@ignore).each { |k| @@config[k] = {} }
       @@config[:transaction_name] = {}
 
       @@config[:profiling] = :disabled
