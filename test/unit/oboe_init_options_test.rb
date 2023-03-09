@@ -318,4 +318,27 @@ describe 'OboeInitOptions' do
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.grpc_proxy).must_equal ''
   end
+
+
+  it 'rejects invalid collector string' do
+    ENV['SW_APM_COLLECTOR'] = 'appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal true
+
+    ENV['SW_APM_COLLECTOR'] = 'abcd.appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal true
+
+    ENV['SW_APM_COLLECTOR'] = 'puts"abc".appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+
+    ENV['SW_APM_COLLECTOR'] = '\xA4\xA49\x9D\xAC\xA5\x98\xC1.appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+
+    ENV['SW_APM_COLLECTOR'] = 'google.ca.appoptics'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+  end
 end

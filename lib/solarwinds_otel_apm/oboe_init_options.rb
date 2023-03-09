@@ -190,7 +190,7 @@ module SolarWindsOTelAPM
     def read_certificates
 
       file = ''
-      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if ENV["SW_APM_COLLECTOR"]&.include? "appoptics.com"
+      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if is_appoptics_collector
       file = ENV['SW_APM_TRUSTEDPATH'] if (!ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?)
       
       return String.new if file.empty?
@@ -207,12 +207,24 @@ module SolarWindsOTelAPM
     end
 
     def determine_the_metric_model
-      if ENV['SW_APM_COLLECTOR']&.include? "appoptics.com"
+      if is_appoptics_collector
         return 1
       else
         return 0
       end
     end
+
+    def is_appoptics_collector
+      begin
+        sanitized_url = URI(ENV['SW_APM_COLLECTOR']).path
+        return true if sanitized_url.include? "appoptics.com"
+      rescue StandardError => e
+        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] the SW_APM_COLLECTOR is not in correct format caused by #{e.message}"
+      end
+      return false
+    end
+
+
   end
 end
 
