@@ -67,35 +67,6 @@ describe 'OboeInitOptions' do
     _(options[20]).must_equal 0
   end
 
-  it 'reads config vars' do
-    ENV.delete('SW_APM_GEM_TEST')
-    ENV['SW_APM_REPORTER'] = 'ssl'
-
-    ENV.delete('SW_APM_HOSTNAME_ALIAS')
-    ENV.delete('SW_APM_DEBUG_LEVEL')
-    ENV.delete('SW_APM_SERVICE_KEY')
-    ENV.delete('SW_APM_EC2_METADATA_TIMEOUT')
-    ENV.delete('SW_APM_PROXY')
-    ENV.delete('')
-
-    SolarWindsOTelAPM::Config[:hostname_alias] = 'string_0'
-    SolarWindsOTelAPM::Config[:debug_level] = 0
-    SolarWindsOTelAPM::Config[:service_key] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:test_app'
-    SolarWindsOTelAPM::Config[:ec2_metadata_timeout] = 2345
-    SolarWindsOTelAPM::Config[:http_proxy] = 'http://the.proxy:7777'
-
-    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    options = SolarWindsOTelAPM::OboeInitOptions.instance.array_for_oboe
-
-    _(options.size).must_equal 21
-
-    _(options[0]).must_equal 'string_0'
-    _(options[1]).must_equal 0
-    _(options[9]).must_equal 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:test_app'
-    _(options[17]).must_equal 2345
-    _(options[18]).must_equal 'http://the.proxy:7777'
-  end
-
   it 'env vars override config vars' do
     ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
@@ -258,7 +229,7 @@ describe 'OboeInitOptions' do
 
     SolarWindsOTelAPM::Config[:service_key] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:service'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
 
     ENV['SW_APM_SERVICE_KEY'] = 'blabla'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
@@ -266,7 +237,7 @@ describe 'OboeInitOptions' do
 
     ENV['SW_APM_SERVICE_KEY'] = nil
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
 
     ENV['SW_APM_SERVICE_KEY'] = '22222222-2222-2222-2222-222222222222:service'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init

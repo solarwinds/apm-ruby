@@ -27,7 +27,7 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.reporter = Oboe_metal::Reporter.new(*options)
 
           # report __Init
-          SolarWindsOTelAPM::API.report_init
+          SolarWindsOTelAPM::LayerInit.report_init
 
         rescue => e
           $stderr.puts e.message
@@ -111,50 +111,6 @@ module SolarWindsOTelAPM
   end
 
   class << self
-    # def sample?(opts = {})
-    #   # Return false if no-op mode
-    #   return false unless SolarWindsOTelAPM.loaded
-    #
-    #   # Assure defaults since SWIG enforces Strings
-    #   xtrace  = opts[:xtrace]     ? opts[:xtrace].to_s.strip       : SW_APM_STR_BLANK
-    #
-    #   # the first arg has changed to be the service name, blank means to use the default (from the service key)
-    #   rv = SolarWindsOTelAPM::Context.sampleRequest(SW_APM_STR_BLANK, xtrace)
-    #
-    #   if rv == 0
-    #     SolarWindsOTelAPM.sample_rate = -1
-    #     SolarWindsOTelAPM.sample_source = -1
-    #     false
-    #   else
-    #     # liboboe version > 1.3.1 returning a bit masked integer with SampleRate and
-    #     # source embedded
-    #     SolarWindsOTelAPM.sample_rate = (rv & SAMPLE_RATE_MASK)
-    #     SolarWindsOTelAPM.sample_source = (rv & SAMPLE_SOURCE_MASK) >> 24
-    #     true
-    #   end
-    # rescue StandardError => e
-    #   SolarWindsOTelAPM.logger.debug "[oboe/error] sample? error: #{e.inspect}"
-    #   false
-    # end
-
-    # def set_tracing_mode(mode)
-    #   return unless SolarWindsOTelAPM.loaded
-    #
-    #   value = mode.to_sym
-    #
-    #   case value
-    #   when :disabled, :never
-    #     SolarWindsOTelAPM::Context.setTracingMode(SW_APM_TRACE_DISABLED)
-    #
-    #   when :enabled, :always
-    #     SolarWindsOTelAPM::Context.setTracingMode(SW_APM_TRACE_ENABLED)
-    #
-    #   else
-    #     SolarWindsOTelAPM.logger.fatal "[oboe/error] Invalid tracing mode set: #{mode}"
-    #     SolarWindsOTelAPM::Context.setTracingMode(SW_APM_TRACE_DISABLED)
-    #   end
-    # end
-
     def set_sample_rate(rate)
       return unless SolarWindsOTelAPM.loaded
 

@@ -60,14 +60,15 @@ describe 'SolarWindsOTelAPMBase' do
       ths = []
       2.times do |i|
         ths << Thread.new do
-          trace_00 = "00-#{i}435a9fe510ae4533414d425dadf4e18-#{i}9e60702469db05f-00"
+          trace_00 = "#{i}435a9fe510ae4533414d425dadf4e18"
+          span_00  = "#{i}9e60702469db05f"
           state_00 = "sw=#{i}9e60702469db05f-00"
-          headers = { traceparent: trace_00, tracestate: state_00 }
-          SolarWindsOTelAPM.trace_context = SolarWindsOTelAPM::TraceContext.new(headers)
+          trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(state_00)
+          context = ::OpenTelemetry::Trace::SpanContext.new(trace_id: trace_00, span_id: span_00, tracestate: trace_state)
 
-          contexts[i] = [SolarWindsOTelAPM.trace_context.traceparent,
-                         SolarWindsOTelAPM.trace_context.tracestate,
-                         SolarWindsOTelAPM.trace_context.sw_member_value]
+          contexts[i] = [context.trace_id,
+                         context.span_id,
+                         context.tracestate['sw']]
         end
       end
       ths.each { |th| th.join }

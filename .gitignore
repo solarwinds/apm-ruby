@@ -42,6 +42,7 @@ lib/libsolarwinds_apm.so
 vendor/
 .DS_Store
 apm.collector.st-ssp.solarwinds.com
+appoptics.com
 
 # test script
 install_gem.sh
