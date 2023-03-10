@@ -13,7 +13,6 @@ require 'bundler/setup'
 require 'rake/testtask'
 require 'solarwinds_otel_apm/test'
 
-
 Rake::TestTask.new do |t|
   t.verbose = false
   t.warning = false
@@ -25,9 +24,7 @@ Rake::TestTask.new do |t|
     t.test_files = FileList['test/unit/*_test.rb'] +
                    FileList['test/component/*_test.rb']
   end
-
 end
-
 
 desc 'Run all test suites defined by travis'
 task :docker_tests, :environment do
@@ -35,7 +32,9 @@ task :docker_tests, :environment do
   os = arg2 || 'ubuntu'
 
   Dir.chdir('test/run_otel_tests')
-  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports --name ruby_sw_apm_#{os} ruby_sw_apm_#{os} /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh test copy")
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports
+              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os}
+              /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh test copy")
 end
 
 task :docker_test => :docker_tests
@@ -46,7 +45,9 @@ task :docker, :environment do
   os = arg2 || 'ubuntu'
 
   Dir.chdir('test/run_otel_tests')
-  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os} /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh bash")
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports
+              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}
+              /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh bash")
 end
 
 desc 'Stop all containers that were started for testing and debugging'
@@ -62,7 +63,7 @@ end
 
 desc 'Fetch oboe files from STAGING'
 task :fetch_oboe_file_from_staging do
-  swig_version = %x{swig -version} rescue ''
+  swig_version = %x(swig -version) rescue ''
   swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
   if swig_valid_version.empty?
     $stderr.puts '== ERROR ================================================================='
@@ -89,19 +90,17 @@ task :fetch_oboe_file_from_staging do
   Dir.glob(File.join(ext_src_dir, 'oboe*')).each { |file| File.delete(file) }
 
   # inform when there is a newer oboe version
-  remote_file = File.join("https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/latest", 'VERSION')
+  remote_file = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/latest', 'VERSION')
   local_file  = File.join(ext_src_dir, 'VERSION_latest')
   URI.open(remote_file, 'rb') do |rf|
     content = rf.read
     File.open(local_file, 'wb') { |f| f.puts content }
-    unless content.strip == oboe_version
-      puts "FYI: latest C-Lib VERSION: #{content.strip} !"
-    end
+    puts "FYI: latest C-Lib VERSION: #{content.strip} !" unless content.strip == oboe_version
   end
 
   # oboe and bson header files
   FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
-  files = %w(bson/bson.h bson/platform_hacks.h)
+  files = %w[bson/bson.h bson/platform_hacks.h]
 
   if ENV['OBOE_WIP'] || ENV['OBOE_LOCAL']
     wip_src_dir = File.expand_path('../oboe/liboboe')
@@ -147,13 +146,9 @@ task :fetch_oboe_file_from_staging do
 
   api_hpp_patch = File.join(ext_src_dir, 'api_hpp.patch')
   api_cpp_patch = File.join(ext_src_dir, 'api_cpp.patch')
-  if File.exist?(api_hpp_patch)
-    `patch -N #{File.join(ext_src_dir, 'oboe_api.h')} #{api_hpp_patch}`
-  end
-  if File.exist?(api_cpp_patch)
-    `patch -N #{File.join(ext_src_dir, 'oboe_api.cpp')} #{api_cpp_patch}`
-  end
-
+  `patch -N #{File.join(ext_src_dir, 'oboe_api.h')} #{api_hpp_patch}`   if File.exist?(api_hpp_patch)
+  `patch -N #{File.join(ext_src_dir, 'oboe_api.cpp')} #{api_cpp_patch}` if File.exist?(api_cpp_patch)
+    
   FileUtils.cd(ext_src_dir) do
     system('swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i')
     FileUtils.rm('oboe.i')
@@ -162,7 +157,7 @@ end
 
 task :fetch => :fetch_oboe_file_from_staging
 
-@files = %w(oboe.h oboe_api.h oboe_api.cpp oboe.i oboe_debug.h bson/bson.h bson/platform_hacks.h)
+@files = %w[oboe.h oboe_api.h oboe_api.cpp oboe.i oboe_debug.h bson/bson.h bson/platform_hacks.h]
 @ext_dir = File.expand_path('ext/oboe_metal')
 @ext_verify_dir = File.expand_path('ext/oboe_metal/verify')
 
@@ -175,7 +170,9 @@ def oboe_github_fetch
 
   # fetch files
   @files.each do |filename|
-    uri = filename == 'oboe.i' ? URI("#{File.join(oboe_github, 'swig', filename)}") : URI("#{File.join(oboe_github, filename)}")
+    
+    uri = URI(File.join(oboe_github, filename).to_s)
+    uri = URI(File.join(oboe_github, 'swig', filename).to_s) if filename == 'oboe.i'
     req = Net::HTTP::Get.new(uri)
     req['Authorization'] = "token #{oboe_token}"
 
@@ -192,8 +189,8 @@ def oboe_github_fetch
   end
 end
 
-desc "Fetch oboe files from cloud.solarwinds.com and create swig wrapper"
-task :fetch_oboe_file_from_prod do 
+desc 'Fetch oboe files from cloud.solarwinds.com and create swig wrapper'
+task :fetch_oboe_file_from_prod do
   oboe_version = File.read('ext/oboe_metal/src/VERSION').strip
   files_solarwinds = "https://agent-binaries.cloud.solarwinds.com/apm/c-lib/#{oboe_version}"
 
@@ -234,16 +231,16 @@ task :fetch_oboe_file_from_prod do
   end
 end
 
-desc "Verify files"
+desc 'Verify files'
 task :oboe_verify do
   oboe_github_fetch
   @files.each do |filename|
     puts "Verifying #{filename}"
 
-    sha_1 = Digest::SHA2.file(File.join(@ext_dir, 'src', filename)).hexdigest
-    sha_2 = Digest::SHA2.file(File.join(@ext_verify_dir, filename)).hexdigest
+    sha_local = Digest::SHA2.file(File.join(@ext_dir, 'src', filename)).hexdigest
+    sha_remote = Digest::SHA2.file(File.join(@ext_verify_dir, filename)).hexdigest
 
-    if sha_1 != sha_2
+    if sha_local != sha_remote
       puts "#{filename} from github and agent-binaries.cloud.solarwinds differ"
       puts `diff #{File.join(@ext_dir, 'src', filename)} #{File.join(@ext_verify_dir, filename)}`
       exit 1
@@ -251,7 +248,7 @@ task :oboe_verify do
   end
 end
 
-desc "Build and publish to Rubygems"
+desc 'Build and publish to Rubygems'
 # !!! publishing requires gem >=3.0.5 !!!
 # Don't run with Ruby versions < 2.7 they have gem < 3.0.5
 task :build_and_publish_gem do
@@ -341,10 +338,10 @@ task :distclean do
   end
 end
 
-desc "Rebuild the gem's c extension without fetching the oboe files, without recreating the swig wrapper"
+desc 'Rebuild the gem c extension without fetching the oboe files, without recreating the swig wrapper'
 task :recompile => [:distclean, :compile]
 
-desc "Build the gem's c extension ..."
+desc 'Build the gem c extension ...'
 task :cfc => [:clean, :fetch, :compile]
 
 task :environment do
@@ -362,61 +359,59 @@ task 'resque:setup' => :environment do
   require 'resque/tasks'
 end
 
-desc "Build gem locally for testing"
+desc 'Build gem locally for testing'
 task :build_gem do
 
   puts "\n=== building for MRI ===\n"
-  FileUtils.mkdir_p('builds') if Dir['builds'].size == 0
+  FileUtils.mkdir_p('builds') if Dir['builds'].empty?
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
   
   puts "\n=== install required dependencies ===\n"
   system('bundle install --without development --without test')
 
   puts "\n=== clean & compile & build ===\n"
-  Rake::Task["distclean"].execute
-  Rake::Task["fetch_oboe_file_from_staging"].execute # if production, then use fetch_oboe_file_from_prod
+  Rake::Task['distclean'].execute
+  Rake::Task['fetch_oboe_file_from_staging'].execute # if production, then use fetch_oboe_file_from_prod
   system('gem build solarwinds_otel_apm.gemspec')
   
   gemname = Dir['solarwinds_otel_apm*.gem'].first
   FileUtils.mv(gemname, 'builds/')
 
   puts "\n=== last 5 built gems ===\n"
-  puts Dir['builds/solarwinds_otel_apm*.gem']  
+  puts Dir['builds/solarwinds_otel_apm*.gem']
 
   puts "\n=== SHA256 ===\n"
   result = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
-  system("shasum -a256 #{result.strip()}")
+  system("shasum -a256 #{result.strip}")
 
   puts "\n=== Finished ===\n"
 end
 
-desc "Build gem and push to packagecloud. Run as bundle exec rake build_gem_push_to_packagecloud[<version>]"
-task :build_gem_push_to_packagecloud, [:version] do |t, args|
+desc 'Build gem and push to packagecloud. Run as bundle exec rake build_gem_push_to_packagecloud[<version>]'
+task :build_gem_push_to_packagecloud, [:version] do |_, args|
 
   require 'package_cloud'
 
-  abort("Require PACKAGECLOUD_TOKEN\n See here: https://packagecloud.io/docs ") if ENV["PACKAGECLOUD_TOKEN"]&.empty? || ENV["PACKAGECLOUD_TOKEN"].nil?
-  abort("No version specified.") if args[:version]&.empty? || args[:version].nil?
+  abort('Require PACKAGECLOUD_TOKEN\n See here: https://packagecloud.io/docs') if ENV["PACKAGECLOUD_TOKEN"]&.empty? || ENV["PACKAGECLOUD_TOKEN"].nil?
+  abort('No version specified.') if args[:version]&.empty? || args[:version].nil?
 
   gems = Dir["builds/solarwinds_otel_apm-#{args[:version]}.gem"]
   gem_to_push = nil
-  if gems.size == 0
-    Rake::Task["build_gem"].execute 
+  if gems.empty?
+    Rake::Task["build_gem"].execute
     gem_to_push = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
   else
     gem_to_push = gems.first
   end
 
   puts "\n=== Gem will be pushed #{gem_to_push} ===\n"
-  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.gsub("-","")
-  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.pre/).to_s.gsub("-","") if args[:version].include? "pre"
+  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.gsub('-', '')
+  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.pre/).to_s.gsub('-', '') if args[:version].include? 'pre'
   
   abort("Couldn't find the required gem file.") if gem_to_push.nil? || gem_to_push_version != args[:version]
     
   cli = PackageCloud::CLI::Entry.new
-  cli.push("solarwinds/solarwinds-apm-otel-ruby", gem_to_push.strip())
+  cli.push("solarwinds/solarwinds-apm-otel-ruby", gem_to_push.strip)
 
   puts "\n=== Finished ===\n"
-
 end
-
