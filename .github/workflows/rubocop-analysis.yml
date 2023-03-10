@@ -29,7 +29,9 @@ jobs:
       run: bundle add code-scanning-rubocop --skip-install
 
     - name: Install dependencies
-      run: bundle install
+      run: |
+        bundle install
+        gem install rubocop
 
     - name: RuboCop run
       run: |

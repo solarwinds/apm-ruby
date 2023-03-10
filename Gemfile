@@ -10,7 +10,6 @@ group :development, :test do
   gem 'irb', '>= 1.0.0' # if RUBY_VERSION >= '2.6.0'
   gem 'memory_profiler'
   gem 'package_cloud'
-  gem 'rubocop'
 end
 
 gemspec

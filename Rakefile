@@ -32,8 +32,8 @@ task :docker_tests, :environment do
   os = arg2 || 'ubuntu'
 
   Dir.chdir('test/run_otel_tests')
-  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports
-              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os}
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
+              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os} \
               /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh test copy")
 end
 
@@ -45,8 +45,8 @@ task :docker, :environment do
   os = arg2 || 'ubuntu'
 
   Dir.chdir('test/run_otel_tests')
-  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports
-              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
+              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os} \
               /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh bash")
 end
 
@@ -392,8 +392,8 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
 
   require 'package_cloud'
 
-  abort('Require PACKAGECLOUD_TOKEN\n See here: https://packagecloud.io/docs') if ENV["PACKAGECLOUD_TOKEN"]&.empty? || ENV["PACKAGECLOUD_TOKEN"].nil?
-  abort('No version specified.') if args[:version]&.empty? || args[:version].nil?
+  abort('Require PACKAGECLOUD_TOKEN') if ENV["PACKAGECLOUD_TOKEN"].nil? || ENV["PACKAGECLOUD_TOKEN"].empty? 
+  abort('No version specified.') if args[:version].nil? || args[:version].empty?
 
   gems = Dir["builds/solarwinds_otel_apm-#{args[:version]}.gem"]
   gem_to_push = nil
