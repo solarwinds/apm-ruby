@@ -148,7 +148,6 @@ task :fetch_oboe_file_from_staging do
   api_cpp_patch = File.join(ext_src_dir, 'api_cpp.patch')
   `patch -N #{File.join(ext_src_dir, 'oboe_api.h')} #{api_hpp_patch}`   if File.exist?(api_hpp_patch)
   `patch -N #{File.join(ext_src_dir, 'oboe_api.cpp')} #{api_cpp_patch}` if File.exist?(api_cpp_patch)
-    
   FileUtils.cd(ext_src_dir) do
     system('swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i')
     FileUtils.rm('oboe.i')
@@ -170,7 +169,6 @@ def oboe_github_fetch
 
   # fetch files
   @files.each do |filename|
-    
     uri = URI(File.join(oboe_github, filename).to_s)
     uri = URI(File.join(oboe_github, 'swig', filename).to_s) if filename == 'oboe.i'
     req = Net::HTTP::Get.new(uri)
