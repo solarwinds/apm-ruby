@@ -323,7 +323,7 @@ describe 'OboeInitOptions' do
   it 'rejects invalid collector string' do
     ENV['SW_APM_COLLECTOR'] = 'appoptics.com'
     is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
-    _(is_appoptics).must_equal true
+    _(is_appoptics).must_equal false
 
     ENV['SW_APM_COLLECTOR'] = 'abcd.appoptics.com'
     is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
