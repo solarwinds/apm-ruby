@@ -11,7 +11,8 @@ begin
   require 'solarwinds_otel_apm/constants'
   require 'solarwinds_otel_apm/config'
   
-  SolarWindsOTelAPM::Config.set_log_level
+  SolarWindsOTelAPM::Config.load_config_file
+  # SolarWindsOTelAPM::Config.set_log_level
 
   SolarWindsOTelAPM.loaded = false
   begin
@@ -19,7 +20,7 @@ begin
       require_relative './libsolarwinds_apm.so'
       require 'solarwinds_otel_apm/layerinit'
       require 'solarwinds_otel_apm/oboe_init_options'
-      require 'oboe_metal.rb'  # sets SolarWindsOTelAPM.loaded = true if successful
+      require 'oboe_metal.rb'  # initialize Reporter; sets SolarWindsOTelAPM.loaded = true if successful
     else
       SolarWindsOTelAPM.logger.warn '==================================================================='
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: Platform #{RUBY_PLATFORM} not yet supported."

@@ -11,10 +11,9 @@ module SolarWindsOTelAPM
       HTTP_URL = "http.url"
       LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE = 0
 
-      def initialize(exporter, txn_manager, agent_enabled)
+      def initialize(exporter, txn_manager)
         @exporter = exporter
         @txn_manager = txn_manager
-        @agent_enabled = agent_enabled
       end
 
       # Called when a {Span} is started, if the {Span#recording?}

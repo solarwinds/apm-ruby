@@ -16,6 +16,8 @@ module SolarWindsOTelAPM
     #
     # There are 3 possible locations for the config file:
     # Rails default, ENV['SW_APM_CONFIG_RUBY'], or the gem's default
+    # Config will be used in OboeInitOptions but ENV variable has higher priority 
+    #   e.g. ENV['SW_APM_SERVICE_KEY'] || SolarWindsOTelAPM::Config[:service_key]
     #
     # Hierarchie:
     # 1 - Rails default: config/initializers/solarwinds_otel_apm.rb
@@ -65,14 +67,31 @@ module SolarWindsOTelAPM
     end
 
     def self.set_log_level
+      unless (-1..6).include?(SolarWindsOTelAPM::Config[:debug_level])
+        SolarWindsOTelAPM::Config[:debug_level] = 3
+      end
+      
       # let's find and use the equivalent debug level for ruby
-      debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i
+      debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       if debug_level < 0
         # there should be no logging if SW_APM_DEBUG_LEVEL == -1
         # In Ruby level 5 is UNKNOWN and it can log, but level 6 is quiet
         SolarWindsOTelAPM.logger.level = 6
       else
         SolarWindsOTelAPM.logger.level = [4 - debug_level, 0].max
+      end
+    end
+
+    ##
+    # print_config
+    #
+    # print configurations one per line
+    # to create an output similar to the content of the config file
+    #
+    def self.print_config
+      SolarWindsAPM.logger.warn "# General configurations"
+      @@config.each do |k,v|
+        SolarWindsAPM.logger.warn "Config Key/Value: #{k}, #{v.inspect}"
       end
     end
 
@@ -91,7 +110,7 @@ module SolarWindsOTelAPM
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
-      # load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
+      load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
     end
     # rubocop:enable Metrics/AbcSize
 
@@ -106,11 +125,6 @@ module SolarWindsOTelAPM
     end
 
     def self.[](key)
-      if key == :resque
-        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/warn] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker.'
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Called from #{Kernel.caller[0]}"
-      end
-
       @@config[key.to_sym]
     end
 
@@ -184,10 +198,6 @@ module SolarWindsOTelAPM
         # after it is loaded
         SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
 
-      elsif key == :resque
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker."
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Called from #{Kernel.caller[0]}"
-
       elsif key == :include_url_query_params # DEPRECATED
         # Obey the global flag and update all of the per instrumentation
         # <tt>:log_args</tt> values.
@@ -208,34 +218,36 @@ module SolarWindsOTelAPM
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
+
+      # otel-related config (will affect load_opentelemetry directly)
+      # default is from solarwinds_otel_apm_initializer.rb
+      # ENV always has the highest priorities
+      # config.rb -> oboe_init_options
+      elsif key == :otel_propagator # SWO_OTEL_PROPAGATOR
+        @@config[key.to_sym] = value.to_sym
+
+      elsif key == :otel_sampler    # SWO_OTEL_SAMPLER
+        @@config[key.to_sym] = value.to_sym
+
+      elsif key == :otel_processor  # SWO_OTEL_PROCESSOR
+        @@config[key.to_sym] = value.to_sym
+
+      elsif key == :service_name    # SWO_OTEL_SERVICE_NAME
+        @@config[key.to_sym] = value.to_sym
+
+      elsif key == :otel_response_propagator # SWO_OTEL_RESPONSE
+        @@config[key.to_sym] = value.to_sym
+
+      elsif key == :otel_exporter
+        @@config[key.to_sym] = value.to_sym # SWO_OTEL_EXPORTER
+
       elsif key == :trigger_tracing_mode
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
 
-    def self.method_missing(sym, *args)
-      class_var_name = "@@#{sym}"
-
-      if sym.to_s =~ /(.+)=$/
-        self[$1] = args.first
-      else
-        # Try part of the @@config hash first
-        if @@config.key?(sym)
-          self[sym]
-
-        # Then try as a class variable
-        elsif self.class_variable_defined?(class_var_name.to_sym)
-          self.class_eval(class_var_name)
-
-        # Congrats - You've won a brand new nil...
-        else
-          nil
-        end
-      end
-    end
   end
 end
 
