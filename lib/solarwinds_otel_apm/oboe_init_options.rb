@@ -215,15 +215,11 @@ module SolarWindsOTelAPM
     end
 
     def is_appoptics_collector
-      begin
-        sanitized_url = URI(ENV['SW_APM_COLLECTOR']).path
-        return true if sanitized_url =~ /.+.appoptics.com$/
-      rescue StandardError => e
-        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] the SW_APM_COLLECTOR is not in correct format caused by #{e.message}"
-      end
+      allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
+                        'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
+      return true if allowed_uri.include? ENV["SW_APM_COLLECTOR"]  
       return false
     end
-
 
   end
 end
