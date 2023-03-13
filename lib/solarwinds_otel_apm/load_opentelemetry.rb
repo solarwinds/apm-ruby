@@ -27,19 +27,27 @@ module SolarWindsOTelAPM
     end
 
     # propagator config is comma separated
-    # propagator setup: must include otel's tracecontext propagator
+    # propagator setup: must include otel's tracecontext propagator, and the order matters
     def self.resolve_propagators
       propagators = ENV["SWO_OTEL_PROPAGATOR"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
       propagators_list = Array.new
-      propagators.split(",").each do |propagator|
+      splited_propagators = propagators.split(",")
+      splited_propagators.each do |propagator|
         case propagator
-        when 'solarwinds'
-          propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
         when 'tracecontext'
           propagators_list << ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new
         when 'baggage'
           propagators_list << ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new
         end
+      end
+
+      # solarwinds propagator always in the end
+      propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new if splited_propagators.include? 'solarwinds'
+
+      if propagators_list.size == 0
+        propagators_list = [::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new,
+                            ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
+                            SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]
       end
 
       @@config[:propagators] = propagators_list
@@ -53,7 +61,7 @@ module SolarWindsOTelAPM
         @@config[:span_processor] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
       else
         @@config[:span_processor] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
-        SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default exporter is used"
+        SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default processor is used"
       end
 
     end
@@ -133,10 +141,10 @@ module SolarWindsOTelAPM
 
     def self.print_config
       @@config.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}] = #{@@config[config]}"
+        SolarWindsOTelAPM.logger.debug "SolarWindsOTelAPM::Config[:#{config}] = #{@@config[config]}"
       end
       @@config_map.each do |config|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config.config_map #{config} = #{@@config_map[config]}"
+        SolarWindsOTelAPM.logger.debug "SolarWindsOTelAPM::Config.config_map #{config} = #{@@config_map[config]}"
       end
     end
 
@@ -163,7 +171,7 @@ module SolarWindsOTelAPM
 
           # use separately
           # @@instrumentations.each do |instrumentation|
-          #   c.use instrumentation
+          #   c.use instrumentation, @@config_map[instrumentation.class.to_s]
           # end
         end
       end

@@ -91,15 +91,6 @@ if defined?(SolarWindsOTelAPM::Config)
   SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
 
   #
-  # Turn Trigger Tracing on or off
-  #
-  # By default trigger tracing is :enabled, the other option is :disabled.
-  # It allows to use the X-Trace-Options header to force a request to be
-  # traced (within rate limits set for trigger tracing)
-  #
-  SolarWindsOTelAPM::Config[:trigger_tracing_mode] = :enabled
-
-  #
   # Trace Context in Logs
   #
   # Configure if and when the Trace ID should be included in application logs.
@@ -276,7 +267,7 @@ if defined?(SolarWindsOTelAPM::Config)
 
 
   #############################################
-  ## SETTINGS FOR OPENTELEMTRY COMPONENT     ##
+  ## SETTINGS FOR OPENTELEMETRY COMPONENT     ##
   #############################################
 
   SolarWindsOTelAPM::Config[:otel_propagator]   = 'tracecontext,baggage,solarwinds'
@@ -291,7 +282,7 @@ if defined?(SolarWindsOTelAPM::Config)
 
   SolarWindsOTelAPM::Config[:otel_response_propagator]    = 'solarwinds'
 
-  SolarWindsOTelAPM::Config[:trigger_trace] = 'enabled'
+  SolarWindsOTelAPM::Config[:trigger_trace]               = 'enabled'
 
   #############################################
   ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##

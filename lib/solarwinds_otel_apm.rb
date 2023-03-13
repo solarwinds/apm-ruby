@@ -12,7 +12,6 @@ begin
   require 'solarwinds_otel_apm/config'
   
   SolarWindsOTelAPM::Config.load_config_file
-  # SolarWindsOTelAPM::Config.set_log_level
 
   SolarWindsOTelAPM.loaded = false
   begin

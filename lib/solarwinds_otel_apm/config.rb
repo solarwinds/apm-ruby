@@ -238,10 +238,6 @@ module SolarWindsOTelAPM
       elsif key == :otel_exporter            # SWO_OTEL_EXPORTER
         @@config[key.to_sym] = value 
 
-      elsif key == :trigger_tracing_mode
-        # Make sure that the mode is stored as a symbol
-        @@config[key.to_sym] = value.to_sym
-
       end
     end
 
