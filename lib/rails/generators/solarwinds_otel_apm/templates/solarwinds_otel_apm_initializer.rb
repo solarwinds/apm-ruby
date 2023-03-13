@@ -279,17 +279,19 @@ if defined?(SolarWindsOTelAPM::Config)
   ## SETTINGS FOR OPENTELEMTRY COMPONENT     ##
   #############################################
 
-  SolarWindsOTelAPM::Config[:otel_propagator]   = ''
+  SolarWindsOTelAPM::Config[:otel_propagator]   = 'tracecontext,baggage,solarwinds'
 
-  SolarWindsOTelAPM::Config[:otel_exporter]     = ''
+  SolarWindsOTelAPM::Config[:otel_exporter]     = 'solarwinds'
 
-  SolarWindsOTelAPM::Config[:otel_sampler]      = ''
+  SolarWindsOTelAPM::Config[:otel_sampler]      = 'solarwinds'
 
-  SolarWindsOTelAPM::Config[:otel_processor]    = ''
+  SolarWindsOTelAPM::Config[:otel_processor]    = 'solarwinds'
 
   SolarWindsOTelAPM::Config[:service_name]      = ''
 
-  SolarWindsOTelAPM::Config[:otel_response_propagator]    = ''
+  SolarWindsOTelAPM::Config[:otel_response_propagator]    = 'solarwinds'
+
+  SolarWindsOTelAPM::Config[:trigger_trace] = 'enabled'
 
   #############################################
   ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##

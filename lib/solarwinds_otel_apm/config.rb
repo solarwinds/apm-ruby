@@ -11,6 +11,14 @@ module SolarWindsOTelAPM
   module Config
     @@config = {}
 
+    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
+                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
+                         :dalli, :delayed_jobclient, :delayed_jobworker,
+                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
+                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
+                         :resqueclient, :resqueworker, :rest_client,
+                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus]
+
     ##
     # load_config_file
     #
@@ -89,9 +97,9 @@ module SolarWindsOTelAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.warn "# General configurations"
+      SolarWindsOTelAPM.logger.warn "# General configurations"
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn "Config Key/Value: #{k}, #{v.inspect}"
+        SolarWindsOTelAPM.logger.warn "Config Key/Value: #{k}, #{v.inspect}"
       end
     end
 
@@ -103,6 +111,8 @@ module SolarWindsOTelAPM
     #
     # rubocop:disable Metrics/AbcSize
     def self.initialize(_data = {})
+      @@instrumentation.each { |k| @@config[k] = {} }
+
       @@config[:transaction_name] = {}
 
       @@config[:profiling] = :disabled
@@ -198,18 +208,6 @@ module SolarWindsOTelAPM
         # after it is loaded
         SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
 
-      elsif key == :include_url_query_params # DEPRECATED
-        # Obey the global flag and update all of the per instrumentation
-        # <tt>:log_args</tt> values.
-        @@config[:rack][:log_args] = value
-
-      elsif key == :include_remote_url_params # DEPRECATED
-        # Obey the global flag and update all of the per instrumentation
-        # <tt>:log_args</tt> values.
-        @@http_clients.each do |i|
-          @@config[i][:log_args] = value
-        end
-
       elsif key == :tracing_mode
       #   CAN'T DO `set_tracing_mode` ANYMORE, ALL TRACING COMMUNICATION TO OBOE
       #   IS NOW HANDLED BY TransactionSettings
@@ -218,28 +216,27 @@ module SolarWindsOTelAPM
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
-
       # otel-related config (will affect load_opentelemetry directly)
       # default is from solarwinds_otel_apm_initializer.rb
       # ENV always has the highest priorities
       # config.rb -> oboe_init_options
       elsif key == :otel_propagator # SWO_OTEL_PROPAGATOR
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
       elsif key == :otel_sampler    # SWO_OTEL_SAMPLER
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
       elsif key == :otel_processor  # SWO_OTEL_PROCESSOR
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
       elsif key == :service_name    # SWO_OTEL_SERVICE_NAME
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
       elsif key == :otel_response_propagator # SWO_OTEL_RESPONSE
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
-      elsif key == :otel_exporter
-        @@config[key.to_sym] = value.to_sym # SWO_OTEL_EXPORTER
+      elsif key == :otel_exporter            # SWO_OTEL_EXPORTER
+        @@config[key.to_sym] = value 
 
       elsif key == :trigger_tracing_mode
         # Make sure that the mode is stored as a symbol
