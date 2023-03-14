@@ -3,3 +3,5 @@ source "https://rubygems.org"
 eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile')))
 gemspec :path => File.expand_path(File.dirname(__FILE__) + '/../')
 # vim:syntax=ruby
+
+gem "code-scanning-rubocop", "~> 0.6.1"
