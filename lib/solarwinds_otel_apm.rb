@@ -45,6 +45,9 @@ begin
   end
   if SolarWindsOTelAPM.loaded
     require 'solarwinds_otel_apm/load_opentelemetry'
+    require 'solarwinds_otel_apm/otel_config'
+    SolarWindsOTelAPM::OTelConfig.initialize if SolarWindsOTelAPM::Config[:swo_otel_default] == true
+    SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize swo otel config by yourself" if SolarWindsOTelAPM::Config[:swo_otel_default] == false
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'

@@ -8,7 +8,6 @@ describe 'Loading Opentelemetry Test' do
   before do
     SolarWindsOTelAPM::Config[:otel_propagator] = nil
     ENV["SWO_OTEL_PROPAGATOR"] = nil
-    @@config = {}
   end
 
   it 'test_resolve_propagators_with_defaults' do
@@ -61,6 +60,32 @@ describe 'Loading Opentelemetry Test' do
     end
   end
 
+  it 'test_should_set_solarwinds_processor_when_swo_otel_processor_is_solarwinds' do
+    ENV['SWO_OTEL_PROCESSOR'] = 'solarwinds'
+    SolarWindsOTelAPM::OTelConfig.initialize
+    _(SolarWindsOTelAPM::OTelConfig[:span_processor]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+  
+  end
+
+  it 'test_should_set_default_processor_and_warn_when_swo_otel_processor_is_not_solarwinds' do
+    ENV.delete('SWO_OTEL_PROCESSOR')
+    SolarWindsOTelAPM::OTelConfig.initialize
+    _(SolarWindsOTelAPM::OTelConfig[:span_processor]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+  end
+
+
+  it 'test_should_set_solarwinds_exporter_when_swo_otel_exporter_is_solarwinds' do
+    ENV['SWO_OTEL_EXPORTER'] = 'solarwinds'
+    SolarWindsOTelAPM::OTelConfig.initialize
+    _(SolarWindsOTelAPM::OTelConfig[:exporter]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+  end
+
+  it 'test_should_set_default_exporter_and_warn_when_swo_otel_exporter_is_not_solarwinds' do 
+    ENV.delete('SWO_OTEL_EXPORTER')
+    SolarWindsOTelAPM::OTelConfig.initialize
+    _(SolarWindsOTelAPM::OTelConfig[:exporter]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+
+  end
 
 end
 

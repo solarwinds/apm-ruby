@@ -238,6 +238,9 @@ module SolarWindsOTelAPM
       elsif key == :otel_exporter            # SWO_OTEL_EXPORTER
         @@config[key.to_sym] = value 
 
+      elsif key == :swo_otel_default
+        @@config[key.to_sym] = value.to_s.downcase == "true"
+
       end
     end
 
