@@ -108,7 +108,7 @@ module SolarWindsOTelAPM
           response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
         else
           response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-          SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default exporter is used"
+          SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default response propagator is used"
         end
       end
 
@@ -131,11 +131,11 @@ module SolarWindsOTelAPM
     end
 
     def self.print_config
-      @@config.each do |config|
-        SolarWindsOTelAPM.logger.debug "SolarWindsOTelAPM::Config[:#{config}] = #{@@config[config]}"
+      @@config.each do |config, value|
+        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}] = #{value}"
       end
-      @@config_map.each do |config|
-        SolarWindsOTelAPM.logger.debug "SolarWindsOTelAPM::Config.config_map #{config} = #{@@config_map[config]}"
+      @@config_map.each do |config, value|
+        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config.config_map #{config} = #{value}"
       end
     end
 
@@ -147,9 +147,9 @@ module SolarWindsOTelAPM
     #     SolarWindsOTelAPM::OTelConfig.initialize 
     # 
     # With extrac config 
-    # SolarWindsOTelAPM::OTelConfig.initialize do 
-    #   config = {"OpenTelemetry::Instrumentation::Rack" => {},
-    #             "OpenTelemetry::Instrumentation::Dalli" => {}}
+    # SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
+    #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
     # end
     #
     #
@@ -162,9 +162,7 @@ module SolarWindsOTelAPM
       resolve_service_name
       resolve_instrumentation_config_map
 
-      extra_config = nil
-      extra_config = yield if block_given?
-      @@config_map.merge!(extra_config) if extra_config and extra_config.class == Hash  # merge user provided config for instrumentation
+      yield @@config_map if block_given?
 
       txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
 
