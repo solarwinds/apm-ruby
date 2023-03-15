@@ -116,6 +116,7 @@ module SolarWindsOTelAPM
         host = ''
       end
 
+      host = sanitize_collector_uri(host)
       [reporter, host]
     end
 
@@ -220,6 +221,18 @@ module SolarWindsOTelAPM
       return true if allowed_uri.include? ENV["SW_APM_COLLECTOR"]  
       return false
     end
+
+    def sanitize_collector_uri uri
+      return uri if uri.nil? || uri.empty?
+      begin
+        sanitized_uri = URI("http://#{uri}").host
+        return sanitized_uri unless sanitized_uri.nil?
+      rescue StandardError => e
+        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] uri for collector #{uri} is malformat"
+      end
+      ""    
+    end
+
 
   end
 end
