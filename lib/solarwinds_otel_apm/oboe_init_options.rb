@@ -116,6 +116,7 @@ module SolarWindsOTelAPM
         host = ''
       end
 
+      host = sanitize_collector_uri(host)
       [reporter, host]
     end
 
@@ -190,7 +191,7 @@ module SolarWindsOTelAPM
     def read_certificates
 
       file = ''
-      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if ENV["SW_APM_COLLECTOR"]&.include? "appoptics.com"
+      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if is_appoptics_collector
       file = ENV['SW_APM_TRUSTEDPATH'] if (!ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?)
       
       return String.new if file.empty?
@@ -207,12 +208,32 @@ module SolarWindsOTelAPM
     end
 
     def determine_the_metric_model
-      if ENV['SW_APM_COLLECTOR']&.include? "appoptics.com"
+      if is_appoptics_collector
         return 1
       else
         return 0
       end
     end
+
+    def is_appoptics_collector
+      allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
+                        'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
+      return true if allowed_uri.include? ENV["SW_APM_COLLECTOR"]  
+      return false
+    end
+
+    def sanitize_collector_uri uri
+      return uri if uri.nil? || uri.empty?
+      begin
+        sanitized_uri = URI("http://#{uri}").host
+        return sanitized_uri unless sanitized_uri.nil?
+      rescue StandardError => e
+        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] uri for collector #{uri} is malformat"
+      end
+      ""    
+    end
+
+
   end
 end
 

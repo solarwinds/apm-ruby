@@ -103,7 +103,7 @@ describe 'OboeInitOptions' do
     options = SolarWindsOTelAPM::OboeInitOptions.instance.array_for_oboe
 
     _(options.size).must_equal 21
-    _(options[20]).must_equal 1
+    _(options[20]).must_equal 0
   end
 
   it 'checks for metric mode nighthawk' do
@@ -141,7 +141,7 @@ describe 'OboeInitOptions' do
   it 'checks for default certificates for ao' do
     ENV.delete('SW_APM_TRUSTEDPATH')
     ENV.delete('SW_APM_COLLECTOR')
-    ENV["SW_APM_COLLECTOR"] = 'collector.abc.abc.appoptics.com'
+    ENV["SW_APM_COLLECTOR"] = 'collector.appoptics.com'
 
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     options = SolarWindsOTelAPM::OboeInitOptions.instance.array_for_oboe
@@ -317,5 +317,50 @@ describe 'OboeInitOptions' do
     ENV['SW_APM_PROXY'] = 'http://sgdgsdg'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.grpc_proxy).must_equal ''
+  end
+
+
+  it 'rejects invalid collector string' do
+    ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com:443'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal true
+
+    ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal true
+
+    ENV['SW_APM_COLLECTOR'] = 'puts"abc".appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+
+    ENV['SW_APM_COLLECTOR'] = '\xA4\xA49\x9D\xAC\xA5\x98\xC1.appoptics.com'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+
+    ENV['SW_APM_COLLECTOR'] = 'google.ca.appoptics'
+    is_appoptics = SolarWindsOTelAPM::OboeInitOptions.instance.send(:is_appoptics_collector)
+    _(is_appoptics).must_equal false
+  end
+
+  it 'sanitze uri for collector uri' do
+    uri = 'collector.appoptics.com:443'
+    sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal 'collector.appoptics.com'
+
+    uri = 'collector.appoptics.com'
+    sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal 'collector.appoptics.com'
+
+    uri = 'puts"abc".appoptics.com'
+    sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal ""
+
+    uri = '\xA4\xA49\x9D\xAC\xA5\x98\xC1.appoptics.com'
+    sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal ""
+
+    uri = 'google.ca.appoptics'
+    sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal "google.ca.appoptics"
   end
 end

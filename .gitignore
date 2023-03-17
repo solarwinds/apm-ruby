@@ -56,3 +56,6 @@ sample_start.rb
 # test
 test/.DS_Store
 
+# rubocop
+rubocop.sarif
+
