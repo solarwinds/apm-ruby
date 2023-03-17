@@ -1,8 +1,6 @@
 module SolarWindsOTelAPM
-
   # override the Ruby method, so that no code related to profiling gets executed
   class Profiling
-
     def self.run
       yield
     end

@@ -6,21 +6,22 @@
 module SolarWindsOTelAPM
   ##
   # Provides methods related to layer initialization and reporting
-  module LayerInit #:nodoc:
+  module LayerInit # :nodoc:
     # Internal: Report that instrumentation for the given layer has been
     # installed, as well as the version of instrumentation and version of
     # layer.
     #
-    def self.report_init(layer = :rack) #:nodoc:
+    def self.report_init(layer = :rack) # :nodoc:
       # Don't send __Init in test or if SolarWindsOTelAPM
       # isn't fully loaded (e.g. missing c-extension)
       return if ENV.key?('SW_APM_GEM_TEST') || !SolarWindsOTelAPM.loaded
+
       platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
       log_init(layer, platform_info)
     end
 
     ##
-    #:nodoc:
+    # :nodoc:
     # Internal: Reports agent init to the collector
     #
     # ==== Arguments

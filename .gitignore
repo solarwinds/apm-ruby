@@ -58,4 +58,4 @@ test/.DS_Store
 
 # rubocop
 rubocop.sarif
-
+rubocop_result.txt

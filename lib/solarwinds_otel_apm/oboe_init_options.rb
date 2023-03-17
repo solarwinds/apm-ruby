@@ -116,7 +116,7 @@ module SolarWindsOTelAPM
         host = ''
       end
 
-      host = sanitize_collector_uri(host)
+      host = sanitize_collector_uri(host) unless reporter == 'file'
       [reporter, host]
     end
 
@@ -191,7 +191,7 @@ module SolarWindsOTelAPM
     def read_certificates
 
       file = ''
-      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if is_appoptics_collector
+      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
       file = ENV['SW_APM_TRUSTEDPATH'] if (!ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?)
       
       return String.new if file.empty?
@@ -203,22 +203,22 @@ module SolarWindsOTelAPM
         certificate = String.new
       end
       
-      return certificate
-
+      certificate
     end
 
     def determine_the_metric_model
-      if is_appoptics_collector
-        return 1
+      if appoptics_collector?
+        1
       else
-        return 0
+        0
       end
     end
 
-    def is_appoptics_collector
+    def appoptics_collector?
       allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
-                        'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
+                     'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
       return true if allowed_uri.include? ENV["SW_APM_COLLECTOR"]  
+      
       return false
     end
 

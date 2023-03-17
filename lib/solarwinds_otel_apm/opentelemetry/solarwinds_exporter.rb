@@ -2,9 +2,8 @@
 
 module SolarWindsOTelAPM
   module OpenTelemetry
+    # SolarWindsExporter
     class SolarWindsExporter
-
-
       SUCCESS = ::OpenTelemetry::SDK::Trace::Export::SUCCESS # ::OpenTelemetry  #=> the OpenTelemetry at top level (to ignore SolarWindsOTelAPM)
       FAILURE = ::OpenTelemetry::SDK::Trace::Export::FAILURE
 
@@ -22,11 +21,12 @@ module SolarWindsOTelAPM
         @context = SolarWindsOTelAPM::Context
         @metadata = SolarWindsOTelAPM::Metadata
         @reporter = SolarWindsOTelAPM::Reporter
-        @version_cache = Hash.new
+        @version_cache = {}
       end
 
       def export(span_data, timeout: nil)
         return FAILURE if @shutdown
+        
         SolarWindsOTelAPM.logger.debug "####### span_data: #{span_data} " 
         span_data.each do |data|
           log_span_data(data)

@@ -63,6 +63,8 @@ AllCops:
     - 'tmp/**/*'
     - 'vendor/**/*'
     - '.git/**/*'
+    - 'test/*/*_test.rb'
+    - 'Rakefile'
   # Default formatter will be used if no `-f/--format` option is given.
   DefaultFormatter: progress
   # Cop names are displayed in offense messages by default. Change behavior
@@ -288,7 +290,7 @@ Gemspec/DuplicatedAssignment:
 Gemspec/OrderedDependencies:
   Description: >-
                  Dependencies in the gemspec should be alphabetically sorted.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.51'
   TreatCommentsAsGroupSeparators: true
   # By default, "-" and "_" are ignored for order purposes.
@@ -624,7 +626,7 @@ Layout/EmptyLinesAroundBeginBody:
 Layout/EmptyLinesAroundBlockBody:
   Description: "Keeps track of empty lines around block bodies."
   StyleGuide: '#empty-lines-around-bodies'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   EnforcedStyle: no_empty_lines
   SupportedStyles:
@@ -655,7 +657,7 @@ Layout/EmptyLinesAroundExceptionHandlingKeywords:
 Layout/EmptyLinesAroundMethodBody:
   Description: "Keeps track of empty lines around method bodies."
   StyleGuide: '#empty-lines-around-bodies'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
 
 Layout/EmptyLinesAroundModuleBody:
@@ -704,7 +706,7 @@ Layout/EndOfLine:
 
 Layout/ExtraSpacing:
   Description: 'Do not use unnecessary spacing.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   # When true, allows most uses of extra spacing if the intent is to align
   # things with the previous or next line, not counting empty lines or comment
@@ -779,7 +781,7 @@ Layout/FirstArrayElementLineBreak:
 
 Layout/FirstHashElementIndentation:
   Description: 'Checks the indentation of the first key in a hash literal.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.68'
   VersionChanged: '0.77'
   # The value `special_inside_parentheses` means that hash literals with braces
@@ -845,7 +847,7 @@ Layout/HashAlignment:
   Description: >-
     Align the elements of a hash literal if they span more than
     one line.
-  Enabled: true
+  Enabled: false
   AllowMultipleStyles: true
   VersionAdded: '0.49'
   VersionChanged: '1.16'
@@ -987,7 +989,7 @@ Layout/InitialIndentation:
 Layout/LeadingCommentSpace:
   Description: 'Comments should start with a space.'
   StyleGuide: '#hash-space'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '0.73'
   AllowDoxygenCommentStyle: false
@@ -1039,7 +1041,7 @@ Layout/LineEndStringConcatenationIndentation:
 Layout/LineLength:
   Description: 'Checks that line length does not exceed the configured limit.'
   StyleGuide: '#max-line-length'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.4'
   Max: 120
@@ -1266,7 +1268,7 @@ Layout/SpaceAfterColon:
 Layout/SpaceAfterComma:
   Description: 'Use spaces after commas.'
   StyleGuide: '#spaces-operators'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
 
 Layout/SpaceAfterMethodName:
@@ -1324,7 +1326,7 @@ Layout/SpaceAroundMethodCallOperator:
 Layout/SpaceAroundOperators:
   Description: 'Use a single space around operators.'
   StyleGuide: '#spaces-operators'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   # When `true`, allows most uses of extra spacing if the intent is to align
   # with an operator on the previous or next line, not counting empty lines
@@ -1387,7 +1389,7 @@ Layout/SpaceBeforeSemicolon:
 
 Layout/SpaceInLambdaLiteral:
   Description: 'Checks for spaces in lambda literals.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   EnforcedStyle: require_no_space
   SupportedStyles:
@@ -1501,7 +1503,7 @@ Layout/SpaceInsideStringInterpolation:
 Layout/TrailingEmptyLines:
   Description: 'Checks trailing blank lines and final newline.'
   StyleGuide: '#newline-eof'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '0.77'
   EnforcedStyle: final_newline
@@ -1512,7 +1514,7 @@ Layout/TrailingEmptyLines:
 Layout/TrailingWhitespace:
   Description: 'Avoid trailing whitespace.'
   StyleGuide: '#no-trailing-whitespace'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '1.0'
   AllowInHeredoc: false
@@ -1965,7 +1967,7 @@ Lint/Loop:
 
 Lint/MissingCopEnableDirective:
   Description: 'Checks for a `# rubocop:enable` after `# rubocop:disable`.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.52'
   # Maximum number of consecutive lines the cop can be disabled for.
   # 0 allows only single-line disables
@@ -2073,6 +2075,8 @@ Lint/OutOfRangeRegexpRef:
   Enabled: true
   Safe: false
   VersionAdded: '0.89'
+  Exclude:
+    - 'lib/solarwinds_otel_apm/support_report.rb'
 
 Lint/ParenthesesAsGroupedExpression:
   Description: >-
@@ -2118,7 +2122,7 @@ Lint/RedundantCopDisableDirective:
                  Checks for rubocop:disable comments that can be removed.
                  Note: this cop is not disabled when disabling all cops.
                  It must be explicitly disabled.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.76'
 
 Lint/RedundantCopEnableDirective:
@@ -2415,6 +2419,8 @@ Lint/UnusedMethodArgument:
   AllowUnusedKeywordArguments: false
   IgnoreEmptyMethods: true
   IgnoreNotImplementedMethods: true
+  Exclude:
+    - 'lib/solarwinds_otel_apm/opentelemetry/*rb'
 
 Lint/UriEscapeUnescape:
   Description: >-
@@ -2498,7 +2504,7 @@ Metrics/AbcSize:
   Reference:
     - http://c2.com/cgi/wiki?AbcMetric
     - https://en.wikipedia.org/wiki/ABC_Software_Metric
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.27'
   VersionChanged: '1.5'
   # The ABC size is a calculated magnitude, so this number can be an Integer or
@@ -2535,7 +2541,7 @@ Metrics/BlockNesting:
 
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.87'
   CountComments: false  # count full line comments?
@@ -2563,7 +2569,7 @@ Metrics/CyclomaticComplexity:
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 10 lines of code.'
   StyleGuide: '#short-methods'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.5'
   CountComments: false  # count full line comments?
@@ -2574,7 +2580,7 @@ Metrics/MethodLength:
 
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.31'
   VersionChanged: '0.87'
   CountComments: false  # count full line comments?
@@ -2595,7 +2601,7 @@ Metrics/PerceivedComplexity:
   Description: >-
                  A complexity metric geared towards measuring complexity for a
                  human reader.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.81'
   AllowedMethods: []
@@ -2821,6 +2827,8 @@ Naming/MethodName:
   SupportedStyles:
     - snake_case
     - camelCase
+  Exclude:
+    - 'lib/solarwinds_otel_apm/noop/*.rb'
   # Method names matching patterns are always allowed.
   #
   #   AllowedPatterns:
@@ -3340,7 +3348,7 @@ Style/ClassMethodsDefinitions:
 Style/ClassVars:
   Description: 'Avoid the use of class variables.'
   StyleGuide: '#no-class-vars'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.13'
 
 Style/CollectionCompact:
@@ -3841,7 +3849,7 @@ Style/GlobalVars:
   Description: 'Do not introduce global variables.'
   StyleGuide: '#instance-vars'
   Reference: 'https://www.zenspider.com/ruby/quickref.html'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.13'
   # Built-in global variables are allowed by default.
   AllowedVariables: []
@@ -4567,7 +4575,7 @@ Style/NumericPredicate:
   # object. Switching these methods has to be done with knowledge of the types
   # of the variables which rubocop doesn't have.
   SafeAutoCorrect: false
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.42'
   VersionChanged: '0.59'
   EnforcedStyle: predicate
@@ -4786,7 +4794,7 @@ Style/RedundantAssignment:
 Style/RedundantBegin:
   Description: "Don't use begin blocks when they are not needed."
   StyleGuide: '#begin-implicit'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.10'
   VersionChanged: '0.21'
 
@@ -5142,7 +5150,7 @@ Style/StaticClass:
 Style/StderrPuts:
   Description: 'Use `warn` instead of `$stderr.puts`.'
   StyleGuide: '#warn'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.51'
 
 Style/StringChars:
@@ -5234,7 +5242,7 @@ Style/SymbolArray:
   Enabled: true
   VersionAdded: '0.9'
   VersionChanged: '0.49'
-  EnforcedStyle: percent
+  EnforcedStyle: brackets
   MinSize: 2
   SupportedStyles:
     - percent

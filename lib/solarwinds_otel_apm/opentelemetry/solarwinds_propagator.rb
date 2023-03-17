@@ -1,13 +1,14 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
     module SolarWindsPropagator
+      # TextMapPropagator
       class TextMapPropagator
 
-        TRACESTATE_HEADER_NAME = "tracestate"
-        XTRACEOPTIONS_HEADER_NAME = "x-trace-options"
-        XTRACEOPTIONS_SIGNATURE_HEADER_NAME = "x-trace-options-signature"
-        INTL_SWO_X_OPTIONS_KEY = "sw_xtraceoptions"
-        INTL_SWO_SIGNATURE_KEY = "sw_signature"
+        TRACESTATE_HEADER_NAME    = "tracestate".freeze
+        XTRACEOPTIONS_HEADER_NAME = "x-trace-options".freeze
+        XTRACEOPTIONS_SIGNATURE_HEADER_NAME = "x-trace-options-signature".freeze
+        INTL_SWO_X_OPTIONS_KEY    = "sw_xtraceoptions".freeze
+        INTL_SWO_SIGNATURE_KEY    = "sw_signature".freeze
 
         private_constant \
           :TRACESTATE_HEADER_NAME, :XTRACEOPTIONS_HEADER_NAME, 
@@ -28,7 +29,7 @@ module SolarWindsOTelAPM
 
           SolarWindsOTelAPM.logger.debug "####### context(before): #{context.inspect} #{context.nil?}"
 
-          context = ::OpenTelemetry::Context.new(Hash.new) if context.nil?
+          context = ::OpenTelemetry::Context.new({}) if context.nil?
 
           xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
           context = context.set_value(INTL_SWO_X_OPTIONS_KEY, xtraceoptions_header) if xtraceoptions_header
@@ -59,7 +60,7 @@ module SolarWindsOTelAPM
           return unless span_context&.valid?
 
           sw_value = Transformer.sw_from_context(span_context)  # sw_value is a string
-          trace_state_header = carrier["#{TRACESTATE_HEADER_NAME}"].nil?? nil : carrier["#{TRACESTATE_HEADER_NAME}"]
+          trace_state_header = carrier[TRACESTATE_HEADER_NAME].nil?? nil : carrier[TRACESTATE_HEADER_NAME]
 
           SolarWindsOTelAPM.logger.debug "####### sw_value: #{sw_value}; trace_state_header: #{trace_state_header}"
 
@@ -80,7 +81,7 @@ module SolarWindsOTelAPM
             SolarWindsOTelAPM.logger.debug "Updating/Adding trace state for injection #{trace_state.inspect}"
           end
 
-          setter.set(carrier, "#{TRACESTATE_HEADER_NAME}", Transformer.trace_state_header(trace_state))
+          setter.set(carrier, TRACESTATE_HEADER_NAME, Transformer.trace_state_header(trace_state))
 
         end
 

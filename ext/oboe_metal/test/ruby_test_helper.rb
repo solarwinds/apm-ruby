@@ -1,6 +1,6 @@
 class TestMe
+  # Snapshot
   class Snapshot
-
     class << self
       # !!! do not shift the definition of take_snapshot from line 7 !!!
       # the line number is used to verify a test in frames_test.cc
@@ -8,7 +8,7 @@ class TestMe
         # puts "getting frames ...."
         begin
           ::RubyCalls::get_frames
-        rescue => e
+        rescue StandardError => e
           puts "oops, getting frames didn't work"
           puts e
         end
@@ -19,7 +19,7 @@ class TestMe
           Teddy.new.sing do
             take_snapshot
           end
-        rescue => e
+        rescue StandardError => e
           puts "Ruby call did not work"
           puts e
         end
@@ -27,8 +27,8 @@ class TestMe
     end
   end
 
+  # Teddy
   class Teddy
-
     attr_accessor :name
 
     def sing
@@ -42,7 +42,10 @@ class TestMe
     private
 
     def yodel
-      a_proc = -> (x) { x * x;  yield }
+      a_proc = lambda(x) do 
+                 x * x
+                 yield
+               end
       in_block(&a_proc)
     end
 
@@ -50,7 +53,7 @@ class TestMe
       begin
         yield 7
         # puts "block called!"
-      rescue => e
+      rescue StandardError => e
         puts "no, this should never happen"
         puts e
       end

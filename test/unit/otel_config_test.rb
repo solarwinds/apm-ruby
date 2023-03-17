@@ -61,18 +61,9 @@ describe 'Loading Opentelemetry Test' do
   end
 
   it 'test_should_set_solarwinds_processor_when_swo_otel_processor_is_solarwinds' do
-    ENV['SWO_OTEL_PROCESSOR'] = 'solarwinds'
-    SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig[:span_processor]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
-  
-  end
-
-  it 'test_should_set_default_processor_and_warn_when_swo_otel_processor_is_not_solarwinds' do
-    ENV.delete('SWO_OTEL_PROCESSOR')
     SolarWindsOTelAPM::OTelConfig.initialize
     _(SolarWindsOTelAPM::OTelConfig[:span_processor]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
   end
-
 
   it 'test_should_set_solarwinds_exporter_when_swo_otel_exporter_is_solarwinds' do
     ENV['SWO_OTEL_EXPORTER'] = 'solarwinds'

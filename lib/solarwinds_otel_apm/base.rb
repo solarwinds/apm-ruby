@@ -102,7 +102,8 @@ module SolarWindsOTelAPMBase
   #
   def tracing?
     SolarWindsOTelAPM.logger.debug "#{SolarWindsOTelAPM.loaded} #{SolarWindsOTelAPM::Context.isSampled} result======#######"
-    return false if !SolarWindsOTelAPM.loaded # || SolarWindsOTelAPM.tracing_disabled?
+    return false unless SolarWindsOTelAPM.loaded # || SolarWindsOTelAPM.tracing_disabled?
+    
     SolarWindsOTelAPM::Context.isSampled
   end
 
@@ -127,19 +128,19 @@ module SolarWindsOTelAPMBase
   # currently only Oboe_metal
   #
   def sample?(_opts = {})
-    fail 'sample? should be implemented by metal layer.'
+    raise 'sample? should be implemented by metal layer.'
   end
 
   def log(_layer, _label, _options = {})
-    fail 'log should be implemented by metal layer.'
+    raise 'log should be implemented by metal layer.'
   end
 
-  def set_tracing_mode(_mode)
-    fail 'set_tracing_mode should be implemented by metal layer.'
+  def tracing_mode(_mode)
+    raise 'tracing_mode should be implemented by metal layer.'
   end
 
-  def set_sample_rate(_rate)
-    fail 'set_sample_rate should be implemented by metal layer.'
+  def sample_rate(_rate)
+    raise 'sample_rate should be implemented by metal layer.'
   end
 end
 

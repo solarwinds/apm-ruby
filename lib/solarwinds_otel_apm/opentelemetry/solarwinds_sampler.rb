@@ -84,7 +84,7 @@ module SolarWindsOTelAPM
       end
 
       # return Hash
-      def calculate_liboboe_decision parent_span_context, xtraceoptions
+      def calculate_liboboe_decision(parent_span_context, xtraceoptions)
 
         tracestring = nil
         if parent_span_context.valid? && parent_span_context.remote?
@@ -125,7 +125,7 @@ module SolarWindsOTelAPM
         do_metrics, do_sample, rate, source, bucket_rate, \
             bucket_cap, decision_type, auth, status_msg, auth_msg, status = SolarWindsOTelAPM::Context.getDecisions(*args)
 
-        decision = Hash.new
+        decision = {}
         decision["do_metrics"]    = do_metrics > 0
         decision["do_sample"]     = do_sample > 0 
         decision["rate"]          = rate
@@ -141,7 +141,7 @@ module SolarWindsOTelAPM
       end
 
 
-      def otel_decision_from_liboboe liboboe_decision
+      def otel_decision_from_liboboe(liboboe_decision)
 
         decision = ::OpenTelemetry::SDK::Trace::Samplers::Decision::DROP
         if liboboe_decision["do_sample"]
@@ -154,7 +154,7 @@ module SolarWindsOTelAPM
 
       end
 
-      def create_xtraceoptions_response_value decision, parent_span_context, xtraceoptions
+      def create_xtraceoptions_response_value(decision, parent_span_context, xtraceoptions)
 
         response = Array.new
 
@@ -196,7 +196,7 @@ module SolarWindsOTelAPM
       end
 
 
-      def create_new_trace_state parent_span_context, decision, xtraceoptions
+      def create_new_trace_state(parent_span_context, decision, xtraceoptions)
         decision = sw_from_span_and_decision(parent_span_context, decision)
         trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => decision}) # e.g. sw=3e222c863a04123a-01
         SolarWindsOTelAPM.logger.debug "Created new trace_state: #{trace_state.inspect}"
@@ -209,7 +209,7 @@ module SolarWindsOTelAPM
       # This function merely just add sw=value and xtrace_options_response=value into the old/new tracestate 
       # The return value tracestate will be used in propagating to next services
       # 
-      def calculate_trace_state decision, parent_span_context, xtraceoptions
+      def calculate_trace_state(decision, parent_span_context, xtraceoptions)
         SolarWindsOTelAPM.logger.debug "calculate_trace_state parent_span_context: #{parent_span_context.inspect}"
         if !parent_span_context.valid?
           
@@ -242,7 +242,7 @@ module SolarWindsOTelAPM
       # trace_state is the new trace_state from existing span information
       # parent_span_context.trace_state is from its parent 
       #
-      def add_tracestate_capture_to_attributes_dict attributes_dict, decision, trace_state, parent_span_context
+      def add_tracestate_capture_to_attributes_dict(attributes_dict, decision, trace_state, parent_span_context)
         
         tracestate_capture = attributes_dict[SW_TRACESTATE_CAPTURE_KEY]
         SolarWindsOTelAPM.logger.debug "####### tracestate_capture #{tracestate_capture.inspect}; attributes_dict #{attributes_dict.inspect}; trace_state #{trace_state.inspect}; parent_span_context: #{parent_span_context.inspect}"        
@@ -279,7 +279,7 @@ module SolarWindsOTelAPM
       # calculate_attributes use new_trace_state that is derived from current span information and old tracestate from parent_span_context.tracestate
       # the sw.w3c.tracestate should perserve the old tracestate value for debugging purpose
       ##
-      def calculate_attributes span_name, attributes, decision, trace_state, parent_span_context, xtraceoptions
+      def calculate_attributes(span_name, attributes, decision, trace_state, parent_span_context, xtraceoptions)
         SolarWindsOTelAPM.logger.debug "Received attributes: #{attributes.inspect}; decision:#{decision.inspect}; trace_state:#{trace_state.inspect}; parent_span_context:#{parent_span_context.inspect}; xtraceoptions:#{xtraceoptions.inspect}"
 
         otel_decision = otel_decision_from_liboboe(decision)
@@ -287,7 +287,7 @@ module SolarWindsOTelAPM
         
         SolarWindsOTelAPM.logger.debug("Trace decision is_sampled - setting attributes #{otel_decision.inspect}")
 
-        new_attributes = Hash.new
+        new_attributes = {}
         # Copy existing MappingProxyType KV into new_attributes for modification.
         attributes.each {|k,v| new_attributes[k] = v } if attributes
 
@@ -324,7 +324,7 @@ module SolarWindsOTelAPM
         return new_attributes.freeze
       end
 
-      def sw_from_span_and_decision parent_span_context, decision
+      def sw_from_span_and_decision(parent_span_context, decision)
         trace_flag = Transformer.trace_flags_from_boolean(decision["do_sample"])
         return Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, trace_flag)
       end

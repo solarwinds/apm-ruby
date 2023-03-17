@@ -10,7 +10,7 @@ begin
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
   require 'solarwinds_otel_apm/config'
-  
+
   SolarWindsOTelAPM::Config.load_config_file
 
   SolarWindsOTelAPM.loaded = false
@@ -19,7 +19,7 @@ begin
       require_relative './libsolarwinds_apm.so'
       require 'solarwinds_otel_apm/layerinit'
       require 'solarwinds_otel_apm/oboe_init_options'
-      require 'oboe_metal.rb'  # initialize Reporter; sets SolarWindsOTelAPM.loaded = true if successful
+      require_relative './oboe_metal'  # initialize Reporter; sets SolarWindsOTelAPM.loaded = true if successful
     else
       SolarWindsOTelAPM.logger.warn '==================================================================='
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: Platform #{RUBY_PLATFORM} not yet supported."
@@ -46,8 +46,11 @@ begin
   if SolarWindsOTelAPM.loaded
     require 'solarwinds_otel_apm/load_opentelemetry'
     require 'solarwinds_otel_apm/otel_config'
-    SolarWindsOTelAPM::OTelConfig.initialize if SolarWindsOTelAPM::Config[:swo_otel_default] == true
-    SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize swo otel config by yourself" if SolarWindsOTelAPM::Config[:swo_otel_default] == false
+    if SolarWindsOTelAPM::Config[:swo_otel_default]
+      SolarWindsOTelAPM::OTelConfig.initialize 
+    else
+      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize swo otel config by yourself"
+    end
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'

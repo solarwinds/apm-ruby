@@ -9,13 +9,13 @@ require 'open-uri'
 require 'no_proxy_fix'
 
 CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, '')
-                        .gsub(/-Wimplicit-function-declaration/, '')
-                        .gsub(/-Wimplicit-int/, '')
-                        .gsub(/-Wno-tautological-compare/, '')
-                        .gsub(/-Wno-self-assign/, '')
-                        .gsub(/-Wno-parentheses-equality/, '')
-                        .gsub(/-Wno-constant-logical-operand/, '')
-                        .gsub(/-Wno-cast-function-type/, '')
+                                         .gsub(/-Wimplicit-function-declaration/, '')
+                                         .gsub(/-Wimplicit-int/, '')
+                                         .gsub(/-Wno-tautological-compare/, '')
+                                         .gsub(/-Wno-self-assign/, '')
+                                         .gsub(/-Wno-parentheses-equality/, '')
+                                         .gsub(/-Wno-constant-logical-operand/, '')
+                                         .gsub(/-Wno-cast-function-type/, '')
 init_mkmf(CONFIG)
 
 ext_dir = File.expand_path(File.dirname(__FILE__))
@@ -77,7 +77,7 @@ while retries > 0
       success = true
       retries = 0
     end
-  rescue => e
+  rescue StandardError => e
     File.write(clib, '')
     retries -= 1
     if retries == 0
@@ -127,15 +127,15 @@ if success
 
     create_makefile('libsolarwinds_apm', 'src')
   else
-    $stderr.puts   '== ERROR ========================================================='
+    $stderr.puts '== ERROR ========================================================='
     if have_library('oboe')
       $stderr.puts "The c-library either needs to be updated or doesn't match the OS."
       $stderr.puts 'No tracing will occur.'
     else
       $stderr.puts 'Could not find a matching c-library. No tracing will occur.'
     end
-    $stderr.puts   'Contact technicalsupport@solarwinds.com if the problem persists.'
-    $stderr.puts   '=================================================================='
+    $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
+    $stderr.puts '=================================================================='
     create_makefile('oboe_noop', 'noop')
   end
 end

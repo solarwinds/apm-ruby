@@ -28,11 +28,8 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '*   Please email the output of this report to technicalsupport@solarwinds.com'
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn "Ruby: #{RUBY_DESCRIPTION}"
-    SolarWindsOTelAPM.logger.warn "$0: #{$0}"
-    SolarWindsOTelAPM.logger.warn "$1: #{$1}" unless $1.nil?
-    SolarWindsOTelAPM.logger.warn "$2: #{$2}" unless $2.nil?
-    SolarWindsOTelAPM.logger.warn "$3: #{$3}" unless $3.nil?
-    SolarWindsOTelAPM.logger.warn "$4: #{$4}" unless $4.nil?
+    SolarWindsOTelAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}"   # replace $0 to get executing script
+    SolarWindsOTelAPM.logger.warn "ARGV: #{ARGV.inspect}" 
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM.loaded == #{SolarWindsOTelAPM.loaded}"
 
     on_heroku = SolarWindsOTelAPM.heroku?
@@ -53,7 +50,7 @@ module SolarWindsOTelAPM
     if using_rails
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rails loaded?: #{yesno(defined?(SolarWindsOTelAPM::Rails))}"
       if defined?(SolarWindsOTelAPM::Rack)
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rack middleware loaded?: #{yesno(::Rails.configuration.middleware.include? SolarWindsOTelAPM::Rack)}"
+        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rack middleware loaded?: #{yesno(::Rails.configuration.middleware.include?(SolarWindsOTelAPM::Rack))}"
       end
     end
 

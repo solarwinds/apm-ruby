@@ -2,13 +2,12 @@ require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
 
-# customized component
-pattern = File.join(File.dirname(__FILE__), 'opentelemetry', '*.rb')
-Dir.glob(pattern) do |f|
-  begin
-    require f
-  rescue => e
-    SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/loading] Error loading opentelemetry file '#{f}' : #{e}"
-    SolarWindsOTelAPM.logger.debug "[solarwinds_otel_apm/loading] #{e.backtrace.first}"
-  end
-end
+require_relative './opentelemetry/oboe_tracing_mode'
+require_relative './opentelemetry/solarwinds_txn_name_manager'
+require_relative './opentelemetry/transformer'
+require_relative './opentelemetry/solarwinds_propagator'
+require_relative './opentelemetry/solarwinds_processor'
+require_relative './opentelemetry/x_trace_options'
+require_relative './opentelemetry/solarwinds_sampler'
+require_relative './opentelemetry/solarwinds_exporter'
+require_relative './opentelemetry/solarwinds_response_propagator'

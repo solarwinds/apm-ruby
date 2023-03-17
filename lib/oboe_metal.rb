@@ -1,8 +1,6 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-require 'thread'
-
 # Disable docs and Camelcase warns since we're implementing
 # an interface here.  See OboeBase for details.
 # rubocop:disable Style/Documentation, Naming/MethodName
@@ -29,7 +27,7 @@ module SolarWindsOTelAPM
           # report __Init
           SolarWindsOTelAPM::LayerInit.report_init
 
-        rescue => e
+        rescue StandardError=> e
           $stderr.puts e.message
           raise
         end
@@ -111,7 +109,7 @@ module SolarWindsOTelAPM
   end
 
   class << self
-    def set_sample_rate(rate)
+    def sample_rate(rate)
       return unless SolarWindsOTelAPM.loaded
 
       # Update liboboe with the new SampleRate value

@@ -9,13 +9,13 @@ require 'open-uri'
 require 'no_proxy_fix'
 
 CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, '')
-                        .gsub(/-Wimplicit-function-declaration/, '')
-                        .gsub(/-Wimplicit-int/, '')
-                        .gsub(/-Wno-tautological-compare/, '')
-                        .gsub(/-Wno-self-assign/, '')
-                        .gsub(/-Wno-parentheses-equality/, '')
-                        .gsub(/-Wno-constant-logical-operand/, '')
-                        .gsub(/-Wno-cast-function-type/, '')
+                                         .gsub(/-Wimplicit-function-declaration/, '')
+                                         .gsub(/-Wimplicit-int/, '')
+                                         .gsub(/-Wno-tautological-compare/, '')
+                                         .gsub(/-Wno-self-assign/, '')
+                                         .gsub(/-Wno-parentheses-equality/, '')
+                                         .gsub(/-Wno-constant-logical-operand/, '')
+                                         .gsub(/-Wno-cast-function-type/, '')
 init_mkmf(CONFIG)
 
 ext_dir = File.expand_path(File.dirname(__FILE__))

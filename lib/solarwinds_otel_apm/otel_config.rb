@@ -1,14 +1,14 @@
 module SolarWindsOTelAPM
+
+  # OTelConfig module
+  # For configure otel component: configurable: propagator, exporter
+  #                               non-config: sampler, processor, response_propagator
+  # Level of this configuration: SolarWindsOTel::Config -> OboeOption -> SolarWindsOTel::OTelConfig
   module OTelConfig
 
     @@config = {}
     @@config_map = {}
-    @@instrumentations = [] # used for use_all/use 
-
-    def self.resolve_service_name
-      @@config[:service_name] = ENV['SERVICE_NAME'] || SolarWindsOTelAPM::Config[:service_name] || ''
-
-    end
+    @@instrumentations = [] # used for use_all/use
 
     # propagator config is comma separated
     # propagator setup: must include otel's tracecontext propagator, and the order matters
@@ -35,19 +35,6 @@ module SolarWindsOTelAPM
       end
 
       @@config[:propagators] = propagators_list
-
-    end
-
-    def self.resolve_span_processor
-      span_processor = ENV["SWO_OTEL_PROCESSOR"] || SolarWindsOTelAPM::Config[:otel_processor] || ''
-      case span_processor
-      when 'solarwinds'
-        @@config[:span_processor] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
-      else
-        @@config[:span_processor] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
-        SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default processor is used"
-      end
-
     end
 
     def self.resolve_exporter
@@ -63,67 +50,46 @@ module SolarWindsOTelAPM
 
     end
 
+    def self.resolve_span_processor
+      @@config[:span_processor] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+    end
+
+    def self.resolve_service_name
+      @@config[:service_name] = ENV['SERVICE_NAME'] || SolarWindsOTelAPM::Config[:service_name] || ''
+    end
+
     def self.resolve_sampler
-
       resolve_sampler_config
-
-      sampler = ENV["SWO_OTEL_SAMPLER"] || SolarWindsOTelAPM::Config[:otel_sampler] || ''
-      case sampler
-      when 'solarwinds'
-        @@config[:sampler] = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-                      root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                      remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                      remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
-      else
-
-        @@config[:sampler] = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-                      root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                      remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                      remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
-        SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default sampler is used"
-      end
-
+      @@config[:sampler] = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+            root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+            remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+            remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config])
+          )
     end
 
     def self.resolve_sampler_config
-
-      sampler_config = Hash.new
-      sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
-      @@config[:sampler_config] = sampler_config
-
+      if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
+        @@config[:sampler_config] = {"trigger_trace" => "enabled"}
+      end
     end
 
     # 
-    # Current strategy is to have the ENV or config to detect the possible configuration for each instrumentation.
-    # When initialize, there is no change allowed (resolve_instrumentation_config_map happens before initialize)
-    # More fliexable way is to disable loading opentelemetry by default, and then user can load swo-customized configuration (for otel) manually
-    # Because reporter initialization is before opentelemetry initialization
-    # 
-    def self.resolve_instrumentation_config_map
-      response_propagators = ENV["SWO_OTEL_RESPONSE_PROPAGATOR"] || SolarWindsOTelAPM::Config[:otel_response_propagator] || 'solarwinds'
-      response_propagators_list = Array.new
-      response_propagators.split(",").each do |res|
-        case res
-        when 'solarwinds'
-          response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-        else
-          response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-          SolarWindsOTelAPM::Logger.warn "[solarwinds_otel_apm/otel_config] The default response propagator is used"
-        end
+    # Response propagator that inside Rack instrumentation is default swo 
+    def self.resolve_response_propagator
+      response_propagators_list = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
+      if @@config_map["OpenTelemetry::Instrumentation::Rack"]
+        @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
+      else
+        @@config_map["OpenTelemetry::Instrumentation::Rack"] = { response_propagators: response_propagators_list }
       end
-
-      @@config_map["OpenTelemetry::Instrumentation::Rack"] = { response_propagators: response_propagators_list}
-
     end
 
     # this may not even needed if use_all is allowed
     # 
     def self.resolve_instrumentation_library
       # determine which gem is loaded and load the corresponding instrumentation
-      if defined?(Rack)
-        @@instrumentations << 'OpenTelemetry::Instrumentation::Rack'
-      end
-
+      @@instrumentations << 'OpenTelemetry::Instrumentation::Rack' if defined?(Rack)
+      
     end
 
     def self.[](key)
@@ -155,16 +121,16 @@ module SolarWindsOTelAPM
     #
     def self.initialize
 
+      resolve_service_name
       resolve_propagators
       resolve_sampler
-      resolve_exporter
       resolve_span_processor
-      resolve_service_name
-      resolve_instrumentation_config_map
+      resolve_exporter
 
       yield @@config_map if block_given?
 
-      txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
+      resolve_response_propagator
+      txn_name_manager     = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
 
       if defined?(::OpenTelemetry::SDK::Configurator)
         ::OpenTelemetry::SDK.configure do |c|
@@ -186,6 +152,3 @@ module SolarWindsOTelAPM
     end
   end
 end
-
-
-

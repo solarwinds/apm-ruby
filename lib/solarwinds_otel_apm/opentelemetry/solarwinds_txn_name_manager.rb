@@ -3,7 +3,7 @@ module SolarWindsOTelAPM
     class SolarWindsTxnNameManager
 
       def initialize
-        @cache = Hash.new
+        @cache = {}
       end
 
       def get(key)
