@@ -5,10 +5,9 @@
 # noop version of SolarWindsAPM::Metadata
 #
 #
-
 module SolarWindsOTelAPM
+  # Metadata
   class Metadata
-
     ##
     # noop version of :makeRandom
     #

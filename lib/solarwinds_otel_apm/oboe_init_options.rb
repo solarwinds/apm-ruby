@@ -1,10 +1,8 @@
 # Copyright (c) 2019 SolarWinds, LLC.
 # All rights reserved.
-
 require 'singleton'
-
 module SolarWindsOTelAPM
-
+  # OboeInitOptions
   class OboeInitOptions
     include Singleton
 
@@ -46,7 +44,7 @@ module SolarWindsOTelAPM
       # custom token bucket rate
       @token_bucket_rate = (ENV['SW_APM_TOKEN_BUCKET_RATE'] || -1).to_i
       # use single files in file reporter for each event
-      @file_single = (ENV['SW_APM_REPORTER_FILE_SINGLE'].to_s.downcase == 'true') ? 1 : 0
+      @file_single = ENV['SW_APM_REPORTER_FILE_SINGLE'].to_s.downcase == 'true' ? 1 : 0
       # timeout for ec2 metadata
       @ec2_md_timeout = read_and_validate_ec2_md_timeout
       @grpc_proxy = read_and_validate_proxy
@@ -57,7 +55,8 @@ module SolarWindsOTelAPM
       @metric_format = determine_the_metric_model
     end
 
-    def re_init # for testing with changed ENV vars
+    # for testing with changed ENV vars
+    def re_init
       initialize
     end
 
@@ -89,7 +88,7 @@ module SolarWindsOTelAPM
     end
 
     def service_key_ok?
-      return !@service_key.empty? || @reporter != 'ssl'
+      !@service_key.empty? || @reporter != 'ssl'
     end
 
     private
@@ -107,7 +106,7 @@ module SolarWindsOTelAPM
         host = ENV['SW_APM_COLLECTOR'] || ''
       when 'udp'
         host = ENV['SW_APM_COLLECTOR']
-        # TODO decide what to do
+        # TODO: decide what to do
         # ____ SolarWindsOTelAPM::Config[:reporter_host] and
         # ____ SolarWindsOTelAPM::Config[:reporter_port] were moved here from
         # ____ oboe_metal.rb and are not documented anywhere
@@ -129,19 +128,19 @@ module SolarWindsOTelAPM
         return ''
       end
 
-      match = service_key.match( /([^:]+)(:{0,1})(.*)/ )
+      match = service_key.match(/([^:]+)(:{0,1})(.*)/)
       token = match[1]
       service_name = match[3]
 
       return '' unless validate_token(token)
       return '' unless validate_transform_service_name(service_name)
 
-      return "#{token}:#{service_name}"
+      "#{token}:#{service_name}"
     end
 
     def validate_token(token)
       if (token !~ /^[0-9a-zA-Z_-]{71}$/) && ENV['SW_APM_COLLECTOR'] !~ /java-collector:1222/
-        masked = "#{token[0..3]}...#{token[-4..-1]}"
+        masked = "#{token[0..3]}...#{token[-4..]}"
         SolarWindsOTelAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"
         return false
       end
@@ -172,8 +171,9 @@ module SolarWindsOTelAPM
     def read_and_validate_ec2_md_timeout
       timeout = ENV['SW_APM_EC2_METADATA_TIMEOUT']
       return 1000 unless timeout.is_a?(Integer) || timeout =~ /^\d+$/
+      
       timeout = timeout.to_i
-      return timeout.between?(0, 3000) ? timeout : 1000
+      timeout.between?(0, 3000) ? timeout : 1000
     end
 
     def read_and_validate_proxy
@@ -192,7 +192,7 @@ module SolarWindsOTelAPM
 
       file = ''
       file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
-      file = ENV['SW_APM_TRUSTEDPATH'] if (!ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?)
+      file = ENV['SW_APM_TRUSTEDPATH'] if !ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?
       
       return String.new if file.empty?
       
@@ -207,33 +207,26 @@ module SolarWindsOTelAPM
     end
 
     def determine_the_metric_model
-      if appoptics_collector?
-        1
-      else
-        0
-      end
+      appoptics_collector? ? 1 : 0
     end
 
     def appoptics_collector?
       allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
                      'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
-      return true if allowed_uri.include? ENV["SW_APM_COLLECTOR"]  
-      
-      return false
+
+      allowed_uri.include? ENV["SW_APM_COLLECTOR"] ? true : false
     end
 
-    def sanitize_collector_uri uri
+    def sanitize_collector_uri(uri)
       return uri if uri.nil? || uri.empty?
+
       begin
         sanitized_uri = URI("http://#{uri}").host
         return sanitized_uri unless sanitized_uri.nil?
       rescue StandardError => e
-        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] uri for collector #{uri} is malformat"
+        SolarWindsOTelAPM.logger.error "[solarwinds_otel_apm/oboe_options] uri for collector #{uri} is malformat. Error: #{e.message}"
       end
       ""    
     end
-
-
   end
 end
-

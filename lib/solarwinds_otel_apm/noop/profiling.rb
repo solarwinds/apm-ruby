@@ -8,12 +8,10 @@ module SolarWindsOTelAPM
 
   # these put the c-functions into "noop"
   module CProfiler
-    def self.set_interval(_)
-      # do nothing
-    end
+    def self.set_interval(_); end
 
     def self.get_tid
-      return 0
+      0
     end
   end
 end

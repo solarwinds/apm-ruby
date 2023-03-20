@@ -43,7 +43,6 @@ module SolarWindsOTelAPMBase
   # global config options.
   thread_local :config_lock
 
-
   ##
   # tracing_layer?
   #
@@ -71,10 +70,11 @@ module SolarWindsOTelAPMBase
     end
 
     return false if SolarWindsOTelAPM.layer_op.nil? || SolarWindsOTelAPM.layer_op.empty? || !operation.respond_to?(:to_sym)
+    
     SolarWindsOTelAPM.layer_op.last == operation.to_sym
   end
 
-  # TODO review use of these boolean statements
+  # TODO: review use of these boolean statements
   # ____ they should now be handled by TransactionSettings,
   # ____ because there can be exceptions to :enabled and :disabled
 
@@ -108,7 +108,7 @@ module SolarWindsOTelAPMBase
   end
 
   def heroku?
-    ENV.key?('SW_APM_URL')
+    ENV.has_key?('SW_APM_URL')
   end
 
   ##
@@ -127,11 +127,11 @@ module SolarWindsOTelAPMBase
   # These methods should be implemented by the descendants
   # currently only Oboe_metal
   #
-  def sample?(_opts = {})
+  def sample?(_opts={})
     raise 'sample? should be implemented by metal layer.'
   end
 
-  def log(_layer, _label, _options = {})
+  def log(_layer, _label, _options={})
     raise 'log should be implemented by metal layer.'
   end
 

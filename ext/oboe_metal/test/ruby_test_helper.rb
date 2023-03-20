@@ -1,5 +1,4 @@
 class TestMe
-  # Snapshot
   class Snapshot
     class << self
       # !!! do not shift the definition of take_snapshot from line 7 !!!
@@ -7,7 +6,7 @@ class TestMe
       def take_snapshot
         # puts "getting frames ...."
         begin
-          ::RubyCalls::get_frames
+          ::RubyCalls.get_frames   # RubyCalls is defined in frames_test.cc
         rescue StandardError => e
           puts "oops, getting frames didn't work"
           puts e
@@ -27,7 +26,6 @@ class TestMe
     end
   end
 
-  # Teddy
   class Teddy
     attr_accessor :name
 
@@ -43,7 +41,7 @@ class TestMe
 
     def yodel
       a_proc = lambda(x) do 
-                 x * x
+                 x = x*x
                  yield
                end
       in_block(&a_proc)
@@ -63,8 +61,5 @@ class TestMe
       html = "<#{tag}>#{text}</#{tag}>"
       yield html
     end
-
   end
 end
-
-

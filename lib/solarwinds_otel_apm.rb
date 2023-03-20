@@ -29,7 +29,7 @@ begin
       SolarWindsOTelAPM.logger.warn '==================================================================='
     end
   rescue LoadError => e
-    unless ENV['RAILS_GROUP'] == 'assets' or ENV['SW_APM_NO_LIBRARIES_WARNING']
+    unless ENV['RAILS_GROUP'] == 'assets' || ENV['SW_APM_NO_LIBRARIES_WARNING']
       SolarWindsOTelAPM.logger.error '=============================================================='
       SolarWindsOTelAPM.logger.error 'Missing SolarWindsOTelAPM libraries.  Tracing disabled.'
       SolarWindsOTelAPM.logger.error "Error: #{e.message}"
@@ -62,7 +62,7 @@ begin
   end
 
   require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
-rescue => e
+rescue StandardError => e
   $stderr.puts "[solarwinds_otel_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace
 end

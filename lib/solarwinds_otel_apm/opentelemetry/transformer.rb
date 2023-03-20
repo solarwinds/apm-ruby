@@ -1,23 +1,16 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
-  
+    # Transformer
     class Transformer
-
-      DECISION = "{}"
-      SPAN_ID_HEX = "{:016x}"
-      TRACE_FLAGS_HEX = "{:02x}"
-      TRACE_ID_HEX = "{:032x}"
-      VERSION = "00"
-
+      VERSION = '00'.freeze
 
       def self.sw_from_context(span_context)
         flag = span_context.trace_flags.sampled?? 1 : 0
-        sw = "#{span_context.hex_span_id}-0#{flag}"
-        sw
+        "#{span_context.hex_span_id}-0#{flag}"
       end
 
       def self.trace_state_header(trace_state)
-        arr = Array.new
+        arr = []
         trace_state.to_h.each do |key, value|
           arr << "#{key}=#{value}"
         end
@@ -44,15 +37,11 @@ module SolarWindsOTelAPM
       end
 
       def self.trace_flags_from_boolean(trace_flags)
-        trace_flag = (trace_flags == true)? "01" : "00"
+        trace_flags == true ? "01" : "00"
       end
 
-      def trace_flags_from_boolean(trace_flags)
-        trace_flag = (trace_flags == true)? "01" : "00"
-      end
-
-      def self.is_sampled?(decision)
-        (decision == ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
+      def self.sampled?(decision)
+        decision == ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE
       end
 
       def self.span_id_from_sw(sw_value)
@@ -62,9 +51,6 @@ module SolarWindsOTelAPM
       def self.create_key(name_)
         ::OpenTelemetry::Context.create_key(name_)
       end
-
     end
-
   end
-  
 end

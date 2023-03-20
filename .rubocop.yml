@@ -228,7 +228,7 @@ Bundler/InsecureProtocolSource:
 Bundler/OrderedGems:
   Description: >-
                  Gems within groups in the Gemfile should be alphabetically sorted.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.46'
   VersionChanged: '0.47'
   TreatCommentsAsGroupSeparators: true
@@ -312,7 +312,7 @@ Gemspec/RequireMFA:
 
 Gemspec/RequiredRubyVersion:
   Description: 'Checks that `required_ruby_version` of gemspec is specified and equal to `TargetRubyVersion` of .rubocop.yml.'
-  Enabled: true
+  Enabled: false
   Severity: warning
   VersionAdded: '0.52'
   VersionChanged: '1.40'
@@ -721,10 +721,10 @@ Layout/ExtraSpacing:
 
 Layout/FirstArgumentIndentation:
   Description: 'Checks the indentation of the first argument in a method call.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.68'
   VersionChanged: '0.77'
-  EnforcedStyle: special_for_inner_method_call_in_parentheses
+  EnforcedStyle: consistent
   SupportedStyles:
     # The first parameter should always be indented one step more than the
     # preceding line.
@@ -1308,7 +1308,7 @@ Layout/SpaceAroundEqualsInParameterDefault:
   StyleGuide: '#spaces-around-equals'
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -1341,13 +1341,13 @@ Layout/SpaceBeforeBlockBraces:
   Description: >-
                  Checks that the left block brace has or doesn't have space
                  before it.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
-  EnforcedStyleForEmptyBraces: space
+  EnforcedStyleForEmptyBraces: no_space
   SupportedStylesForEmptyBraces:
     - space
     - no_space
@@ -1422,9 +1422,9 @@ Layout/SpaceInsideBlockBraces:
                  Checks that block braces have or don't have surrounding space.
                  For blocks taking parameters, checks that the left brace has
                  or doesn't have trailing space.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -1440,7 +1440,7 @@ Layout/SpaceInsideHashLiteralBraces:
   StyleGuide: '#spaces-braces'
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -2031,7 +2031,7 @@ Lint/NonAtomicFileOperation:
 
 Lint/NonDeterministicRequireOrder:
   Description: 'Always sort arrays returned by Dir.glob when requiring files.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.78'
   Safe: false
 
@@ -2516,7 +2516,7 @@ Metrics/AbcSize:
 
 Metrics/BlockLength:
   Description: 'Avoid long blocks with many lines.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.44'
   VersionChanged: '1.5'
   CountComments: false  # count full line comments?
@@ -2559,10 +2559,10 @@ Metrics/CyclomaticComplexity:
   Description: >-
                  A complexity metric that is strongly correlated to the number
                  of test cases needed to validate a method.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.81'
-  AllowedMethods: []
+  AllowedMethods: ["report_server_in_use","resolve_propagators","method_alias","calculate_attributes"]
   AllowedPatterns: []
   Max: 7
 
@@ -2590,7 +2590,7 @@ Metrics/ModuleLength:
 Metrics/ParameterLists:
   Description: 'Avoid parameter lists longer than three or four parameters.'
   StyleGuide: '#too-many-params'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.5'
   Max: 5
@@ -2604,7 +2604,7 @@ Metrics/PerceivedComplexity:
   Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.81'
-  AllowedMethods: []
+  AllowedMethods: ['report_server_in_use']
   AllowedPatterns: []
   Max: 8
 
@@ -2937,6 +2937,7 @@ Naming/VariableNumber:
     - rfc2822      # Time#rfc2822
     - rfc3339      # DateTime.rfc3339
     - x86_64       # Allowed by default as an underscore separated CPU architecture name
+    - mri_19
   AllowedPatterns: []
 
 #################### Security ##############################
@@ -3023,10 +3024,10 @@ Style/AccessorGrouping:
 Style/Alias:
   Description: 'Use alias instead of alias_method.'
   StyleGuide: '#alias-method-lexically'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '0.36'
-  EnforcedStyle: prefer_alias
+  EnforcedStyle: prefer_alias_method
   SupportedStyles:
     - prefer_alias
     - prefer_alias_method
@@ -3286,7 +3287,7 @@ Style/ClassAndModuleChildren:
   # have the knowledge to perform either operation safely and thus requires
   # manual oversight.
   SafeAutoCorrect: false
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.19'
   #
   # Basically there are two different styles:
@@ -3302,7 +3303,7 @@ Style/ClassAndModuleChildren:
   #   end
   #
   # The compact style is only forced, for classes or modules with one child.
-  EnforcedStyle: nested
+  EnforcedStyle: compact
   SupportedStyles:
     - nested
     - compact
@@ -3463,10 +3464,10 @@ Style/ConditionalAssignment:
                  Use the return value of `if` and `case` statements for
                  assignment to a variable and variable comparison instead
                  of assigning that variable inside of each branch.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.36'
   VersionChanged: '0.47'
-  EnforcedStyle: assign_to_condition
+  EnforcedStyle: assign_inside_condition
   SupportedStyles:
     - assign_to_condition
     - assign_inside_condition
@@ -3476,6 +3477,7 @@ Style/ConditionalAssignment:
   # When configured to `assign_inside_condition`, `SingleLineConditionsOnly`
   # will only register an offense for assignment to a condition that has
   # at least one multiline branch.
+  # UNCERTAIN
   SingleLineConditionsOnly: true
   IncludeTernaryExpressions: true
 
@@ -3561,7 +3563,7 @@ Style/DocumentDynamicEvalDefinition:
 
 Style/Documentation:
   Description: 'Document classes and non-namespace modules.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   AllowedConstants: []
   Exclude:
@@ -3919,7 +3921,7 @@ Style/HashSyntax:
                  Prefer Ruby 1.9 hash syntax { a: 1, b: 2 } over 1.8 syntax
                  { :a => 1, :b => 2 }.
   StyleGuide: '#hash-literals'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '1.24'
   EnforcedStyle: ruby19
@@ -4726,7 +4728,7 @@ Style/PreferredHashMethods:
   Safe: false
   VersionAdded: '0.41'
   VersionChanged: '0.70'
-  EnforcedStyle: short
+  EnforcedStyle: verbose
   SupportedStyles:
     - short
     - verbose
@@ -4956,7 +4958,7 @@ Style/RegexpLiteral:
   Enabled: true
   VersionAdded: '0.9'
   VersionChanged: '0.30'
-  EnforcedStyle: slashes
+  EnforcedStyle: mixed
   # slashes: Always use slashes.
   # percent_r: Always use `%r`.
   # mixed: Use slashes on single-line regexes, and `%r` on multi-line regexes.
@@ -5111,7 +5113,7 @@ Style/SoleNestedConditional:
   Description: >-
                   Finds sole nested conditional nodes
                   which can be merged into outer conditional node.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.89'
   VersionChanged: '1.5'
   AllowModifier: false
@@ -5518,7 +5520,7 @@ Style/YodaExpression:
 
 Style/ZeroLengthPredicate:
   Description: 'Use #empty? when testing for objects of length 0.'
-  Enabled: true
+  Enabled: false
   Safe: false
   VersionAdded: '0.37'
   VersionChanged: '0.39'

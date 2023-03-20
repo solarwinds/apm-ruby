@@ -51,7 +51,7 @@ describe 'SolarWindsExporterTest' do
 
     clear_all_traces
     Net::HTTP.get(URI('https://www.google.com'))
-    traces = get_all_traces
+    traces = obtain_all_traces
 
     _(traces.count).must_equal 4
 
@@ -109,7 +109,7 @@ describe 'SolarWindsExporterTest' do
     sample_events = ::OpenTelemetry::SDK::Trace::Event.new(name: "name", attributes: {"key" => "value"}.freeze, timestamp: 1669317386298642087)
     @exporter.send(:report_exception_event, sample_events)
     
-    traces = get_all_traces
+    traces = obtain_all_traces
 
     _(traces.count).must_equal 1
     _(traces[0]["sw.trace_context"].empty?).must_equal false
@@ -140,7 +140,7 @@ describe 'SolarWindsExporterTest' do
 
     clear_all_traces
     @exporter.send(:log_span_data, @span_data)
-    traces = get_all_traces
+    traces = obtain_all_traces
 
     _(traces.count).must_equal 2
     _(traces[0]["Label"]).must_equal "entry"

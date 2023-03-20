@@ -1,31 +1,26 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
+    # SolarWindsSampler
     class SolarWindsSampler
-
-      INTERNAL_BUCKET_CAPACITY = "BucketCapacity"
-      INTERNAL_BUCKET_RATE = "BucketRate"
-      INTERNAL_SAMPLE_RATE = "SampleRate"
-      INTERNAL_SAMPLE_SOURCE = "SampleSource"
-      INTERNAL_SW_KEYS = "SWKeys"
-      LIBOBOE_CONTINUED = -1
-      SW_TRACESTATE_CAPTURE_KEY = "sw.w3c.tracestate"
-      SW_TRACESTATE_ROOT_KEY = "sw.tracestate_parent_id"
-      UNSET = -1
-      XTRACEOPTIONS_RESP_AUTH = "auth"
-      XTRACEOPTIONS_RESP_IGNORED = "ignored"
-      XTRACEOPTIONS_RESP_TRIGGER_IGNORED = "ignored"
-      XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED = "not-requested"
-      XTRACEOPTIONS_RESP_TRIGGER_TRACE = "trigger-trace"
+      INTERNAL_BUCKET_CAPACITY   = "BucketCapacity".freeze
+      INTERNAL_BUCKET_RATE       = "BucketRate".freeze
+      INTERNAL_SAMPLE_RATE       = "SampleRate".freeze
+      INTERNAL_SAMPLE_SOURCE     = "SampleSource".freeze
+      INTERNAL_SW_KEYS           = "SWKeys".freeze
+      LIBOBOE_CONTINUED          = -1
+      SW_TRACESTATE_CAPTURE_KEY  = "sw.w3c.tracestate".freeze
+      SW_TRACESTATE_ROOT_KEY     = "sw.tracestate_parent_id".freeze
+      UNSET                      = -1
+      XTRACEOPTIONS_RESP_AUTH    = "auth".freeze
+      XTRACEOPTIONS_RESP_IGNORED = "ignored".freeze
+      XTRACEOPTIONS_RESP_TRIGGER_IGNORED       = "ignored".freeze
+      XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED = "not-requested".freeze
+      XTRACEOPTIONS_RESP_TRIGGER_TRACE         = "trigger-trace".freeze
 
       attr_reader :description
 
       def initialize(config={})
         @config = config
-        @context = init_context
-      end
-
-      def get_description
-        "SolarWinds custom opentelemetry sampler"
       end
 
       def ==(other)
@@ -40,7 +35,7 @@ module SolarWindsOTelAPM
       def should_sample?(trace_id:, parent_context:, links:, name:, kind:, attributes:)
 
         SolarWindsOTelAPM.logger.debug "####### should_sample? parameters \n
-                                        trace_id: #{trace_id.unpack1("H*")}\n
+                                        trace_id: #{trace_id.unpack1('H*')}\n
                                         parent_context:  #{parent_context}\n
                                         parent_context.inspect:  #{parent_context.inspect}\n
                                         links: #{links}\n
@@ -70,7 +65,7 @@ module SolarWindsOTelAPM
         sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
         SolarWindsOTelAPM.logger.debug "####### sampling_result: #{sampling_result.inspect}"
 
-        return sampling_result
+        sampling_result
       end
 
       protected
@@ -78,10 +73,6 @@ module SolarWindsOTelAPM
       attr_reader :decision
 
       private
-
-      def init_context
-        context = (SolarWindsOTelAPM.loaded == true)? SolarWindsOTelAPM::Context : nil
-      end
 
       # return Hash
       def calculate_liboboe_decision(parent_span_context, xtraceoptions)
@@ -137,9 +128,8 @@ module SolarWindsOTelAPM
         decision["status_msg"]    = status_msg
         decision["auth_msg"]      = auth_msg
         decision["status"]        = status
-        return decision
+        decision
       end
-
 
       def otel_decision_from_liboboe(liboboe_decision)
 
@@ -150,27 +140,21 @@ module SolarWindsOTelAPM
           decision = ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY
         end
         SolarWindsOTelAPM.logger.debug "OTel decision created: #{decision}"
-        return decision
-
+        decision
       end
 
       def create_xtraceoptions_response_value(decision, parent_span_context, xtraceoptions)
-
-        response = Array.new
-
-        SolarWindsOTelAPM.logger.debug  "####### create_xtraceoptions_response_value decision[auth]: #{decision["auth"]}; decision[auth_msg]: #{decision["auth_msg"]}; xtraceoptions.trigger_trace: #{xtraceoptions.trigger_trace}"
-
-        if xtraceoptions.signature && decision["auth_msg"]
-          response << [XTRACEOPTIONS_RESP_AUTH, decision["auth_msg"]].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
-        end
-
+        SolarWindsOTelAPM.logger.debug "####### create_xtraceoptions_response_value decision[auth]: #{decision['auth']}; decision[auth_msg]: #{decision['auth_msg']}; xtraceoptions.trigger_trace: #{xtraceoptions.trigger_trace}"
+        
+        w3c_sanitized = SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED
+        response = [XTRACEOPTIONS_RESP_AUTH, decision['auth_msg']].join(w3c_sanitized) if xtraceoptions.signature && decision['auth_msg']
         if !decision["auth"] || decision["auth"] < 1
           trigger_msg = ""
           tracestring = nil
           if xtraceoptions.trigger_trace
             # If a traceparent header was provided then oboe does not generate the message
             tracestring = Transformer.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?  
-            trigger_msg = (tracestring && decision["decision_type"] == 0)? XTRACEOPTIONS_RESP_TRIGGER_IGNORED : decision["status_msg"]
+            trigger_msg = tracestring && decision['decision_type'] == 0 ? XTRACEOPTIONS_RESP_TRIGGER_IGNORED : decision['status_msg']
           else
             trigger_msg = XTRACEOPTIONS_RESP_TRIGGER_NOT_REQUESTED
           end
@@ -178,31 +162,27 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.debug "####### create_xtraceoptions_response_value parent_span_context: #{parent_span_context}; tracestring: #{tracestring}; trigger_msg: #{trigger_msg}"
 
           # e.g. response << trigger-trace####ok
-          response << [XTRACEOPTIONS_RESP_TRIGGER_TRACE, trigger_msg].join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
+          response << [XTRACEOPTIONS_RESP_TRIGGER_TRACE, trigger_msg].join(w3c_sanitized)
 
         end
 
         # so far the x-trace-options are only used for liboboe calculate decision for x-trace feature
         # probably not need for remaining services since liboboe decision only calculate once
-        if xtraceoptions.ignored
-          if xtraceoptions.ignored.size != 0
-            ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
-            response << ignored_response.join(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED)
-            # e.g. response << ignored####invalidkeys,invalidkeys,invalidkeys
-          end
-        end 
+        if xtraceoptions.ignored.empty?
+          ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
+          response << ignored_response.join(w3c_sanitized)
+          # e.g. response << ignored####invalidkeys,invalidkeys,invalidkeys
+        end
 
-        response.join(";")  # e.g. trigger-trace####ok;ignored####invalidkeys,invalidkeys,invalidkeys
+        response.join(';')  # e.g. trigger-trace####ok;ignored####invalidkeys,invalidkeys,invalidkeys
       end
-
 
       def create_new_trace_state(parent_span_context, decision, xtraceoptions)
         decision = sw_from_span_and_decision(parent_span_context, decision)
         trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => decision}) # e.g. sw=3e222c863a04123a-01
         SolarWindsOTelAPM.logger.debug "Created new trace_state: #{trace_state.inspect}"
-        return trace_state
+        trace_state
       end
-
 
       # 
       # calculate_trace_state
@@ -226,9 +206,9 @@ module SolarWindsOTelAPM
         end
 
         # for setting up the xtrace_options_response
-        if xtraceoptions && xtraceoptions.options
+        if xtraceoptions&.options
           trace_state = trace_state.set_value(
-            "#{XTraceOptions.get_sw_xtraceoptions_response_key}",
+            XTraceOptions.sw_xtraceoptions_response_key.to_s,
             create_xtraceoptions_response_value(decision,parent_span_context,xtraceoptions)
           )
         end
@@ -238,7 +218,7 @@ module SolarWindsOTelAPM
 
       #
       # SW_TRACESTATE_CAPTURE_KEY = "sw.w3c.tracestate"
-      # get_sw_xtraceoptions_response_key = "xtrace_options_response"
+      # sw_xtraceoptions_response_key = "xtrace_options_response"
       # trace_state is the new trace_state from existing span information
       # parent_span_context.trace_state is from its parent 
       #
@@ -251,7 +231,7 @@ module SolarWindsOTelAPM
         # since tracestate_capture is always nil, so the sw always have new value for sw=key
         if tracestate_capture.nil?
         
-          trace_state_no_response = trace_state.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
+          trace_state_no_response = trace_state.delete(XTraceOptions.sw_xtraceoptions_response_key)
         
         else
           # Must retain all potential tracestate pairs for attributes
@@ -260,18 +240,18 @@ module SolarWindsOTelAPM
           # This step generated the new sw=key for tracestate based on root parent_span_id
           new_attr_trace_state = attr_trace_state.set_value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context,decision))
           
-          trace_state_no_response = new_attr_trace_state.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
+          trace_state_no_response = new_attr_trace_state.delete(XTraceOptions.sw_xtraceoptions_response_key)
         end
 
         SolarWindsOTelAPM.logger.debug "####### trace_state_no_response #{trace_state_no_response.inspect}"
 
         # other approach
-        trace_state_no_response = parent_span_context.tracestate.delete(XTraceOptions.get_sw_xtraceoptions_response_key)
-        no_sw_count = trace_state_no_response.to_h.select { |k,v| k != "sw" }.count
+        trace_state_no_response = parent_span_context.tracestate.delete(XTraceOptions.sw_xtraceoptions_response_key)
+        no_sw_count = trace_state_no_response.to_h.reject { |k, _v| k == "sw" }.count
         attributes_dict[SW_TRACESTATE_CAPTURE_KEY] = Transformer.trace_state_header(trace_state_no_response) if no_sw_count > 0 
 
         SolarWindsOTelAPM.logger.debug "####### attributes_dict #{attributes_dict.inspect}"
-        return attributes_dict
+        attributes_dict
       end
 
       ##
@@ -283,19 +263,19 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.logger.debug "Received attributes: #{attributes.inspect}; decision:#{decision.inspect}; trace_state:#{trace_state.inspect}; parent_span_context:#{parent_span_context.inspect}; xtraceoptions:#{xtraceoptions.inspect}"
 
         otel_decision = otel_decision_from_liboboe(decision)
-        return nil if Transformer.is_sampled?(otel_decision) == false
+        return nil if Transformer.sampled?(otel_decision) == false
         
         SolarWindsOTelAPM.logger.debug("Trace decision is_sampled - setting attributes #{otel_decision.inspect}")
 
         new_attributes = {}
         # Copy existing MappingProxyType KV into new_attributes for modification.
-        attributes.each {|k,v| new_attributes[k] = v } if attributes
+        attributes&.each {|k,v| new_attributes[k] = v}
 
         # Always (root or is_remote) set _INTERNAL_SW_KEYS if injected
         new_attributes[INTERNAL_SW_KEYS] = xtraceoptions.sw_keys if xtraceoptions.sw_keys
 
         # Always (root or is_remote) set custom KVs if extracted from x-trace-options
-        xtraceoptions.custom_kvs.each { |k,v| new_attributes[k] = v } if xtraceoptions.custom_kvs
+        xtraceoptions.custom_kvs&.each {|k,v| new_attributes[k] = v}
 
         # Always (root or is_remote) set service entry internal KVs       
         new_attributes[INTERNAL_BUCKET_CAPACITY] = decision["bucket_cap"].to_s
@@ -315,21 +295,18 @@ module SolarWindsOTelAPM
         # Trace's root span has no valid traceparent nor tracestate so we can't calculate remaining attributes
         if !parent_span_context.valid? || trace_state.nil?
           SolarWindsOTelAPM.logger.debug "No valid traceparent or no tracestate - returning attributes: #{new_attributes}"
-          return new_attributes.freeze if new_attributes
-          return nil
+          return new_attributes.freeze || nil
         end
 
         new_attributes = add_tracestate_capture_to_attributes_dict(new_attributes,decision,trace_state,parent_span_context)
         # e.g. {"SWKeys"=>"check-id:check-1013,website-id:booking-demo", "BucketCapacity"=>"6.0", "BucketRate"=>"0.1", "SampleRate"=>-1, "SampleSource"=>-1, "http.method"=>"GET", "http.host"=>"0.0.0.0:8002", "http.scheme"=>"http", "http.target"=>"/call_second_rails/", "http.user_agent"=>"curl/7.81.0", "sw.w3c.tracestate"=>"sw=aaaa1111bbbb2222-01"}
-        return new_attributes.freeze
+        new_attributes.freeze
       end
 
       def sw_from_span_and_decision(parent_span_context, decision)
         trace_flag = Transformer.trace_flags_from_boolean(decision["do_sample"])
-        return Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, trace_flag)
+        Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, trace_flag)
       end
-
-
     end
   end
 end

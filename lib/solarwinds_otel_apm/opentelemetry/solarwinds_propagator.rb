@@ -3,7 +3,6 @@ module SolarWindsOTelAPM
     module SolarWindsPropagator
       # TextMapPropagator
       class TextMapPropagator
-
         TRACESTATE_HEADER_NAME    = "tracestate".freeze
         XTRACEOPTIONS_HEADER_NAME = "x-trace-options".freeze
         XTRACEOPTIONS_SIGNATURE_HEADER_NAME = "x-trace-options-signature".freeze
@@ -39,8 +38,7 @@ module SolarWindsOTelAPM
           context = context.set_value(INTL_SWO_SIGNATURE_KEY, signature_header) if signature_header
           SolarWindsOTelAPM.logger.debug "####### signature_header: #{signature_header}; propagator extract context: #{context.inspect}"
 
-          return context
-
+          context
         end
 
         # Inject trace context into the supplied carrier.
@@ -68,13 +66,10 @@ module SolarWindsOTelAPM
           trace_state = nil
           if trace_state_header.nil?
             # Only create new trace state if valid span_id
-            if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
-              return
-            else
-              trace_state = ::OpenTelemetry::Trace::Tracestate.create({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => sw_value})
-              SolarWindsOTelAPM.logger.debug "####### creating new trace state: #{trace_state.inspect}"
-            end
-
+            return if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
+              
+            trace_state = ::OpenTelemetry::Trace::Tracestate.create({SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY => sw_value})
+            SolarWindsOTelAPM.logger.debug "####### creating new trace state: #{trace_state.inspect}"
           else
             trace_state_from_string = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
             trace_state = trace_state_from_string.set_value(SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_value)
@@ -82,7 +77,6 @@ module SolarWindsOTelAPM
           end
 
           setter.set(carrier, TRACESTATE_HEADER_NAME, Transformer.trace_state_header(trace_state))
-
         end
 
         # Returns the predefined propagation fields. If your carrier is reused, you

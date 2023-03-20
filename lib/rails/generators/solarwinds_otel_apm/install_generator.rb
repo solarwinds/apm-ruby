@@ -2,6 +2,7 @@
 # All rights reserved.
 
 module SolarWindsOTelAPM
+  # InstallGenerator
   class InstallGenerator < ::Rails::Generators::Base
     source_root File.join(File.dirname(__FILE__), 'templates')
     desc "Copies a SolarWindsOTelAPM gem initializer file to your application."

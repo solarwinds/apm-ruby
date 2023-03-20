@@ -1,6 +1,5 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
-    
     # OboeTracingMode
     # Used in solarwinds_sampler
     class OboeTracingMode
@@ -23,9 +22,6 @@ module SolarWindsOTelAPM
         mode = OBOE_TRIGGER_DISABLED if trigger_trace_mode == 'disabled'
         mode
       end
-
     end
-
   end
-  
 end

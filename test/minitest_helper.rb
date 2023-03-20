@@ -4,15 +4,17 @@
 require 'simplecov' if ENV["SIMPLECOV_COVERAGE"]
 require 'simplecov-console' if ENV["SIMPLECOV_COVERAGE"]
 
-SimpleCov.start do
-# SimpleCov.formatter = SimpleCov.formatter = SimpleCov::Formatter::Console
-  merge_timeout 3600
-  command_name "#{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']}"
-# SimpleCov.use_merging true
-  add_filter '/test/'
-  add_filter '../test/'
-  use_merging true
-end if ENV["SIMPLECOV_COVERAGE"]
+if ENV["SIMPLECOV_COVERAGE"]
+  SimpleCov.start do
+    # SimpleCov.formatter = SimpleCov.formatter = SimpleCov::Formatter::Console
+    merge_timeout 3600
+    command_name "#{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']}"
+    # SimpleCov.use_merging true
+    add_filter '/test/'
+    add_filter '../test/'
+    use_merging true
+  end
+end
 
 require 'rubygems'
 require 'bundler/setup'
@@ -31,7 +33,6 @@ require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'bson'
 
-
 # write to a file as well as STDOUT (comes in handy with docker runs)
 # This approach preserves the coloring of pass fail, which the cli
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
@@ -40,7 +41,7 @@ if ENV['TEST_RUNS_TO_FILE']
   if ENV['TEST_RUNS_FILE_NAME']
     $out_file = File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
   else
-    $out_file = File.new("log/test_direct_runs_#{Time.now.strftime("%Y%m%d_%H_%M")}.log", 'a')
+    $out_file = File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
   end
   $out_file.sync = true
   $stdout.sync = true
@@ -60,16 +61,14 @@ end
 module MiniTest
   module Assertions
     def refute_raises *exp
-      msg = "#{exp.pop}.\n" if String === exp.last
-
       begin
         yield
       rescue MiniTest::Skip => e
         return e if exp.include? MiniTest::Skip
+
         raise e
-      rescue Exception => e
-        exp = exp.first if exp.size == 1
-        flunk "unexpected exception raised: #{e}"
+      rescue StandardError => e
+        flunk "unexpected exception raised: #{e.message}"
       end
 
     end
@@ -77,7 +76,7 @@ module MiniTest
 end
 
 # Print out a headline in with the settings used in the test run
-puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime("%Y-%m-%d %H:%M")} ===\033[0m\n"
+puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
 ENV['RACK_ENV'] = 'test'
 MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
@@ -91,26 +90,24 @@ SolarWindsOTelAPM.logger.level = 1
 # Truncates the trace output file to zero
 #
 def clear_all_traces
-  if SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
-    while SolarWindsOTelAPM::Reporter.get_all_traces.size != 0
-      SolarWindsOTelAPM::Reporter.clear_all_traces
-      sleep 0.2
-    end
+  return unless SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+    
+  while SolarWindsOTelAPM::Reporter.obtain_all_traces.size != 0
+    SolarWindsOTelAPM::Reporter.clear_all_traces
+    sleep 0.2
   end
 end
 
 ##
-# get_all_traces
+# obtain_all_traces
 #
 # Retrieves all traces written to the trace file
 #
-def get_all_traces
-  if SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
-    sleep 0.5
-    SolarWindsOTelAPM::Reporter.get_all_traces
-  else
-    []
-  end
+def obtain_all_traces
+  return [] unless SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+
+  sleep 0.5
+  SolarWindsOTelAPM::Reporter.obtain_all_traces
 end
 
 ##
@@ -119,11 +116,11 @@ end
 #
 # `clear_query_log` before next test
 def query_logged?(regex)
-  File.open(ENV['QUERY_LOG_FILE']).read() =~ regex
+  File.open(ENV['QUERY_LOG_FILE']).read =~ regex
 end
 
 def print_query_log
-  puts File.open(ENV['QUERY_LOG_FILE']).read()
+  puts File.open(ENV['QUERY_LOG_FILE']).read
 end
 
 ##
@@ -160,28 +157,26 @@ end
 #
 def validate_event_keys(event, kvs)
   kvs.each do |k, v|
-    assert event.key?(k), "#{k} is missing"
+    assert event.has_key?(k), "#{k} is missing"
     assert_equal event[k], v, "#{k} != #{v} (#{event[k]})"
   end
 end
 
 ##
-# has_edge?
+# edge?
 #
 # Searches the array of <tt>traces</tt> for
 # <tt>edge</tt>
 #
-def has_edge?(edge, traces)
+def edge?(edge, traces)
   traces.each do |t|
-    if SolarWindsOTelAPM::TraceString.span_id(t["sw.trace_context"]) == edge
-      return true
-    end
+    return true if SolarWindsOTelAPM::TraceString.span_id(t["sw.trace_context"]) == edge
   end
   SolarWindsOTelAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
   false
 end
 
-def assert_entry_exit(traces, num = nil, check_trace_id = true)
+def assert_entry_exit(traces, num=nil, check_trace_id: true)
   if check_trace_id
     trace_id = SolarWindsOTelAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
     refute traces.find { |tr| SolarWindsOTelAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, "trace ids not matching"
@@ -208,26 +203,27 @@ end
 #
 # The param connected can be set to false if there are disconnected traces
 #
-def valid_edges?(traces, connected = true)
+def valid_edges?(traces, connected: true)
   return true unless traces.is_a?(Array) && traces.count > 1 # so that in case the traces are sent to the collector, tests will fail but not barf
-  traces[1..-1].reverse.each do |t|
-    if t.key?("sw.parent_span_id")
-      unless has_edge?(t["sw.parent_span_id"], traces)
-        puts "edge missing for #{t["sw.parent_span_id"]}"
-        print_traces(traces)
-        return false
-      end
-    end
+  
+  parent_span_id = 'sw.parent_span_id'.freeze
+  traces[1..].reverse.each do |t|
+    next unless t.has_key?(parent_span_id)
+
+    next if edge?(t[parent_span_id], traces)
+  
+    puts "edge missing for #{t[parent_span_id]}"
+    print_traces(traces)
+    return false
   end
+
   if connected
-    if traces.map { |tr| tr['sw.parent_span_id'] }.uniq.size == traces.size
-      return true
-    else
-      puts "number of unique sw.parent_span_ids: #{traces.map { |tr| tr['sw.parent_span_id'] }.uniq.size}"
-      puts "number of traces: #{traces.size}"
-      print_traces(traces)
-      return false
-    end
+    return true if traces.map { |tr| tr[parent_span_id] }.uniq.size == traces.size
+    
+    puts "number of unique sw.parent_span_ids: #{traces.map { |tr| tr[parent_span_id] }.uniq.size}"
+    puts "number of traces: #{traces.size}"
+    print_traces(traces)
+    return false
   end
   true
 end
@@ -251,12 +247,11 @@ end
 #
 def layer_has_key(traces, layer, key)
   return false if traces.empty?
+
   has_key = false
-
   traces.each do |t|
-    if t["Layer"] == layer and t.has_key?(key)
+    if t["Layer"] == layer && t.has_key?(key)
       has_key = true
-
       _(t[key].length > 0).must_equal true
     end
   end
@@ -272,10 +267,10 @@ end
 #
 def layer_has_key_once(traces, layer, key)
   return false if traces.empty?
-  has_keys = 0
 
+  has_keys = 0
   traces.each do |t|
-    has_keys += 1 if t["Layer"] == layer and t.has_key?(key)
+    has_keys += 1 if t["Layer"] == layer && t.has_key?(key)
   end
 
   _(has_keys).must_equal 1, "Key #{key} missing in layer #{layer}"
@@ -289,10 +284,10 @@ end
 #
 def layer_doesnt_have_key(traces, layer, key)
   return false if traces.empty?
-  has_key = false
 
+  has_key = false
   traces.each do |t|
-    has_key = true if t["Layer"] == layer and t.has_key?(key)
+    has_key = true if t["Layer"] == layer && t.has_key?(key)
   end
 
   _(has_key).must_equal false, "Key #{key} should not be in layer #{layer}"
@@ -303,7 +298,7 @@ end
 # if there are multiple events with Controller and/or Action, then they all have to match
 #
 def assert_controller_action(test_action)
-  traces = get_all_traces
+  traces = obtain_all_traces
   traces.select { |tr| tr['Controller'] || tr['Action'] }.map do |tr|
     assert_equal(test_action, [tr['Controller'], tr['Action']].join('.'))
   end
@@ -325,33 +320,34 @@ def pretty(traces)
   puts traces.pretty_inspect
 end
 
-def print_traces(traces, more_keys = [])
+def print_traces(traces, more_keys=[])
   return unless traces.is_a?(Array) # so that in case the traces are sent to the collector, tests will fail but not barf
+  
   more_keys << 'sw.tracestate_parent_id'
   indent = ''
   puts "\n"
   traces.each do |trace|
-    indent += '  ' if trace["Label"] == "entry"
+    indent += '  ' if trace['Label'] == 'entry'
 
-    puts "#{indent}Label:   #{trace["Label"]}"
-    puts "#{indent}Layer:   #{trace["Layer"]}"
-    puts "#{indent}sw.trace_context: #{trace["sw.trace_context"]}"
-    puts "#{indent}sw.parent_span_id: #{trace["sw.parent_span_id"]}"
+    puts "#{indent}Label:   #{trace['Label']}"
+    puts "#{indent}Layer:   #{trace['Layer']}"
+    puts "#{indent}sw.trace_context: #{trace['sw.trace_context']}"
+    puts "#{indent}sw.parent_span_id: #{trace['sw.parent_span_id']}"
 
     more_keys.each { |key| puts "#{indent}#{key}:   #{trace[key]}" if trace[key] }
 
-    indent = indent[0...-2] if trace["Label"] == "exit"
+    indent = indent[0...-2] if trace['Label'] == 'exit'
   end
   puts "\n"
 end
 
 # a method to reduce the number of kvs
 # mainly helpful for the msg when an assertion fails
-def filter_traces(traces, more_keys = [])
+def filter_traces(traces, more_keys=[])
   keys = more_keys.dup
-  keys |= %w(Layer Label sw.trace_context sw.parent_span_id sw.tracestate_parent_id)
+  keys |= %w[Layer Label sw.trace_context sw.parent_span_id sw.tracestate_parent_id]
 
-  traces.map { |tr| tr.reject { |k, _v| !keys.include?(k) }}
+  traces.map {|tr| tr.select{|k, _v| keys.include?(k) }}
 end
 
 def print_edges(traces)
@@ -385,7 +381,7 @@ def sw_value(tracestate)
   matches && matches[:sw_value]
 end
 
-def assert_trace_headers(headers, sampled = nil)
+def assert_trace_headers(headers, sampled=nil)
   # don't use transform_keys! (the one with the bang!)
   # it makes follow up assertions fail
   # and it is not available in Ruby 2.4
@@ -416,8 +412,9 @@ def create_context(trace_id:,
     )
   )
   conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
-  context = context.set_value(conext_key, true)
-  context
+  # context = context.set_value(conext_key, true)
+  # context
+  context.set_value(conext_key, true)
 end
 
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
@@ -426,19 +423,20 @@ if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
   # Sinatra and Padrino Related Helpers
   #
   # Taken from padrino-core gem
-  #
+  # Sinatra::Base
   class Sinatra::Base
     # Allow assertions in request context
     include MiniTest::Assertions
   end
 
+  # MiniTest::Spec
   class MiniTest::Spec
     include Rack::Test::Methods
 
     # Sets up a Sinatra::Base subclass defined with the block
     # given. Used in setup or individual spec methods to establish
     # the application.
-    def mock_app(base = Padrino::Application, &block)
+    def mock_app(base=Padrino::Application, &block)
       @app = Sinatra.new(base, &block)
     end
 

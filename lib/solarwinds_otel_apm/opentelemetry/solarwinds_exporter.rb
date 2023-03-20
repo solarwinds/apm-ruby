@@ -1,5 +1,4 @@
 # solarwinds_nh will use liboboe to export data to solarwinds swo
-
 module SolarWindsOTelAPM
   module OpenTelemetry
     # SolarWindsExporter
@@ -19,7 +18,6 @@ module SolarWindsOTelAPM
         @shutdown = false
         @apm_txname_manager = apm_txname_manager
         @context = SolarWindsOTelAPM::Context
-        @metadata = SolarWindsOTelAPM::Metadata
         @reporter = SolarWindsOTelAPM::Reporter
         @version_cache = {}
       end
@@ -53,7 +51,7 @@ module SolarWindsOTelAPM
 
           if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
 
-            parent_md = build_meta_data(span_data, true)
+            parent_md = build_meta_data(span_data, parent: true)
             SolarWindsOTelAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
           else
@@ -70,30 +68,26 @@ module SolarWindsOTelAPM
           add_info_instrumentation_scope(event, span_data)
           add_info_instrumented_framework(event, span_data)
 
-          span_data.attributes.each {|k,v| event.addInfo(k, v) } if span_data.attributes
-          @reporter.sendReport(event, false)
+          span_data.attributes&.each {|k,v| event.addInfo(k, v)}
+          @reporter.send_report(event, with_system_timestamp: false)
 
           # info / exception event
-          span_data.events&.each do |event|
-            if event.name == 'exception'
-              report_exception_event(event)
-            else
-              report_info_event(event)
-            end
+          span_data.events&.each do |span_data_event|
+            span_data_event.name == 'exception' ? report_exception_event(span_data_event) : report_info_event(span_data_event)
           end
 
           event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
           event.addInfo('Layer', span_data.name)
-          @reporter.sendReport(event, false)
+          @reporter.send_report(event, with_system_timestamp: false)
           SolarWindsOTelAPM.logger.debug "####### Exit a trace: #{event.metadataString}"
-        rescue Exception => e
+        rescue StandardError => e
           SolarWindsOTelAPM.logger.debug "######## \n\n #{e.message} #{e.backtrace}\n\n ########"
           raise
         end
 
       end
 
-      def add_info_instrumentation_scope event, span_data
+      def add_info_instrumentation_scope(event, span_data)
         scope_name = ""
         scope_version = ""
         if span_data.instrumentation_scope
@@ -107,30 +101,21 @@ module SolarWindsOTelAPM
       # 
       # get the framework version (the real version not the sdk instrumentation version)
       # 
-      def add_info_instrumented_framework event, span_data
+      def add_info_instrumented_framework(event, span_data)
         SolarWindsOTelAPM.logger.debug "####### add_info_instrumented_framework: #{span_data.instrumentation_scope.name}"
         scope_name = span_data.instrumentation_scope.name
         scope_name = scope_name.downcase if scope_name
-        if scope_name and scope_name.include? "opentelemetry::instrumentation"
+        return unless scope_name&.include? "opentelemetry::instrumentation"
           
-          framework = scope_name.split("::")[2..-1]&.join("::")
-          return if framework.nil? || framework.empty?
-          
-          framework = normalize_framework_name(framework)
-          framwork_version = check_framework_version(framework)
-
-          if framwork_version.nil?
-            SolarWindsOTelAPM.logger.debug "######## framework version can't be found for #{scope_name}; skip ########" 
-          else
-            event.addInfo("Ruby.#{framework}.Version",framwork_version)
-            SolarWindsOTelAPM.logger.debug "######## added framework version: #{"Ruby.#{framework}.Version"}: #{framwork_version}"
-          end
-        end
-
+        framework = scope_name.split("::")[2..]&.join("::")
+        return if framework.nil? || framework.empty?
+        
+        framework        = normalize_framework_name(framework)
+        framwork_version = check_framework_version(framework)
+        event.addInfo("Ruby.#{framework}.Version",framwork_version) unless framework_version.nil?
       end
 
-      def check_framework_version framework
-
+      def check_framework_version(framework)
         framwork_version = nil
         if @version_cache.keys.include? framework
 
@@ -152,7 +137,7 @@ module SolarWindsOTelAPM
         framwork_version
       end
 
-      def normalize_framework_name framework
+      def normalize_framework_name(framework)
         case framework
         when "net::http"
           normalized = "net/http"
@@ -163,7 +148,7 @@ module SolarWindsOTelAPM
       end
 
       # Add transaction name from cache to root span then removes from cache
-      def add_info_transaction_name span_data, evt
+      def add_info_transaction_name(span_data, evt)
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
         SolarWindsOTelAPM.logger.debug "#{@apm_txname_manager.inspect},\n span_data: #{span_data.inspect}"
         txname = @apm_txname_manager.get(trace_span_id).nil?? "" : @apm_txname_manager.get(trace_span_id)
@@ -182,13 +167,11 @@ module SolarWindsOTelAPM
           evt.addInfo('ErrorMsg', span_event.attributes['exception.message'])
           evt.addInfo('Backtrace', span_event.attributes['exception.stacktrace'])
           span_event.attributes.each do |key, value|
-            unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
-              evt.addInfo(key, value)
-            end
+            evt.addInfo(key, value) unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
           end
         end
         SolarWindsOTelAPM.logger.debug "######## exception event #{evt.metadataString} ########"
-        @reporter.sendReport(evt, false)
+        @reporter.send_report(evt, with_system_timestamp: false)
       end
 
       def report_info_event(span_event)
@@ -198,20 +181,15 @@ module SolarWindsOTelAPM
           evt.addInfo(key, value)
         end
         SolarWindsOTelAPM.logger.debug "######## info event #{evt.metadataString} ########"
-        @reporter.sendReport(evt, false)
+        @reporter.send_report(evt, with_system_timestamp: false)
       end
 
-      def build_meta_data span_data, parent=false
+      def build_meta_data(span_data, parent: false)
         flag = span_data.trace_flags.sampled?? 1 : 0
         version = "00"
-        xtr = (parent == false)? "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_span_id}-0#{flag}" : "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_parent_span_id}-0#{flag}"
-        md = @metadata.fromString(xtr)
-        return md
+        xtr = parent == false ? "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_span_id}-0#{flag}" : "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_parent_span_id}-0#{flag}"
+        SolarWindsOTelAPM::Metadata.fromString(xtr)
       end
-
     end
   end
 end
-
-
-

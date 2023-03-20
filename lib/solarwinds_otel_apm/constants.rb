@@ -1,6 +1,6 @@
 module SolarWindsOTelAPM
+  # Constants
   module Constants
-    
     HTTP_METHOD      = "http.method".freeze
     HTTP_ROUTE       = "http.route".freeze
     HTTP_STATUS_CODE = "http.status_code".freeze
@@ -25,6 +25,5 @@ module SolarWindsOTelAPM
     INTL_SWO_OTEL_SCOPE_VERSION      = "otel.scope.version".freeze
 
     INTERNAL_TRIGGERED_TRACE         = "TriggeredTrace".freeze
-
   end
 end

@@ -41,7 +41,7 @@ module SolarWindsOTelAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files = config_from_env if ENV.key?('SW_APM_CONFIG_RUBY')
+      config_files = config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
       config_files << config_files
 
       # Check for default config file
@@ -68,7 +68,7 @@ module SolarWindsOTelAPM
     end
 
     def self.set_verbose_level
-      verbose = ENV.key?('SW_APM_GEM_VERBOSE')? ENV['SW_APM_GEM_VERBOSE'].downcase == 'true' : nil
+      verbose = ENV.has_key?('SW_APM_GEM_VERBOSE')? ENV['SW_APM_GEM_VERBOSE'].downcase == 'true' : nil
       SolarWindsOTelAPM::Config[:verbose] = verbose
     end
 
@@ -77,7 +77,7 @@ module SolarWindsOTelAPM
 
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
-      SolarWindsOTelAPM.logger.level = (debug_level < 0)? 6 : [4 - debug_level, 0].max
+      SolarWindsOTelAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
     end
 
     ##
@@ -99,7 +99,7 @@ module SolarWindsOTelAPM
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
     # 
-    def self.initialize(_data = {})
+    def self.initialize(_data={})
       @@instrumentation.each { |k| @@config[k] = {} }
 
       @@config[:transaction_name] = {}
@@ -167,7 +167,7 @@ module SolarWindsOTelAPM
 
       when :dnt_regexp
         dnt_compiled = Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
-        @@config[:dnt_compiled] = (value.nil? || value == '')? nil : dnt_compiled
+        @@config[:dnt_compiled] = value.nil? || value == '' ? nil : dnt_compiled
 
       when :dnt_opts
         if SolarWindsOTelAPM::Config[:dnt_regexp] && SolarWindsOTelAPM::Config[:dnt_regexp] != ''
@@ -312,7 +312,6 @@ module SolarWindsOTelAPM
 
     #   end
     # end
-
   end
 end
 

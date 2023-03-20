@@ -1,7 +1,7 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
+    # SolarWindsTxnNameManager
     class SolarWindsTxnNameManager
-
       def initialize
         @cache = {}
       end
@@ -20,7 +20,6 @@ module SolarWindsOTelAPM
       end
 
       alias []= set
-
     end
   end
 end

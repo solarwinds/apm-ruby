@@ -1,11 +1,9 @@
 module SolarWindsOTelAPM
-
   # OTelConfig module
   # For configure otel component: configurable: propagator, exporter
   #                               non-config: sampler, processor, response_propagator
   # Level of this configuration: SolarWindsOTel::Config -> OboeOption -> SolarWindsOTel::OTelConfig
   module OTelConfig
-
     @@config = {}
     @@config_map = {}
     @@instrumentations = [] # used for use_all/use
@@ -14,7 +12,7 @@ module SolarWindsOTelAPM
     # propagator setup: must include otel's tracecontext propagator, and the order matters
     def self.resolve_propagators
       propagators = ENV["SWO_OTEL_PROPAGATOR"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
-      propagators_list = Array.new
+      propagators_list = []
       splited_propagators = propagators.split(",")
       splited_propagators.each do |propagator|
         case propagator
@@ -61,16 +59,16 @@ module SolarWindsOTelAPM
     def self.resolve_sampler
       resolve_sampler_config
       @@config[:sampler] = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-            root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-            remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-            remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config])
-          )
+                                root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+                                remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+                                remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config])
+                              )
     end
 
     def self.resolve_sampler_config
-      if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
-        @@config[:sampler_config] = {"trigger_trace" => "enabled"}
-      end
+      return unless (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
+
+      @@config[:sampler_config] = {"trigger_trace" => "enabled"}
     end
 
     # 
@@ -80,7 +78,7 @@ module SolarWindsOTelAPM
       if @@config_map["OpenTelemetry::Instrumentation::Rack"]
         @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
       else
-        @@config_map["OpenTelemetry::Instrumentation::Rack"] = { response_propagators: response_propagators_list }
+        @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: response_propagators_list}
       end
     end
 
@@ -120,7 +118,6 @@ module SolarWindsOTelAPM
     #
     #
     def self.initialize
-
       resolve_service_name
       resolve_propagators
       resolve_sampler
@@ -148,7 +145,6 @@ module SolarWindsOTelAPM
 
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
-
     end
   end
 end

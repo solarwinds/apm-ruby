@@ -62,14 +62,14 @@ if have_library('oboe', 'oboe_config_get_revision', 'oboe.h')
 
   create_makefile('libsolarwinds_apm', 'src')
 else
-  $stderr.puts   '== ERROR ========================================================='
+  $stderr.puts '== ERROR ========================================================='
   if have_library('oboe')
     $stderr.puts "The c-library either needs to be updated or doesn't match the OS."
     $stderr.puts 'No tracing will occur.'
   else
     $stderr.puts 'Could not find a matching c-library. No tracing will occur.'
   end
-  $stderr.puts   'Contact technicalsupport@solarwinds.com if the problem persists.'
-  $stderr.puts   '=================================================================='
+  $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
+  $stderr.puts '=================================================================='
   create_makefile('oboe_noop', 'noop')
 end

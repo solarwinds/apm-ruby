@@ -15,7 +15,8 @@ module SolarWindsOTelAPM
         # => "AbstractMysqlAdapter"
         #
         cls.to_s.split(/::/).last
-      rescue
+      rescue StandardError => e
+        SolarWindsOTelAPM.logger.warn "[solarwinds_apm/loading] Couldn't contextual_name #{cls} with error #{e.message}." 
         cls
       end
 
@@ -25,7 +26,7 @@ module SolarWindsOTelAPM
       # Centralized utility method to alias a method on an arbitrary
       # class or module.
       #
-      def method_alias(cls, method, name = nil)
+      def method_alias(cls, method, name=nil)
         name ||= contextual_name(cls)
 
         if cls.method_defined?(method.to_sym) || cls.private_method_defined?(method.to_sym)
@@ -38,9 +39,7 @@ module SolarWindsOTelAPM
           with_sw_apm    = "#{safe_method_name}_with_sw_apm"
 
           # Only alias if we haven't done so already
-          unless cls.method_defined?(without_sw_apm.to_sym) ||
-            cls.private_method_defined?(without_sw_apm.to_sym)
-
+          unless cls.method_defined?(without_sw_apm.to_sym) || cls.private_method_defined?(without_sw_apm.to_sym)
             cls.class_eval do
               alias_method without_sw_apm, method.to_s
               alias_method method.to_s, with_sw_apm
@@ -57,7 +56,7 @@ module SolarWindsOTelAPM
       # Centralized utility method to alias a class method on an arbitrary
       # class or module
       #
-      def class_method_alias(cls, method, name = nil)
+      def class_method_alias(cls, method, name=nil)
         name ||= contextual_name(cls)
 
         if cls.singleton_methods.include? method.to_sym
@@ -105,11 +104,11 @@ module SolarWindsOTelAPM
       #   from The American Heritage Dictionary of the English Language, 4th Edition
       #
       # This method makes things 'purty' for reporting.
-      def prettify(x)
-        if (x.to_s =~ /^#</) == 0
-          x.class.to_s
+      def prettify(str)
+        if (str.to_s =~ /^#</) == 0
+          str.class.to_s
         else
-          x.to_s
+          str.to_s
         end
       end
 
@@ -120,9 +119,9 @@ module SolarWindsOTelAPM
       # for things like HTTP scheme or method.  This takes anything and does
       # it's best to safely convert it to a string (if needed) and convert it
       # to all uppercase.
-      def upcase(o)
-        if o.is_a?(String) || o.respond_to?(:to_s)
-          o.to_s.upcase
+      def upcase(str)
+        if str.is_a?(String) || str.respond_to?(:to_s)
+          str.to_s.upcase
         else
           SolarWindsOTelAPM.logger.debug "[solarwinds_apm/debug] SolarWindsOTelAPM::Util.upcase: could not convert #{o.class}"
           'UNKNOWN'
@@ -134,12 +133,11 @@ module SolarWindsOTelAPM
       #
       # Used to convert a hash into a URL # query.
       #
-      def to_query(h)
-        return '' unless h.is_a?(Hash)
+      def to_query(hash_)
+        return '' unless hash_.is_a?(Hash)
 
         result = []
-
-        h.each { |k, v| result.push(k.to_s + '=' + v.to_s) }
+        hash_.each {|k, v| result.push("#{k}=#{v}")}
         result.sort.join('&')
       end
 
@@ -234,7 +232,7 @@ module SolarWindsOTelAPM
           platform_info['Ruby.Sidekiq.Version']    = "Sidekiq-#{::Sidekiq::VERSION}"       if defined?(::Sidekiq::VERSION)
           platform_info['Ruby.Typhoeus.Version']   = "Typhoeus-#{::Typhoeus::VERSION}"     if defined?(::Typhoeus::VERSION)
 
-          if Gem.loaded_specs.key?('delayed_job')
+          if Gem.loaded_specs.has_key?('delayed_job')
             # Oddly, DelayedJob doesn't have an embedded version number so we get it from the loaded
             # gem specs.
             version = Gem.loaded_specs['delayed_job'].version.to_s
@@ -242,9 +240,7 @@ module SolarWindsOTelAPM
           end
 
           # Special case since the Mongo 1.x driver doesn't embed the version number in the gem directly
-          if ::Gem.loaded_specs.key?('mongo')
-            platform_info['Ruby.Mongo.Version']     = "Mongo-#{::Gem.loaded_specs['mongo'].version}"
-          end
+          platform_info['Ruby.Mongo.Version']   = "Mongo-#{::Gem.loaded_specs['mongo'].version}" if ::Gem.loaded_specs.has_key?('mongo')
 
           # Report the DB adapter in use
           platform_info['Ruby.Mysql.Version']   = Mysql::GemVersion::VERSION   if defined?(Mysql::GemVersion::VERSION)
@@ -273,13 +269,13 @@ module SolarWindsOTelAPM
       #
       # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_init_report
-        platform_info = { '__Init' => 1 }
+        platform_info = {'__Init' => 1}
         begin
-          platform_info['Force']                                = true
-          platform_info['Ruby.Platform.Version']                = RUBY_PLATFORM
-          platform_info['Ruby.Version']                         = RUBY_VERSION
-          platform_info['Ruby.SolarWindsOTelAPM.Version']       = SolarWindsOTelAPM::Version::STRING
-          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = get_extension_lib_version
+          platform_info['Force']                                   = true
+          platform_info['Ruby.Platform.Version']                   = RUBY_PLATFORM
+          platform_info['Ruby.Version']                            = RUBY_VERSION
+          platform_info['Ruby.SolarWindsOTelAPM.Version']          = SolarWindsOTelAPM::Version::STRING
+          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = extension_lib_version
           platform_info['RubyHeroku.SolarWindsOTelAPM.Version']    = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
           platform_info['Ruby.TraceMode.Version']                  = SolarWindsOTelAPM::Config[:tracing_mode]
           platform_info.merge!(report_gem_in_use)
@@ -303,11 +299,11 @@ module SolarWindsOTelAPM
       # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_swo_init_report
 
-        platform_info = { '__Init' => true }
+        platform_info = {'__Init' => true}
 
         begin
-          platform_info['APM.Version']                  = SolarWindsOTelAPM::Version::STRING
-          platform_info['APM.Extension.Version']        = get_extension_lib_version
+          platform_info['APM.Version']             = SolarWindsOTelAPM::Version::STRING
+          platform_info['APM.Extension.Version']   = extension_lib_version
           
           # OTel Resource Attributes (Optional)
           platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
@@ -320,10 +316,10 @@ module SolarWindsOTelAPM
 
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
           begin
-            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each do |key, value| platform_info[key] = value end
-            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each do |key, value| platform_info[key] = value end
+            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
+            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
           rescue StandardError => e
-            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes."
+            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes. Error: #{e.message}"
           end
 
         rescue StandardError, ScriptError => e
@@ -347,9 +343,7 @@ module SolarWindsOTelAPM
       def report_gem_in_use
         platform_info = {}
         if defined?(Gem) && Gem.respond_to?(:loaded_specs)
-          Gem.loaded_specs.each_pair { |k, v|
-            platform_info["Ruby.#{k}.Version"] = v.version.to_s
-          }
+          Gem.loaded_specs.each_pair {|k, v| platform_info["Ruby.#{k}.Version"] = v.version.to_s}
         else
           platform_info.merge!(legacy_build_init_report)
         end
@@ -360,11 +354,10 @@ module SolarWindsOTelAPM
       # get extension library version by looking at the VERSION file
       # oboe not loaded yet, can't use oboe_api function to read oboe VERSION
       ##
-      def get_extension_lib_version
+      def extension_lib_version
         gem_location = Gem::Specification.find_by_name('solarwinds_otel_apm')
         clib_version_file = File.join(gem_location&.gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
-        version = File.read(clib_version_file).strip
-        version
+        File.read(clib_version_file).strip
       end
 
       ##

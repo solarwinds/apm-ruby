@@ -39,11 +39,11 @@ describe 'TransformerTest' do
     _(result).must_equal "00"
   end
 
-  it 'test is_sampled?' do 
-    result = @transformer.is_sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
+  it 'test sampled?' do 
+    result = @transformer.sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
     _(result).must_equal true
 
-    result = @transformer.is_sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY)
+    result = @transformer.sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY)
     _(result).must_equal false
   end
 

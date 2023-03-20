@@ -203,7 +203,7 @@ if defined?(SolarWindsOTelAPM::Config)
   # served directly from the cache without hitting a controller action.
   # When set to `false` the path will be used for the transaction name.
   #
-  SolarWindsOTelAPM::Config[:rack_cache] = { transaction_name: true }
+  SolarWindsOTelAPM::Config[:rack_cache] = {transaction_name: true}
 
   #
   # Transaction Settings
