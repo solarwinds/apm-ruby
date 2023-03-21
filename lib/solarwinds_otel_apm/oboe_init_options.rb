@@ -191,7 +191,7 @@ module SolarWindsOTelAPM
     def read_certificates
 
       file = ''
-      file = "#{File.expand_path File.dirname(__FILE__)}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
+      file = "#{__dir__}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
       file = ENV['SW_APM_TRUSTEDPATH'] if !ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?
       
       return String.new if file.empty?

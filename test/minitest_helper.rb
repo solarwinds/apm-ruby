@@ -356,19 +356,6 @@ def print_edges(traces)
   end
 end
 
-# Ruby 2.4 doesn't have the transform_keys method
-unless Hash.instance_methods.include?(:transform_keys)
-  class Hash
-    def transform_keys
-      new_hash = {}
-      self.each do |k, v|
-        new_hash[yield(k)] = v
-      end
-      new_hash
-    end
-  end
-end
-
 # this checks if `sw=...` is at the beginning of tracestate and returns the value
 def sw_tracestate(tracestate)
   matches = /^[,\s]*sw=(?<sw_value>[a-f0-9]{16}-0[01])/.match(tracestate)
@@ -379,24 +366,6 @@ end
 def sw_value(tracestate)
   matches = /[,\s]*sw=(?<sw_value>[a-f0-9]{16}-0[01])/.match(tracestate)
   matches && matches[:sw_value]
-end
-
-def assert_trace_headers(headers, sampled=nil)
-  # don't use transform_keys! (the one with the bang!)
-  # it makes follow up assertions fail
-  # and it is not available in Ruby 2.4
-  headers = headers.transform_keys(&:downcase)
-  assert headers['traceparent'], "traceparent header missing"
-  assert SolarWindsOTelAPM::TraceString.valid?(headers['traceparent']), "traceparent header not valid"
-  assert SolarWindsOTelAPM::TraceString.sampled?(headers['traceparent']), "traceparent should have sampled flag" if sampled
-  refute SolarWindsOTelAPM::TraceString.sampled?(headers['traceparent']), "traceparent should NOT have sampled flag" if sampled == false
-
-  assert headers['tracestate'], "tracestate header missing"
-  assert_match /#{SW_APM_TRACESTATE_ID}=/, headers['tracestate'], "tracestate header missing #{SW_APM_TRACESTATE_ID}"
-
-  assert sw_tracestate(headers['tracestate']), "tracestate header not starting with correct sw member"
-  assert_equal SolarWindsOTelAPM::TraceString.span_id_flags(headers['traceparent']),
-               sw_value(headers['tracestate']), "edge_id and flags not matching"
 end
 
 def create_context(trace_id:,

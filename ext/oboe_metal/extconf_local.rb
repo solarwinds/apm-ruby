@@ -18,7 +18,8 @@ CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, 
                                          .gsub(/-Wno-cast-function-type/, '')
 init_mkmf(CONFIG)
 
-ext_dir = File.expand_path(File.dirname(__FILE__))
+# ext_dir = File.expand_path(File.dirname(__FILE__))
+ext_dir = __dir__
 
 # Set the mkmf lib paths so we have no issues linking to
 # the SolarWindsAPM libs.

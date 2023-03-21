@@ -296,7 +296,7 @@ VALUE Profiling::profiling_stop(pid_t tid) {
     return (result == 0) ? Qtrue : Qfalse;
 }
 
-VALUE Profiling::set_interval(VALUE self, VALUE val) {
+VALUE Profiling::interval_setup(VALUE self, VALUE val) {
     if (!FIXNUM_P(val)) return Qfalse;
 
     configured_interval = FIX2INT(val);
@@ -304,18 +304,18 @@ VALUE Profiling::set_interval(VALUE self, VALUE val) {
     return INT2FIX(configured_interval);
 }
 
-VALUE Profiling::get_interval() {
+VALUE Profiling::interval() {
     return INT2FIX(current_interval);
 }
 
 VALUE Profiling::profiling_run(VALUE self, VALUE rb_thread_val, VALUE interval) {
     rb_need_block();  // checks if function is called with a block in Ruby
-    if (profiling_shut_down || OboeProfiling::get_interval() == 0) {
+    if (profiling_shut_down || OboeProfiling::interval() == 0) {
         return rb_yield(Qundef);
     }
 
     if (FIXNUM_P(interval)) configured_interval = FIX2INT(interval);
-    current_interval = max(configured_interval, (long)OboeProfiling::get_interval());
+    current_interval = max(configured_interval, (long)OboeProfiling::interval());
 
     // !!!!! Can't use try_catch_shutdown() here, MAKES rb_ensure cause a memory leak !!!!!
     try {
@@ -356,7 +356,7 @@ void Profiling::shut_down() {
     }
 }
 
-VALUE Profiling::getTid() {
+VALUE Profiling::tid() {
     pid_t tid = AO_GETTID;
 
     return INT2NUM(tid);
@@ -424,10 +424,10 @@ extern "C" void Init_profiling(void) {
     static VALUE rb_mSolarWindsOTelAPM = rb_define_module("SolarWindsOTelAPM");
     static VALUE rb_mCProfiler = rb_define_module_under(rb_mSolarWindsOTelAPM, "CProfiler");
 
-    rb_define_singleton_method(rb_mCProfiler, "get_interval", reinterpret_cast<VALUE (*)(...)>(Profiling::get_interval), 0);
-    rb_define_singleton_method(rb_mCProfiler, "set_interval", reinterpret_cast<VALUE (*)(...)>(Profiling::set_interval), 1);
+    rb_define_singleton_method(rb_mCProfiler, "interval", reinterpret_cast<VALUE (*)(...)>(Profiling::interval), 0);
+    rb_define_singleton_method(rb_mCProfiler, "interval_setup", reinterpret_cast<VALUE (*)(...)>(Profiling::interval_setup), 1);
     rb_define_singleton_method(rb_mCProfiler, "run", reinterpret_cast<VALUE (*)(...)>(Profiling::profiling_run), 2);
-    rb_define_singleton_method(rb_mCProfiler, "get_tid", reinterpret_cast<VALUE (*)(...)>(Profiling::getTid), 0);
+    rb_define_singleton_method(rb_mCProfiler, "tid", reinterpret_cast<VALUE (*)(...)>(Profiling::tid), 0);
 
     pthread_atfork(prof_atfork_prepare,
                    prof_atfork_parent,

@@ -189,7 +189,7 @@ module SolarWindsOTelAPM
         @@config[:profiling_interval] = value
         # CProfiler may not be loaded yet, the profiler will send the value
         # after it is loaded
-        SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
+        SolarWindsOTelAPM::CProfiler.interval_setup(value) if defined? SolarWindsOTelAPM::CProfiler
 
       when :tracing_mode
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
@@ -284,7 +284,7 @@ module SolarWindsOTelAPM
     #     @@config[:profiling_interval] = value
     #     # CProfiler may not be loaded yet, the profiler will send the value
     #     # after it is loaded
-    #     SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
+    #     SolarWindsOTelAPM::CProfiler.interval_setup(value) if defined? SolarWindsOTelAPM::CProfiler
 
     #   elsif key == :tracing_mode
     #   #   CAN'T DO `set_tracing_mode` ANYMORE, ALL TRACING COMMUNICATION TO OBOE

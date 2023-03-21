@@ -19,65 +19,7 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.logger.warn "[solarwinds_apm/loading] Couldn't contextual_name #{cls} with error #{e.message}." 
         cls
       end
-
-      ##
-      # method_alias
-      #
-      # Centralized utility method to alias a method on an arbitrary
-      # class or module.
-      #
-      def method_alias(cls, method, name=nil)
-        name ||= contextual_name(cls)
-
-        if cls.method_defined?(method.to_sym) || cls.private_method_defined?(method.to_sym)
-
-          # Strip '!' or '?' from method if present
-          safe_method_name = method.to_s.chop if method.to_s =~ /\?$|\!$/
-          safe_method_name ||= method
-
-          without_sw_apm = "#{safe_method_name}_without_sw_apm"
-          with_sw_apm    = "#{safe_method_name}_with_sw_apm"
-
-          # Only alias if we haven't done so already
-          unless cls.method_defined?(without_sw_apm.to_sym) || cls.private_method_defined?(without_sw_apm.to_sym)
-            cls.class_eval do
-              alias_method without_sw_apm, method.to_s
-              alias_method method.to_s, with_sw_apm
-            end
-          end
-        else
-          SolarWindsOTelAPM.logger.warn "[solarwinds_apm/loading] Couldn't properly instrument #{name}.#{method}.  Partial traces may occur."
-        end
-      end
-
-      ##
-      # class_method_alias
-      #
-      # Centralized utility method to alias a class method on an arbitrary
-      # class or module
-      #
-      def class_method_alias(cls, method, name=nil)
-        name ||= contextual_name(cls)
-
-        if cls.singleton_methods.include? method.to_sym
-
-          # Strip '!' or '?' from method if present
-          safe_method_name = method.to_s.chop if method.to_s =~ /\?$|\!$/
-          safe_method_name ||= method
-
-          without_sw_apm = "#{safe_method_name}_without_sw_apm"
-          with_sw_apm    = "#{safe_method_name}_with_sw_apm"
-
-          # Only alias if we haven't done so already
-          unless cls.singleton_methods.include? without_sw_apm.to_sym
-            cls.singleton_class.send(:alias_method, without_sw_apm, method.to_s)
-            cls.singleton_class.send(:alias_method, method.to_s, with_sw_apm)
-          end
-        else
-          SolarWindsOTelAPM.logger.warn "[solarwinds_apm/loading] Couldn't properly instrument #{name}.  Partial traces may occur."
-        end
-      end
-
+      
       ##
       # send_extend
       #
@@ -119,7 +61,7 @@ module SolarWindsOTelAPM
       # for things like HTTP scheme or method.  This takes anything and does
       # it's best to safely convert it to a string (if needed) and convert it
       # to all uppercase.
-      def upcase(str)
+      def upcase!(str)
         if str.is_a?(String) || str.respond_to?(:to_s)
           str.to_s.upcase
         else
@@ -280,7 +222,6 @@ module SolarWindsOTelAPM
           platform_info['Ruby.TraceMode.Version']                  = SolarWindsOTelAPM::Config[:tracing_mode]
           platform_info.merge!(report_gem_in_use)
           platform_info.merge!(report_server_in_use)
-
         rescue StandardError, ScriptError => e
           platform_info['Error'] = "Error in build_report: #{e.message}"
           SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
@@ -321,7 +262,6 @@ module SolarWindsOTelAPM
           rescue StandardError => e
             SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes. Error: #{e.message}"
           end
-
         rescue StandardError, ScriptError => e
           # Also rescue ScriptError (aka SyntaxError) in case one of the expected
           # version defines don't exist
@@ -389,9 +329,6 @@ module SolarWindsOTelAPM
         end
         platform_info
       end
-
-    end
-
-    
+    end    
   end
 end

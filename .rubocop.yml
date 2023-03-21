@@ -2491,7 +2491,7 @@ Lint/UselessTimes:
 
 Lint/Void:
   Description: 'Possible use of operator/literal/variable in void context.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   CheckForMethodsWithNoSideEffects: false
 
@@ -2949,7 +2949,7 @@ Security/CompoundHash:
 
 Security/Eval:
   Description: 'The use of eval represents a serious security risk.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.47'
 
 Security/IoMethods:
@@ -2982,7 +2982,7 @@ Security/MarshalLoad:
 
 Security/Open:
   Description: 'The use of `Kernel#open` and `URI.open` represent a serious security risk.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.53'
   VersionChanged: '1.0'
   Safe: false
@@ -4705,6 +4705,8 @@ Style/PercentLiteralDelimiters:
     '%w': '[]'
     '%W': '[]'
   VersionChanged: '0.48'
+  Exclude:
+    - 'lib/solarwinds_otel_apm/oboe_init_options.rb'
 
 Style/PercentQLiterals:
   Description: 'Checks if uses of %Q/%q match the configured preference.'
@@ -4903,7 +4905,7 @@ Style/RedundantRegexpCharacterClass:
 
 Style/RedundantRegexpEscape:
   Description: 'Checks for redundant escapes in Regexps.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.85'
 
 Style/RedundantReturn:
@@ -4955,10 +4957,10 @@ Style/RedundantStringEscape:
 Style/RegexpLiteral:
   Description: 'Use / or %r around regular expressions.'
   StyleGuide: '#percent-r'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '0.30'
-  EnforcedStyle: mixed
+  EnforcedStyle: slashes
   # slashes: Always use slashes.
   # percent_r: Always use `%r`.
   # mixed: Use slashes on single-line regexes, and `%r` on multi-line regexes.

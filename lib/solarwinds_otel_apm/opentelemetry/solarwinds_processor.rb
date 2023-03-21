@@ -2,8 +2,6 @@ module SolarWindsOTelAPM
   module OpenTelemetry
     # reference: OpenTelemetry::SDK::Trace::SpanProcessor
     class SolarWindsProcessor
-
-
       HTTP_METHOD      = "http.method".freeze
       HTTP_ROUTE       = "http.route".freeze
       HTTP_STATUS_CODE = "http.status_code".freeze

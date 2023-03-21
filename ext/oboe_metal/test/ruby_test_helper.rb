@@ -40,17 +40,17 @@ class TestMe
     private
 
     def yodel
-      a_proc = lambda(x) do 
-                 x = x*x
-                 yield
-               end
+      a_proc = lambda(x) do
+        x * x
+        yield
+      end
       in_block(&a_proc)
     end
 
-    def in_block(&block)
+    def in_block(_block)
       begin
         yield 7
-        # puts "block called!"
+        puts "block called!"
       rescue StandardError => e
         puts "no, this should never happen"
         puts e
