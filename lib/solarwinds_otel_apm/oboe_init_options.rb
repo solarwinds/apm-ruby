@@ -214,7 +214,7 @@ module SolarWindsOTelAPM
       allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
                      'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
 
-      allowed_uri.include? ENV["SW_APM_COLLECTOR"] ? true : false
+      (allowed_uri.include? ENV["SW_APM_COLLECTOR"])? true : false
     end
 
     def sanitize_collector_uri(uri)

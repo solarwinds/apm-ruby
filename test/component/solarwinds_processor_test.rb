@@ -43,20 +43,19 @@ describe 'SolarWindsProcessor' do
 
   
   it 'test calculate_span_time' do 
-    result = @processor.send(:calculate_span_time, @span_data.start_timestamp, @span_data.end_timestamp)
+    result = @processor.send(:calculate_span_time, start_time: @span_data.start_timestamp, end_time: @span_data.end_timestamp)
     _(result).must_equal 44853
 
-    result = @processor.send(:calculate_span_time, @span_data.start_timestamp, nil)
+    result = @processor.send(:calculate_span_time, start_time: @span_data.start_timestamp, end_time: nil)
     _(result).must_equal 0
 
-    result = @processor.send(:calculate_span_time, nil, @span_data.end_timestamp)
+    result = @processor.send(:calculate_span_time, start_time: nil, end_time: @span_data.end_timestamp)
     _(result).must_equal 0
   end
 
   it 'test calculate_transaction_names' do 
-    result = @processor.send(:calculate_transaction_names,@span_data)
-    _(result[0]).must_equal "connect"
-    _(result[1]).must_equal nil
+    result = @processor.send(:calculate_transaction_names, @span_data)
+    _(result).must_equal "connect"
   end
 
   it 'test get_http_status_code' do 
@@ -68,13 +67,13 @@ describe 'SolarWindsProcessor' do
     _(result).must_equal 200
   end
 
-  it 'test has_error' do 
-    result = @processor.send(:has_error, @span_data)
+  it 'test error?' do 
+    result = @processor.send(:error?, @span_data)
     _(result).must_equal 0 
   end
 
-  it 'test is_span_http' do 
-    result = @processor.send(:is_span_http, @span_data)
+  it 'test span_http?' do 
+    result = @processor.send(:span_http?, @span_data)
     _(result).must_equal false 
   end
 

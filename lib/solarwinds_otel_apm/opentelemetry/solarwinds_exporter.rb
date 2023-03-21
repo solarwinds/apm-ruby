@@ -110,31 +110,31 @@ module SolarWindsOTelAPM
         framework = scope_name.split("::")[2..]&.join("::")
         return if framework.nil? || framework.empty?
         
-        framework        = normalize_framework_name(framework)
-        framwork_version = check_framework_version(framework)
-        event.addInfo("Ruby.#{framework}.Version",framwork_version) unless framework_version.nil?
+        framework         = normalize_framework_name(framework)
+        framework_version = check_framework_version(framework)
+        event.addInfo("Ruby.#{framework}.Version",framework_version) unless framework_version.nil?
       end
 
       def check_framework_version(framework)
-        framwork_version = nil
+        framework_version = nil
         if @version_cache.keys.include? framework
 
-          framwork_version = @version_cache[framework]
+          framework_version = @version_cache[framework]
         else
 
           begin
             require framework
-            framwork_version = Gem.loaded_specs[framework].version.to_s
+            framework_version = Gem.loaded_specs[framework].version.to_s
           rescue LoadError
             SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
           rescue StandardError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
           ensure
-            @version_cache[framework] = framwork_version
+            @version_cache[framework] = framework_version
           end
         end
         SolarWindsOTelAPM.logger.debug "######## Current framework version cached: #{@version_cache.inspect}"
-        framwork_version
+        framework_version
       end
 
       def normalize_framework_name(framework)
@@ -175,7 +175,7 @@ module SolarWindsOTelAPM
       end
 
       def report_info_event(span_event)
-        evt = SolarWindsOTelAPM::Context.createEvent((span_event.timestamp.to_i / 1000).to_i)
+        evt = @context.createEvent((span_event.timestamp.to_i / 1000).to_i)
         evt.addInfo('Label', 'info')
         span_event.attributes&.each do |key, value|
           evt.addInfo(key, value)

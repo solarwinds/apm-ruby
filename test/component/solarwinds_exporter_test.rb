@@ -89,7 +89,7 @@ describe 'SolarWindsExporterTest' do
   it 'test build_meta_data false' do
 
     clear_all_traces
-    md = @exporter.send(:build_meta_data, @span_data, false)
+    md = @exporter.send(:build_meta_data, @span_data, parent: false)
     _(md.class.to_s).must_equal "Oboe_metal::Metadata"
 
   end
@@ -97,7 +97,7 @@ describe 'SolarWindsExporterTest' do
   it 'test build_meta_data true' do
 
     clear_all_traces
-    md = @exporter.send(:build_meta_data, @span_data, true)
+    md = @exporter.send(:build_meta_data, @span_data, parent: true)
     _(md.class.to_s).must_equal "Oboe_metal::Metadata"
 
   end

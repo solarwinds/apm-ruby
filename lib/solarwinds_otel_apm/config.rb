@@ -41,8 +41,7 @@ module SolarWindsOTelAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files = config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
-      config_files << config_files
+      config_files << config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_otel_apm_config.rb')

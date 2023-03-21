@@ -146,8 +146,9 @@ module SolarWindsOTelAPM
       def create_xtraceoptions_response_value(decision, parent_span_context, xtraceoptions)
         SolarWindsOTelAPM.logger.debug "####### create_xtraceoptions_response_value decision[auth]: #{decision['auth']}; decision[auth_msg]: #{decision['auth_msg']}; xtraceoptions.trigger_trace: #{xtraceoptions.trigger_trace}"
         
+        response = []
         w3c_sanitized = SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED
-        response = [XTRACEOPTIONS_RESP_AUTH, decision['auth_msg']].join(w3c_sanitized) if xtraceoptions.signature && decision['auth_msg']
+        response << [XTRACEOPTIONS_RESP_AUTH, decision['auth_msg']].join(w3c_sanitized) if xtraceoptions.signature && decision['auth_msg']
         if !decision["auth"] || decision["auth"] < 1
           trigger_msg = ""
           tracestring = nil
@@ -168,7 +169,7 @@ module SolarWindsOTelAPM
 
         # so far the x-trace-options are only used for liboboe calculate decision for x-trace feature
         # probably not need for remaining services since liboboe decision only calculate once
-        if xtraceoptions.ignored.empty?
+        unless xtraceoptions.ignored.empty?
           ignored_response = [XTRACEOPTIONS_RESP_IGNORED, xtraceoptions.ignored.join(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED)]
           response << ignored_response.join(w3c_sanitized)
           # e.g. response << ignored####invalidkeys,invalidkeys,invalidkeys

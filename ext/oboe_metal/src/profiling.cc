@@ -310,12 +310,12 @@ VALUE Profiling::interval() {
 
 VALUE Profiling::profiling_run(VALUE self, VALUE rb_thread_val, VALUE interval) {
     rb_need_block();  // checks if function is called with a block in Ruby
-    if (profiling_shut_down || OboeProfiling::interval() == 0) {
+    if (profiling_shut_down || OboeProfiling::get_interval() == 0) {
         return rb_yield(Qundef);
     }
 
     if (FIXNUM_P(interval)) configured_interval = FIX2INT(interval);
-    current_interval = max(configured_interval, (long)OboeProfiling::interval());
+    current_interval = max(configured_interval, (long)OboeProfiling::get_interval());
 
     // !!!!! Can't use try_catch_shutdown() here, MAKES rb_ensure cause a memory leak !!!!!
     try {

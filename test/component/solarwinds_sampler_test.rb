@@ -24,11 +24,6 @@ describe 'SolarWindsSamplerTest' do
 
   end
 
-  it 'test init_context' do 
-    context = @sampler.send(:init_context)
-    assert_equal(context, SolarWindsOTelAPM::Context)
-  end
-
   it 'test calculate_attributes should return nil' do 
     attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context, @xtraceoptions)
     _(attributes).must_equal nil
