@@ -13,12 +13,12 @@ module SolarWindsOTelAPM
       def initialize(endpoint: ENV['SW_APM_EXPORTER'],
                      metrics_reporter: nil,
                      service_key: ENV['SW_APM_SERVICE_KEY'],
-                     apm_txname_manager: nil)
+                     txn_manager: nil)
         raise ArgumentError, "Missing SW_APM_SERVICE_KEY." if service_key.nil?
         
         @metrics_reporter = metrics_reporter || ::OpenTelemetry::SDK::Trace::Export::MetricsReporter
         @shutdown = false
-        @apm_txname_manager = apm_txname_manager
+        @apm_txname_manager = txn_manager
         @context = SolarWindsOTelAPM::Context
         @metadata = SolarWindsOTelAPM::Metadata
         @reporter = SolarWindsOTelAPM::Reporter

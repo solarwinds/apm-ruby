@@ -276,15 +276,9 @@ if defined?(SolarWindsOTelAPM::Config)
 
   SolarWindsOTelAPM::Config[:otel_exporter]     = 'solarwinds'
 
-  SolarWindsOTelAPM::Config[:otel_sampler]      = 'solarwinds'
-
-  SolarWindsOTelAPM::Config[:otel_processor]    = 'solarwinds'
-
   SolarWindsOTelAPM::Config[:service_name]      = ''
 
-  SolarWindsOTelAPM::Config[:otel_response_propagator]    = 'solarwinds'
-
-  SolarWindsOTelAPM::Config[:trigger_trace]               = 'enabled'
+  SolarWindsOTelAPM::Config[:trigger_trace]     = 'enabled'
 
   #############################################
   ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##

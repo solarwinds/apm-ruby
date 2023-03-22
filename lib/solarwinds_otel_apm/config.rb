@@ -223,16 +223,7 @@ module SolarWindsOTelAPM
       elsif key == :otel_propagator # SWO_OTEL_PROPAGATOR
         @@config[key.to_sym] = value
 
-      elsif key == :otel_sampler    # SWO_OTEL_SAMPLER
-        @@config[key.to_sym] = value
-
-      elsif key == :otel_processor  # SWO_OTEL_PROCESSOR
-        @@config[key.to_sym] = value
-
       elsif key == :service_name    # SWO_OTEL_SERVICE_NAME
-        @@config[key.to_sym] = value
-
-      elsif key == :otel_response_propagator # SWO_OTEL_RESPONSE
         @@config[key.to_sym] = value
 
       elsif key == :otel_exporter            # SWO_OTEL_EXPORTER
