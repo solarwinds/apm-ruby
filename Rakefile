@@ -390,13 +390,13 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
 
   require 'package_cloud'
 
-  abort('Require PACKAGECLOUD_TOKEN') if ENV["PACKAGECLOUD_TOKEN"].nil? || ENV["PACKAGECLOUD_TOKEN"].empty? 
+  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].nil? || ENV['PACKAGECLOUD_TOKEN'].empty? 
   abort('No version specified.') if args[:version].nil? || args[:version].empty?
 
   gems = Dir["builds/solarwinds_otel_apm-#{args[:version]}.gem"]
   gem_to_push = nil
   if gems.empty?
-    Rake::Task["build_gem"].execute
+    Rake::Task['build_gem'].execute
     gem_to_push = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
   else
     gem_to_push = gems.first
@@ -406,10 +406,10 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.gsub('-', '')
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.pre/).to_s.gsub('-', '') if args[:version].include? 'pre'
   
-  abort("Couldn't find the required gem file.") if gem_to_push.nil? || gem_to_push_version != args[:version]
+  abort('Could not find the required gem file.') if gem_to_push.nil? || gem_to_push_version != args[:version]
     
   cli = PackageCloud::CLI::Entry.new
-  cli.push("solarwinds/solarwinds-apm-otel-ruby", gem_to_push.strip)
+  cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
 
   puts "\n=== Finished ===\n"
 end

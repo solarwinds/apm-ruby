@@ -1,10 +1,10 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-require 'simplecov' if ENV["SIMPLECOV_COVERAGE"]
-require 'simplecov-console' if ENV["SIMPLECOV_COVERAGE"]
+require 'simplecov' if ENV['SIMPLECOV_COVERAGE']
+require 'simplecov-console' if ENV['SIMPLECOV_COVERAGE']
 
-if ENV["SIMPLECOV_COVERAGE"]
+if ENV['SIMPLECOV_COVERAGE']
   SimpleCov.start do
     # SimpleCov.formatter = SimpleCov.formatter = SimpleCov::Formatter::Console
     merge_timeout 3600
@@ -170,7 +170,7 @@ end
 #
 def edge?(edge, traces)
   traces.each do |t|
-    return true if SolarWindsOTelAPM::TraceString.span_id(t["sw.trace_context"]) == edge
+    return true if SolarWindsOTelAPM::TraceString.span_id(t['sw.trace_context']) == edge
   end
   SolarWindsOTelAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
   false
@@ -179,15 +179,15 @@ end
 def assert_entry_exit(traces, num=nil, check_trace_id: true)
   if check_trace_id
     trace_id = SolarWindsOTelAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
-    refute traces.find { |tr| SolarWindsOTelAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, "trace ids not matching"
+    refute traces.find { |tr| SolarWindsOTelAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, 'trace ids not matching'
   end
   num_entries = traces.select { |tr| tr ['Label'] == 'entry' }.size
   num_exits = traces.select { |tr| tr ['Label'] == 'exit' }.size
   if num && num > 0
-    _(num_entries).must_equal num, "incorrect number of entry spans"
-    _(num_exits).must_equal num, "incorrect number of exit spans"
+    _(num_entries).must_equal num, 'incorrect number of entry spans'
+    _(num_exits).must_equal num, 'incorrect number of exit spans'
   else
-    _(num_exits).must_equal num_entries, "number of exit spans is not the same as entry spans"
+    _(num_exits).must_equal num_entries, 'number of exit spans is not the same as entry spans'
   end
 end
 
@@ -381,8 +381,6 @@ def create_context(trace_id:,
     )
   )
   conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
-  # context = context.set_value(conext_key, true)
-  # context
   context.set_value(conext_key, true)
 end
 
