@@ -18,7 +18,6 @@ module SolarWindsOTelAPM
     condition ? 'yes' : 'no'
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
   def self.support_report
     @logger_level = SolarWindsOTelAPM.logger.level
     SolarWindsOTelAPM.logger.level = ::Logger::DEBUG
@@ -99,5 +98,4 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.level = @logger_level
     nil
   end
-  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 end

@@ -55,11 +55,12 @@ retries = 3
 success = false
 while retries > 0
   begin
-    download = URI.open(ao_item, 'rb')
-    IO.copy_stream(download, clib)
-
+    # download = URI.open(ao_item, 'rb')
+    # IO.copy_stream(download, clib)
+    IO.copy_stream(URI.parse(ao_item).open, clib)
+    
     clib_checksum = Digest::SHA256.file(clib).hexdigest
-    download.close
+    # download.close
     checksum =  File.read(ao_checksum_file).strip
 
     # unfortunately these messages only show if the install command is run

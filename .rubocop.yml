@@ -721,7 +721,7 @@ Layout/ExtraSpacing:
 
 Layout/FirstArgumentIndentation:
   Description: 'Checks the indentation of the first argument in a method call.'
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.68'
   VersionChanged: '0.77'
   EnforcedStyle: consistent
@@ -1150,7 +1150,7 @@ Layout/MultilineMethodCallBraceLayout:
                  a new line.
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: symmetrical
+  EnforcedStyle: same_line
   SupportedStyles:
     # symmetrical: closing brace is positioned in same way as opening brace
     # new_line: closing brace is always on a new line
@@ -1967,7 +1967,7 @@ Lint/Loop:
 
 Lint/MissingCopEnableDirective:
   Description: 'Checks for a `# rubocop:enable` after `# rubocop:disable`.'
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.52'
   # Maximum number of consecutive lines the cop can be disabled for.
   # 0 allows only single-line disables
@@ -2122,7 +2122,7 @@ Lint/RedundantCopDisableDirective:
                  Checks for rubocop:disable comments that can be removed.
                  Note: this cop is not disabled when disabling all cops.
                  It must be explicitly disabled.
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.76'
 
 Lint/RedundantCopEnableDirective:
@@ -2420,7 +2420,7 @@ Lint/UnusedMethodArgument:
   IgnoreEmptyMethods: true
   IgnoreNotImplementedMethods: true
   Exclude:
-    - 'lib/solarwinds_otel_apm/opentelemetry/*rb'
+    - 'lib/solarwinds_otel_apm/opentelemetry/solarwinds_response_propagator.rb'
 
 Lint/UriEscapeUnescape:
   Description: >-
@@ -2491,9 +2491,9 @@ Lint/UselessTimes:
 
 Lint/Void:
   Description: 'Possible use of operator/literal/variable in void context.'
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.9'
-  CheckForMethodsWithNoSideEffects: false
+  CheckForMethodsWithNoSideEffects: true
 
 #################### Metrics ###############################
 
@@ -2949,7 +2949,7 @@ Security/CompoundHash:
 
 Security/Eval:
   Description: 'The use of eval represents a serious security risk.'
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.47'
 
 Security/IoMethods:
@@ -2982,7 +2982,7 @@ Security/MarshalLoad:
 
 Security/Open:
   Description: 'The use of `Kernel#open` and `URI.open` represent a serious security risk.'
-  Enabled: false
+  Enabled: true
   VersionAdded: '0.53'
   VersionChanged: '1.0'
   Safe: false
@@ -5058,7 +5058,7 @@ Style/Semicolon:
   VersionAdded: '0.9'
   VersionChanged: '0.19'
   # Allow `;` to separate several expressions on the same line.
-  AllowAsExpressionSeparator: false
+  AllowAsExpressionSeparator: true
 
 Style/Send:
   Description: 'Prefer `Object#__send__` or `Object#public_send` to `send`, as `send` may overlap with existing methods.'

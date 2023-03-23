@@ -92,11 +92,8 @@ task :fetch_oboe_file_from_staging do
   # inform when there is a newer oboe version
   remote_file = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/latest', 'VERSION')
   local_file  = File.join(ext_src_dir, 'VERSION_latest')
-  URI.open(remote_file, 'rb') do |rf|
-    content = rf.read
-    File.open(local_file, 'wb') { |f| f.puts content }
-    puts "FYI: latest C-Lib VERSION: #{content.strip} !" unless content.strip == oboe_version
-  end
+
+  IO.copy_stream(URI.parse(remote_file).open, local_file)
 
   # oboe and bson header files
   FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
@@ -119,10 +116,8 @@ task :fetch_oboe_file_from_staging do
 
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   unless ENV['OBOE_LOCAL']
@@ -135,12 +130,8 @@ task :fetch_oboe_file_from_staging do
 
       puts "fetching #{remote_file}"
       puts "      to #{local_file}"
-
-      URI.open(remote_file, 'rb') do |rf|
-        content = rf.read
-        File.open(local_file, 'wb') { |f| f.puts content }
-        puts "%%% #{filename} checksum: #{content.strip} %%%"
-      end
+      IO.copy_stream(URI.parse(remote_file).open, local_file)
+      puts "%%% #{filename} %%%"
     end
   end
 
@@ -202,10 +193,7 @@ task :fetch_oboe_file_from_prod do
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
 
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   sha_files = ['liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
@@ -218,10 +206,7 @@ task :fetch_oboe_file_from_prod do
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
 
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   FileUtils.cd(File.join(@ext_dir, 'src')) do
@@ -412,4 +397,13 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
 
   puts "\n=== Finished ===\n"
+end
+
+desc 'Run rubocop and generate result. For specific autocorrection, run: bundle exec rubocop -A --only ...'
+task :rubocop do 
+  rubocop_file = "#{__dir__}/rubocop_result.txt"
+  File.delete(rubocop_file) if File.exist?(rubocop_file)
+  new_file = File.new(rubocop_file, "w")
+  new_file.close
+  %x(bundle exec rubocop > rubocop_result.txt)
 end

@@ -21,7 +21,6 @@ module SolarWindsOTelAPM
 
     private
 
-    # rubocop:disable Metrics/MethodLength
     def print_header
       say ""
       say shell.set_color "Welcome to the SolarWindsOTelAPM Ruby instrumentation setup.", :green, :bold
@@ -35,7 +34,6 @@ module SolarWindsOTelAPM
       say "More information on instrumenting Ruby applications can be found here:"
       say "https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent"
     end
-    # rubocop:enable Metrics/MethodLength
 
     def print_footer
       say ""

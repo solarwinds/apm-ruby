@@ -137,8 +137,6 @@ module SolarWindsOTelAPM
       #
       # This legacy version of build_init_report is used for apps without Bundler.
       #
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
-      #
       # @deprecated Please use {#build_init_report} instead
       def legacy_build_init_report
         SolarWindsOTelAPM.logger.warn '[solarwinds_apm/deprecated] Oboe::API will be deprecated in a future version.'
@@ -200,7 +198,6 @@ module SolarWindsOTelAPM
         end
         platform_info
       end
-      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
       ##
       #  build_init_report
@@ -209,7 +206,6 @@ module SolarWindsOTelAPM
       # running environment.  This is used on stack boot in __Init reporting
       # and for SolarWindsOTelAPM.support_report.
       #
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_init_report
         platform_info = {'__Init' => 1}
         begin
@@ -237,7 +233,6 @@ module SolarWindsOTelAPM
       # running environment for swo only. This is used on stack boot in __Init reporting
       # and for SolarWindsOTelAPM.support_report.
       #
-      # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
       def build_swo_init_report
 
         platform_info = {'__Init' => true}
@@ -273,7 +268,6 @@ module SolarWindsOTelAPM
         end
         platform_info
       end
-      # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
       private
 

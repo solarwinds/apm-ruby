@@ -26,6 +26,10 @@ class TestMe
     end
   end
 
+  # example call 
+  # sing do
+  #   puts 'a'
+  # end
   class Teddy
     attr_accessor :name
 
@@ -40,17 +44,14 @@ class TestMe
     private
 
     def yodel
-      a_proc = lambda(x) do
-        x * x
-        yield
-      end
+      a_proc = -> (x) { result = x * x;  yield }
       in_block(&a_proc)
     end
 
-    def in_block(_block)
+    def in_block(*)
       begin
         yield 7
-        puts "block called!"
+        # puts "block called!"
       rescue StandardError => e
         puts "no, this should never happen"
         puts e

@@ -35,7 +35,7 @@ describe 'SolarWindsExporterTest' do
                                                             tracestate
                                                           )
     txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
-    @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(endpoint:"",metrics_reporter:nil,service_key:"",apm_txname_manager:txn_name_manager)
+    @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager:txn_name_manager)
                                                 
   end
 

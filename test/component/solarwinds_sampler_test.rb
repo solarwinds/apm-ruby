@@ -25,12 +25,8 @@ describe 'SolarWindsSamplerTest' do
   end
 
   it 'test calculate_attributes should return nil' do 
-    attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context, @xtraceoptions)
+    attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes).must_equal nil
-  end
-
-  it 'test calculate_attributes ' do 
-    skip
   end
 
   it 'test add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 

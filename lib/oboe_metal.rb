@@ -117,3 +117,4 @@ module SolarWindsOTelAPM
 end
 
 SolarWindsOTelAPM.loaded = true
+# rubocop:enable Style/Documentation

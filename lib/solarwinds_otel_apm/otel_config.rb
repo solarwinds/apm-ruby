@@ -60,7 +60,7 @@ module SolarWindsOTelAPM
       propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new if propagators.include? 'solarwinds'
 
       if propagators_list.size == 1
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] Default propagators tracecontext,baggage,solarwinds will be used."
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Default propagators tracecontext,baggage,solarwinds will be used.'
         propagators_list = [::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new,
                             ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
                             SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]
@@ -70,7 +70,12 @@ module SolarWindsOTelAPM
     end
 
     def self.propagator?(propagator)
-      propagator.methods.include?(:extract) && propagator.methods.include?(:inject) rescue false
+      begin
+        propagator.methods.include?(:extract) && propagator.methods.include?(:inject) 
+      rescue StandardError => e
+        SolarWindsOTelAPM.logger.warn "solarwinds_otel_apm/otel_config] Check propagator #{propagator} failed. Error: #{e.message}"
+        false
+      end
     end
 
     def self.resolve_span_processor
@@ -86,26 +91,27 @@ module SolarWindsOTelAPM
 
       @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager)
 
-      if @@config_map['OpenTelemetry::Exporter'] && ![Class, Module].include?(@@config_map['OpenTelemetry::Exporter'].class)
-        @@config[:exporter] = @@config_map['OpenTelemetry::Exporter']
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The customer provided exporter #{@@config[:exporter]} is used."
-        @@config_map.delete_if {|k,_v| k == 'OpenTelemetry::Exporter'}
-      end
+      return unless @@config_map['OpenTelemetry::Exporter'] && ![Class, Module].include?(@@config_map['OpenTelemetry::Exporter'].class)
+
+      @@config[:exporter] = @@config_map['OpenTelemetry::Exporter']
+      SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The customer provided exporter #{@@config[:exporter]} is used."
+      @@config_map.delete_if {|k,_v| k == 'OpenTelemetry::Exporter'}
     end
 
     def self.resolve_sampler
 
       resolve_sampler_config
-      @@config[:sampler] = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-                    root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                    remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-                    remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
+      @@config[:sampler] = 
+        ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+          root: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+          remote_parent_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
+          remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
     end
 
     def self.resolve_sampler_config
       return unless (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
       
-      sampler_config = Hash.new
+      sampler_config = {}
       sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
       @@config[:sampler_config] = sampler_config
     end
@@ -117,18 +123,7 @@ module SolarWindsOTelAPM
     # Because reporter initialization is before opentelemetry initialization
     # 
     def self.resolve_instrumentation_config_map
-      response_propagators = ENV["SWO_OTEL_RESPONSE_PROPAGATOR"] || SolarWindsOTelAPM::Config[:otel_response_propagator] || 'solarwinds'
-      response_propagators_list = Array.new
-      response_propagators.split(",").each do |res|
-        case res
-        when 'solarwinds'
-          response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-        else
-          response_propagators_list << SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The default response propagator is used"
-        end
-      end
-
+      response_propagators_list = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
       if @@config_map["OpenTelemetry::Instrumentation::Rack"]
         @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
       else
@@ -195,8 +190,13 @@ module SolarWindsOTelAPM
         end
       end
 
+      # ::OpenTelemetry::Internal::ProxyTracerProvider.new
+      # ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
+      # ::OpenTelemetry.tracer_provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
+      ::OpenTelemetry.tracer_provider.delegate = ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
+      
       # configure sampler afterwards
-      ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
+      # ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
       nil
     end
   end

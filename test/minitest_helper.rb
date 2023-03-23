@@ -376,10 +376,7 @@ def create_context(trace_id:,
       OpenTelemetry::Trace::SpanContext.new(
         trace_id: Array(trace_id).pack('H*'),
         span_id: Array(span_id).pack('H*'),
-        trace_flags: trace_flags
-      )
-    )
-  )
+        trace_flags: trace_flags)))
   conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
   context.set_value(conext_key, true)
 end

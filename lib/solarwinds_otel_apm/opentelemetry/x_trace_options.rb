@@ -35,7 +35,7 @@ module SolarWindsOTelAPM
 
     SW_XTRACEOPTIONS_RESPONSE_KEY = 'xtrace_options_response'.freeze
 
-    def initialize(context, signature=nil)
+    def initialize(context)
       SolarWindsOTelAPM.logger.debug "####### x_trace_options context: #{context.inspect}"
       @context = context.dup
       @trigger_trace = false

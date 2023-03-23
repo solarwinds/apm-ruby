@@ -8,13 +8,7 @@ module SolarWindsOTelAPM
 
       private_constant(:SUCCESS, :FAILURE)
     
-      def initialize(endpoint: ENV['SW_APM_EXPORTER'],
-                     metrics_reporter: nil,
-                     service_key: ENV['SW_APM_SERVICE_KEY'],
-                     txn_manager: nil)
-        raise ArgumentError, "Missing SW_APM_SERVICE_KEY." if service_key.nil?
-        
-        @metrics_reporter = metrics_reporter || ::OpenTelemetry::SDK::Trace::Export::MetricsReporter
+      def initialize(txn_manager: nil)
         @shutdown = false
         @apm_txname_manager = txn_manager
         @context = SolarWindsOTelAPM::Context
@@ -22,7 +16,7 @@ module SolarWindsOTelAPM
         @version_cache = {}
       end
 
-      def export(span_data, timeout: nil)
+      def export(span_data, _timeout: nil)
         return FAILURE if @shutdown
         
         SolarWindsOTelAPM.logger.debug "####### span_data: #{span_data} " 
@@ -32,11 +26,11 @@ module SolarWindsOTelAPM
         SUCCESS
       end
 
-      def force_flush(timeout: nil)
+      def force_flush(_timeout: nil)
         SUCCESS
       end
 
-      def shutdown(timeout: nil)
+      def shutdown(_timeout: nil)
         @shutdown = true
         SUCCESS
       end

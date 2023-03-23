@@ -37,7 +37,7 @@ describe 'Loading Opentelemetry Test' do
         ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.stub(:new, :baggage_propagator) do
           SolarWindsOTelAPM::OTelConfig.send(:resolve_propagators)
 
-          _(SolarWindsOTelAPM::OTelConfig[:propagators]).must_equal [:tracecontext_propagator]
+          _(SolarWindsOTelAPM::OTelConfig[:propagators]).must_equal [:tracecontext_propagator, :baggage_propagator, :solarwinds_propagator]
         
         end
       end
@@ -53,7 +53,7 @@ describe 'Loading Opentelemetry Test' do
         ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.stub(:new, :baggage_propagator) do
           SolarWindsOTelAPM::OTelConfig.send(:resolve_propagators)
 
-          _(SolarWindsOTelAPM::OTelConfig[:propagators]).must_equal [:baggage_propagator, :solarwinds_propagator]
+          _(SolarWindsOTelAPM::OTelConfig[:propagators]).must_equal [:tracecontext_propagator, :baggage_propagator, :solarwinds_propagator]
         
         end
       end
@@ -62,19 +62,19 @@ describe 'Loading Opentelemetry Test' do
 
   it 'test_should_set_solarwinds_processor_when_swo_otel_processor_is_solarwinds' do
     SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig[:span_processor]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+    _(SolarWindsOTelAPM::OTelConfig[:span_processor].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
   end
 
   it 'test_should_set_solarwinds_exporter_when_swo_otel_exporter_is_solarwinds' do
     ENV['SWO_OTEL_EXPORTER'] = 'solarwinds'
     SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig[:exporter]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+    _(SolarWindsOTelAPM::OTelConfig[:exporter].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
   end
 
   it 'test_should_set_default_exporter_and_warn_when_swo_otel_exporter_is_not_solarwinds' do 
     ENV.delete('SWO_OTEL_EXPORTER')
     SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig[:exporter]).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+    _(SolarWindsOTelAPM::OTelConfig[:exporter].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
 
   end
 
