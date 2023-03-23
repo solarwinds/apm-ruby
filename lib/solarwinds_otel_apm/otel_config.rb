@@ -11,7 +11,6 @@ module SolarWindsOTelAPM
 
     def self.resolve_service_name
       @@config[:service_name] = ENV['SERVICE_NAME'] || SolarWindsOTelAPM::Config[:service_name] || ''
-
     end
 
     # propagator config is comma separated
@@ -169,10 +168,11 @@ module SolarWindsOTelAPM
     def self.initialize
       yield @@config_map if block_given?
 
+      resolve_service_name
       resolve_propagators
       resolve_sampler
-      resolve_span_processor
       resolve_exporter
+      resolve_span_processor
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 
@@ -190,13 +190,8 @@ module SolarWindsOTelAPM
         end
       end
 
-      # ::OpenTelemetry::Internal::ProxyTracerProvider.new
-      # ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
-      # ::OpenTelemetry.tracer_provider = ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
-      ::OpenTelemetry.tracer_provider.delegate = ::OpenTelemetry::SDK::Trace::TracerProvider.new(sampler: @@config[:sampler])
-      
       # configure sampler afterwards
-      # ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
+      ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
       nil
     end
   end

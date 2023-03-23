@@ -44,7 +44,7 @@ class TestMe
     private
 
     def yodel
-      a_proc = -> (x) { result = x * x;  yield }
+      a_proc = -> (x) { result = x * x; puts result; yield }
       in_block(&a_proc)
     end
 
