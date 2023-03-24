@@ -22,7 +22,7 @@ describe 'SolarWindsTXNNameManangerTest.rb' do
 
   it 'test del' do
     @txn_manager.del("c")
-     _(@txn_manager.get("c")).must_equal nil
+    _(@txn_manager.get("c")).must_equal nil
   end
 
   it 'test get' do

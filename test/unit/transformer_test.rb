@@ -56,6 +56,4 @@ describe 'TransformerTest' do
     result = @transformer.create_key("current-span")
     _(result.name).must_equal "current-span"
   end
-
-
 end

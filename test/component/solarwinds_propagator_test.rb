@@ -13,13 +13,13 @@ describe 'SolarWindsPropagatorTest' do
   end
 
   it 'test extract for empty carrier' do
-    carrier = Hash.new
+    carrier = {}
     result = @text_map_propagator.extract(carrier)
     _(result.class.to_s).must_equal "OpenTelemetry::Context"
   end
 
   it 'test extract for non-empty carrier' do
-    carrier = Hash.new 
+    carrier = {} 
     carrier["x-trace-options"] = "foo"
     carrier["x-trace-options-signature"] = "bar"
     result = @text_map_propagator.extract(carrier)
@@ -29,11 +29,11 @@ describe 'SolarWindsPropagatorTest' do
   end
 
   it 'test extract for non-empty carrier and context' do
-    carrier = Hash.new 
+    carrier = {} 
     carrier["x-trace-options"] = "foo"
     carrier["x-trace-options-signature"] = "bar"
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_xtraceoptions"] = "sample_signature"
     context_value["sw_signature"]     = "sample_xtraceoptions"
     otel_context = ::OpenTelemetry::Context.new(context_value)
@@ -53,8 +53,7 @@ describe 'SolarWindsPropagatorTest' do
       context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
-      )
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
 
       carrier = {}
       @text_map_propagator.inject(carrier, context: context)
@@ -71,8 +70,7 @@ describe 'SolarWindsPropagatorTest' do
       otel_context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
-      )
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
 
       carrier = {}
       @text_map_propagator.inject(carrier, context: otel_context)
@@ -83,14 +81,13 @@ describe 'SolarWindsPropagatorTest' do
 
   it 'test inject for trace_state_header is nil (create new trace state)' do
 
-    @mock.expect(:call, ::OpenTelemetry::Trace::Tracestate.create(Hash.new), [Hash])
+    @mock.expect(:call, ::OpenTelemetry::Trace::Tracestate.create({}), [Hash])
 
     ::OpenTelemetry::Trace::Tracestate.stub(:create, @mock) do
       otel_context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
-      )
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
 
       carrier = {}
       @text_map_propagator.inject(carrier, context: otel_context)
@@ -101,16 +98,15 @@ describe 'SolarWindsPropagatorTest' do
 
   it 'test inject for trace_state_header is not nil trace state set_values' do
 
-    @mock.expect(:call, ::OpenTelemetry::Trace::Tracestate.create(Hash.new), [String])
+    @mock.expect(:call, ::OpenTelemetry::Trace::Tracestate.create({}), [String])
 
     ::OpenTelemetry::Trace::Tracestate.stub(:from_string, @mock) do
       otel_context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
-      )
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
 
-      carrier = Hash.new
+      carrier = {}
       carrier["tracestate"] = "abcd"
       @text_map_propagator.inject(carrier, context: otel_context)
     end
@@ -120,22 +116,20 @@ describe 'SolarWindsPropagatorTest' do
 
   it 'test inject for check setter' do
 
-    @mock.expect(:call, nil , [Hash, String, String])
+    @mock.expect(:call, nil, [Hash, String, String])
 
     ::OpenTelemetry::Context::Propagation.text_map_setter.stub(:set, @mock) do
       otel_context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
-      )
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
 
-      carrier = Hash.new
+      carrier = {}
       carrier["tracestate"] = "abcd"
       @text_map_propagator.inject(carrier, context: otel_context)
     end
 
     _(@mock.verify).must_equal true
   end
-
 
 end

@@ -60,18 +60,19 @@ describe 'SolarWindsOTelAPMBase' do
       ths = []
       2.times do |i|
         ths << Thread.new do
-          trace_00 = "#{i}435a9fe510ae4533414d425dadf4e18"
-          span_00  = "#{i}9e60702469db05f"
-          state_00 = "sw=#{i}9e60702469db05f-00"
-          trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(state_00)
-          context = ::OpenTelemetry::Trace::SpanContext.new(trace_id: trace_00, span_id: span_00, tracestate: trace_state)
+          trace_ = "#{i}435a9fe510ae4533414d425dadf4e18"
+          span_  = "#{i}9e60702469db05f"
+          state_ = "sw=#{i}9e60702469db05f-00"
+          trace_state = ::OpenTelemetry::Trace::Tracestate.from_string(state_)
+          context = ::OpenTelemetry::Trace::SpanContext.new(trace_id: trace_, span_id: span_, tracestate: trace_state)
 
           contexts[i] = [context.trace_id,
                          context.span_id,
                          context.tracestate['sw']]
         end
       end
-      ths.each { |th| th.join }
+      ths.each(&:join)
+      # ths.map(&:join)
       assert contexts[0]
       assert contexts[1]
       refute_equal contexts[0][0], contexts[1][0]

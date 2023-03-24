@@ -164,7 +164,7 @@ describe 'OboeInitOptions' do
 
   it 'checks for customized certificates' do
     ENV.delete('SW_APM_TRUSTEDPATH')
-    ENV['SW_APM_TRUSTEDPATH'] = "#{File.expand_path File.dirname(__FILE__)}/tmp.cert"
+    ENV['SW_APM_TRUSTEDPATH'] = "#{File.expand_path __dir__}/tmp.cert"
 
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     options = SolarWindsOTelAPM::OboeInitOptions.instance.array_for_oboe
@@ -318,7 +318,6 @@ describe 'OboeInitOptions' do
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.grpc_proxy).must_equal ''
   end
-
 
   it 'rejects invalid collector string' do
     ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com:443'
