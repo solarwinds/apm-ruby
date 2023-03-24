@@ -12,7 +12,7 @@ module SolarWindsOTelAPM
           :HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, :XTRACE_HEADER_NAME, 
           :XTRACEOPTIONS_RESPONSE_HEADER_NAME
 
-        def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
+        def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter) # rubocop:disable Lint/UnusedMethodArgument
           context
         end
 

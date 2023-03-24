@@ -2417,8 +2417,6 @@ Lint/UnusedMethodArgument:
   AllowUnusedKeywordArguments: false
   IgnoreEmptyMethods: true
   IgnoreNotImplementedMethods: true
-  Exclude:
-    - 'lib/solarwinds_otel_apm/opentelemetry/solarwinds_response_propagator.rb'
 
 Lint/UriEscapeUnescape:
   Description: >-

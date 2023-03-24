@@ -404,13 +404,22 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   puts "\n=== Finished ===\n"
 end
 
-desc 'Run rubocop and generate result. For specific autocorrection, run: bundle exec rubocop -A --only ...'
-task :rubocop do 
+desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
+      If want to safely autocorrect enabled, just use bundle exec rake rubocop auto-safe
+      If want to all autocorrect enabled, just use bundle exec rake rubocop auto-all
+      If want to specific lint rule for autocorrection, run as bundle exec rubocop -A --only'
+task :rubocop, :environment do
+  _arg1, arg2 = ARGV
+
   rubocop_file = "#{__dir__}/rubocop_result.txt"
   File.delete(rubocop_file) if File.exist?(rubocop_file)
   new_file = File.new(rubocop_file, "w")
   new_file.close
+
+  %x(bundle exec rubocop --auto-correct) if arg2 == 'auto-safe'
+  %x(bundle exec rubocop --auto-correct-all) if arg2 == 'auto-all'
   %x(bundle exec rubocop > rubocop_result.txt)
+  exit 1
 end
 
 desc 'Remove all the logs generated from run_test.sh'
