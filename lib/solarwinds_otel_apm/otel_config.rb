@@ -164,7 +164,6 @@ module SolarWindsOTelAPM
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
     # end
     #
-    #
     def self.initialize
       yield @@config_map if block_given?
 
