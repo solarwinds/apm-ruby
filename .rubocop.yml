@@ -64,7 +64,6 @@ AllCops:
     - 'vendor/**/*'
     - '.git/**/*'
     - 'test/*/*_test.rb'
-    - 'Rakefile'
   # Default formatter will be used if no `-f/--format` option is given.
   DefaultFormatter: progress
   # Cop names are displayed in offense messages by default. Change behavior
@@ -3422,6 +3421,8 @@ Style/CommandLiteral:
   # If `false`, the cop will always recommend using `%x` if one or more backticks
   # are found in the command string.
   AllowInnerBackticks: false
+  Exclude:
+    - 'Rakefile'
 
 # Checks formatting of special comments
 Style/CommentAnnotation:

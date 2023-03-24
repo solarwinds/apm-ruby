@@ -63,7 +63,12 @@ end
 
 desc 'Fetch oboe files from STAGING'
 task :fetch_oboe_file_from_staging do
-  swig_version = %x(swig -version) rescue ''
+  begin
+    swig_version = %x(swig -version)
+  rescue StandardError => e
+    swig_version = ''
+    puts "Checking swig version failed. Error: #{e.message}"
+  end
   swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
   if swig_valid_version.empty?
     $stderr.puts '== ERROR ================================================================='
@@ -223,7 +228,7 @@ task :oboe_verify do
     sha_local = Digest::SHA2.file(File.join(@ext_dir, 'src', filename)).hexdigest
     sha_remote = Digest::SHA2.file(File.join(@ext_verify_dir, filename)).hexdigest
 
-    if sha_local != sha_remote
+    if sha_local != sha_remote # rubocop:disable Style/Next
       puts "#{filename} from github and agent-binaries.cloud.solarwinds differ"
       puts `diff #{File.join(@ext_dir, 'src', filename)} #{File.join(@ext_verify_dir, filename)}`
       exit 1
@@ -237,7 +242,7 @@ desc 'Build and publish to Rubygems'
 task :build_and_publish_gem do
   gemspec_file = 'solarwinds_otel_apm.gemspec'
   gemspec = Gem::Specification.load(gemspec_file)
-  gem_file = gemspec.full_name + '.gem'
+  gem_file = "#{gemspec.full_name}.gem"
 
   exit 1 unless system('gem', 'build', gemspec_file)
 
@@ -406,4 +411,12 @@ task :rubocop do
   new_file = File.new(rubocop_file, "w")
   new_file.close
   %x(bundle exec rubocop > rubocop_result.txt)
+end
+
+desc 'Remove all the logs generated from run_test.sh'
+task :cleanup_logs do
+  %x(rm log/testrun_*)
+  %x(rm log/test_direct_*)
+  %x(rm log/postgresql/postgresql-*)
+  puts 'Log cleaned.'
 end
