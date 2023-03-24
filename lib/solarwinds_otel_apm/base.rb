@@ -43,7 +43,6 @@ module SolarWindsOTelAPMBase
   # global config options.
   thread_local :config_lock
 
-
   ##
   # tracing_layer?
   #
@@ -71,10 +70,11 @@ module SolarWindsOTelAPMBase
     end
 
     return false if SolarWindsOTelAPM.layer_op.nil? || SolarWindsOTelAPM.layer_op.empty? || !operation.respond_to?(:to_sym)
+    
     SolarWindsOTelAPM.layer_op.last == operation.to_sym
   end
 
-  # TODO review use of these boolean statements
+  # TODO: review use of these boolean statements
   # ____ they should now be handled by TransactionSettings,
   # ____ because there can be exceptions to :enabled and :disabled
 
@@ -102,12 +102,13 @@ module SolarWindsOTelAPMBase
   #
   def tracing?
     SolarWindsOTelAPM.logger.debug "#{SolarWindsOTelAPM.loaded} #{SolarWindsOTelAPM::Context.isSampled} result======#######"
-    return false if !SolarWindsOTelAPM.loaded # || SolarWindsOTelAPM.tracing_disabled?
+    return false unless SolarWindsOTelAPM.loaded # || SolarWindsOTelAPM.tracing_disabled?
+    
     SolarWindsOTelAPM::Context.isSampled
   end
 
   def heroku?
-    ENV.key?('SW_APM_URL')
+    ENV.has_key?('SW_APM_URL')
   end
 
   ##
@@ -126,20 +127,20 @@ module SolarWindsOTelAPMBase
   # These methods should be implemented by the descendants
   # currently only Oboe_metal
   #
-  def sample?(_opts = {})
-    fail 'sample? should be implemented by metal layer.'
+  def sample?(_opts={})
+    raise 'sample? should be implemented by metal layer.'
   end
 
-  def log(_layer, _label, _options = {})
-    fail 'log should be implemented by metal layer.'
+  def log(_layer, _label, _options={})
+    raise 'log should be implemented by metal layer.'
   end
 
-  def set_tracing_mode(_mode)
-    fail 'set_tracing_mode should be implemented by metal layer.'
+  def tracing_mode(_mode)
+    raise 'tracing_mode should be implemented by metal layer.'
   end
 
-  def set_sample_rate(_rate)
-    fail 'set_sample_rate should be implemented by metal layer.'
+  def sample_rate(_rate)
+    raise 'sample_rate should be implemented by metal layer.'
   end
 end
 

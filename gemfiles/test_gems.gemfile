@@ -1,6 +1,5 @@
 # this gemfile covers the basics for testing
 # included it in other gemfiles with the following line of code:
-# eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile')))
 
 group :development, :test do
   gem 'benchmark-ips', '>= 2.7.2'

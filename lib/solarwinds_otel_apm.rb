@@ -10,8 +10,8 @@ begin
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
   require 'solarwinds_otel_apm/config'
-  
-  SolarWindsOTelAPM::Config.set_log_level
+
+  SolarWindsOTelAPM::Config.load_config_file
 
   SolarWindsOTelAPM.loaded = false
   begin
@@ -19,7 +19,7 @@ begin
       require_relative './libsolarwinds_apm.so'
       require 'solarwinds_otel_apm/layerinit'
       require 'solarwinds_otel_apm/oboe_init_options'
-      require 'oboe_metal.rb'  # sets SolarWindsOTelAPM.loaded = true if successful
+      require_relative './oboe_metal'  # initialize Reporter; sets SolarWindsOTelAPM.loaded = true if successful
     else
       SolarWindsOTelAPM.logger.warn '==================================================================='
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: Platform #{RUBY_PLATFORM} not yet supported."
@@ -29,7 +29,7 @@ begin
       SolarWindsOTelAPM.logger.warn '==================================================================='
     end
   rescue LoadError => e
-    unless ENV['RAILS_GROUP'] == 'assets' or ENV['SW_APM_NO_LIBRARIES_WARNING']
+    unless ENV['RAILS_GROUP'] == 'assets' || ENV['SW_APM_NO_LIBRARIES_WARNING']
       SolarWindsOTelAPM.logger.error '=============================================================='
       SolarWindsOTelAPM.logger.error 'Missing SolarWindsOTelAPM libraries.  Tracing disabled.'
       SolarWindsOTelAPM.logger.error "Error: #{e.message}"
@@ -45,6 +45,12 @@ begin
   end
   if SolarWindsOTelAPM.loaded
     require 'solarwinds_otel_apm/load_opentelemetry'
+    require 'solarwinds_otel_apm/otel_config'
+    if SolarWindsOTelAPM::Config[:swo_otel_default]
+      SolarWindsOTelAPM::OTelConfig.initialize 
+    else
+      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize swo otel config by yourself"
+    end
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'
@@ -56,7 +62,7 @@ begin
   end
 
   require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
-rescue => e
+rescue StandardError => e
   $stderr.puts "[solarwinds_otel_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace
 end

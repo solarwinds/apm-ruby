@@ -1,20 +1,19 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
     module SolarWindsResponsePropagator
+      # ResponsePropagator
       class TextMapPropagator
-
-        HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers"
-        XTRACE_HEADER_NAME = "x-trace"
-        XTRACEOPTIONS_RESPONSE_HEADER_NAME = "x-trace-options-response"
-        INTL_SWO_EQUALS = "="
+        HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers".freeze
+        XTRACE_HEADER_NAME                        = "x-trace".freeze
+        XTRACEOPTIONS_RESPONSE_HEADER_NAME        = "x-trace-options-response".freeze
+        INTL_SWO_EQUALS                           = "=".freeze
 
         private_constant \
           :HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, :XTRACE_HEADER_NAME, 
           :XTRACEOPTIONS_RESPONSE_HEADER_NAME
 
-
-        def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter);
-          return context
+        def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter) # rubocop:disable Lint/UnusedMethodArgument
+          context
         end
 
         # Inject trace context into the supplied carrier.
@@ -56,12 +55,11 @@ module SolarWindsOTelAPM
           TRACESTATE_HEADER_NAME
         end
 
-
         private
 
-        # get_sw_xtraceoptions_response_key -> xtrace_options_response
-        def recover_response_from_tracestate tracestate
-          sanitized = tracestate.value(XTraceOptions.get_sw_xtraceoptions_response_key)
+        # sw_xtraceoptions_response_key -> xtrace_options_response
+        def recover_response_from_tracestate(tracestate)
+          sanitized = tracestate.value(XTraceOptions.sw_xtraceoptions_response_key)
           sanitized = "" if sanitized.nil?
           sanitized = sanitized.gsub(SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED, SolarWindsOTelAPM::Constants::INTL_SWO_EQUALS)
           sanitized = sanitized.gsub(SolarWindsOTelAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED, SolarWindsOTelAPM::Constants::INTL_SWO_COMMA)

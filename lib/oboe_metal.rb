@@ -1,15 +1,13 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-require 'thread'
-
 # Disable docs and Camelcase warns since we're implementing
 # an interface here.  See OboeBase for details.
-# rubocop:disable Style/Documentation, Naming/MethodName
 module SolarWindsOTelAPM
   extend SolarWindsOTelAPMBase
   include Oboe_metal
 
+  # Reporter that send span data to SWO
   class Reporter
     class << self
       ##
@@ -28,8 +26,7 @@ module SolarWindsOTelAPM
 
           # report __Init
           SolarWindsOTelAPM::LayerInit.report_init
-
-        rescue => e
+        rescue StandardError=> e
           $stderr.puts e.message
           raise
         end
@@ -41,7 +38,7 @@ module SolarWindsOTelAPM
       #
       # Send the report for the given event
       #
-      def sendReport(evt, with_system_timestamp=true)
+      def send_report(evt, with_system_timestamp: true)
         SolarWindsOTelAPM.reporter.sendReport(evt, with_system_timestamp)
       end
 
@@ -50,7 +47,7 @@ module SolarWindsOTelAPM
       #
       # Send the report for the given event
       #
-      def sendStatus(evt, context = nil, with_system_timestamp=true)
+      def send_status(evt, context=nil, with_system_timestamp: true)
         SolarWindsOTelAPM.reporter.sendStatus(evt, context, with_system_timestamp)
       end
 
@@ -64,11 +61,11 @@ module SolarWindsOTelAPM
       end
 
       ##
-      # get_all_traces
+      # obtain_all_traces
       #
       # Retrieves all traces written to the trace file
       #
-      def get_all_traces
+      def obtain_all_traces
         io = File.open(SolarWindsOTelAPM::OboeInitOptions.instance.host, 'r')
         contents = io.readlines(nil)
         io.close
@@ -94,9 +91,7 @@ module SolarWindsOTelAPM
           end
         else
           bbb = ::BSON::ByteBuffer.new(contents[0])
-          until bbb.length == 0
-            traces << Hash.from_bson(bbb)
-          end
+          traces << Hash.from_bson(bbb) until bbb.length == 0
         end
 
         traces
@@ -104,14 +99,15 @@ module SolarWindsOTelAPM
     end
   end
 
+  # EventUtil
   module EventUtil
-    def self.metadataString(evt)
+    def self.metadata_string(evt)
       evt.metadataString
     end
   end
 
   class << self
-    def set_sample_rate(rate)
+    def sample_rate(rate)
       return unless SolarWindsOTelAPM.loaded
 
       # Update liboboe with the new SampleRate value
@@ -119,6 +115,6 @@ module SolarWindsOTelAPM
     end
   end
 end
-# rubocop:enable Style/Documentation
 
 SolarWindsOTelAPM.loaded = true
+# rubocop:enable Style/Documentation

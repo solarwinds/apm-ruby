@@ -226,7 +226,7 @@ Bundler/InsecureProtocolSource:
 Bundler/OrderedGems:
   Description: >-
                  Gems within groups in the Gemfile should be alphabetically sorted.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.46'
   VersionChanged: '0.47'
   TreatCommentsAsGroupSeparators: true
@@ -288,7 +288,7 @@ Gemspec/DuplicatedAssignment:
 Gemspec/OrderedDependencies:
   Description: >-
                  Dependencies in the gemspec should be alphabetically sorted.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.51'
   TreatCommentsAsGroupSeparators: true
   # By default, "-" and "_" are ignored for order purposes.
@@ -310,7 +310,7 @@ Gemspec/RequireMFA:
 
 Gemspec/RequiredRubyVersion:
   Description: 'Checks that `required_ruby_version` of gemspec is specified and equal to `TargetRubyVersion` of .rubocop.yml.'
-  Enabled: true
+  Enabled: false
   Severity: warning
   VersionAdded: '0.52'
   VersionChanged: '1.40'
@@ -624,7 +624,7 @@ Layout/EmptyLinesAroundBeginBody:
 Layout/EmptyLinesAroundBlockBody:
   Description: "Keeps track of empty lines around block bodies."
   StyleGuide: '#empty-lines-around-bodies'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   EnforcedStyle: no_empty_lines
   SupportedStyles:
@@ -655,7 +655,7 @@ Layout/EmptyLinesAroundExceptionHandlingKeywords:
 Layout/EmptyLinesAroundMethodBody:
   Description: "Keeps track of empty lines around method bodies."
   StyleGuide: '#empty-lines-around-bodies'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
 
 Layout/EmptyLinesAroundModuleBody:
@@ -704,7 +704,7 @@ Layout/EndOfLine:
 
 Layout/ExtraSpacing:
   Description: 'Do not use unnecessary spacing.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   # When true, allows most uses of extra spacing if the intent is to align
   # things with the previous or next line, not counting empty lines or comment
@@ -722,7 +722,7 @@ Layout/FirstArgumentIndentation:
   Enabled: true
   VersionAdded: '0.68'
   VersionChanged: '0.77'
-  EnforcedStyle: special_for_inner_method_call_in_parentheses
+  EnforcedStyle: consistent
   SupportedStyles:
     # The first parameter should always be indented one step more than the
     # preceding line.
@@ -779,7 +779,7 @@ Layout/FirstArrayElementLineBreak:
 
 Layout/FirstHashElementIndentation:
   Description: 'Checks the indentation of the first key in a hash literal.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.68'
   VersionChanged: '0.77'
   # The value `special_inside_parentheses` means that hash literals with braces
@@ -845,7 +845,7 @@ Layout/HashAlignment:
   Description: >-
     Align the elements of a hash literal if they span more than
     one line.
-  Enabled: true
+  Enabled: false
   AllowMultipleStyles: true
   VersionAdded: '0.49'
   VersionChanged: '1.16'
@@ -987,7 +987,7 @@ Layout/InitialIndentation:
 Layout/LeadingCommentSpace:
   Description: 'Comments should start with a space.'
   StyleGuide: '#hash-space'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '0.73'
   AllowDoxygenCommentStyle: false
@@ -1039,7 +1039,7 @@ Layout/LineEndStringConcatenationIndentation:
 Layout/LineLength:
   Description: 'Checks that line length does not exceed the configured limit.'
   StyleGuide: '#max-line-length'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.4'
   Max: 120
@@ -1148,7 +1148,7 @@ Layout/MultilineMethodCallBraceLayout:
                  a new line.
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: symmetrical
+  EnforcedStyle: same_line
   SupportedStyles:
     # symmetrical: closing brace is positioned in same way as opening brace
     # new_line: closing brace is always on a new line
@@ -1266,7 +1266,7 @@ Layout/SpaceAfterColon:
 Layout/SpaceAfterComma:
   Description: 'Use spaces after commas.'
   StyleGuide: '#spaces-operators'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
 
 Layout/SpaceAfterMethodName:
@@ -1306,7 +1306,7 @@ Layout/SpaceAroundEqualsInParameterDefault:
   StyleGuide: '#spaces-around-equals'
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -1324,7 +1324,7 @@ Layout/SpaceAroundMethodCallOperator:
 Layout/SpaceAroundOperators:
   Description: 'Use a single space around operators.'
   StyleGuide: '#spaces-operators'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   # When `true`, allows most uses of extra spacing if the intent is to align
   # with an operator on the previous or next line, not counting empty lines
@@ -1339,13 +1339,13 @@ Layout/SpaceBeforeBlockBraces:
   Description: >-
                  Checks that the left block brace has or doesn't have space
                  before it.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
-  EnforcedStyleForEmptyBraces: space
+  EnforcedStyleForEmptyBraces: no_space
   SupportedStylesForEmptyBraces:
     - space
     - no_space
@@ -1387,7 +1387,7 @@ Layout/SpaceBeforeSemicolon:
 
 Layout/SpaceInLambdaLiteral:
   Description: 'Checks for spaces in lambda literals.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   EnforcedStyle: require_no_space
   SupportedStyles:
@@ -1420,9 +1420,9 @@ Layout/SpaceInsideBlockBraces:
                  Checks that block braces have or don't have surrounding space.
                  For blocks taking parameters, checks that the left brace has
                  or doesn't have trailing space.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -1438,7 +1438,7 @@ Layout/SpaceInsideHashLiteralBraces:
   StyleGuide: '#spaces-braces'
   Enabled: true
   VersionAdded: '0.49'
-  EnforcedStyle: space
+  EnforcedStyle: no_space
   SupportedStyles:
     - space
     - no_space
@@ -1501,7 +1501,7 @@ Layout/SpaceInsideStringInterpolation:
 Layout/TrailingEmptyLines:
   Description: 'Checks trailing blank lines and final newline.'
   StyleGuide: '#newline-eof'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '0.77'
   EnforcedStyle: final_newline
@@ -1512,7 +1512,7 @@ Layout/TrailingEmptyLines:
 Layout/TrailingWhitespace:
   Description: 'Avoid trailing whitespace.'
   StyleGuide: '#no-trailing-whitespace'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.49'
   VersionChanged: '1.0'
   AllowInHeredoc: false
@@ -2029,7 +2029,7 @@ Lint/NonAtomicFileOperation:
 
 Lint/NonDeterministicRequireOrder:
   Description: 'Always sort arrays returned by Dir.glob when requiring files.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.78'
   Safe: false
 
@@ -2073,6 +2073,8 @@ Lint/OutOfRangeRegexpRef:
   Enabled: true
   Safe: false
   VersionAdded: '0.89'
+  Exclude:
+    - 'lib/solarwinds_otel_apm/support_report.rb'
 
 Lint/ParenthesesAsGroupedExpression:
   Description: >-
@@ -2487,7 +2489,7 @@ Lint/Void:
   Description: 'Possible use of operator/literal/variable in void context.'
   Enabled: true
   VersionAdded: '0.9'
-  CheckForMethodsWithNoSideEffects: false
+  CheckForMethodsWithNoSideEffects: true
 
 #################### Metrics ###############################
 
@@ -2498,7 +2500,7 @@ Metrics/AbcSize:
   Reference:
     - http://c2.com/cgi/wiki?AbcMetric
     - https://en.wikipedia.org/wiki/ABC_Software_Metric
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.27'
   VersionChanged: '1.5'
   # The ABC size is a calculated magnitude, so this number can be an Integer or
@@ -2510,7 +2512,7 @@ Metrics/AbcSize:
 
 Metrics/BlockLength:
   Description: 'Avoid long blocks with many lines.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.44'
   VersionChanged: '1.5'
   CountComments: false  # count full line comments?
@@ -2535,7 +2537,7 @@ Metrics/BlockNesting:
 
 Metrics/ClassLength:
   Description: 'Avoid classes longer than 100 lines of code.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.87'
   CountComments: false  # count full line comments?
@@ -2553,17 +2555,17 @@ Metrics/CyclomaticComplexity:
   Description: >-
                  A complexity metric that is strongly correlated to the number
                  of test cases needed to validate a method.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.81'
-  AllowedMethods: []
+  AllowedMethods: ["report_server_in_use","resolve_propagators","method_alias","calculate_attributes"]
   AllowedPatterns: []
   Max: 7
 
 Metrics/MethodLength:
   Description: 'Avoid methods longer than 10 lines of code.'
   StyleGuide: '#short-methods'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.5'
   CountComments: false  # count full line comments?
@@ -2574,7 +2576,7 @@ Metrics/MethodLength:
 
 Metrics/ModuleLength:
   Description: 'Avoid modules longer than 100 lines of code.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.31'
   VersionChanged: '0.87'
   CountComments: false  # count full line comments?
@@ -2584,7 +2586,7 @@ Metrics/ModuleLength:
 Metrics/ParameterLists:
   Description: 'Avoid parameter lists longer than three or four parameters.'
   StyleGuide: '#too-many-params'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '1.5'
   Max: 5
@@ -2595,10 +2597,10 @@ Metrics/PerceivedComplexity:
   Description: >-
                  A complexity metric geared towards measuring complexity for a
                  human reader.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.25'
   VersionChanged: '0.81'
-  AllowedMethods: []
+  AllowedMethods: ['report_server_in_use']
   AllowedPatterns: []
   Max: 8
 
@@ -2821,6 +2823,8 @@ Naming/MethodName:
   SupportedStyles:
     - snake_case
     - camelCase
+  Exclude:
+    - 'lib/solarwinds_otel_apm/noop/*.rb'
   # Method names matching patterns are always allowed.
   #
   #   AllowedPatterns:
@@ -2929,6 +2933,7 @@ Naming/VariableNumber:
     - rfc2822      # Time#rfc2822
     - rfc3339      # DateTime.rfc3339
     - x86_64       # Allowed by default as an underscore separated CPU architecture name
+    - mri_19
   AllowedPatterns: []
 
 #################### Security ##############################
@@ -3015,10 +3020,10 @@ Style/AccessorGrouping:
 Style/Alias:
   Description: 'Use alias instead of alias_method.'
   StyleGuide: '#alias-method-lexically'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '0.36'
-  EnforcedStyle: prefer_alias
+  EnforcedStyle: prefer_alias_method
   SupportedStyles:
     - prefer_alias
     - prefer_alias_method
@@ -3278,7 +3283,7 @@ Style/ClassAndModuleChildren:
   # have the knowledge to perform either operation safely and thus requires
   # manual oversight.
   SafeAutoCorrect: false
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.19'
   #
   # Basically there are two different styles:
@@ -3294,7 +3299,7 @@ Style/ClassAndModuleChildren:
   #   end
   #
   # The compact style is only forced, for classes or modules with one child.
-  EnforcedStyle: nested
+  EnforcedStyle: compact
   SupportedStyles:
     - nested
     - compact
@@ -3340,7 +3345,7 @@ Style/ClassMethodsDefinitions:
 Style/ClassVars:
   Description: 'Avoid the use of class variables.'
   StyleGuide: '#no-class-vars'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.13'
 
 Style/CollectionCompact:
@@ -3413,6 +3418,8 @@ Style/CommandLiteral:
   # If `false`, the cop will always recommend using `%x` if one or more backticks
   # are found in the command string.
   AllowInnerBackticks: false
+  Exclude:
+    - 'Rakefile'
 
 # Checks formatting of special comments
 Style/CommentAnnotation:
@@ -3455,10 +3462,10 @@ Style/ConditionalAssignment:
                  Use the return value of `if` and `case` statements for
                  assignment to a variable and variable comparison instead
                  of assigning that variable inside of each branch.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.36'
   VersionChanged: '0.47'
-  EnforcedStyle: assign_to_condition
+  EnforcedStyle: assign_inside_condition
   SupportedStyles:
     - assign_to_condition
     - assign_inside_condition
@@ -3468,6 +3475,7 @@ Style/ConditionalAssignment:
   # When configured to `assign_inside_condition`, `SingleLineConditionsOnly`
   # will only register an offense for assignment to a condition that has
   # at least one multiline branch.
+  # UNCERTAIN
   SingleLineConditionsOnly: true
   IncludeTernaryExpressions: true
 
@@ -3553,7 +3561,7 @@ Style/DocumentDynamicEvalDefinition:
 
 Style/Documentation:
   Description: 'Document classes and non-namespace modules.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   AllowedConstants: []
   Exclude:
@@ -3841,7 +3849,7 @@ Style/GlobalVars:
   Description: 'Do not introduce global variables.'
   StyleGuide: '#instance-vars'
   Reference: 'https://www.zenspider.com/ruby/quickref.html'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.13'
   # Built-in global variables are allowed by default.
   AllowedVariables: []
@@ -3911,7 +3919,7 @@ Style/HashSyntax:
                  Prefer Ruby 1.9 hash syntax { a: 1, b: 2 } over 1.8 syntax
                  { :a => 1, :b => 2 }.
   StyleGuide: '#hash-literals'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '1.24'
   EnforcedStyle: ruby19
@@ -4567,7 +4575,7 @@ Style/NumericPredicate:
   # object. Switching these methods has to be done with knowledge of the types
   # of the variables which rubocop doesn't have.
   SafeAutoCorrect: false
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.42'
   VersionChanged: '0.59'
   EnforcedStyle: predicate
@@ -4695,6 +4703,8 @@ Style/PercentLiteralDelimiters:
     '%w': '[]'
     '%W': '[]'
   VersionChanged: '0.48'
+  Exclude:
+    - 'lib/solarwinds_otel_apm/oboe_init_options.rb'
 
 Style/PercentQLiterals:
   Description: 'Checks if uses of %Q/%q match the configured preference.'
@@ -4718,7 +4728,7 @@ Style/PreferredHashMethods:
   Safe: false
   VersionAdded: '0.41'
   VersionChanged: '0.70'
-  EnforcedStyle: short
+  EnforcedStyle: verbose
   SupportedStyles:
     - short
     - verbose
@@ -4786,7 +4796,7 @@ Style/RedundantAssignment:
 Style/RedundantBegin:
   Description: "Don't use begin blocks when they are not needed."
   StyleGuide: '#begin-implicit'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.10'
   VersionChanged: '0.21'
 
@@ -4893,7 +4903,7 @@ Style/RedundantRegexpCharacterClass:
 
 Style/RedundantRegexpEscape:
   Description: 'Checks for redundant escapes in Regexps.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.85'
 
 Style/RedundantReturn:
@@ -4945,7 +4955,7 @@ Style/RedundantStringEscape:
 Style/RegexpLiteral:
   Description: 'Use / or %r around regular expressions.'
   StyleGuide: '#percent-r'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.9'
   VersionChanged: '0.30'
   EnforcedStyle: slashes
@@ -5046,7 +5056,7 @@ Style/Semicolon:
   VersionAdded: '0.9'
   VersionChanged: '0.19'
   # Allow `;` to separate several expressions on the same line.
-  AllowAsExpressionSeparator: false
+  AllowAsExpressionSeparator: true
 
 Style/Send:
   Description: 'Prefer `Object#__send__` or `Object#public_send` to `send`, as `send` may overlap with existing methods.'
@@ -5103,7 +5113,7 @@ Style/SoleNestedConditional:
   Description: >-
                   Finds sole nested conditional nodes
                   which can be merged into outer conditional node.
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.89'
   VersionChanged: '1.5'
   AllowModifier: false
@@ -5142,7 +5152,7 @@ Style/StaticClass:
 Style/StderrPuts:
   Description: 'Use `warn` instead of `$stderr.puts`.'
   StyleGuide: '#warn'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.51'
 
 Style/StringChars:
@@ -5234,7 +5244,7 @@ Style/SymbolArray:
   Enabled: true
   VersionAdded: '0.9'
   VersionChanged: '0.49'
-  EnforcedStyle: percent
+  EnforcedStyle: brackets
   MinSize: 2
   SupportedStyles:
     - percent
@@ -5261,7 +5271,7 @@ Style/SymbolProc:
 
 Style/TernaryParentheses:
   Description: 'Checks for use of parentheses around ternary conditions.'
-  Enabled: true
+  Enabled: false
   VersionAdded: '0.42'
   VersionChanged: '0.46'
   EnforcedStyle: require_no_parentheses
@@ -5510,7 +5520,7 @@ Style/YodaExpression:
 
 Style/ZeroLengthPredicate:
   Description: 'Use #empty? when testing for objects of length 0.'
-  Enabled: true
+  Enabled: false
   Safe: false
   VersionAdded: '0.37'
   VersionChanged: '0.39'

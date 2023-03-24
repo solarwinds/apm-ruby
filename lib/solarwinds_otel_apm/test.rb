@@ -12,13 +12,13 @@ module SolarWindsOTelAPM
       #
       def load_extras
         # If we're using the libraries gemfile (with sidekiq and resque)
-        if SolarWindsOTelAPM::Test.gemfile?(:libraries)
-          # Load all of the test workers
-          pattern = File.join(File.dirname(__FILE__), '../../test/jobs/**/', '*.rb')
-          Dir.glob(pattern) do |f|
-            SolarWindsOTelAPM.logger.debug "[solarwinds_otel_apm/test] Loading test job file: #{File.basename(f)}"
-            require f
-          end
+        return unless SolarWindsOTelAPM::Test.gemfile?(:libraries)
+          
+        # Load all of the test workers
+        pattern = File.join(File.dirname(__FILE__), '../../test/jobs/**/', '*.rb')
+        Dir.glob(pattern) do |f|
+          SolarWindsOTelAPM.logger.debug "[solarwinds_otel_apm/test] Loading test job file: #{File.basename(f)}"
+          require f
         end
       end
 
@@ -31,8 +31,8 @@ module SolarWindsOTelAPM
       #
       # returns true or false depending on result
       #
-      def gemfile?(name)
-        File.basename(ENV['BUNDLE_GEMFILE']) == (name.to_s + '.gemfile')
+      def gemfile?(name_)
+        File.basename(ENV['BUNDLE_GEMFILE']) == "#{name_}.gemfile"
       end
 
       ##
@@ -51,10 +51,11 @@ module SolarWindsOTelAPM
       # Used to set the postgresql specific DATABASE_URL env based
       # on various conditions
       def set_postgresql_env
-        if ENV.key?('TRAVIS_PSQL_PASS')
+        
+        if ENV.has_key?('TRAVIS_PSQL_PASS')
           ENV['DATABASE_URL'] = "postgresql://postgres:#{ENV['TRAVIS_PSQL_PASS']}@127.0.0.1:5432/test_db"
-        elsif ENV.key?('POSTGRES_USER')
-          port = ENV.key?('POSTGRES_PORT') ? ENV['POSTGRES_PORT'] : 5432
+        elsif ENV.has_key?('POSTGRES_USER')
+          port = ENV.has_key?('POSTGRES_PORT') ? ENV['POSTGRES_PORT'] : 5432
           ENV['DATABASE_URL'] = "postgresql://#{ENV['POSTGRES_PASSWORD']}:#{ENV['POSTGRES_USER']}@#{ENV['POSTGRES_HOST']}:#{port}/test_db"
         else
           ENV['DATABASE_URL'] = 'postgresql://postgres@127.0.0.1:5432/test_db'
@@ -70,19 +71,16 @@ module SolarWindsOTelAPM
         # need to use string keys otherwise the output is not readable by Rails 5
         config = {
           'adapter'  => "postgresql",
-          'username' =>  ENV.key?('POSTGRES_USER') ? ENV['POSTGRES_USER'] : "postgres",
-          'password' =>  ENV.key?('POSTGRES_PASSWORD') ? ENV['POSTGRES_PASSWORD'] : "postgres",
+          'username' =>  ENV.has_key?('POSTGRES_USER') ? ENV['POSTGRES_USER'] : "postgres",
+          'password' =>  ENV.has_key?('POSTGRES_PASSWORD') ? ENV['POSTGRES_PASSWORD'] : "postgres",
           'database' =>  "test_db",
-          'host'     =>  ENV.key?('POSTGRES_HOST') ? ENV['POSTGRES_HOST'] : '127.0.0.1',
-          'port'     =>  ENV.key?('POSTGRES_PORT') ? ENV['POSTGRES_PORT'] : 5432,
+          'host'     =>  ENV.has_key?('POSTGRES_HOST') ? ENV['POSTGRES_HOST'] : '127.0.0.1',
+          'port'     =>  ENV.has_key?('POSTGRES_PORT') ? ENV['POSTGRES_PORT'] : 5432,
           'statement_limit' =>  5
         }
 
-        if ENV.key?('TEST_PREPARED_STATEMENT')
-          config['prepared_statements'] = ENV['TEST_PREPARED_STATEMENT'] == 'true' ? true : false
-        else
-          config['prepared_statements'] = false
-        end
+        config['prepared_statements'] = false
+        config['prepared_statements'] = ENV['TEST_PREPARED_STATEMENT'] == 'true' if ENV.has_key?('TEST_PREPARED_STATEMENT')
 
         env_config = {
           'default' => config,
@@ -96,16 +94,18 @@ module SolarWindsOTelAPM
         end
         config
       end
+      
       ##
       # set_mysql_env
       #
       # Used to set the mysql specific DATABASE_URL env based
       # on various conditions
-      def set_mysql_env
-        if ENV.key?('TRAVIS_MYSQL_PASS')
+      def mysql_env_setup
+
+        if ENV.has_key?('TRAVIS_MYSQL_PASS')
           ENV['DATABASE_URL'] = "mysql://root:#{ENV['TRAVIS_MYSQL_PASS']}@127.0.0.1:3306/test_db"
-        elsif ENV.key?('DOCKER_MYSQL_PASS')
-          port = ENV.key?('MYSQL_PORT') ? ENV['MYSQL_PORT'] : 3306
+        elsif ENV.has_key?('DOCKER_MYSQL_PASS')
+          port = ENV.has_key?('MYSQL_PORT') ? ENV['MYSQL_PORT'] : 3306
           ENV['DATABASE_URL'] = "mysql://root:#{ENV['DOCKER_MYSQL_PASS']}@#{ENV['MYSQL_HOST']}:#{port}/test_db"
         else
           ENV['DATABASE_URL'] = 'mysql://root@127.0.0.1:3306/test_db'
@@ -117,10 +117,11 @@ module SolarWindsOTelAPM
       #
       # Used to set the mysql specific DATABASE_URL env based
       # on various conditions
-      def set_mysql2_env
-        if ENV.key?('TRAVIS_MYSQL_PASS')
+      def mysql2_env_setup
+
+        if ENV.has_key?('TRAVIS_MYSQL_PASS')
           ENV['DATABASE_URL'] = "mysql2://root:#{ENV['TRAVIS_MYSQL_PASS']}@127.0.0.1:3306/test_db"
-        elsif ENV.key?('DOCKER_MYSQL_PASS')
+        elsif ENV.has_key?('DOCKER_MYSQL_PASS')
           ENV['DATABASE_URL'] = "mysql2://root:#{ENV['DOCKER_MYSQL_PASS']}@#{ENV['MYSQL_HOST']}:3306/test_db"
         else
           ENV['DATABASE_URL'] = 'mysql2://root@127.0.0.1:3306/test_db'
@@ -132,7 +133,8 @@ module SolarWindsOTelAPM
       # we need to do it using the database.yml file
       # there is no method exposed (afaik) to set prepared_statements
       # interactively
-      def set_mysql2_rails_config
+      def mysql2_rails_config_setup
+
         config = {
           'adapter' => "mysql2",
           'username' => "root",
@@ -140,14 +142,9 @@ module SolarWindsOTelAPM
           'port' => 3306
         }
 
-        config[:password] = ENV['DOCKER_MYSQL_PASS'] if ENV.key?('DOCKER_MYSQL_PASS')
-        config[:host] = ENV.key?('MYSQL_HOST') ? ENV['MYSQL_HOST'] : '127.0.0.1'
-
-        if ENV.key?('TEST_PREPARED_STATEMENT')
-          config['prepared_statements'] = ENV['TEST_PREPARED_STATEMENT'] == 'true' ? true : false
-        else
-          config['prepared_statements'] = false
-        end
+        config[:password]             = ENV['DOCKER_MYSQL_PASS'] if ENV.has_key?('DOCKER_MYSQL_PASS')
+        config[:host]                 = ENV['MYSQL_HOST'] || '127.0.0.1'
+        config['prepared_statements'] = ENV['TEST_PREPARED_STATEMENT'] == 'true'
 
         env_config = {
           'default' => config,

@@ -11,11 +11,21 @@ module SolarWindsOTelAPM
   module Config
     @@config = {}
 
+    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
+                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
+                         :dalli, :delayed_jobclient, :delayed_jobworker,
+                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
+                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
+                         :resqueclient, :resqueworker, :rest_client,
+                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus]
+
     ##
     # load_config_file
     #
     # There are 3 possible locations for the config file:
     # Rails default, ENV['SW_APM_CONFIG_RUBY'], or the gem's default
+    # Config will be used in OboeInitOptions but ENV variable has higher priority
+    #   e.g. ENV['SW_APM_SERVICE_KEY'] || SolarWindsOTelAPM::Config[:service_key]
     #
     # Hierarchie:
     # 1 - Rails default: config/initializers/solarwinds_otel_apm.rb
@@ -31,48 +41,54 @@ module SolarWindsOTelAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      if ENV.key?('SW_APM_CONFIG_RUBY')
-        if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
-          config_files << ENV['SW_APM_CONFIG_RUBY']
-        elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_otel_apm_config.rb'))
-          config_files << File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_otel_apm_config.rb')
-        else
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"
-        end
-      end
+      config_files << config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_otel_apm_config.rb')
       config_files << config_file if File.exist?(config_file)
 
-      unless config_files.empty? # we use the defaults from the template if there are no config files
-        if config_files.size > 1
-          SolarWindsOTelAPM.logger.warn [
-                                     '[solarwinds_otel_apm/config] Multiple configuration files configured, using the first one listed: ',
-                                     config_files.join(', ')
-                                   ].join(' ')
-        end
-        load(config_files[0])
-      end
+      SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
+      load(config_files[0]) if config_files.size > 0
 
-      # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
-      set_log_level
+      set_log_level       # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
+      set_verbose_level   # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
+    end
 
-      # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
-      if ENV.key?('SW_APM_GEM_VERBOSE')
-        SolarWindsOTelAPM::Config[:verbose] = ENV['SW_APM_GEM_VERBOSE'].downcase == 'true'
+    def self.config_from_env
+      config_files = []
+      if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
+        config_files << ENV['SW_APM_CONFIG_RUBY']
+      elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_otel_apm_config.rb'))
+        config_files << File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_otel_apm_config.rb')
+      else
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"
       end
+      config_files
+    end
+
+    def self.set_verbose_level
+      verbose = ENV.has_key?('SW_APM_GEM_VERBOSE')? ENV['SW_APM_GEM_VERBOSE'].downcase == 'true' : nil
+      SolarWindsOTelAPM::Config[:verbose] = verbose
     end
 
     def self.set_log_level
+      SolarWindsOTelAPM::Config[:debug_level] = 3 unless (-1..6).include?(SolarWindsOTelAPM::Config[:debug_level])
+
       # let's find and use the equivalent debug level for ruby
-      debug_level = (ENV['SW_APM_DEBUG_LEVEL']).to_i
-      if debug_level < 0
-        # there should be no logging if SW_APM_DEBUG_LEVEL == -1
-        # In Ruby level 5 is UNKNOWN and it can log, but level 6 is quiet
-        SolarWindsOTelAPM.logger.level = 6
-      else
-        SolarWindsOTelAPM.logger.level = [4 - debug_level, 0].max
+      debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
+      SolarWindsOTelAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
+    end
+
+    ##
+    # print_config
+    #
+    # print configurations one per line
+    # to create an output similar to the content of the config file
+    #
+    def self.print_config
+      SolarWindsOTelAPM.logger.warn "# General configurations"
+      @@config.each do |k,v|
+        SolarWindsOTelAPM.logger.warn "Config Key/Value: #{k}, #{v.inspect}"
       end
     end
 
@@ -81,9 +97,10 @@ module SolarWindsOTelAPM
     #
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
-    #
-    # rubocop:disable Metrics/AbcSize
-    def self.initialize(_data = {})
+    # 
+    def self.initialize(_data={})
+      @@instrumentation.each { |k| @@config[k] = {} }
+
       @@config[:transaction_name] = {}
 
       @@config[:profiling] = :disabled
@@ -91,9 +108,8 @@ module SolarWindsOTelAPM
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
-      # load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
+      load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb'))
     end
-    # rubocop:enable Metrics/AbcSize
 
     def self.update!(data)
       data.each do |key, value|
@@ -106,11 +122,6 @@ module SolarWindsOTelAPM
     end
 
     def self.[](key)
-      if key == :resque
-        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/warn] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker.'
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Called from #{Kernel.caller[0]}"
-      end
-
       @@config[key.to_sym]
     end
 
@@ -119,17 +130,17 @@ module SolarWindsOTelAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
-    #
-    # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
+    # 
     def self.[]=(key, value)
       key = key.to_sym
       @@config[key] = value
 
-      if key == :sampling_rate
+      case key
+      when :sampling_rate
         SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/config] sampling_rate is not a supported setting for SolarWindsOTelAPM::Config.  ' \
                                  'Please use :sample_rate.'
 
-      elsif key == :sample_rate
+      when :sample_rate
         unless value.is_a?(Integer) || value.is_a?(Float)
           SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :sample_rate must be a number between 0 and 1000000 (1m) " \
                                    "(provided: #{value}), corrected to 0"
@@ -138,84 +149,73 @@ module SolarWindsOTelAPM
 
         # Validate :sample_rate value
         unless value.between?(0, 1e6)
-          value_1 = value
-          value = value_1 < 0 ? 0 : 1_000_000
+          new_value = value < 0 ? 0 : 1_000_000
           SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :sample_rate must be between 0 and 1000000 (1m) " \
-                                   "(provided: #{value_1}), corrected to #{value}"
+                                   "(provided: #{value}), corrected to #{new_value}"
         end
 
         # Assure value is an integer
-        @@config[key.to_sym] = value.to_i
-        SolarWindsOTelAPM.set_sample_rate(value) if SolarWindsOTelAPM.loaded
+        @@config[key.to_sym] = new_value.to_i
+        SolarWindsOTelAPM.sample_rate(new_value) if SolarWindsOTelAPM.loaded
 
-      elsif key == :action_blacklist
+      when :action_blacklist
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :action_blacklist has been deprecated and no longer functions."
 
-      elsif key == :blacklist
+      when :blacklist
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :blacklist has been deprecated and no longer functions."
 
-      elsif key == :dnt_regexp
-        if value.nil? || value == ''
-          @@config[:dnt_compiled] = nil
-        else
-          @@config[:dnt_compiled] =
-            Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
-        end
+      when :dnt_regexp
+        dnt_compiled = Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
+        @@config[:dnt_compiled] = value.nil? || value == '' ? nil : dnt_compiled
 
-      elsif key == :dnt_opts
+      when :dnt_opts
         if SolarWindsOTelAPM::Config[:dnt_regexp] && SolarWindsOTelAPM::Config[:dnt_regexp] != ''
           @@config[:dnt_compiled] =
             Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
         end
 
-      elsif key == :profiling
+      when :profiling
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available." 
         @@config[:profiling] = :disabled
 
-      elsif key == :profiling_interval
+      when  :profiling_interval
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available. :profiling_interval setting is not configured." 
-        if value.is_a?(Integer) && value > 0
-          value = [100, value].min
-        else
-          value = 10
-        end
+        value = if value.is_a?(Integer) && value > 0
+                  [100, value].min
+                else
+                  10
+                end
         @@config[:profiling_interval] = value
         # CProfiler may not be loaded yet, the profiler will send the value
         # after it is loaded
-        SolarWindsOTelAPM::CProfiler.set_interval(value) if defined? SolarWindsOTelAPM::CProfiler
+        SolarWindsOTelAPM::CProfiler.interval_setup(value) if defined? SolarWindsOTelAPM::CProfiler
 
-      elsif key == :resque
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :resque config is deprecated.  It is now split into :resqueclient and :resqueworker."
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Called from #{Kernel.caller[0]}"
-
-      elsif key == :include_url_query_params # DEPRECATED
-        # Obey the global flag and update all of the per instrumentation
-        # <tt>:log_args</tt> values.
-        @@config[:rack][:log_args] = value
-
-      elsif key == :include_remote_url_params # DEPRECATED
-        # Obey the global flag and update all of the per instrumentation
-        # <tt>:log_args</tt> values.
-        @@http_clients.each do |i|
-          @@config[i][:log_args] = value
-        end
-
-      elsif key == :tracing_mode
-      #   CAN'T DO `set_tracing_mode` ANYMORE, ALL TRACING COMMUNICATION TO OBOE
-      #   IS NOW HANDLED BY TransactionSettings
-      #   SolarWindsOTelAPM.set_tracing_mode(value.to_sym) if SolarWindsOTelAPM.loaded
-
+      when :tracing_mode
+        # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
-      elsif key == :trigger_tracing_mode
-        # Make sure that the mode is stored as a symbol
-        @@config[key.to_sym] = value.to_sym
+      # otel-related config (will affect load_opentelemetry directly)
+      # default is from solarwinds_otel_apm_initializer.rb
+      # ENV always has the highest priorities
+      # config.rb -> oboe_init_options
+      when :otel_propagator # SWO_OTEL_PROPAGATOR
+        @@config[key.to_sym] = value
+
+      when :service_name    # SWO_OTEL_SERVICE_NAME
+        @@config[key.to_sym] = value
+
+      when :otel_exporter   # SWO_OTEL_EXPORTER
+        @@config[key.to_sym] = value 
+
+      when :swo_otel_default
+        @@config[key.to_sym] = value.to_s.downcase == "true"
+
+      else
+        @@config[key.to_sym] = value
 
       end
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
-
   end
 end
 

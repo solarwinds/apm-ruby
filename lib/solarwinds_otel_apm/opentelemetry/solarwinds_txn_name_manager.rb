@@ -1,9 +1,9 @@
 module SolarWindsOTelAPM
   module OpenTelemetry
+    # SolarWindsTxnNameManager
     class SolarWindsTxnNameManager
-
       def initialize
-        @cache = Hash.new
+        @cache = {}
       end
 
       def get(key)
@@ -20,7 +20,6 @@ module SolarWindsOTelAPM
       end
 
       alias []= set
-
     end
   end
 end

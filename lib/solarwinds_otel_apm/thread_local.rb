@@ -18,7 +18,7 @@ module SolarWindsOTelAPM
         Thread.current[key]
       end
 
-      define_method(name.to_s + '=') do |value|
+      define_method("#{name}=") do |value|
         Thread.current[key] = value
       end
     end

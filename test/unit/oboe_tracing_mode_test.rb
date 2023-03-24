@@ -10,7 +10,7 @@ describe 'OboeTracingModeTest.rb' do
 
   it 'test get_oboe_trace_mode' do
     result = @oboe_tracing_mode.get_oboe_trace_mode("")
-    _(result).must_equal -1
+    _(result).must_equal(-1)
 
     result = @oboe_tracing_mode.get_oboe_trace_mode("enabled")
     _(result).must_equal 1
@@ -21,7 +21,7 @@ describe 'OboeTracingModeTest.rb' do
 
   it 'test get_oboe_trigger_trace_mode' do
     result = @oboe_tracing_mode.get_oboe_trigger_trace_mode("")
-    _(result).must_equal -1
+    _(result).must_equal(-1)
 
     result = @oboe_tracing_mode.get_oboe_trigger_trace_mode("enabled")
     _(result).must_equal 1

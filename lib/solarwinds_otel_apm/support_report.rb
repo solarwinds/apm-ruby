@@ -14,11 +14,10 @@ module SolarWindsOTelAPM
   # yesno
   #
   # Utility method to translate value/nil to "yes"/"no" strings
-  def self.yesno(x)
-    x ? 'yes' : 'no'
+  def self.yesno(condition)
+    condition ? 'yes' : 'no'
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
   def self.support_report
     @logger_level = SolarWindsOTelAPM.logger.level
     SolarWindsOTelAPM.logger.level = ::Logger::DEBUG
@@ -28,18 +27,13 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '*   Please email the output of this report to technicalsupport@solarwinds.com'
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn "Ruby: #{RUBY_DESCRIPTION}"
-    SolarWindsOTelAPM.logger.warn "$0: #{$0}"
-    SolarWindsOTelAPM.logger.warn "$1: #{$1}" unless $1.nil?
-    SolarWindsOTelAPM.logger.warn "$2: #{$2}" unless $2.nil?
-    SolarWindsOTelAPM.logger.warn "$3: #{$3}" unless $3.nil?
-    SolarWindsOTelAPM.logger.warn "$4: #{$4}" unless $4.nil?
+    SolarWindsOTelAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}"   # replace $0 to get executing script
+    SolarWindsOTelAPM.logger.warn "ARGV: #{ARGV.inspect}" 
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM.loaded == #{SolarWindsOTelAPM.loaded}"
 
     on_heroku = SolarWindsOTelAPM.heroku?
     SolarWindsOTelAPM.logger.warn "On Heroku?: #{yesno(on_heroku)}"
-    if on_heroku
-      SolarWindsOTelAPM.logger.warn "SW_APM_URL: #{ENV['SW_APM_URL']}"
-    end
+    SolarWindsOTelAPM.logger.warn "SW_APM_URL: #{ENV['SW_APM_URL']}" if on_heroku
 
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Ruby defined?: #{yesno(defined?(SolarWindsOTelAPM::Ruby))}"
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM.reporter: #{SolarWindsOTelAPM.reporter}"
@@ -52,9 +46,7 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn "Using Rails?: #{yesno(using_rails)}"
     if using_rails
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rails loaded?: #{yesno(defined?(SolarWindsOTelAPM::Rails))}"
-      if defined?(SolarWindsOTelAPM::Rack)
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rack middleware loaded?: #{yesno(::Rails.configuration.middleware.include? SolarWindsOTelAPM::Rack)}"
-      end
+      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Rack middleware loaded?: #{yesno(::Rails.configuration.middleware.include?(SolarWindsOTelAPM::Rack))}" if defined?(SolarWindsOTelAPM::Rack)
     end
 
     using_sinatra = defined?(::Sinatra)
@@ -84,9 +76,9 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* OS, Platform + Env'
     SolarWindsOTelAPM.logger.warn '********************************************************'
-    SolarWindsOTelAPM.logger.warn "host_os: " + RbConfig::CONFIG['host_os']
-    SolarWindsOTelAPM.logger.warn "sitearch: " + RbConfig::CONFIG['sitearch']
-    SolarWindsOTelAPM.logger.warn "arch: " + RbConfig::CONFIG['arch']
+    SolarWindsOTelAPM.logger.warn "host_os:  #{RbConfig::CONFIG['host_os']}"
+    SolarWindsOTelAPM.logger.warn "sitearch: #{RbConfig::CONFIG['sitearch']}"
+    SolarWindsOTelAPM.logger.warn "arch:     #{RbConfig::CONFIG['arch']}"
     SolarWindsOTelAPM.logger.warn RUBY_PLATFORM
     SolarWindsOTelAPM.logger.warn "RACK_ENV: #{ENV['RACK_ENV']}"
     SolarWindsOTelAPM.logger.warn "RAILS_ENV: #{ENV['RAILS_ENV']}" if using_rails
@@ -95,9 +87,7 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn '* Raw __Init KVs'
     SolarWindsOTelAPM.logger.warn '********************************************************'
     platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
-    platform_info.each { |k,v|
-      SolarWindsOTelAPM.logger.warn "#{k}: #{v}"
-    }
+    platform_info.each {|k,v| SolarWindsOTelAPM.logger.warn "#{k}: #{v}"}
 
     SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* END SolarWindsOTelAPM Support Report'
@@ -108,5 +98,4 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.level = @logger_level
     nil
   end
-  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 end

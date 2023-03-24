@@ -1,27 +1,23 @@
-$:.push File.expand_path("../lib", __FILE__)
+$LOAD_PATH.push File.expand_path("lib", __dir__)
 require "solarwinds_otel_apm/version"
 
 Gem::Specification.new do |s|
-  s.name = %q{solarwinds_otel_apm}
+  s.name = 'solarwinds_otel_apm'
   s.version = SolarWindsOTelAPM::Version::STRING
   s.date = Time.now.strftime('%Y-%m-%d')
 
-  s.license = "Apache-2.0"
+  s.license  = 'Apache-2.0'
 
-  s.authors = ["Maia Engeli", "Peter Giacomo Lombardo", "Spiros Eliopoulos", "Xuan Cao"]
-  s.email = %q{technicalsupport@solarwinds.com}
-  s.homepage = %q{https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html}
-  s.summary = %q{SolarWindsOTelAPM performance instrumentation gem for Ruby}
-  s.description = <<-EOF
-Automatic tracing and metrics for Ruby applications. Get started at cloud.solarwinds.com
-  EOF
+  s.authors  = ["Maia Engeli", "Peter Giacomo Lombardo", "Spiros Eliopoulos", "Xuan Cao"]
+  s.email    = 'technicalsupport@solarwinds.com'
+  s.homepage = 'https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html'
+  s.summary  = 'SolarWindsOTelAPM performance instrumentation gem for Ruby'
+  s.description = 'Automatic tracing and metrics for Ruby applications. Get started at cloud.solarwinds.com'
 
-  s.metadata = {
-      'changelog_uri'     => 'https://github.com/solarwindscloud/solarwinds-apm-ruby/releases',
-      'documentation_uri' => 'https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent',
-      'homepage_uri'      => 'https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html',
-      'source_code_uri'   => 'https://github.com/solarwindscloud/solarwinds-apm-ruby',
-  }
+  s.metadata = {'changelog_uri'     => 'https://github.com/solarwindscloud/solarwinds-apm-ruby/releases',
+                'documentation_uri' => 'https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent',
+                'homepage_uri'      => 'https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html',
+                'source_code_uri'   => 'https://github.com/solarwindscloud/solarwinds-apm-ruby'}
 
   s.extra_rdoc_files = ['LICENSE']
   # s.files = `git ls-files`.split("\n").reject { |f| f.match(%r{^(test|gemfiles)/}) }
@@ -36,8 +32,7 @@ Automatic tracing and metrics for Ruby applications. Get started at cloud.solarw
               'ext/oboe_metal/src/init_solarwinds_apm.cc',
               'ext/oboe_metal/src/VERSION',
               'ext/oboe_metal/lib/liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
-              'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.0.0.0.sha256'
-             ]
+              'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.0.0.0.sha256']
   s.files -= ['Rakefile']
 
   s.extensions = ['ext/oboe_metal/extconf.rb']

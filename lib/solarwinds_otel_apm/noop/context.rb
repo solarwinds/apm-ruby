@@ -4,11 +4,9 @@
 ####
 # noop version of SolarWindsAPM::Context
 #
-#
-
 module SolarWindsOTelAPM
+  # Context for noop
   module Context
-
     ##
     # noop version of :toString
     # toString would return the current trace context as string
@@ -20,7 +18,6 @@ module SolarWindsOTelAPM
     ##
     # noop version of :clear
     #
-    def self.clear
-    end
+    def self.clear; end
   end
 end

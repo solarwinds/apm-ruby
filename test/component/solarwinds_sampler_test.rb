@@ -6,17 +6,17 @@ require 'minitest_helper'
 describe 'SolarWindsSamplerTest' do
   before do
 
-    sampler_config = Hash.new
+    sampler_config = {}
     sampler_config["trigger_trace"] =  "enabled"
     @sampler = SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
-    @decision = Hash.new
-    @attributes_dict = Hash.new
+    @decision = {}
+    @attributes_dict = {}
     @attributes_dict["a"] = "b"
     @tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({})
     @parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P")
     
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_signature"] = "sample_signature"
     context_value["sw_xtraceoptions"] = "sample_xtraceoptions"
     otel_context = ::OpenTelemetry::Context.new(context_value)
@@ -24,18 +24,9 @@ describe 'SolarWindsSamplerTest' do
 
   end
 
-  it 'test init_context' do 
-    context = @sampler.send(:init_context)
-    assert_equal(context, SolarWindsOTelAPM::Context)
-  end
-
   it 'test calculate_attributes should return nil' do 
-    attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context, @xtraceoptions)
+    attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes).must_equal nil
-  end
-
-  it 'test calculate_attributes ' do 
-    skip
   end
 
   it 'test add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 
@@ -60,7 +51,7 @@ describe 'SolarWindsSamplerTest' do
   end
 
   it 'test calculate_trace_state with parent_context contains different kv' do 
-    content = Hash.new
+    content = {}
     content["abc"] = "cba"
     tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash(content)
     parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", tracestate: tracestate)
@@ -78,7 +69,7 @@ describe 'SolarWindsSamplerTest' do
   end
 
   it 'test create_xtraceoptions_response_value with empty otel_context xtraceoptions' do
-    otel_context = ::OpenTelemetry::Context.new(Hash.new)
+    otel_context = ::OpenTelemetry::Context.new({})
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested"
@@ -88,7 +79,7 @@ describe 'SolarWindsSamplerTest' do
     @decision["status_msg"] = "status"
     @decision["auth"] = 0
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_xtraceoptions"] = "trigger-trace"
     otel_context = ::OpenTelemetry::Context.new(context_value)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
@@ -102,7 +93,7 @@ describe 'SolarWindsSamplerTest' do
     @decision["auth"] = 0
     @decision["decision_type"] = 0
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_xtraceoptions"] = "AAAabcdefg"
     otel_context = ::OpenTelemetry::Context.new(context_value)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
@@ -116,7 +107,7 @@ describe 'SolarWindsSamplerTest' do
   it 'test create_xtraceoptions_response_value with signature' do
     @decision["auth_msg"] = "auth"
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_signature"] = "signature_made"
     otel_context = ::OpenTelemetry::Context.new(context_value)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
@@ -128,7 +119,7 @@ describe 'SolarWindsSamplerTest' do
   it 'test create_xtraceoptions_response_value without signature' do
     @decision["auth"] = nil
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_xtraceoptions"] = "1and1=candc"
     otel_context = ::OpenTelemetry::Context.new(context_value)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
@@ -141,7 +132,7 @@ describe 'SolarWindsSamplerTest' do
     @decision["status_msg"] = "status"
     @decision["auth"] = 0
 
-    context_value = Hash.new
+    context_value = {}
     context_value["sw_xtraceoptions"] = "sw-keys=hereiskeyyyy;trigger-trace;custom-key=12345"
     otel_context = ::OpenTelemetry::Context.new(context_value)
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
@@ -178,12 +169,12 @@ describe 'SolarWindsSamplerTest' do
     decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions)
     _(decision["do_metrics"]).must_equal true
     _(decision["do_sample"]).must_equal false
-    _(decision["rate"]).must_equal 1000000
+    _(decision["rate"]).must_equal 1_000_000
     _(decision["status_msg"]).must_equal "auth-failed"
     _(decision["auth_msg"]).must_equal "bad-signature"   
     _(decision["source"]).must_equal 6
     _(decision["bucket_rate"]).must_equal 0.0
-    _(decision["status"]).must_equal -5
+    _(decision["status"]).must_equal(-5)
 
   end
 

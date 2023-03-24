@@ -54,9 +54,9 @@ class Profiling {
 
     // The following are made available to Ruby and have to return VALUE
     static VALUE profiling_run(VALUE self, VALUE rb_thread_val, VALUE interval);
-    static VALUE get_interval();
-    static VALUE set_interval(VALUE self, VALUE interval);
-    static VALUE getTid();
+    static VALUE interval();
+    static VALUE interval_setup(VALUE self, VALUE interval);
+    static VALUE tid();
 
    private:
     static void profiling_start(pid_t tid);

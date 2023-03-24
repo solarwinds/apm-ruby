@@ -9,6 +9,6 @@ module SolarWindsOTelAPM
   end
 end
 
-SolarWindsOTelAPM.logger = Logger.new(STDERR)
+SolarWindsOTelAPM.logger = Logger.new($stderr)
 # set log level to INFO to be consistent with the c-lib, DEBUG would be default
 SolarWindsOTelAPM.logger.level = Logger::INFO

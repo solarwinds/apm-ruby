@@ -9,16 +9,16 @@ require 'open-uri'
 require 'no_proxy_fix'
 
 CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, '')
-                        .gsub(/-Wimplicit-function-declaration/, '')
-                        .gsub(/-Wimplicit-int/, '')
-                        .gsub(/-Wno-tautological-compare/, '')
-                        .gsub(/-Wno-self-assign/, '')
-                        .gsub(/-Wno-parentheses-equality/, '')
-                        .gsub(/-Wno-constant-logical-operand/, '')
-                        .gsub(/-Wno-cast-function-type/, '')
+                                         .gsub(/-Wimplicit-function-declaration/, '')
+                                         .gsub(/-Wimplicit-int/, '')
+                                         .gsub(/-Wno-tautological-compare/, '')
+                                         .gsub(/-Wno-self-assign/, '')
+                                         .gsub(/-Wno-parentheses-equality/, '')
+                                         .gsub(/-Wno-constant-logical-operand/, '')
+                                         .gsub(/-Wno-cast-function-type/, '')
 init_mkmf(CONFIG)
 
-ext_dir = File.expand_path(File.dirname(__FILE__))
+ext_dir = __dir__
 
 # Set the mkmf lib paths so we have no issues linking to
 # the SolarWindsAPM libs.
@@ -55,11 +55,12 @@ retries = 3
 success = false
 while retries > 0
   begin
-    download = URI.open(ao_item, 'rb')
-    IO.copy_stream(download, clib)
-
+    # download = URI.open(ao_item, 'rb')
+    # IO.copy_stream(download, clib)
+    IO.copy_stream(URI.parse(ao_item).open, clib)
+    
     clib_checksum = Digest::SHA256.file(clib).hexdigest
-    download.close
+    # download.close
     checksum =  File.read(ao_checksum_file).strip
 
     # unfortunately these messages only show if the install command is run
@@ -77,7 +78,7 @@ while retries > 0
       success = true
       retries = 0
     end
-  rescue => e
+  rescue StandardError => e
     File.write(clib, '')
     retries -= 1
     if retries == 0
@@ -127,15 +128,15 @@ if success
 
     create_makefile('libsolarwinds_apm', 'src')
   else
-    $stderr.puts   '== ERROR ========================================================='
+    $stderr.puts '== ERROR ========================================================='
     if have_library('oboe')
       $stderr.puts "The c-library either needs to be updated or doesn't match the OS."
       $stderr.puts 'No tracing will occur.'
     else
       $stderr.puts 'Could not find a matching c-library. No tracing will occur.'
     end
-    $stderr.puts   'Contact technicalsupport@solarwinds.com if the problem persists.'
-    $stderr.puts   '=================================================================='
+    $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
+    $stderr.puts '=================================================================='
     create_makefile('oboe_noop', 'noop')
   end
 end

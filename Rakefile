@@ -63,7 +63,12 @@ end
 
 desc 'Fetch oboe files from STAGING'
 task :fetch_oboe_file_from_staging do
-  swig_version = %x(swig -version) rescue ''
+  begin
+    swig_version = %x(swig -version)
+  rescue StandardError => e
+    swig_version = ''
+    puts "Checking swig version failed. Error: #{e.message}"
+  end
   swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
   if swig_valid_version.empty?
     $stderr.puts '== ERROR ================================================================='
@@ -92,11 +97,8 @@ task :fetch_oboe_file_from_staging do
   # inform when there is a newer oboe version
   remote_file = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/latest', 'VERSION')
   local_file  = File.join(ext_src_dir, 'VERSION_latest')
-  URI.open(remote_file, 'rb') do |rf|
-    content = rf.read
-    File.open(local_file, 'wb') { |f| f.puts content }
-    puts "FYI: latest C-Lib VERSION: #{content.strip} !" unless content.strip == oboe_version
-  end
+
+  IO.copy_stream(URI.parse(remote_file).open, local_file)
 
   # oboe and bson header files
   FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
@@ -119,10 +121,8 @@ task :fetch_oboe_file_from_staging do
 
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   unless ENV['OBOE_LOCAL']
@@ -135,12 +135,8 @@ task :fetch_oboe_file_from_staging do
 
       puts "fetching #{remote_file}"
       puts "      to #{local_file}"
-
-      URI.open(remote_file, 'rb') do |rf|
-        content = rf.read
-        File.open(local_file, 'wb') { |f| f.puts content }
-        puts "%%% #{filename} checksum: #{content.strip} %%%"
-      end
+      IO.copy_stream(URI.parse(remote_file).open, local_file)
+      puts "%%% #{filename} %%%"
     end
   end
 
@@ -202,10 +198,7 @@ task :fetch_oboe_file_from_prod do
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
 
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   sha_files = ['liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
@@ -218,10 +211,7 @@ task :fetch_oboe_file_from_prod do
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
 
-    URI.open(remote_file, 'rb') do |rf|
-      content = rf.read
-      File.open(local_file, 'wb') { |f| f.puts content }
-    end
+    IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
   FileUtils.cd(File.join(@ext_dir, 'src')) do
@@ -238,7 +228,7 @@ task :oboe_verify do
     sha_local = Digest::SHA2.file(File.join(@ext_dir, 'src', filename)).hexdigest
     sha_remote = Digest::SHA2.file(File.join(@ext_verify_dir, filename)).hexdigest
 
-    if sha_local != sha_remote
+    if sha_local != sha_remote # rubocop:disable Style/Next
       puts "#{filename} from github and agent-binaries.cloud.solarwinds differ"
       puts `diff #{File.join(@ext_dir, 'src', filename)} #{File.join(@ext_verify_dir, filename)}`
       exit 1
@@ -252,7 +242,7 @@ desc 'Build and publish to Rubygems'
 task :build_and_publish_gem do
   gemspec_file = 'solarwinds_otel_apm.gemspec'
   gemspec = Gem::Specification.load(gemspec_file)
-  gem_file = gemspec.full_name + '.gem'
+  gem_file = "#{gemspec.full_name}.gem"
 
   exit 1 unless system('gem', 'build', gemspec_file)
 
@@ -390,13 +380,13 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
 
   require 'package_cloud'
 
-  abort('Require PACKAGECLOUD_TOKEN') if ENV["PACKAGECLOUD_TOKEN"].nil? || ENV["PACKAGECLOUD_TOKEN"].empty? 
+  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].nil? || ENV['PACKAGECLOUD_TOKEN'].empty? 
   abort('No version specified.') if args[:version].nil? || args[:version].empty?
 
   gems = Dir["builds/solarwinds_otel_apm-#{args[:version]}.gem"]
   gem_to_push = nil
   if gems.empty?
-    Rake::Task["build_gem"].execute
+    Rake::Task['build_gem'].execute
     gem_to_push = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
   else
     gem_to_push = gems.first
@@ -406,10 +396,36 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.gsub('-', '')
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.pre/).to_s.gsub('-', '') if args[:version].include? 'pre'
   
-  abort("Couldn't find the required gem file.") if gem_to_push.nil? || gem_to_push_version != args[:version]
+  abort('Could not find the required gem file.') if gem_to_push.nil? || gem_to_push_version != args[:version]
     
   cli = PackageCloud::CLI::Entry.new
-  cli.push("solarwinds/solarwinds-apm-otel-ruby", gem_to_push.strip)
+  cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
 
   puts "\n=== Finished ===\n"
+end
+
+desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
+      If want to safely autocorrect enabled, just use bundle exec rake rubocop auto-safe
+      If want to all autocorrect enabled, just use bundle exec rake rubocop auto-all
+      If want to specific lint rule for autocorrection, run as bundle exec rubocop -A --only'
+task :rubocop, :environment do
+  _arg1, arg2 = ARGV
+
+  rubocop_file = "#{__dir__}/rubocop_result.txt"
+  File.delete(rubocop_file) if File.exist?(rubocop_file)
+  new_file = File.new(rubocop_file, "w")
+  new_file.close
+
+  %x(bundle exec rubocop --auto-correct) if arg2 == 'auto-safe'
+  %x(bundle exec rubocop --auto-correct-all) if arg2 == 'auto-all'
+  %x(bundle exec rubocop > rubocop_result.txt)
+  exit 1
+end
+
+desc 'Remove all the logs generated from run_test.sh'
+task :cleanup_logs do
+  %x(rm log/testrun_*)
+  %x(rm log/test_direct_*)
+  %x(rm log/postgresql/postgresql-*)
+  puts 'Log cleaned.'
 end
