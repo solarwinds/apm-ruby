@@ -14,8 +14,6 @@ module SolarWindsOTelAPM
       @@config[:service_name] = ENV['OTEL_SERVICE_NAME'] || SolarWindsOTelAPM::Config[:service_name] || ''
     end
 
-
-
     def self.disable_agent
       if @@agent_enabled  # only show the msg once
         @@agent_enabled = false
@@ -26,6 +24,7 @@ module SolarWindsOTelAPM
     def self.validate_propagator
       propagators = @@config_map['OpenTelemetry::Propagators']
       if propagators
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Using in-code configuration for propagators.'
         propagator_type  = propagators.class.to_s 
         if propagator_type != 'Array'
           SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] Don't support #{propagator_type}. Please provided initialized propagator with array."
@@ -54,9 +53,9 @@ module SolarWindsOTelAPM
           end
         end
       else
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Using external configuration for propagators.'
         propagator = ENV["OTEL_PROPAGATORS"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
         propagators = propagator.split(',')
-
         if (['tracecontext','solarwinds'] - propagators).empty?
           unless correct_order?(propagators)
             SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The order of propagators is incorrect. tracecontext need to be in front of solarwinds"
@@ -98,6 +97,7 @@ module SolarWindsOTelAPM
 
       else
         exporter = ENV["OTEL_TRACES_EXPORTER"] || SolarWindsOTelAPM::Config[:otel_exporter] || 'solarwinds'
+        puts "exporter: #{exporter}"
         case exporter
         when 'solarwinds'
           @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager)
@@ -124,7 +124,7 @@ module SolarWindsOTelAPM
         @@config_map.delete('OpenTelemetry::Propagators')
       else
         otel_propagator = ENV["OTEL_PROPAGATORS"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
-
+        # The solarwinds propagator is unknown and cannot be configured will come up warning because OTEL_PROPAGATORS will be used in configure_propagation from otel configurator
         otel_propagator.split(',').each do |propagator|
           case propagator
           when 'tracecontext'
@@ -148,12 +148,11 @@ module SolarWindsOTelAPM
       if exporter
         @@config[:exporter] = exporter
         @@config_map.delete('OpenTelemetry::Exporter')
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The customer provided exporter #{exporter.name} is used."
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The customer provided exporter #{exporter} is used."
       else
         otel_trace_exporter = ENV["OTEL_TRACES_EXPORTER"] || SolarWindsOTelAPM::Config[:otel_exporter] || 'solarwinds'
         case otel_trace_exporter
         when 'solarwinds'
-          # @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager, agent_enabled: @@agent_enabled)
           @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager)
         end
       end
@@ -171,7 +170,7 @@ module SolarWindsOTelAPM
         solarwinds_inds   = type_propagators.find_index('solarwinds')
       end
 
-      SolarWindsOTelAPM.logger.debug "tracecontext_inds: #{tracecontext_inds}; solarwinds_inds: #{solarwinds_inds}"
+      SolarWindsOTelAPM.logger.warn "tracecontext_inds: #{tracecontext_inds}; solarwinds_inds: #{solarwinds_inds}"
       solarwinds_inds > tracecontext_inds ? true : false
     end
 

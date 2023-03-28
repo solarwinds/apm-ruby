@@ -75,6 +75,22 @@ module MiniTest
   end
 end
 
+# Dummy Propagator for testing
+module Dummy
+  class TextMapPropagator
+    def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter); end
+    def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter); end
+  end
+end
+
+module Exporter
+  class Dummy
+    def flush(); end
+  end
+end
+
+
+
 # Print out a headline in with the settings used in the test run
 puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
