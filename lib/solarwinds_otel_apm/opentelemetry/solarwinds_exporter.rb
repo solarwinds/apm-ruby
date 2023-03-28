@@ -9,11 +9,12 @@ module SolarWindsOTelAPM
       private_constant(:SUCCESS, :FAILURE)
     
       def initialize(txn_manager: nil)
-        @shutdown = false
+        @shutdown           = false
         @apm_txname_manager = txn_manager
-        @context = SolarWindsOTelAPM::Context
-        @reporter = SolarWindsOTelAPM::Reporter
-        @version_cache = {}
+        @reporter           = SolarWindsOTelAPM::Reporter
+        @context            = SolarWindsOTelAPM::Context
+        @metadata           = SolarWindsOTelAPM::Metadata
+        @version_cache      = {}
       end
 
       def export(span_data, _timeout: nil)
@@ -182,7 +183,7 @@ module SolarWindsOTelAPM
         flag = span_data.trace_flags.sampled?? 1 : 0
         version = "00"
         xtr = parent == false ? "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_span_id}-0#{flag}" : "#{version}-#{span_data.hex_trace_id}-#{span_data.hex_parent_span_id}-0#{flag}"
-        SolarWindsOTelAPM::Metadata.fromString(xtr)
+        @metadata.fromString(xtr)
       end
     end
   end

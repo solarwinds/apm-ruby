@@ -50,8 +50,9 @@ module SolarWindsOTelAPM
       SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
-      set_log_level       # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
-      set_verbose_level   # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
+      set_otel_config      # determine if the otel config is default or customized
+      set_log_level        # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
+      set_verbose_level    # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
     end
 
     def self.config_from_env
@@ -77,6 +78,11 @@ module SolarWindsOTelAPM
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       SolarWindsOTelAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
+    end
+
+    def self.set_otel_config
+      otel_config = ENV['SWO_OTEL_DEFAULT'] || SolarWindsOTelAPM::Config[:swo_otel_default] || 'true'
+      SolarWindsOTelAPM::Config[:swo_otel_default] = otel_config
     end
 
     ##

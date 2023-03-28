@@ -8,7 +8,7 @@ module SolarWindsOTelAPM
   module Version
     MAJOR  = 0 # breaking,
     MINOR  = 1 # feature,
-    PATCH  = 6 # fix => BFF
+    PATCH  = 7 # fix => BFF
     PRE    = nil # for pre-releases into packagecloud, set to nil for production releases into rubygems
 
     STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')
