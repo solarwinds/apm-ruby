@@ -169,7 +169,7 @@ export BUNDLE_GEMFILE=gemfiles/delayed_job.gemfile
 export DBTYPE=mysql       # optional, defaults to postgresql
 bundle
 bundle exec rake cfc           # download, compile oboe_api, and link liboboe
-bundle exec ruby -I test test/unit/otel_config_test.rb
+bundle exec ruby -I test test/unit/otel_config_propagator_test.rb
 ```
 
 A specific test:

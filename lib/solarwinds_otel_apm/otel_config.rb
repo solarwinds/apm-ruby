@@ -21,6 +21,12 @@ module SolarWindsOTelAPM
       end
     end
 
+    def self.validate_service_key
+      return unless (ENV['SW_APM_REPORTER'] || 'ssl') == 'ssl'
+
+      disable_agent unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsOTelAPM::Config[:service_key]
+    end
+
     def self.validate_propagator
       propagators = @@config_map['OpenTelemetry::Propagators']
       if propagators
@@ -77,7 +83,6 @@ module SolarWindsOTelAPM
             disable_agent
           end
         end
-
       end
     end
 
@@ -111,8 +116,6 @@ module SolarWindsOTelAPM
     end
 
     #
-    #
-    #
     def self.resolve_propagators
       propagators = []
       propagator = @@config_map['OpenTelemetry::Propagators']
@@ -135,13 +138,11 @@ module SolarWindsOTelAPM
             propagators << SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
           end
         end
+        ENV.delete('OTEL_PROPAGATORS')
       end
-
       @@config[:propagators] = propagators
     end
 
-    #
-    #
     #
     def self.resolve_exporter
       exporter = @@config_map['OpenTelemetry::Exporter']
@@ -155,6 +156,7 @@ module SolarWindsOTelAPM
         when 'solarwinds'
           @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager)
         end
+        ENV.delete('OTEL_TRACES_EXPORTER')
       end
     end
 
@@ -267,6 +269,7 @@ module SolarWindsOTelAPM
     def self.initialize
       yield @@config_map if block_given?
 
+      validate_service_key
       validate_propagator
       validate_exporter
 
