@@ -10,9 +10,9 @@ module SolarWindsOTelAPM
 
     def initialize
       # optional hostname alias
-      @hostname_alias = ENV['SW_APM_HOSTNAME_ALIAS'] || SolarWindsAPM::Config[:hostname_alias] || ''
+      @hostname_alias = ENV['SW_APM_HOSTNAME_ALIAS'] || SolarWindsOTelAPM::Config[:hostname_alias] || ''
       # level at which log messages will be written to log file (0-6)
-      @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
+      @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       # file name including path for log file
       # TODO eventually find better way to combine ruby and oboe logs
       @log_file_path = ENV['SW_APM_LOGFILE'] || ''
@@ -105,7 +105,7 @@ module SolarWindsOTelAPM
       when 'ssl', 'file'
         host = ENV['SW_APM_COLLECTOR'] || ''
       when 'udp'
-        host = ENV['SW_APM_COLLECTOR'] || "#{SolarWindsAPM::Config[:reporter_host]}:#{SolarWindsAPM::Config[:reporter_port]}"
+        host = ENV['SW_APM_COLLECTOR'] || "#{SolarWindsOTelAPM::Config[:reporter_host]}:#{SolarWindsOTelAPM::Config[:reporter_port]}"
         # TODO: decide what to do
         # ____ SolarWindsOTelAPM::Config[:reporter_host] and
         # ____ SolarWindsOTelAPM::Config[:reporter_port] were moved here from
@@ -169,7 +169,7 @@ module SolarWindsOTelAPM
     end
 
     def read_and_validate_ec2_md_timeout
-      timeout = ENV['SW_APM_EC2_METADATA_TIMEOUT'] || SolarWindsAPM::Config[:ec2_metadata_timeout]
+      timeout = ENV['SW_APM_EC2_METADATA_TIMEOUT'] || SolarWindsOTelAPM::Config[:ec2_metadata_timeout]
       return 1000 unless timeout.is_a?(Integer) || timeout =~ /^\d+$/
       
       timeout = timeout.to_i
@@ -177,7 +177,7 @@ module SolarWindsOTelAPM
     end
 
     def read_and_validate_proxy
-      proxy = ENV['SW_APM_PROXY'] || SolarWindsAPM::Config[:http_proxy] || ''
+      proxy = ENV['SW_APM_PROXY'] || SolarWindsOTelAPM::Config[:http_proxy] || ''
       return proxy if proxy == ''
 
       unless proxy =~ /http:\/\/.*:\d+$/

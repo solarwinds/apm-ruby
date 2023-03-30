@@ -195,6 +195,6 @@ module SolarWindsOTelAPM
         clib_version_file = File.join(gem_location&.gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
         File.read(clib_version_file).strip
       end
-
+    end
   end
 end
