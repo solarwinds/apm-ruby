@@ -33,7 +33,10 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Using in-code configuration for propagators.'
         propagator_type  = propagators.class.to_s 
         if propagator_type != 'Array'
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] Don't support #{propagator_type}. Please provided initialized propagator with array."
+          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] Don't support #{propagator_type}. Customized propagators must be provided as an array, 
+                                          e.g. [::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator,
+                                                ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
+                                                SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new]. "
           disable_agent
         else
           propagator_types = []
@@ -41,7 +44,7 @@ module SolarWindsOTelAPM
             if propagator?(propagator)
               propagator_types << propagator.class.to_s
             else
-              SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] #{propagator} is not valid propagator."
+              SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] #{propagator.class} is not valid propagator."
               disable_agent
               break
             end
@@ -102,7 +105,6 @@ module SolarWindsOTelAPM
 
       else
         exporter = ENV["OTEL_TRACES_EXPORTER"] || SolarWindsOTelAPM::Config[:otel_exporter] || 'solarwinds'
-        puts "exporter: #{exporter}"
         case exporter
         when 'solarwinds'
           @@config[:exporter] = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @@txn_manager)
@@ -172,7 +174,7 @@ module SolarWindsOTelAPM
         solarwinds_inds   = type_propagators.find_index('solarwinds')
       end
 
-      SolarWindsOTelAPM.logger.warn "tracecontext_inds: #{tracecontext_inds}; solarwinds_inds: #{solarwinds_inds}"
+      SolarWindsOTelAPM.logger.debug "tracecontext_inds: #{tracecontext_inds}; solarwinds_inds: #{solarwinds_inds}"
       solarwinds_inds > tracecontext_inds ? true : false
     end
 
@@ -181,7 +183,7 @@ module SolarWindsOTelAPM
         if propagator.methods.include?(:extract) && propagator.methods.include?(:inject) 
           true
         else
-          SolarWindsOTelAPM.logger.warn "solarwinds_otel_apm/otel_config] #{propagator} is not a proper propagator. Check if your propagator contains function inject and extract."
+          SolarWindsOTelAPM.logger.warn "solarwinds_otel_apm/otel_config] #{propagator.class} is not a proper propagator. Check if your propagator contains function inject and extract."
           false
         end
       rescue StandardError => e
