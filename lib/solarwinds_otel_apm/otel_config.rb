@@ -212,11 +212,9 @@ module SolarWindsOTelAPM
           remote_parent_not_sampled: SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
     end
 
-    def self.resolve_sampler_config
-      return unless (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
-      
+    def self.resolve_sampler_config      
       sampler_config = {}
-      sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == "enabled"
+      sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == 'enabled'
       @@config[:sampler_config] = sampler_config
     end
 
