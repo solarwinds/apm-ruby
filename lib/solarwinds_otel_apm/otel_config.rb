@@ -15,10 +15,10 @@ module SolarWindsOTelAPM
     end
 
     def self.disable_agent
-      if @@agent_enabled  # only show the msg once
-        @@agent_enabled = false
-        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Agent disabled. No Trace exported.'
-      end
+      return unless @@agent_enabled  # only show the msg once
+      
+      @@agent_enabled = false
+      SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Agent disabled. No Trace exported.'
     end
 
     def self.validate_service_key
@@ -51,7 +51,7 @@ module SolarWindsOTelAPM
           end
 
           if (['OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator', 'SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator'] - propagator_types).empty?
-            unless correct_order?(propagators.map{|pro| pro.class})
+            unless correct_order?(propagators.map(&:class)) # rubocop:disable Metrics/BlockNesting
               SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The order of propagators is incorrect. tracecontext need to be in front of solarwinds"
               disable_agent
             end
@@ -63,9 +63,9 @@ module SolarWindsOTelAPM
         end
       else
         SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Using external configuration for propagators.'
-        propagator = ENV["OTEL_PROPAGATORS"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
-        propagators = propagator.split(',')
-        if (['tracecontext','solarwinds'] - propagators).empty?
+        env_propagator = ENV["OTEL_PROPAGATORS"] || SolarWindsOTelAPM::Config[:otel_propagator] || 'tracecontext,baggage,solarwinds'
+        propagators = env_propagator.split(',')
+        if (%w[tracecontext solarwinds] - propagators).empty?
           unless correct_order?(propagators)
             SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] The order of propagators is incorrect. tracecontext need to be in front of solarwinds"
             disable_agent
@@ -117,12 +117,12 @@ module SolarWindsOTelAPM
       end
     end
 
-    #
+    # resolve propagator
     def self.resolve_propagators
       propagators = []
-      propagator = @@config_map['OpenTelemetry::Propagators']
-      if propagator
-        propagator.each do |propagator|
+      config_propagator = @@config_map['OpenTelemetry::Propagators']
+      if config_propagator
+        config_propagator.each do |propagator|
           propagators << propagator
         end
 
@@ -145,7 +145,7 @@ module SolarWindsOTelAPM
       @@config[:propagators] = propagators
     end
 
-    #
+    # resolve exporter
     def self.resolve_exporter
       exporter = @@config_map['OpenTelemetry::Exporter']
       if exporter
@@ -175,7 +175,7 @@ module SolarWindsOTelAPM
       end
 
       SolarWindsOTelAPM.logger.debug "tracecontext_inds: #{tracecontext_inds}; solarwinds_inds: #{solarwinds_inds}"
-      solarwinds_inds > tracecontext_inds ? true : false
+      solarwinds_inds > tracecontext_inds
     end
 
     def self.propagator?(propagator)
@@ -199,6 +199,7 @@ module SolarWindsOTelAPM
     def self.exporter?(exporter)
       return false if exporter.nil?
       return false unless exporter.methods.include?(:export)
+
       true
     end
 

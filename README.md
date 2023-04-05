@@ -152,6 +152,50 @@ Default exporter is solarwinds
 
 ## Contributing
 
+### Developement environment setup
+
+#### Minimum dev environment in order to create the gem
+
+Clone the repo and create container
+```bash
+git clone https://github.com/solarwindscloud/swotel-ruby.git
+cd swotel-ruby
+docker run --rm -it -v $PWD:/work ruby:3.1 bash
+```
+
+Install dependencies inside container
+```bash
+# for debian (e.g. ubuntu)
+apt update && apt upgrade -y && apt install swig -y
+
+# install gem dependencies
+bundle install
+```
+
+Create gem and install it
+```bash
+bundle exec rake build_gem                                # this will output gem file
+gem install builds/solarwinds_otel_apm-<version>.gem
+```
+
+#### More comprehensive dev environment 
+
+Start the container services
+```bash
+bundle exec rake docker
+``` 
+
+Install gem dependencies inside container
+```bash
+bundle install
+```
+
+Create gem and install it
+```bash
+bundle exec rake build_gem                                # this will output gem file
+gem install builds/solarwinds_otel_apm-<version>.gem
+```
+
 ### Lint
 
 We follow the rubocop rule to lint our ruby code.

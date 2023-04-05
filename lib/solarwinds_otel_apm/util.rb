@@ -154,6 +154,7 @@ module SolarWindsOTelAPM
 
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
           begin
+            require 'opentelemetry/sdk'
             ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
             ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
           rescue StandardError => e
