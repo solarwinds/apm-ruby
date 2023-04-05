@@ -1,5 +1,22 @@
 # swotel-ruby
-OTEL implementation of ruby agent
+An [OpenTelemetry Ruby](https://opentelemetry.io/docs/instrumentation/ruby/) distribution for SolarWinds Observability. Provides automatic configuration, instrumentation, and APM data export for Ruby applications.
+
+----
+## Requirements
+TBD
+
+## Getting Started
+
+Install by adding `solarwinds_otel_apm` to your Gemfile. TBD confirm.
+
+Run your application with require the library and start the initialization (more details in [config](#configuration) section)
+
+```
+require 'solarwinds_otel_apm'
+SolarWindsOTelAPM::OTelConfig.initialize
+```
+
+e.g. for rails, put it into `config/application.rb`; although you don't need `require 'solarwinds_otel_apm'` if you have `Bundler.require(*Rails.groups)`
 
 ## Configuration
 
@@ -55,7 +72,7 @@ The above example initialized opentelemetry otlp exporter and provide it to `con
 
 #### Configure instrumentation library
 
-By default we try to load all the instrumentation from opentelemetry-ruby-contrib. 
+By default we try to load all the instrumentation from opentelemetry-ruby-contrib.
 However, user can choose disable certain instrumentation if they want.
 
 Example: to disable Dalli, and provide some customization for Rack
@@ -148,111 +165,6 @@ Default propagators are tracecontext, baggage, solarwinds
 
 Default exporter is solarwinds
 
-
-
-## Contributing
-
-### Developement environment setup
-
-#### Minimum dev environment in order to create the gem
-
-Clone the repo and create container
-```bash
-git clone https://github.com/solarwindscloud/swotel-ruby.git
-cd swotel-ruby
-docker run --rm -it -v $PWD:/work ruby:3.1 bash
-```
-
-Install dependencies inside container
-```bash
-# for debian (e.g. ubuntu)
-apt update && apt upgrade -y && apt install swig -y
-
-# install gem dependencies
-bundle install
-```
-
-Create gem and install it
-```bash
-bundle exec rake build_gem                                # this will output gem file
-gem install builds/solarwinds_otel_apm-<version>.gem
-```
-
-#### More comprehensive dev environment 
-
-Start the container services
-```bash
-bundle exec rake docker
-``` 
-
-Install gem dependencies inside container
-```bash
-bundle install
-```
-
-Create gem and install it
-```bash
-bundle exec rake build_gem                                # this will output gem file
-gem install builds/solarwinds_otel_apm-<version>.gem
-```
-
-
-### Run application
-
-Run your application with require the library and start the initialization (more details in [config](#configuration) section)
-
-```
-require 'solarwinds_otel_apm'
-SolarWindsOTelAPM::OTelConfig.initialize
-```
-
-e.g. for rails, put it into `config/application.rb`; although you don't need `require 'solarwinds_otel_apm'` if you have `Bundler.require(*Rails.groups)`
-
-### Lint
-
-We follow the rubocop rule to lint our ruby code.
-
-To run the rubocop:
-```bash
-bundle install  # make sure every dependencies are installed
-bundle exec rake rubocop
-```
-
-The rubocop will produce the file called `rubocop_result.txt`, and you can check the result from it
-
-### Testing
-
-```bash
-~# bundle exec rake docker    # initialize the docker containers, and you will enter docker container automatically
-root@docker:/code/ruby-solarwinds# test/run_otel_tests/run_tests
-
-# for only running ruby version 2.7.5 test
-root@docker:/code/ruby-solarwinds# test/run_otel_tests/run_tests -r 2.7.5
-```
-
-
-#### Run a specific test file, or a specific test
-While coding and for debugging it may be helpful to run fewer tests.
-To run singe tests the env needs to be set up and use `ruby -I test`
-
-One file:
-```bash
-rbenv local 2.7.5
-export BUNDLE_GEMFILE=gemfiles/delayed_job.gemfile
-export DBTYPE=mysql       # optional, defaults to postgresql
-bundle
-bundle exec rake cfc           # download, compile oboe_api, and link liboboe
-bundle exec ruby -I test test/unit/otel_config_propagator_test.rb
-```
-
-A specific test:
-```bash
-rbenv global 2.7.5
-export BUNDLE_GEMFILE=gemfiles/libraries.gemfile
-export DBTYPE=mysql
-bundle
-bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/
-```
-
 ## Useful link
+TBD: is this actually still useful?
 https://aws-otel.github.io/docs/getting-started/ruby-sdk/trace-manual-instr
