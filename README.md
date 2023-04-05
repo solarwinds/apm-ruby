@@ -196,6 +196,18 @@ bundle exec rake build_gem                                # this will output gem
 gem install builds/solarwinds_otel_apm-<version>.gem
 ```
 
+
+### Run application
+
+Run your application with require the library and start the initialization (more details in [config](#configuration) section)
+
+```
+require 'solarwinds_otel_apm'
+SolarWindsOTelAPM::OTelConfig.initialize
+```
+
+e.g. for rails, put it into `config/application.rb`; although you don't need `require 'solarwinds_otel_apm'` if you have `Bundler.require(*Rails.groups)`
+
 ### Lint
 
 We follow the rubocop rule to lint our ruby code.

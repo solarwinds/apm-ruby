@@ -31,8 +31,10 @@ Gem::Specification.new do |s|
               'ext/oboe_metal/src/bson/platform_hacks.h',
               'ext/oboe_metal/src/init_solarwinds_apm.cc',
               'ext/oboe_metal/src/VERSION',
-              'ext/oboe_metal/lib/liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
-              'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.0.0.0.sha256']
+              'ext/oboe_metal/lib/liboboe-1.0-alpine-x86_64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-aarch64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-alpine-aarch64.so.sha256']
   s.files -= ['Rakefile']
 
   s.extensions = ['ext/oboe_metal/extconf.rb']
