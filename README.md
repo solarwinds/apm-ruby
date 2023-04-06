@@ -3,18 +3,30 @@ An [OpenTelemetry Ruby](https://opentelemetry.io/docs/instrumentation/ruby/) dis
 
 ----
 ## Requirements
-TBD
+All published artifacts support Ruby 2.7 or higher. A full list of system requirements is available at [SolarWinds Observability System Requirements](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm).
+
+See [CONTRIBUTING.md](https://github.com/solarwindscloud/swotel-ruby/blob/main/CONTRIBUTING.md) for how to build for development.
 
 ## Getting Started
 
-Install by adding `solarwinds_otel_apm` to your Gemfile. TBD confirm.
+Install by adding `solarwinds_otel_apm` to your Gemfile.
 
-Run your application with require the library and start the initialization (more details in [config](#configuration) section)
+Run your application with require the library and start the initialization.
 
-```
+```ruby
 require 'solarwinds_otel_apm'
 SolarWindsOTelAPM::OTelConfig.initialize
 ```
+
+For extra configuration (this will overwrite other configuration)
+```ruby
+require 'solarwinds_otel_apm'
+SolarWindsOTelAPM::OTelConfig.initialize do |config|
+  config['key'] = value
+end
+```
+
+See more information in [in-code-configuration](#configuration-through-in-code-configuration)
 
 e.g. for rails, put it into `config/application.rb`; although you don't need `require 'solarwinds_otel_apm'` if you have `Bundler.require(*Rails.groups)`
 
@@ -164,7 +176,3 @@ Default propagators are tracecontext, baggage, solarwinds
 #### Exporter
 
 Default exporter is solarwinds
-
-## Useful link
-TBD: is this actually still useful?
-https://aws-otel.github.io/docs/getting-started/ruby-sdk/trace-manual-instr
