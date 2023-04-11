@@ -9,6 +9,8 @@ begin
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
+  require 'solarwinds_otel_apm/transaction_cache'
+  require 'solarwinds_otel_apm/transaction_settings'
   require 'solarwinds_otel_apm/config'
 
   SolarWindsOTelAPM::Config.load_config_file
@@ -50,8 +52,11 @@ begin
       SolarWindsOTelAPM::OTelConfig.initialize 
     else
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize ruby agent in application like following. 
-                                      SolarWindsOTelAPM::OTelConfig.initialize 
-                                      SolarWindsOTelAPM::OTelConfig.initialize do |config| ... end"
+                                                  SolarWindsOTelAPM::OTelConfig.initialize 
+                                                  SolarWindsOTelAPM::OTelConfig.initialize do |config|
+                                                    config['key'] = value
+                                                  end
+                                                  More information see: https://github.com/solarwindscloud/swotel-ruby/tree/main#configuration"
     end
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='

@@ -215,7 +215,8 @@ module SolarWindsOTelAPM
 
     def self.resolve_sampler_config      
       sampler_config = {}
-      sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == 'enabled'
+      trigger_trace  = ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]
+      sampler_config["trigger_trace"] = trigger_trace == 'enabled' ? 'enabled' : 'disabled'
       @@config[:sampler_config] = sampler_config
     end
 

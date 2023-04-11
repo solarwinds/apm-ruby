@@ -11,6 +11,9 @@ module SolarWindsOTelAPM
       SW_TRACESTATE_CAPTURE_KEY  = "sw.w3c.tracestate".freeze
       SW_TRACESTATE_ROOT_KEY     = "sw.tracestate_parent_id".freeze
       UNSET                      = -1
+      SWO_TRACING_ENABLED        = 1
+      SWO_TRACING_DISABLED       = 0
+      SWO_TRACING_UNSET          = -1
       XTRACEOPTIONS_RESP_AUTH    = "auth".freeze
       XTRACEOPTIONS_RESP_IGNORED = "ignored".freeze
       XTRACEOPTIONS_RESP_TRIGGER_IGNORED       = "ignored".freeze
@@ -51,7 +54,7 @@ module SolarWindsOTelAPM
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
         SolarWindsOTelAPM.logger.debug "####### xtraceoptions: #{xtraceoptions.inspect}"
         
-        liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions)
+        liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions, links, name, kind, attributes)
         SolarWindsOTelAPM.logger.debug "####### liboboe_decision: #{liboboe_decision.inspect}"
 
         otel_decision   = otel_decision_from_liboboe(liboboe_decision)
@@ -62,6 +65,7 @@ module SolarWindsOTelAPM
 
         new_attributes  = calculate_attributes(attributes,liboboe_decision,new_trace_state,parent_span_context,xtraceoptions)
         SolarWindsOTelAPM.logger.debug "####### new_attributes: #{new_attributes.inspect}"
+        
         sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
         SolarWindsOTelAPM.logger.debug "####### sampling_result: #{sampling_result.inspect}"
 
@@ -75,7 +79,7 @@ module SolarWindsOTelAPM
       private
 
       # return Hash
-      def calculate_liboboe_decision(parent_span_context, xtraceoptions)
+      def calculate_liboboe_decision(parent_span_context, xtraceoptions, links, name, kind, attributes)
 
         tracestring = nil
         if parent_span_context.valid? && parent_span_context.remote?
@@ -83,12 +87,25 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.debug "####### calculate_liboboe_decision parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
         end
 
-        sw_member_value = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
-        tracing_mode = UNSET
+        SolarWindsOTelAPM.logger.debug "####### links: #{links}, name: #{name}, kind: #{kind}, attributes: #{attributes.inspect}"
+
+        url = attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
+        transaction_naming_key = "#{url}-#{name}-#{kind}"
+        tracing_mode           = SolarWindsOTelAPM::TransactionCache.get(transaction_naming_key)
+        if tracing_mode.nil?
+          SolarWindsOTelAPM.logger.debug "####### transaction cache NOT found: #{transaction_naming_key}."
+          trans_settings = SolarWindsOTelAPM::TransactionSettings.new(url: url, name: name, kind: kind)
+          tracing_mode   = (trans_settings.calculate_trace_mode(kind:'url') == 1 && trans_settings.calculate_trace_mode(kind:'spankind') == 1)? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
+          SolarWindsOTelAPM::TransactionCache.set(transaction_naming_key, tracing_mode)
+        else
+          SolarWindsOTelAPM.logger.debug "####### transaction cache found: #{transaction_naming_key}."
+        end
+
+        sw_member_value    = parent_span_context.tracestate[SolarWindsOTelAPM::Constants::INTL_SWO_TRACESTATE_KEY]
 
         # need to create the config class
         trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
-        sample_rate = UNSET
+        sample_rate        = UNSET
 
         options = nil
         trigger_trace = 0

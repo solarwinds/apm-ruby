@@ -201,6 +201,17 @@ module SolarWindsOTelAPM
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
+      when :transaction_settings
+        # this settings help to setup url_enabled_regexps and url_disabled_regexps that
+        # are used for filtering
+        if value.is_a?(Hash)
+          SolarWindsOTelAPM::TransactionSettings.compile_settings(value[:url], kind: 'url')
+          SolarWindsOTelAPM::TransactionSettings.compile_settings(value[:spankind], kind: 'spankind')
+        else
+          SolarWindsOTelAPM::TransactionSettings.reset_url_regexps
+          SolarWindsOTelAPM::TransactionSettings.reset_spankind_regexps
+        end
+
       # otel-related config (will affect load_opentelemetry directly)
       # default is from solarwinds_otel_apm_initializer.rb
       # ENV always has the highest priorities

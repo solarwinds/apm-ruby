@@ -86,8 +86,6 @@ if defined?(SolarWindsOTelAPM::Config)
   # sampling rate and metrics are reported.
   # :disabled means that there is no sampling and metrics are not reported.
   #
-  # The values :always and :never are deprecated
-  #
   SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
 
   #
@@ -231,6 +229,20 @@ if defined?(SolarWindsOTelAPM::Config)
   #
   SolarWindsOTelAPM::Config[:transaction_settings] = {
     url: [
+      #   {
+      #     extensions: %w['long_job'],
+      #     tracing: :disabled
+      #   },
+      #   {
+      #     regexp: '^.*\/long_job\/.*$',
+      #     opts: Regexp::IGNORECASE,
+      #     tracing: :disabled
+      #   },
+      #   {
+      #     regexp: /batch/,
+      #   }
+    ],
+    spankind: [
       #   {
       #     extensions: %w['long_job'],
       #     tracing: :disabled
