@@ -166,7 +166,7 @@ describe 'SolarWindsSamplerTest' do
 
   it 'test calculate_liboboe_decision' do 
     
-    decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions)
+    decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions, '', '', '', {})
     _(decision["do_metrics"]).must_equal true
     _(decision["do_sample"]).must_equal false
     _(decision["rate"]).must_equal 1_000_000
