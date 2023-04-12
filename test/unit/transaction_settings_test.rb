@@ -10,7 +10,7 @@ describe 'SolarWinds Transaction Setting Test' do
       url: [],
       spankind: []
     }
-    trans_settings = SolarWindsOTelAPM::TransactionSettings.new(url: 'google.ca', name: 'HTTP GET', kind: 'connect')   # initialize transaction setting
+    trans_settings = SolarWindsOTelAPM::TransactionSettings.new(url: 'google.ca', name: 'HTTP GET', kind: 'connect')
     _(trans_settings.calculate_trace_mode(kind:'url')).must_equal 1
     _(trans_settings.calculate_trace_mode(kind:'spankind')).must_equal 1
   end

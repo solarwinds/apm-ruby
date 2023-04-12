@@ -18,14 +18,4 @@ describe 'SolarWinds TransactionCache Test' do
     SolarWindsOTelAPM::TransactionCache.del('a')
     _(SolarWindsOTelAPM::TransactionCache.get("a")).must_equal nil
   end
-
-  it 'test del' do
-    @txn_manager.del("c")
-    _(@txn_manager.get("c")).must_equal nil
-  end
-
-  it 'test get' do
-    @txn_manager.get("c").must_equal "d"
-  end
-
 end

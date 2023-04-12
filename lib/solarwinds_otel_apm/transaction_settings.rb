@@ -60,7 +60,7 @@ module SolarWindsOTelAPM
       regexp_group = kind == 'url' ? SolarWindsOTelAPM::Config[:url_disabled_regexps] : SolarWindsOTelAPM::Config[:spankind_disabled_regexps]
       return false unless regexp_group.is_a? Array
       return false if regexp_group.empty?
-      return regexp_group.any? { |regex| regex.match?(url) }
+      return regexp_group.any? { |regex| regex.match?(value) }
     rescue StandardError => e
       SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter] Could not apply :disabled filter to #{kind}. #{e.inspect}"
       false
@@ -119,7 +119,7 @@ module SolarWindsOTelAPM
       end
 
       def compile_settings_extensions(value)
-        xtensions = value.select do |v|
+        extensions = value.select do |v|
           v.key?(:extensions) &&
             v[:extensions].is_a?(Array) &&
             !v[:extensions].empty?
