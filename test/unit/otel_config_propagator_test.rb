@@ -6,6 +6,9 @@ require 'minitest_helper'
 describe 'Loading Opentelemetry Test' do
 
   before do
+    ENV.delete('OTEL_TRACES_EXPORTER')
+    SolarWindsOTelAPM::Config[:otel_exporter] = nil
+
     ENV.delete('OTEL_PROPAGATORS')
 
     @tracecontext = ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new

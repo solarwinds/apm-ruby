@@ -95,7 +95,7 @@ module SolarWindsOTelAPM
         if tracing_mode.nil?
           SolarWindsOTelAPM.logger.debug "####### transaction cache NOT found: #{transaction_naming_key}."
           trans_settings = SolarWindsOTelAPM::TransactionSettings.new(url: url, name: name, kind: kind)
-          tracing_mode   = (trans_settings.calculate_trace_mode(kind:'url') == 1 && trans_settings.calculate_trace_mode(kind:'spankind') == 1)? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
+          tracing_mode   = (trans_settings.calculate_trace_mode(kind: 'url') == 1 && trans_settings.calculate_trace_mode(kind: 'spankind') == 1)? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
           SolarWindsOTelAPM::TransactionCache.set(transaction_naming_key, tracing_mode)
         else
           SolarWindsOTelAPM.logger.debug "####### transaction cache found: #{transaction_naming_key}."

@@ -18,7 +18,6 @@ module SolarWindsOTelAPM
       SolarWindsOTelAPM.logger.debug "############## current TransactionCache #{@cache.inspect}"
       @cache[key] = value
     end
-
   end
 end
 

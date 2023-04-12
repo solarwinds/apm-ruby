@@ -230,7 +230,7 @@ if defined?(SolarWindsOTelAPM::Config)
   SolarWindsOTelAPM::Config[:transaction_settings] = {
     url: [
       #   {
-      #     extensions: %w['long_job'],
+      #     extensions: %w[long_job],
       #     tracing: :disabled
       #   },
       #   {
@@ -244,7 +244,7 @@ if defined?(SolarWindsOTelAPM::Config)
     ],
     spankind: [
       #   {
-      #     extensions: %w['long_job'],
+      #     extensions: %w[long_job],
       #     tracing: :disabled
       #   },
       #   {

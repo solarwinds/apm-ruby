@@ -6,6 +6,9 @@ require 'minitest_helper'
 describe 'Loading Opentelemetry Test' do
 
   before do
+    ENV.delete('OTEL_PROPAGATORS')
+    SolarWindsOTelAPM::Config[:otel_propagator] = nil
+
     ENV.delete('OTEL_TRACES_EXPORTER')
 
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)

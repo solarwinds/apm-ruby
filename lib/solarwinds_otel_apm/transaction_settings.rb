@@ -13,7 +13,6 @@ module SolarWindsOTelAPM
   # This module helps with setting up the transaction filters and applying them
   #
   class TransactionSettings
-
     def initialize(url: '', name: '', kind: '')
       @url = url
       @name = name
@@ -44,7 +43,8 @@ module SolarWindsOTelAPM
       regexp_group = kind == 'url' ? SolarWindsOTelAPM::Config[:url_enabled_regexps] : SolarWindsOTelAPM::Config[:spankind_enabled_regexps]
       return false unless regexp_group.is_a? Array
       return true if regexp_group.empty?  # if array doesn't contain anything, then it's permit by default
-      return regexp_group.any? { |regex| regex.match?(value) }
+
+      regexp_group.any? { |regex| regex.match?(value) }
     rescue StandardError => e
       SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter] Could not apply :enabled filter to #{kind}. #{e.inspect}"
       true
@@ -60,16 +60,14 @@ module SolarWindsOTelAPM
       regexp_group = kind == 'url' ? SolarWindsOTelAPM::Config[:url_disabled_regexps] : SolarWindsOTelAPM::Config[:spankind_disabled_regexps]
       return false unless regexp_group.is_a? Array
       return false if regexp_group.empty?
-      return regexp_group.any? { |regex| regex.match?(value) }
+
+      regexp_group.any? { |regex| regex.match?(value) }
     rescue StandardError => e
       SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter] Could not apply :disabled filter to #{kind}. #{e.inspect}"
       false
     end
 
-    public
-
     class << self
-
       def compile_settings(settings, kind: nil)
         if !settings.is_a?(Array) || settings.empty?
           kind == 'url' ? reset_url_regexps : reset_spankind_regexps
@@ -101,7 +99,7 @@ module SolarWindsOTelAPM
 
       def compile_settings_regexp(value)
         regexps = value.select do |v|
-          v.key?(:regexp) &&
+          v.has_key?(:regexp) &&
             !(v[:regexp].is_a?(String) && v[:regexp].empty?) &&
             !(v[:regexp].is_a?(Regexp) && v[:regexp].inspect == '//')
         end
@@ -109,8 +107,8 @@ module SolarWindsOTelAPM
         regexps.map! do |v|
           begin
             v[:regexp].is_a?(String) ? Regexp.new(v[:regexp], v[:opts]) : Regexp.new(v[:regexp])
-          rescue
-            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Problem compiling transaction_settings item #{v}, will ignore."
+          rescue StandardError => e
+            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Problem compiling transaction_settings item #{v}, will ignore. Error: #{e.message}"
             nil
           end
         end
@@ -120,7 +118,7 @@ module SolarWindsOTelAPM
 
       def compile_settings_extensions(value)
         extensions = value.select do |v|
-          v.key?(:extensions) &&
+          v.has_key?(:extensions) &&
             v[:extensions].is_a?(Array) &&
             !v[:extensions].empty?
         end
