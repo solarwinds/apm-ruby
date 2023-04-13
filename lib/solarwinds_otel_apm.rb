@@ -7,8 +7,8 @@ begin
   require 'solarwinds_otel_apm/logger'
   require 'solarwinds_otel_apm/util'
   require 'solarwinds_otel_apm/support_report'
-  require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/constants'
+  require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/config'
 
   SolarWindsOTelAPM::Config.load_config_file
