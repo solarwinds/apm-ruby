@@ -120,7 +120,7 @@ module SolarWindsOTelAPM
           begin
             require framework
             framework_version = Gem.loaded_specs[framework].version.to_s
-          rescue LoadError
+          rescue LoadError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
           rescue StandardError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 

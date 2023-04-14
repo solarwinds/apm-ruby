@@ -22,7 +22,15 @@ module SolarWindsOTelAPM
       # @param [Span] span the {Span} that just started.
       # @param [Context] parent_context the parent {Context} of the newly
       #  started span.
-      def on_start(span, parent_context); end
+      def on_start(span, parent_context)
+
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID, span.context.hex_trace_id))
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID, span.context.hex_span_id))
+
+        trace_flag = span.context.trace_flags.sampled? ? '01' : '00'
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG, trace_flag))
+
+      end
 
       # Called when a {Span} is ended, if the {Span#recording?}
       # returns true.

@@ -234,6 +234,18 @@ module SolarWindsOTelAPM
       end
     end
 
+    def self.resolve_config_map_from_config_file
+      otel_instrumentations = {:action_pack => 'OpenTelemetry::Instrumentation::ActionPack'}
+      
+      configs = SolarWindsOTelAPM::Config.class_variable_get(:@@config)
+      configs.each do |key,value|
+        SolarWindsOTelAPM.logger.debug "########## examine key #{key}"
+        if otel_instrumentations.has_key? key.to_sym
+          @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} unless value.has_key?(:enabled) && value[:enabled]
+        end
+      end
+    end
+
     def self.[](key)
       @@config[key.to_sym]
     end
@@ -282,6 +294,7 @@ module SolarWindsOTelAPM
       resolve_exporter
       resolve_span_processor
       resolve_config_map_for_instrumentation
+      resolve_config_map_from_config_file
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 

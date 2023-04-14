@@ -44,6 +44,13 @@ begin
     SolarWindsOTelAPM::Reporter.start if SolarWindsOTelAPM.loaded
   end
   if SolarWindsOTelAPM.loaded
+
+    # for log_TraceId
+    require 'solarwinds_otel_apm/current_trace_info'
+    require 'solarwinds_otel_apm/logger_formatter'
+    require 'solarwinds_otel_apm/logging_log_event'
+    require 'solarwinds_otel_apm/lumberjack_formatter'
+
     require 'solarwinds_otel_apm/load_opentelemetry'
     require 'solarwinds_otel_apm/otel_config'
     if SolarWindsOTelAPM::Config[:swo_otel_default]
