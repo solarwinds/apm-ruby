@@ -27,7 +27,7 @@ module SolarWindsOTelAPM
       def on_start(span, parent_context)
         SolarWindsOTelAPM.logger.debug "####### processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
 
-        return if span.parent_span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
+        return if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
 
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID, span.context.hex_trace_id))
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID, span.context.hex_span_id))

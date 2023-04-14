@@ -120,7 +120,7 @@ module SolarWindsOTelAPM
           begin
             require framework
             framework_version = Gem.loaded_specs[framework].version.to_s
-          rescue LoadError
+          rescue LoadError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
           rescue StandardError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
@@ -149,7 +149,6 @@ module SolarWindsOTelAPM
         txname = @txn_manager.get(trace_span_id).nil?? "" : @txn_manager.get(trace_span_id)
         SolarWindsOTelAPM.logger.debug "######## txname #{txname} ########"
         evt.addInfo("TransactionName", txname)
-        # evt.addInfo('TransactionName', SolarWindsOTelAPM.transaction_name)
         @txn_manager.del(trace_span_id)
       end
 
