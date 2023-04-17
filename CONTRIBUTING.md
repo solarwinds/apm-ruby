@@ -30,10 +30,9 @@ bundle exec rake build_gem
 
 ### Comprehensive Testing and Debugging Setup
 
-This requires a ruby development environment set up on your laptop.
+This requires a ruby development environment set up on your laptop, which we'll describe for [rbenv](https://github.com/rbenv/rbenv).  Feel free to use other tools such as RVM.  
 
-#### Using rbenv
-
+#### Install rbenv
 Mac
 ```bash
 brew install rbenv ruby-build
@@ -51,7 +50,9 @@ echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
 echo 'eval "$(~/.rbenv/bin/rbenv init - zsh)"' >> ~/.zshrc   # for zsh
 ```
 
-Install ruby from rbenv
+#### Install and Set Ruby Runtime
+
+Install ruby from rbenv:
 ```bash
 # list latest stable versions:
 rbenv install -l
@@ -63,16 +64,21 @@ rbenv install -L
 rbenv install 3.1.2
 ```
 
-Set ruby version to use
+Enable rbenv by following the instructions printed by this command:
+```
+rbenv init
+```
+
+Set ruby version to use:
 ```bash
 rbenv global 3.1.2   # set the default Ruby version for this machine
 # or:
 rbenv local 3.1.2    # set the Ruby version for this directory
 ```
 
-More information about rbenv can be found rbenv [repository](https://github.com/rbenv/rbenv)
+#### Run Test/Debug Containers
 
-Install bundler
+Install bundler and project dependencies:
 ```bash
 gem install bundler
 ```
