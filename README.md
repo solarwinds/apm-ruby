@@ -5,20 +5,21 @@ An [OpenTelemetry Ruby](https://opentelemetry.io/docs/instrumentation/ruby/) dis
 ## Requirements
 All published artifacts support Ruby 2.7 or higher. A full list of system requirements is available at [SolarWinds Observability System Requirements](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm).
 
-See [CONTRIBUTING.md](https://github.com/solarwindscloud/swotel-ruby/blob/main/CONTRIBUTING.md) for how to build for development.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
 ## Getting Started
 
 Install by adding `solarwinds_otel_apm` to your Gemfile.
 
-Run your application with require the library and start the initialization.
+To enable instrumentation, require the library and initialize it at the start of your application.
 
 ```ruby
 require 'solarwinds_otel_apm'
 SolarWindsOTelAPM::OTelConfig.initialize
 ```
+For example, in rails put the the above into `config/application.rb`; note that `require 'solarwinds_otel_apm'` is not needed if you have `Bundler.require(*Rails.groups)`.
 
-For extra configuration (this will overwrite other configuration)
+Additional configuration can be set within the initialize block, this will overwrite other configuration.
 ```ruby
 require 'solarwinds_otel_apm'
 SolarWindsOTelAPM::OTelConfig.initialize do |config|
@@ -27,8 +28,6 @@ end
 ```
 
 See more information in [in-code-configuration](#configuration-through-in-code-configuration)
-
-e.g. for rails, put it into `config/application.rb`; although you don't need `require 'solarwinds_otel_apm'` if you have `Bundler.require(*Rails.groups)`
 
 ## Configuration
 
