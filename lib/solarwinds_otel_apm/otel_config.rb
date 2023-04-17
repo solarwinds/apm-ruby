@@ -225,7 +225,7 @@ module SolarWindsOTelAPM
     # More fliexable way is to disable loading opentelemetry by default, and then user can load swo-customized configuration (for otel) manually
     # Because reporter initialization is before opentelemetry initialization
     # 
-    def self.resolve_config_map_for_instrumentation
+    def self.resolve_for_response_propagator
       response_propagators_list = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
       if @@config_map["OpenTelemetry::Instrumentation::Rack"]
         @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
@@ -235,13 +235,54 @@ module SolarWindsOTelAPM
     end
 
     def self.resolve_config_map_from_config_file
-      otel_instrumentations = {:action_pack => 'OpenTelemetry::Instrumentation::ActionPack'}
+      otel_instrumentations = {:trilogy => 'OpenTelemetry::Instrumentation::Trilogy',
+                              :active_support => 'OpenTelemetry::Instrumentation::ActiveSupport',
+                              :action_pack => 'OpenTelemetry::Instrumentation::ActionPack',
+                              :active_job => 'OpenTelemetry::Instrumentation::ActiveJob',
+                              :active_record => 'OpenTelemetry::Instrumentation::ActiveRecord',
+                              :action_view => 'OpenTelemetry::Instrumentation::ActionView',
+                              :aws_sdk => 'OpenTelemetry::Instrumentation::AwsSdk',
+                              :bunny => 'OpenTelemetry::Instrumentation::Bunny',
+                              :lmdb => 'OpenTelemetry::Instrumentation::LMDB',
+                              :http => 'OpenTelemetry::Instrumentation::HTTP',
+                              :koala => 'OpenTelemetry::Instrumentation::Koala',
+                              :active_model_serializers => 'OpenTelemetry::Instrumentation::ActiveModelSerializers',
+                              :concurrent_ruby => 'OpenTelemetry::Instrumentation::ConcurrentRuby',
+                              :dalli => 'OpenTelemetry::Instrumentation::Dalli',
+                              :delayed_job => 'OpenTelemetry::Instrumentation::DelayedJob',
+                              :ethon => 'OpenTelemetry::Instrumentation::Ethon',
+                              :excon => 'OpenTelemetry::Instrumentation::Excon',
+                              :faraday => 'OpenTelemetry::Instrumentation::Faraday',
+                              :graphql => 'OpenTelemetry::Instrumentation::GraphQL',
+                              :http_client => 'OpenTelemetry::Instrumentation::HttpClient',
+                              :mongo => 'OpenTelemetry::Instrumentation::Mongo',
+                              :mysql2 => 'OpenTelemetry::Instrumentation::Mysql2',
+                              :net_http => 'OpenTelemetry::Instrumentation::Net::HTTP',
+                              :pg => 'OpenTelemetry::Instrumentation::PG',
+                              :que => 'OpenTelemetry::Instrumentation::Que',
+                              :racecar => 'OpenTelemetry::Instrumentation::Racecar',
+                              :rack => 'OpenTelemetry::Instrumentation::Rack',
+                              :rails => 'OpenTelemetry::Instrumentation::Rails',
+                              :rake => 'OpenTelemetry::Instrumentation::Rake',
+                              :rdkafka => 'OpenTelemetry::Instrumentation::Rdkafka',
+                              :redis => 'OpenTelemetry::Instrumentation::Redis',
+                              :restclient => 'OpenTelemetry::Instrumentation::RestClient',
+                              :resque => 'OpenTelemetry::Instrumentation::Resque',
+                              :ruby_kafka => 'OpenTelemetry::Instrumentation::RubyKafka',
+                              :sidekiq => 'OpenTelemetry::Instrumentation::Sidekiq',
+                              :sinatra => 'OpenTelemetry::Instrumentation::Sinatra'}
       
       configs = SolarWindsOTelAPM::Config.class_variable_get(:@@config)
       configs.each do |key,value|
-        SolarWindsOTelAPM.logger.debug "########## examine key #{key}"
+        # SolarWindsOTelAPM.logger.debug "########## examine key #{key}"
         if otel_instrumentations.has_key? key.to_sym
-          @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} unless value.has_key?(:enabled) && value[:enabled]
+          unless value.has_key?(:enabled) && value[:enabled]
+            if @@config_map[otel_instrumentations[key.to_sym]]
+              @@config_map[otel_instrumentations[key.to_sym]][:enabled] = false
+            else
+              @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} 
+            end
+          end
         end
       end
     end
@@ -293,8 +334,8 @@ module SolarWindsOTelAPM
       resolve_sampler
       resolve_exporter
       resolve_span_processor
-      resolve_config_map_for_instrumentation
       resolve_config_map_from_config_file
+      resolve_for_response_propagator
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 

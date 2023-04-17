@@ -311,37 +311,42 @@ if defined?(SolarWindsOTelAPM::Config)
   #
   # :enabled settings are read on startup and can't be changed afterwards
   #
-  SolarWindsOTelAPM::Config[:action_controller][:enabled] = true
-  SolarWindsOTelAPM::Config[:action_controller_api][:enabled] = true
-  SolarWindsOTelAPM::Config[:action_view][:enabled] = true
+  SolarWindsOTelAPM::Config[:trilogy][:enabled] = true
+  SolarWindsOTelAPM::Config[:active_support][:enabled] = true
+  SolarWindsOTelAPM::Config[:action_pack][:enabled] = true
+  SolarWindsOTelAPM::Config[:active_job][:enabled] = true
   SolarWindsOTelAPM::Config[:active_record][:enabled] = true
-  SolarWindsOTelAPM::Config[:bunnyclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:bunnyconsumer][:enabled] = true
-  SolarWindsOTelAPM::Config[:curb][:enabled] = true
+  SolarWindsOTelAPM::Config[:action_view][:enabled] = true
+  SolarWindsOTelAPM::Config[:aws_sdk][:enabled] = true
+  SolarWindsOTelAPM::Config[:bunny][:enabled] = true
+  SolarWindsOTelAPM::Config[:lmdb][:enabled] = true
+  SolarWindsOTelAPM::Config[:http][:enabled] = true
+  SolarWindsOTelAPM::Config[:koala][:enabled] = true
+  SolarWindsOTelAPM::Config[:active_model_serializers][:enabled] = true
+  SolarWindsOTelAPM::Config[:concurrent_ruby][:enabled] = true
   SolarWindsOTelAPM::Config[:dalli][:enabled] = true
-  SolarWindsOTelAPM::Config[:delayed_jobclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:delayed_jobworker][:enabled] = true
+  SolarWindsOTelAPM::Config[:delayed_job][:enabled] = true
+  SolarWindsOTelAPM::Config[:ethon][:enabled] = true
   SolarWindsOTelAPM::Config[:excon][:enabled] = true
   SolarWindsOTelAPM::Config[:faraday][:enabled] = true
-  SolarWindsOTelAPM::Config[:grpc_client][:enabled] = true
-  SolarWindsOTelAPM::Config[:grpc_server][:enabled] = true
-  SolarWindsOTelAPM::Config[:grape][:enabled] = true
-  SolarWindsOTelAPM::Config[:httpclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:memcached][:enabled] = true
+  SolarWindsOTelAPM::Config[:graphql][:enabled] = true
+  SolarWindsOTelAPM::Config[:http_client][:enabled] = true
   SolarWindsOTelAPM::Config[:mongo][:enabled] = true
-  SolarWindsOTelAPM::Config[:moped][:enabled] = true
-  SolarWindsOTelAPM::Config[:nethttp][:enabled] = true
-  SolarWindsOTelAPM::Config[:padrino][:enabled] = true
+  SolarWindsOTelAPM::Config[:mysql2][:enabled] = true
+  SolarWindsOTelAPM::Config[:net_http][:enabled] = true
+  SolarWindsOTelAPM::Config[:pg][:enabled] = true
+  SolarWindsOTelAPM::Config[:que][:enabled] = true
+  SolarWindsOTelAPM::Config[:racecar][:enabled] = true
   SolarWindsOTelAPM::Config[:rack][:enabled] = true
+  SolarWindsOTelAPM::Config[:rails][:enabled] = true
+  SolarWindsOTelAPM::Config[:rake][:enabled] = true
+  SolarWindsOTelAPM::Config[:rdkafka][:enabled] = true
   SolarWindsOTelAPM::Config[:redis][:enabled] = true
-  SolarWindsOTelAPM::Config[:resqueclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:resqueworker][:enabled] = true
-  SolarWindsOTelAPM::Config[:rest_client][:enabled] = true
-  SolarWindsOTelAPM::Config[:sequel][:enabled] = true
-  SolarWindsOTelAPM::Config[:sidekiqclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:sidekiqworker][:enabled] = true
+  SolarWindsOTelAPM::Config[:restclient][:enabled] = true
+  SolarWindsOTelAPM::Config[:resque][:enabled] = true
+  SolarWindsOTelAPM::Config[:ruby_kafka][:enabled] = true
+  SolarWindsOTelAPM::Config[:sidekiq][:enabled] = true
   SolarWindsOTelAPM::Config[:sinatra][:enabled] = true
-  SolarWindsOTelAPM::Config[:typhoeus][:enabled] = true
 
   #
   # Argument logging
