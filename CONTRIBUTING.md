@@ -81,6 +81,7 @@ rbenv local 3.1.2    # set the Ruby version for this directory
 Install bundler and project dependencies:
 ```bash
 gem install bundler
+bundle install
 ```
 
 Start the testing/debugging container and supporting services:
