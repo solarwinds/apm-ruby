@@ -49,9 +49,10 @@ begin
     if SolarWindsOTelAPM::Config[:swo_otel_default]
       SolarWindsOTelAPM::OTelConfig.initialize 
     else
-      SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: You need initialize ruby agent in application like following. 
-                                      SolarWindsOTelAPM::OTelConfig.initialize 
-                                      SolarWindsOTelAPM::OTelConfig.initialize do |config| ... end"
+      SolarWindsOTelAPM.logger.info "SolarWindsOTelAPM info: You may need initialize ruby agent in application like the followings. 
+                                        SolarWindsOTelAPM::OTelConfig.initialize 
+                                      or using more complex config options in application:
+                                        SolarWindsOTelAPM::OTelConfig.initialize do |config| ... end"
     end
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='

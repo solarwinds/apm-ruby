@@ -205,15 +205,6 @@ module SolarWindsOTelAPM
       # default is from solarwinds_otel_apm_initializer.rb
       # ENV always has the highest priorities
       # config.rb -> oboe_init_options
-      when :otel_propagator # SWO_OTEL_PROPAGATOR
-        @@config[key.to_sym] = value
-
-      when :service_name    # SWO_OTEL_SERVICE_NAME
-        @@config[key.to_sym] = value
-
-      when :otel_exporter   # SWO_OTEL_EXPORTER
-        @@config[key.to_sym] = value 
-
       when :swo_otel_default
         @@config[key.to_sym] = value.to_s.downcase == "true"
 

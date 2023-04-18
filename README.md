@@ -11,7 +11,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
 Install by adding `solarwinds_otel_apm` to your Gemfile.
 
-To enable instrumentation, require the library and initialize it at the start of your application.
+Instrumentation is auto-enabled. 
+
+Unless you need to customize the components or instrumentations, set SWO_APM_DEFAULT=false or `SolarWindsOTelAPM::Config[:swo_otel_default]=false` in your config file, and then enable instrumentation, require the library and initialize it at the start of your application.
 
 ```ruby
 require 'solarwinds_otel_apm'

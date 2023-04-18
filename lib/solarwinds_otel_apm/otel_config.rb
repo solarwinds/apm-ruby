@@ -10,10 +10,6 @@ module SolarWindsOTelAPM
     @@txn_manager      = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
     @@agent_enabled    = true
 
-    def self.resolve_service_name
-      @@config[:service_name] = ENV['OTEL_SERVICE_NAME'] || SolarWindsOTelAPM::Config[:service_name] || ''
-    end
-
     def self.disable_agent
       return unless @@agent_enabled  # only show the msg once
       
@@ -215,7 +211,7 @@ module SolarWindsOTelAPM
 
     def self.resolve_sampler_config      
       sampler_config = {}
-      sampler_config["trigger_trace"] = "enabled" if (ENV["TRIGGER_TRACE"] || SolarWindsOTelAPM::Config[:trigger_trace]) == 'enabled'
+      sampler_config["trigger_trace"] = "enabled" if (ENV["SW_APM_TRIGGER_TRACING_MODE"] || SolarWindsOTelAPM::Config[:trigger_tracing_mode]) == 'enabled'
       @@config[:sampler_config] = sampler_config
     end
 
@@ -276,7 +272,6 @@ module SolarWindsOTelAPM
 
       return unless @@agent_enabled
 
-      resolve_service_name
       resolve_propagators
       resolve_sampler
       resolve_exporter
