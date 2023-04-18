@@ -1,3 +1,5 @@
+require_relative './otel_instrumentation'
+
 module SolarWindsOTelAPM
   # OTelConfig module
   # For configure otel component: configurable: propagator, exporter
@@ -235,42 +237,7 @@ module SolarWindsOTelAPM
     end
 
     def self.resolve_config_map_from_config_file
-      otel_instrumentations = {:trilogy => 'OpenTelemetry::Instrumentation::Trilogy',
-                              :active_support => 'OpenTelemetry::Instrumentation::ActiveSupport',
-                              :action_pack => 'OpenTelemetry::Instrumentation::ActionPack',
-                              :active_job => 'OpenTelemetry::Instrumentation::ActiveJob',
-                              :active_record => 'OpenTelemetry::Instrumentation::ActiveRecord',
-                              :action_view => 'OpenTelemetry::Instrumentation::ActionView',
-                              :aws_sdk => 'OpenTelemetry::Instrumentation::AwsSdk',
-                              :bunny => 'OpenTelemetry::Instrumentation::Bunny',
-                              :lmdb => 'OpenTelemetry::Instrumentation::LMDB',
-                              :http => 'OpenTelemetry::Instrumentation::HTTP',
-                              :koala => 'OpenTelemetry::Instrumentation::Koala',
-                              :active_model_serializers => 'OpenTelemetry::Instrumentation::ActiveModelSerializers',
-                              :concurrent_ruby => 'OpenTelemetry::Instrumentation::ConcurrentRuby',
-                              :dalli => 'OpenTelemetry::Instrumentation::Dalli',
-                              :delayed_job => 'OpenTelemetry::Instrumentation::DelayedJob',
-                              :ethon => 'OpenTelemetry::Instrumentation::Ethon',
-                              :excon => 'OpenTelemetry::Instrumentation::Excon',
-                              :faraday => 'OpenTelemetry::Instrumentation::Faraday',
-                              :graphql => 'OpenTelemetry::Instrumentation::GraphQL',
-                              :http_client => 'OpenTelemetry::Instrumentation::HttpClient',
-                              :mongo => 'OpenTelemetry::Instrumentation::Mongo',
-                              :mysql2 => 'OpenTelemetry::Instrumentation::Mysql2',
-                              :net_http => 'OpenTelemetry::Instrumentation::Net::HTTP',
-                              :pg => 'OpenTelemetry::Instrumentation::PG',
-                              :que => 'OpenTelemetry::Instrumentation::Que',
-                              :racecar => 'OpenTelemetry::Instrumentation::Racecar',
-                              :rack => 'OpenTelemetry::Instrumentation::Rack',
-                              :rails => 'OpenTelemetry::Instrumentation::Rails',
-                              :rake => 'OpenTelemetry::Instrumentation::Rake',
-                              :rdkafka => 'OpenTelemetry::Instrumentation::Rdkafka',
-                              :redis => 'OpenTelemetry::Instrumentation::Redis',
-                              :restclient => 'OpenTelemetry::Instrumentation::RestClient',
-                              :resque => 'OpenTelemetry::Instrumentation::Resque',
-                              :ruby_kafka => 'OpenTelemetry::Instrumentation::RubyKafka',
-                              :sidekiq => 'OpenTelemetry::Instrumentation::Sidekiq',
-                              :sinatra => 'OpenTelemetry::Instrumentation::Sinatra'}
+      otel_instrumentations = SolarWindsOTelAPM::OTelInstrumentation::Instrumentation
       
       configs = SolarWindsOTelAPM::Config.class_variable_get(:@@config)
       configs.each do |key,value|

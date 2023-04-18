@@ -63,7 +63,10 @@ module SolarWindsOTelAPM
           add_info_instrumentation_scope(event, span_data)
           add_info_instrumented_framework(event, span_data)
 
+          remove_args_from_attribtues(span_data)
           span_data.attributes&.each {|k,v| event.addInfo(k, v)}
+          
+
           @reporter.send_report(event, with_system_timestamp: false)
 
           # info / exception event
@@ -167,6 +170,23 @@ module SolarWindsOTelAPM
         end
         SolarWindsOTelAPM.logger.debug "######## exception event #{evt.metadataString} ########"
         @reporter.send_report(evt, with_system_timestamp: false)
+      end
+
+      def remove_args_from_attribtues(span_data)
+        # determine should send url or sanitized url
+        return if span_data.attributes.nil? 
+
+        scope_name = span_data.instrumentation_scope.name if span_data.instrumentation_scope.name
+        scope_name.gsub('OpenTelemetry::Instrumentation::','').gsub('::','_').downcase!
+
+        span_data.attributes.each do |key, value|
+          case key
+          when 'http.target'
+            span_data.attributes.delete(key) if SolarWindsOTelAPM::Config[scope_name.to_sym] && SolarWindsOTelAPM::Config[scope_name.to_sym][:log_args] == false
+          else
+            next
+          end
+        end
       end
 
       def report_info_event(span_event)

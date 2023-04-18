@@ -11,13 +11,11 @@ module SolarWindsOTelAPM
   module Config
     @@config = {}
 
-    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
-                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
-                         :dalli, :delayed_jobclient, :delayed_jobworker,
-                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
-                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
-                         :resqueclient, :resqueworker, :rest_client,
-                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus]
+    @@instrumentation = [:trilogy,:active_support,:action_pack,:active_job,:active_record,
+                         :action_view,:aws_sdk,:bunny,:lmdb,:http,:koala,:active_model_serializers,
+                         :concurrent_ruby,:dalli,:delayed_job,:ethon,:excon,:faraday,:graphql,
+                         :http_client,:mongo,:mysql2,:net_http,:pg,:que,:racecar,:rack,:rails,
+                         :rake,:rdkafka,:redis,:restclient,:resque,:ruby_kafka,:sidekiq,:sinatra]
 
     ##
     # load_config_file

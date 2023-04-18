@@ -299,8 +299,8 @@ if defined?(SolarWindsOTelAPM::Config)
   # are not specified in the publish, then nothing
   # will be reported here.
   #
-  SolarWindsOTelAPM::Config[:bunnyconsumer][:controller] = :app_id
-  SolarWindsOTelAPM::Config[:bunnyconsumer][:action] = :type
+  SolarWindsOTelAPM::Config[:bunny][:controller] = :app_id
+  SolarWindsOTelAPM::Config[:bunny][:action] = :type
 
   #
   # Enabling/Disabling Instrumentation
@@ -357,57 +357,11 @@ if defined?(SolarWindsOTelAPM::Config)
   # Set :log_args to false and instrumentation will stop collecting
   # and reporting query arguments from URLs.
   #
-  SolarWindsOTelAPM::Config[:bunnyconsumer][:log_args] = true
-  SolarWindsOTelAPM::Config[:curb][:log_args] = true
+  SolarWindsOTelAPM::Config[:bunny][:log_args] = true
   SolarWindsOTelAPM::Config[:excon][:log_args] = true
-  SolarWindsOTelAPM::Config[:httpclient][:log_args] = true
-  SolarWindsOTelAPM::Config[:mongo][:log_args] = true
-  SolarWindsOTelAPM::Config[:nethttp][:log_args] = true
+  SolarWindsOTelAPM::Config[:http_client][:log_args] = true
+  SolarWindsOTelAPM::Config[:net_http][:log_args] = true
   SolarWindsOTelAPM::Config[:rack][:log_args] = true
-  SolarWindsOTelAPM::Config[:resqueclient][:log_args] = true
-  SolarWindsOTelAPM::Config[:resqueworker][:log_args] = true
-  SolarWindsOTelAPM::Config[:sidekiqclient][:log_args] = true
-  SolarWindsOTelAPM::Config[:sidekiqworker][:log_args] = true
-  SolarWindsOTelAPM::Config[:typhoeus][:log_args] = true
-
-  #
-  # Enabling/Disabling Backtrace Collection
-  #
-  # Instrumentation can optionally collect backtraces as they collect
-  # performance metrics.  Note that this has a negative impact on
-  # performance but can be useful when trying to locate the source of
-  # a certain call or operation.
-  #
-  SolarWindsOTelAPM::Config[:action_controller][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:action_controller_api][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:action_view][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:active_record][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:bunnyclient][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:bunnyconsumer][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:curb][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:dalli][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:delayed_jobclient][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:delayed_jobworker][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:excon][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:faraday][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:grape][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:grpc_client][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:grpc_server][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:httpclient][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:memcached][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:mongo][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:moped][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:nethttp][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:padrino][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:rack][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:redis][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:resqueclient][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:resqueworker][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:rest_client][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:sequel][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:sidekiqclient][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:sidekiqworker][:collect_backtraces] = false
-  SolarWindsOTelAPM::Config[:sinatra][:collect_backtraces] = true
-  SolarWindsOTelAPM::Config[:typhoeus][:collect_backtraces] = false
-
+  SolarWindsOTelAPM::Config[:resque][:log_args] = true
+  SolarWindsOTelAPM::Config[:sidekiq][:log_args] = true
 end
