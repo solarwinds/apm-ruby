@@ -29,3 +29,42 @@ Name | Description | Default
 `SolarWindsAPM::Config` is a nested hash used by the solarwinds_apm gem to store preferences and switches.
 
 See [this Rails generator template file](https://github.com/librato/ruby-solarwinds/blob/master/lib/rails/generators/solarwinds_apm/templates/sw_apm_initializer.rb) for documentation on all of the supported values.
+
+
+## SolarWindsAPM Config File
+
+### Transaction Filtering (`[:transaction_settings]`)
+
+Sample configuration:
+```ruby
+SolarWindsOTelAPM::Config[:transaction_settings] = {
+  url: [
+      {
+        extensions: %w[long_job],
+        tracing: :disabled
+      },
+      {
+        regexp: '^.*\/long_job\/.*$',
+        opts: Regexp::IGNORECASE,
+        tracing: :disabled
+      },
+      {
+        regexp: /batch/,
+      }
+  ],
+  spankind: [
+      {
+        extensions: %w[long_job],
+        tracing: :disabled
+      },
+      {
+        regexp: '^.*\/long_job\/.*$',
+        opts: Regexp::IGNORECASE,
+        tracing: :disabled
+      },
+      {
+        regexp: /batch/,
+      }
+  ]
+}
+```

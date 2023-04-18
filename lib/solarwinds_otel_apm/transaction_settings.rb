@@ -19,53 +19,34 @@ module SolarWindsOTelAPM
       @kind = kind
     end
 
-    # cache can only be done in liboboe level because each agent is independent among all the app
-    # p.s. should_sample? call sequence is instrumentation start_root_span/start_span -> @tracer_provider.internal_start_span -> should_sample?
-    # but still can provide a cache that avoid each time to run following code over and over
+    # kind: url/spankind
     def calculate_trace_mode(kind: nil)
       cvalue = kind == 'url' ? @url : "#{@name}:#{@kind}"
-      (tracing_mode_disabled? && !tracing_enabled?(cvalue, kind: kind) || tracing_disabled?(cvalue, kind: kind))? SWO_TRACING_DISABLED : SWO_TRACING_ENABLED
+      tracing_mode_enabled? && tracing_enabled?(cvalue, kind: kind) ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
     end
 
     private
 
-    def tracing_mode_disabled?
-      SolarWindsOTelAPM::Config[:tracing_mode] && [:disabled, :never].include?(SolarWindsOTelAPM::Config[:tracing_mode])
+    def tracing_mode_enabled?
+      SolarWindsOTelAPM::Config[:tracing_mode] && ![:disabled, :never].include?(SolarWindsOTelAPM::Config[:tracing_mode])
     end
 
-    ##
-    # tracing_enabled?
-    #
-    # Given a path/spankind, this method determines whether it matches any of the
-    # regexps to exclude it from metrics and traces
-    #
     def tracing_enabled?(value, kind: nil)
-      regexp_group = kind == 'url' ? SolarWindsOTelAPM::Config[:url_enabled_regexps] : SolarWindsOTelAPM::Config[:spankind_enabled_regexps]
-      return false unless regexp_group.is_a? Array
-      return true if regexp_group.empty?  # if array doesn't contain anything, then it's permit by default
+      enabled_regexps = kind == 'url' ? SolarWindsOTelAPM::Config[:url_enabled_regexps] : SolarWindsOTelAPM::Config[:spankind_enabled_regexps]
+      disabled_regexps = kind == 'url' ? SolarWindsOTelAPM::Config[:url_disabled_regexps] : SolarWindsOTelAPM::Config[:spankind_disabled_regexps]
 
-      regexp_group.any? { |regex| regex.match?(value) }
+      if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(value) }
+        false
+      elsif enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(value) }
+        true
+      else
+        enabled_regexps.nil? ? true : enabled_regexps.empty?  # permit by default if no regexps are defined
+      end
     rescue StandardError => e
-      SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter] Could not apply :enabled filter to #{kind}. #{e.inspect}"
-      true
-    end
-
-    ##
-    # tracing_disabled?
-    #
-    # Given a path or spankind, this method determines whether it matches any of the
-    # regexps to exclude it from metrics and traces
-    #
-    def tracing_disabled?(value, kind: nil)
-      regexp_group = kind == 'url' ? SolarWindsOTelAPM::Config[:url_disabled_regexps] : SolarWindsOTelAPM::Config[:spankind_disabled_regexps]
-      return false unless regexp_group.is_a? Array
-      return false if regexp_group.empty?
-
-      regexp_group.any? { |regex| regex.match?(value) }
-    rescue StandardError => e
-      SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter] Could not apply :disabled filter to #{kind}. #{e.inspect}"
+      SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter_error] Could not determine tracing status for #{kind}. #{e.inspect}"
       false
     end
+
 
     class << self
       def compile_settings(settings, kind: nil)
