@@ -63,7 +63,6 @@ services:
   ruby_sw_otel_apm_ubuntu:
     container_name: ruby_sw_apm_ubuntu
     image: ruby_sw_apm_ubuntu
-    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile_ubuntu
@@ -166,8 +165,7 @@ services:
   # the name has to be java-collector to make it work
   java-collector:
     container_name: java-collector
-    image: "traceqa/test-collector:java-collector"
-    platform: linux/amd64
+    image: "ghcr.io/librato/apm-agent-test-collector:v1.2.2"
     volumes:
       - ./../java_collector/settings.db:/settings.db
       - ./../java_collector/cert/server-grpc.pem:/server-grpc.pem
@@ -181,7 +179,7 @@ services:
       - "8181:8181"
       - "12224:12224"
     command: java -jar apm-agent-test-collector.jar
-    
+
   ao_otel_ruby_wait:
     container_name: ao_otel_ruby_wait
     image: waisbrot/wait
@@ -197,4 +195,3 @@ services:
       - ao-otel-ruby-mongo
       - ao-otel-ruby-postgres
       - java-collector
-
