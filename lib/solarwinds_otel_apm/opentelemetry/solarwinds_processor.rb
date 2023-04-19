@@ -8,6 +8,8 @@ module SolarWindsOTelAPM
       HTTP_URL         = "http.url".freeze
       LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE = 0
 
+      attr_reader :txn_manager
+
       def initialize(exporter, txn_manager)
         @exporter = exporter
         @txn_manager = txn_manager
@@ -22,7 +24,17 @@ module SolarWindsOTelAPM
       # @param [Span] span the {Span} that just started.
       # @param [Context] parent_context the parent {Context} of the newly
       #  started span.
-      def on_start(span, parent_context); end
+      def on_start(span, parent_context)
+        SolarWindsOTelAPM.logger.debug "####### processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
+
+        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
+        return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID, span.context.hex_trace_id))
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID, span.context.hex_span_id))
+
+        SolarWindsOTelAPM.logger.debug "####### current baggage values: #{::OpenTelemetry::Baggage.values}"
+      end
 
       # Called when a {Span} is ended, if the {Span#recording?}
       # returns true.
@@ -125,8 +137,14 @@ module SolarWindsOTelAPM
 
       # Get trans_name and url_tran of this span instance.
       def calculate_transaction_names(span)
-        trans_name = span.attributes[HTTP_ROUTE] || nil
-        trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
+
+        trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
+        if @txn_manager.get(trace_span_id)
+          trans_name = @txn_manager.get(trace_span_id)
+        else
+          trans_name = span.attributes[HTTP_ROUTE] || nil
+          trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
+        end
         trans_name
       end
 
