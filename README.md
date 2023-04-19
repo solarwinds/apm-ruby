@@ -9,56 +9,45 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
 ## Getting Started
 
-Install by adding `solarwinds_otel_apm` to your Gemfile.
+The `solarwinds_otel_apm` gem is hosted on RubyGems. To install, run `gem install solarwinds_otel_apm` or add `gem 'solarwinds_otel_apm'` at the end of your Gemfile if the application manages gems using Bundler.
 
-Instrumentation is auto-enabled. 
+Ideally all application gems are required by `Bundler.require`, which guarantees loading in the order they appear in the Gemfile. If `Bundler.require` does not require all application gems, call `require 'solarwinds_otel_apm'` after all gems that need instrumentation are loaded.
 
-Unless you need to customize the components or instrumentations, set SWO_APM_DEFAULT=false or `SolarWindsOTelAPM::Config[:swo_otel_default]=false` in your config file, and then enable instrumentation, require the library and initialize it at the start of your application.
+Set the service key and ingestion endpoint. An easy way to do this is via environment variables available to your application process. An example:
 
-```ruby
-require 'solarwinds_otel_apm'
-SolarWindsOTelAPM::OTelConfig.initialize
+```bash
+export SW_APM_SERVICE_KEY=<set-service-key-here>
+export SW_APM_COLLECTOR=<set-collector-here>
 ```
-For example, in rails put the the above into `config/application.rb`; note that `require 'solarwinds_otel_apm'` is not needed if you have `Bundler.require(*Rails.groups)`.
-
-Additional configuration can be set within the initialize block, this will overwrite other configuration.
-```ruby
-require 'solarwinds_otel_apm'
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config['key'] = value
-end
-```
-
-See more information in [in-code-configuration](#configuration-through-in-code-configuration)
 
 ## Configuration
 
-swotel-ruby allows several ways of configuration.
+`solarwinds_otel_apm` is configured to work out-of-the-box for SolarWinds Observability with all automatic instrumentation libraries enabled. The service key is the only required configuration; all other configurations are optional.
 
-The configuration level/priority: in-code configure > environmental variable > config file > default
+Options to control the Ruby Library behavior can be set several ways, with the following precedence:
 
+`in-code configure > environmental variable > config file > default`
 
-### Configuration through in-code configuration
+### In-code Configuration
 
-Example:
+Additional configuration can be set within the `SolarWindsOTelAPM::OTelConfig.initialize` block, this will overwrite the same options set via environment variable or configuration file.
 
+An example that disables the Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes.
 ```ruby
 require 'solarwinds_otel_apm'
 
 SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
+  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers: ['header1', 'header2']}
 end
 ```
 
-The above configuration code sets Ruby Rack with configuration as {"a" => "b"}, and sets Ruby Dalli to disabled (not instrumented)
-
-#### Configure propagators in-code
+An example that creates three different propagators and provides them to `config["OpenTelemetry::Propagators"]` with in-code configuration. 
 ```ruby
 require 'opentelemetry/sdk'
 
 trace_context = ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new
-baggage       = ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new,
+baggage       = ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new
 solarwinds    = SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
 
 SolarWindsOTelAPM::OTelConfig.initialize do |config|
@@ -66,10 +55,7 @@ SolarWindsOTelAPM::OTelConfig.initialize do |config|
 end
 ```
 
-The above example initialized three different propagators and provide it to `config["OpenTelemetry::Propagators"]` with in-code configuration. This will overwrite the setting from `OTEL_PROPAGATORS`.
-
-#### Configure exporter in-code
-
+The above example initialized opentelemetry otlp exporter and provide it to `config["OpenTelemetry::Exporter"]` with in-code configuration. 
 ```ruby
 require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
@@ -81,34 +67,7 @@ SolarWindsOTelAPM::OTelConfig.initialize do |config|
 end
 ```
 
-The above example initialized opentelemetry otlp exporter and provide it to `config["OpenTelemetry::Exporter"]` with in-code configuration. This will overwrite the setting from `OTEL_TRACES_EXPORTER`.
-
-#### Configure instrumentation library
-
-By default we try to load all the instrumentation from opentelemetry-ruby-contrib.
-However, user can choose disable certain instrumentation if they want.
-
-Example: to disable Dalli, and provide some customization for Rack
-
-Set SWO_OTEL_DEFAULT to false to disable auto-loading of the instrumentation.
-```bash
-export SWO_OTEL_DEFAULT=false
-```
-
-Or set it to false through config file e.g. `SolarWindsOTelAPM::Config[:swo_otel_default] = false` )
-
-When loading the agent,
-```ruby
-require 'solarwinds_otel_apm'
-
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
-  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
-end
-```
-
-
-### Environmental variable
+### Environmental Variable
 
 #### OTEL_TRACES_EXPORTER
 
@@ -151,7 +110,8 @@ export SW_APM_CONFIG_RUBY=config/file/location.rb
 export SW_APM_SERVICE_KEY=<key>:<service_name>
 ```
 
-### Configuration files
+
+### Configuration Files
 
 The configuration file can be in one of the following locations
 
