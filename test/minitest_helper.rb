@@ -395,6 +395,13 @@ def create_context(trace_id:,
   context.set_value(conext_key, true)
 end
 
+def clean_old_setting
+  ENV.delete('OTEL_PROPAGATORS')
+  ENV.delete('OTEL_TRACES_EXPORTER')
+  SolarWindsOTelAPM::Config[:otel_propagator] = nil
+  SolarWindsOTelAPM::Config[:otel_exporter]   = nil
+end
+
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
   require "sinatra"
   ##

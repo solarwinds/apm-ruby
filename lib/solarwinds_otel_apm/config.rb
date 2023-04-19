@@ -201,6 +201,11 @@ module SolarWindsOTelAPM
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
+      when :otel_service_name
+        # have OTEL_SERVICE_NAME env set even user set service name from config file
+        # this is for have service name in attributes from span
+        ENV['OTEL_SERVICE_NAME'] = value if ENV['OTEL_SERVICE_NAME'].nil? && value
+
       # otel-related config (will affect load_opentelemetry directly)
       # default is from solarwinds_otel_apm_initializer.rb
       # ENV always has the highest priorities

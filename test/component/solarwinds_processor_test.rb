@@ -98,7 +98,7 @@ describe 'SolarWindsProcessor' do
   end
 
   it 'test on_start' do
-    @processor.on_start(@span, ::OpenTelemetry::Trace::SpanContext.new)
+    @processor.on_start(@span, ::OpenTelemetry::Context.current)
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)).must_equal '77cb6ccc522d3106114dd6ecbb70036a'
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)).must_equal '31e175128efc4018'
   end
@@ -106,7 +106,7 @@ describe 'SolarWindsProcessor' do
   it 'test calculate_transaction_names with custom_naming' do
     SolarWindsOTelAPM::OTelConfig.initialize
     processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).first
-    processor.on_start(@span, ::OpenTelemetry::Trace::SpanContext.new)
+    processor.on_start(@span, ::OpenTelemetry::Context.current)
     SolarWindsOTelAPM.set_transaction_name(custom_name: 'abcdf')
     _(processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
   end

@@ -46,14 +46,6 @@ begin
   if SolarWindsOTelAPM.loaded
     require 'solarwinds_otel_apm/load_opentelemetry'
     require 'solarwinds_otel_apm/otel_config'
-    if SolarWindsOTelAPM::Config[:swo_otel_default]
-      SolarWindsOTelAPM::OTelConfig.initialize 
-    else
-      SolarWindsOTelAPM.logger.info "SolarWindsOTelAPM info: You may need initialize ruby agent in application like the followings. 
-                                        SolarWindsOTelAPM::OTelConfig.initialize 
-                                      or using more complex config options in application:
-                                        SolarWindsOTelAPM::OTelConfig.initialize do |config| ... end"
-    end
   else
     SolarWindsOTelAPM.logger.warn '=============================================================='
     SolarWindsOTelAPM.logger.warn 'SolarWindsOTelAPM not loaded. Tracing disabled.'

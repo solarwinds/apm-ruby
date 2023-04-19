@@ -6,7 +6,6 @@ module SolarWindsOTelAPM
   module OTelConfig
     @@config           = {}
     @@config_map       = {}
-    @@instrumentations = [] # used for use_all/use 
     @@txn_manager      = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
     @@agent_enabled    = true
 
@@ -263,8 +262,7 @@ module SolarWindsOTelAPM
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
     # end
     #
-    def self.initialize
-      yield @@config_map if block_given?
+    def self.setup_otel_config
 
       validate_service_key
       validate_propagator
@@ -282,7 +280,6 @@ module SolarWindsOTelAPM
 
       if defined?(::OpenTelemetry::SDK::Configurator)
         ::OpenTelemetry::SDK.configure do |c|
-          c.service_name = @@config[:service_name]
           c.add_span_processor(@@config[:span_processor])
           c.propagators = @@config[:propagators]
           c.use_all(@@config_map)
@@ -293,5 +290,25 @@ module SolarWindsOTelAPM
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
       nil
     end
+
+    def self.reinitialize
+      @@config           = {}
+      @@config_map       = {}
+      @@txn_manager      = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
+      @@agent_enabled    = true
+
+      ::OpenTelemetry.propagation     = nil  # unset propagators
+      ::OpenTelemetry.tracer_provider = nil  # unset sampler, processor and exporter
+
+      yield @@config_map if block_given?
+
+      setup_otel_config
+    end
+
+    def self.initialize
+      setup_otel_config
+    end
   end
 end
+
+SolarWindsOTelAPM::OTelConfig.initialize

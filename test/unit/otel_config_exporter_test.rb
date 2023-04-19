@@ -6,20 +6,11 @@ require 'minitest_helper'
 describe 'Loading Opentelemetry Test' do
 
   before do
-    ENV.delete('OTEL_TRACES_EXPORTER')
-
+    clean_old_setting
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
     sleep 1
-  end
-
-  after do 
-    ENV.delete('OTEL_TRACES_EXPORTER')
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
-    sleep 5
   end
 
   # Exporter Testing
@@ -48,7 +39,7 @@ describe 'Loading Opentelemetry Test' do
 
   it 'test_exporter_with_in_code_valid_exporter' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Exporter'] = ::OpenTelemetry::SDK::Trace::Export::SpanExporter.new
     end
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
@@ -57,7 +48,7 @@ describe 'Loading Opentelemetry Test' do
 
   it 'test_exporter_with_in_code_invalid_exporter' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Exporter'] = ::OpenTelemetry::SDK::Trace::Export::SpanExporter
     end
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
@@ -66,7 +57,7 @@ describe 'Loading Opentelemetry Test' do
 
   it 'test_exporter_with_in_code_invalid_exporter' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Exporter'] = Exporter::Dummy.new
     end
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false

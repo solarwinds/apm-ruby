@@ -275,7 +275,9 @@ if defined?(SolarWindsOTelAPM::Config)
 
   SolarWindsOTelAPM::Config[:otel_exporter]     = 'solarwinds'
 
-  SolarWindsOTelAPM::Config[:trigger_tracing_mode]     = 'enabled'
+  SolarWindsOTelAPM::Config[:trigger_tracing_mode]   = 'enabled'
+
+  SolarWindsOTelAPM::Config[:otel_service_name]      = nil
 
   #############################################
   ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##
