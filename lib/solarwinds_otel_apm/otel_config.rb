@@ -242,26 +242,6 @@ module SolarWindsOTelAPM
       end
     end
 
-    # 
-    # Allow reinitialize after set new value to SolarWindsOTelAPM::Config[:key]=value
-    # 
-    # Usage:
-    # Without extra config for instrumentation:
-    #     SolarWindsOTelAPM::OTelConfig.initialize 
-    # 
-    # With extrac config 
-    # SolarWindsOTelAPM::OTelConfig.initialize do |config|
-    #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
-    #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
-    # end
-    # 
-    # Default using the use_all to load all instrumentation 
-    # With specific instrumentation disabled, use {:enabled: false} in config
-    # SolarWindsOTelAPM::OTelConfig.initialize do |config|
-    #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
-    #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
-    # end
-    #
     def self.setup_otel_config
 
       validate_service_key
@@ -291,6 +271,26 @@ module SolarWindsOTelAPM
       nil
     end
 
+    # 
+    # Allow reinitialize after set new value to SolarWindsOTelAPM::Config[:key]=value
+    # 
+    # Usage:
+    # Without extra config for instrumentation:
+    # SolarWindsOTelAPM::OTelConfig.reinitialize 
+    # 
+    # With extrac config 
+    # SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
+    #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
+    #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
+    # end
+    # 
+    # Default using the use_all to load all instrumentation 
+    # With specific instrumentation disabled, use {:enabled: false} in config
+    # SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
+    #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
+    #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
+    # end
+    #
     def self.reinitialize
       @@config           = {}
       @@config_map       = {}
