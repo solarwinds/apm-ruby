@@ -235,14 +235,20 @@ module SolarWindsOTelAPM
 
     def self.print_config
       @@config.each do |config, value|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config[:#{config}] = #{value}"
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] config:     #{config} = #{value}"
       end
       @@config_map.each do |config, value|
-        SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Config.config_map #{config} = #{value}"
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] config_map: #{config} = #{value}"
       end
     end
 
     def self.setup_otel_config
+
+      unless defined?(::OpenTelemetry::SDK::Configurator)
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
+        disable_agent
+        return
+      end
 
       validate_service_key
       validate_propagator
@@ -258,12 +264,10 @@ module SolarWindsOTelAPM
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 
-      if defined?(::OpenTelemetry::SDK::Configurator)
-        ::OpenTelemetry::SDK.configure do |c|
-          c.add_span_processor(@@config[:span_processor])
-          c.propagators = @@config[:propagators]
-          c.use_all(@@config_map)
-        end
+      ::OpenTelemetry::SDK.configure do |c|
+        c.add_span_processor(@@config[:span_processor])
+        c.propagators = @@config[:propagators]
+        c.use_all(@@config_map)
       end
 
       # configure sampler afterwards
@@ -275,23 +279,26 @@ module SolarWindsOTelAPM
     # Allow reinitialize after set new value to SolarWindsOTelAPM::Config[:key]=value
     # 
     # Usage:
-    # Without extra config for instrumentation:
-    # SolarWindsOTelAPM::OTelConfig.reinitialize 
-    # 
-    # With extrac config 
+    # With extra config 
     # SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
     # end
     # 
     # Default using the use_all to load all instrumentation 
-    # With specific instrumentation disabled, use {:enabled: false} in config
+    # But with specific instrumentation disabled, use {:enabled: false} in config
     # SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
     # end
     #
     def self.reinitialize
+
+      unless block_given?
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] missing block code while doing reinitialize.'
+        return
+      end
+
       @@config           = {}
       @@config_map       = {}
       @@txn_manager      = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
@@ -300,7 +307,7 @@ module SolarWindsOTelAPM
       ::OpenTelemetry.propagation     = nil  # unset propagators
       ::OpenTelemetry.tracer_provider = nil  # unset sampler, processor and exporter
 
-      yield @@config_map if block_given?
+      yield @@config_map
 
       setup_otel_config
     end

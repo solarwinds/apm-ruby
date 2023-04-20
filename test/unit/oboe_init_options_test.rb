@@ -375,33 +375,39 @@ describe 'OboeInitOptions' do
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['OTEL_SERVICE_NAME'] = 'abcdef'
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
-
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'abcdef'
 
     ENV['OTEL_SERVICE_NAME'] = nil
-    SolarWindsOTelAPM::Config[:otel_service_name] = 'abcdef'
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
-
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'abcdef'
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
 
     ENV['OTEL_SERVICE_NAME']  = ""
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
-
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
+  end
 
-    ENV['OTEL_SERVICE_NAME'] = nil
-    SolarWindsOTelAPM::Config[:otel_service_name] = nil
+
+  it 'test when otel_service_name does not exist' do
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
-
+    ENV['OTEL_SERVICE_NAME']  = nil
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
+    _(ENV['OTEL_SERVICE_NAME']).must_equal 'my-cool-service'
+
+    ENV['OTEL_SERVICE_NAME']  = nil
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
+
+    ENV['OTEL_SERVICE_NAME']  = nil
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
 
   end
 end

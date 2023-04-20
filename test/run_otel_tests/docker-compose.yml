@@ -18,8 +18,7 @@ x-ao-env: &ao-env
   SW_APM_GEM_TEST: "true"
   MONGO_SERVER: "ao-otel-ruby-mongo"
   RABBITMQ_SERVER: "ao-otel-ruby-rabbitmq"
-  SW_APM_REPORTER: "file"
-  # SW_APM_REPORTER: "ssl"   # only for java-collector
+  SW_APM_REPORTER: "file"        # for java-collector, set it as ssl
   SW_APM_REPORTER_FILE_SINGLE: "false"
   SW_APM_SERVICE_KEY: "${SW_APM_SERVICE_KEY}"
   SW_APM_TOKEN_BUCKET_CAPACITY: 10000
@@ -31,17 +30,12 @@ x-ao-env: &ao-env
   MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
   MYSQL_ROOT_PASSWORD: "admin"
   MYSQL_HOST: "ao-otel-ruby-mysql"
-#  OBOE_VERSION: "10.1.0"
   POSTGRES_PASSWORD: "docker"
   POSTGRES_USER: "docker"
   POSTGRES_HOST: "ao-otel-ruby-postgres"
   QUERY_LOG_FILE: "/tmp/sw_apm_query_logs.txt"
   RUBY_ENV: "test"
   TEST_RUNS_TO_FILE: "true"
-  SWO_OTEL_DEFAULT: "false"
-#    - SIMPLECOV_COVERAGE=true
-#    - OBOE_WIP=true
-#    - SW_APM_DEBUG_LEVEL=6
 
 x-ao-shared: &ao-shared
   mem_limit: 1G

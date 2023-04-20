@@ -122,8 +122,6 @@ module SolarWindsOTelAPM
     def read_and_validate_service_key
       return '' unless @reporter == 'ssl'
 
-      # puts "SW_APM_SERVICE_KEY: #{ENV['SW_APM_SERVICE_KEY']}; OTEL_SERVICE_NAME: #{ENV['OTEL_SERVICE_NAME']}"
-      # puts "SolarWindsOTelAPM::Config: #{SolarWindsOTelAPM::Config[:service_key]}; OTEL_SERVICE_NAME: #{SolarWindsOTelAPM::Config[:otel_service_name]}"
       service_key = ENV['SW_APM_SERVICE_KEY'] || SolarWindsOTelAPM::Config[:service_key]
       unless service_key
         SolarWindsOTelAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY not configured."
@@ -137,9 +135,14 @@ module SolarWindsOTelAPM
       return '' unless validate_token(token)
       return '' unless validate_transform_service_name(service_name)
 
-      otel_service_name = ENV['OTEL_SERVICE_NAME'] || SolarWindsOTelAPM::Config[:otel_service_name]
-      SolarWindsOTelAPM.logger.debug "Provided otel_service_name #{otel_service_name}" if otel_service_name
-      service_name = otel_service_name if otel_service_name && validate_transform_service_name(otel_service_name)
+      otel_service_name = ENV['OTEL_SERVICE_NAME']
+      SolarWindsOTelAPM.logger.debug "############ provided otel_service_name #{otel_service_name}" if otel_service_name
+      
+      if otel_service_name && validate_transform_service_name(otel_service_name)
+        service_name = otel_service_name
+      else
+        ENV['OTEL_SERVICE_NAME'] = service_name if ENV['OTEL_SERVICE_NAME'].nil?
+      end
 
       "#{token}:#{service_name}"
     end

@@ -269,15 +269,11 @@ if defined?(SolarWindsOTelAPM::Config)
   ## SETTINGS FOR OPENTELEMETRY COMPONENT     ##
   #############################################
 
-  SolarWindsOTelAPM::Config[:swo_otel_default]  = 'true'
+  SolarWindsOTelAPM::Config[:otel_propagator]        = 'tracecontext,baggage,solarwinds'
 
-  SolarWindsOTelAPM::Config[:otel_propagator]   = 'tracecontext,baggage,solarwinds'
-
-  SolarWindsOTelAPM::Config[:otel_exporter]     = 'solarwinds'
+  SolarWindsOTelAPM::Config[:otel_exporter]          = 'solarwinds'
 
   SolarWindsOTelAPM::Config[:trigger_tracing_mode]   = 'enabled'
-
-  SolarWindsOTelAPM::Config[:otel_service_name]      = nil
 
   #############################################
   ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##
