@@ -78,9 +78,10 @@ rbenv local 3.1.2    # set the Ruby version for this directory
 
 #### Run Test/Debug Containers
 
-Install bundler and project dependencies:
+Install bundler, configure it to skip unneeded groups then install the project dependencies:
 ```bash
 gem install bundler
+bundle config set --local without development test
 bundle install
 ```
 
