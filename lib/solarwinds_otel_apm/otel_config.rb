@@ -304,6 +304,7 @@ module SolarWindsOTelAPM
       @@txn_manager      = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
       @@agent_enabled    = true
 
+      ::OpenTelemetry.tracer_provider.shutdown
       ::OpenTelemetry.propagation     = nil  # unset propagators
       ::OpenTelemetry.tracer_provider = nil  # unset sampler, processor and exporter
 

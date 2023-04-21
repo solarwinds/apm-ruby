@@ -27,11 +27,11 @@ module SolarWindsOTelAPM
         SUCCESS
       end
 
-      def force_flush(_timeout: nil)
+      def force_flush(timeout: nil)
         SUCCESS
       end
 
-      def shutdown(_timeout: nil)
+      def shutdown(timeout: nil)
         @shutdown = true
         SUCCESS
       end
