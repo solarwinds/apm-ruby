@@ -1,6 +1,6 @@
 module SolarWindsOTelAPM
   module OTelInstrumentation
-    Instrumentation = {:trilogy => 'OpenTelemetry::Instrumentation::Trilogy',
+    INSTRUMENTATION = {:trilogy => 'OpenTelemetry::Instrumentation::Trilogy',
                        :active_support => 'OpenTelemetry::Instrumentation::ActiveSupport',
                        :action_pack => 'OpenTelemetry::Instrumentation::ActionPack',
                        :active_job => 'OpenTelemetry::Instrumentation::ActiveJob',
@@ -35,6 +35,6 @@ module SolarWindsOTelAPM
                        :resque => 'OpenTelemetry::Instrumentation::Resque',
                        :ruby_kafka => 'OpenTelemetry::Instrumentation::RubyKafka',
                        :sidekiq => 'OpenTelemetry::Instrumentation::Sidekiq',
-                       :sinatra => 'OpenTelemetry::Instrumentation::Sinatra'}        
+                       :sinatra => 'OpenTelemetry::Instrumentation::Sinatra'}.freeze      
   end
 end

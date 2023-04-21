@@ -6,7 +6,6 @@ require 'logger'
 module SolarWindsOTelAPM
   module Logger
     module Formatter
-
       def call(severity, time, progname, msg)
         return super if SolarWindsOTelAPM::Config[:log_traceId] == :never
 
@@ -35,12 +34,10 @@ module SolarWindsOTelAPM
 
       def insert_before_empty_lines(msg, for_log)
         stripped = msg.rstrip
-        "#{stripped} #{for_log}#{msg[stripped.length..-1]}"
+        "#{stripped} #{for_log}#{msg[stripped.length..]}"
       end
     end
   end
 end
 
-if SolarWindsOTelAPM.loaded
-  Logger::Formatter.send(:prepend, SolarWindsOTelAPM::Logger::Formatter)
-end
+Logger::Formatter.prepend(SolarWindsOTelAPM::Logger::Formatter) if SolarWindsOTelAPM.loaded

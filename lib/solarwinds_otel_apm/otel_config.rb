@@ -237,18 +237,17 @@ module SolarWindsOTelAPM
     end
 
     def self.resolve_config_map_from_config_file
-      otel_instrumentations = SolarWindsOTelAPM::OTelInstrumentation::Instrumentation
+      otel_instrumentations = SolarWindsOTelAPM::OTelInstrumentation::INSTRUMENTATION
       
       configs = SolarWindsOTelAPM::Config.class_variable_get(:@@config)
       configs.each do |key,value|
-        # SolarWindsOTelAPM.logger.debug "########## examine key #{key}"
-        if otel_instrumentations.has_key? key.to_sym
-          unless value.has_key?(:enabled) && value[:enabled]
-            if @@config_map[otel_instrumentations[key.to_sym]]
-              @@config_map[otel_instrumentations[key.to_sym]][:enabled] = false
-            else
-              @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} 
-            end
+        next unless otel_instrumentations.has_key? key.to_sym
+        
+        unless value.has_key?(:enabled) && value[:enabled]
+          if @@config_map[otel_instrumentations[key.to_sym]]
+            @@config_map[otel_instrumentations[key.to_sym]][:enabled] = false
+          else
+            @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} 
           end
         end
       end

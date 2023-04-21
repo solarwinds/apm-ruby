@@ -42,8 +42,7 @@ module SolarWindsOTelAPM
         @trace_id    = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
         @span_id     = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
         @trace_flags = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
-        @tracestring = "00-#{@trace_id}-#{@span_id}-#{@trace_flag}"
-
+        @tracestring = "00-#{@trace_id}-#{@span_id}-#{@trace_flags}"
         @do_log = log? # true if the tracecontext should be added to logs
         @do_sql = sql? # true if the tracecontext should be added to sql
       end
@@ -60,9 +59,8 @@ module SolarWindsOTelAPM
       end
 
       def hash_for_log
-        @hash_for_log ||= @do_log ? { trace_id: @trace_id,
-                                     span_id: @span_id,
-                                     trace_flags: @trace_flags } : {}
+        @hash_for_log = {}
+        @hash_for_log = {trace_id: @trace_id, span_id: @span_id, trace_flags: @trace_flags} if @do_log
       end
 
       def for_sql
@@ -104,8 +102,7 @@ module SolarWindsOTelAPM
 
       # if true the trace info should be added to the sql query
       def sql?
-         SolarWindsOTelAPM::Config[:tag_sql] &&
-           SolarWindsOTelAPM::TraceString.sampled?(@tracestring)
+        SolarWindsOTelAPM::Config[:tag_sql] && SolarWindsOTelAPM::TraceString.sampled?(@tracestring)
       end
 
       # un-initialized (all 0 trace-id) tracestrings are not valid
@@ -122,12 +119,9 @@ module SolarWindsOTelAPM
       end
 
       def split(tracestring)
-        matches = REGEXP.match(tracestring)
-
-        matches
+        REGEXP.match(tracestring)
       end
     end
-
   end
 
   extend CurrentTraceInfo
