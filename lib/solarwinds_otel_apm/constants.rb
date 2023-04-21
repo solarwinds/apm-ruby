@@ -20,6 +20,8 @@ module SolarWindsOTelAPM
     INTL_SWO_PROPAGATOR              = "solarwinds_propagator".freeze
     INTL_SWO_DEFAULT_PROPAGATORS     = [INTL_SWO_TRACECONTEXT_PROPAGATOR, "baggage",INTL_SWO_PROPAGATOR].freeze
     INTL_SWO_SUPPORT_EMAIL           = "SWO-support@solarwinds.com".freeze
+    INTL_SWO_CURRENT_SPAN_ID         = "sw-current-entry-span-id".freeze
+    INTL_SWO_CURRENT_TRACE_ID        = "sw-current-trace-id".freeze
 
     INTL_SWO_CURRENT_SPAN_ID         = "sw-current-entry-span-id".freeze
     INTL_SWO_CURRENT_TRACE_ID        = "sw-current-trace-id".freeze

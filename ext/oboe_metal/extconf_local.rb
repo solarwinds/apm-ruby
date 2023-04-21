@@ -6,7 +6,6 @@
 require 'mkmf'
 require 'rbconfig'
 require 'open-uri'
-require 'no_proxy_fix'
 
 CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, '')
                                          .gsub(/-Wimplicit-function-declaration/, '')

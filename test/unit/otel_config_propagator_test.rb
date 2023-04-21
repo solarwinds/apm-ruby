@@ -6,8 +6,7 @@ require 'minitest_helper'
 describe 'Loading Opentelemetry Test' do
 
   before do
-    ENV.delete('OTEL_PROPAGATORS')
-
+    clean_old_setting
     @tracecontext = ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new
     @baggage      = ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new
     @solarwinds   = SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
@@ -18,18 +17,10 @@ describe 'Loading Opentelemetry Test' do
     sleep 1
   end
 
-  after do 
-    ENV.delete('OTEL_PROPAGATORS')
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
-    sleep 5
-  end
-
   # propagation in_code testing
   it 'test_resolve_propagators_with_in_code' do
     
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Propagators'] = []
     end
 
@@ -40,7 +31,7 @@ describe 'Loading Opentelemetry Test' do
 
   it 'test_resolve_propagators_with_in_code_correct' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Propagators'] = [@tracecontext,@baggage,@solarwinds]
     end
 
@@ -51,7 +42,7 @@ describe 'Loading Opentelemetry Test' do
   end
 
   it 'test_resolve_propagators_with_in_code_misorder' do
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Propagators'] = [@solarwinds,@tracecontext,@baggage]
     end
 
@@ -62,7 +53,7 @@ describe 'Loading Opentelemetry Test' do
   it 'test_resolve_propagators_with_in_code_with_invalid_propagator' do
 
     dummy = String.new
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Propagators'] = [@tracecontext,@baggage,@solarwinds,dummy]
     end
 
@@ -73,7 +64,7 @@ describe 'Loading Opentelemetry Test' do
   it 'test_resolve_propagators_with_in_code_with_valid_propagator' do
 
     dummy = Dummy::TextMapPropagator.new
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.reinitialize do |config|
       config['OpenTelemetry::Propagators'] = [@tracecontext,@baggage,@solarwinds,dummy]
     end
 

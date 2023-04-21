@@ -10,6 +10,12 @@ describe 'OboeInitOptions' do
     # lets suppress logging, because we will log a lot of errors when testing the service_key
     @log_level = SolarWindsOTelAPM.logger.level
     SolarWindsOTelAPM.logger.level = 6
+
+    ENV.delete('SW_APM_SERVICE_KEY')
+    ENV.delete('OTEL_SERVICE_NAME')
+    ENV.delete('SW_APM_REPORTER')
+    SolarWindsOTelAPM::Config[:service_key]       = nil
+    SolarWindsOTelAPM::Config[:otel_service_name] = nil
   end
 
   after do
@@ -229,7 +235,9 @@ describe 'OboeInitOptions' do
 
     SolarWindsOTelAPM::Config[:service_key] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:service'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+
+    SolarWindsOTelAPM::Config[:service_key] = nil
 
     ENV['SW_APM_SERVICE_KEY'] = 'blabla'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
@@ -361,5 +369,45 @@ describe 'OboeInitOptions' do
     uri = 'google.ca.appoptics'
     sanitized_uri = SolarWindsOTelAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
     _(sanitized_uri).must_equal "google.ca.appoptics"
+  end
+
+  it 'test when otel_service_name exist' do
+    ENV['SW_APM_REPORTER'] = 'ssl'
+    ENV['OTEL_SERVICE_NAME'] = 'abcdef'
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'abcdef'
+
+    ENV['OTEL_SERVICE_NAME'] = nil
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
+
+    ENV['OTEL_SERVICE_NAME']  = ""
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
+    _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
+  end
+
+
+  it 'test when otel_service_name does not exist' do
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
+    ENV['OTEL_SERVICE_NAME']  = nil
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(ENV['OTEL_SERVICE_NAME']).must_equal 'my-cool-service'
+
+    ENV['OTEL_SERVICE_NAME']  = nil
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
+
+    ENV['OTEL_SERVICE_NAME']  = nil
+    ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:'
+    SolarWindsOTelAPM::OboeInitOptions.instance.re_init
+    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
+
   end
 end
