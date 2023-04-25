@@ -392,7 +392,6 @@ describe 'OboeInitOptions' do
     _(SolarWindsOTelAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
   end
 
-
   it 'test when otel_service_name does not exist' do
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
     ENV['OTEL_SERVICE_NAME']  = nil
