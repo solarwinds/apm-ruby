@@ -111,101 +111,6 @@ if defined?(SolarWindsOTelAPM::Config)
   SolarWindsOTelAPM::Config[:log_traceId] = :never
 
   #
-  # Trace Context in Queries (sql only)
-  #
-  # Configure to add the trace context to sql queries so that queries and
-  # transactions can be linked in the SolarWinds dashboard
-  #
-  # This option can add a small overhead for queries that use prepared
-  # statements as those statements will be recompiled whenever the trace context
-  # is added (about 10% of the requests)
-  #
-  # the options are:
-  # - true   (default) no trace context is added
-  # - false  the tracecontext is added as comment to the start of the query, e.g:
-  #          "/*traceparent='00-268748089f148899e29fc5711aca7760-7c6c704dcbba6682-01'*/SELECT `widgets`.* FROM `widgets` WHERE ..."
-  #
-  SolarWindsOTelAPM::Config[:tag_sql] = false
-
-  #
-  # Sanitize SQL Statements
-  #
-  # The SolarWindsOTelAPM Ruby client has the ability to sanitize query literals
-  # from SQL statements.  By default this is enabled.  Disable to
-  # collect and report query literals to SolarWindsOTelAPM.
-  #
-  SolarWindsOTelAPM::Config[:sanitize_sql] = true
-  SolarWindsOTelAPM::Config[:sanitize_sql_regexp] = '(\'[^\']*\'|\d*\.\d+|\d+|NULL)'
-  SolarWindsOTelAPM::Config[:sanitize_sql_opts]   = Regexp::IGNORECASE
-
-  #
-  # Prepend Domain to Transaction Name
-  #
-  # If this is set to `true` transaction names will be composed as
-  # `my.host.com/controller.action` instead of `controller.action`.
-  # This configuration applies to all transaction names, whether deduced by the
-  # instrumentation or implicitly set.
-  #
-  SolarWindsOTelAPM::Config[:transaction_name][:prepend_domain] = false
-
-  #
-  # Do Not Trace - DNT
-  #
-  # DEPRECATED
-  # Please comment out if no filtering is desired, e.g. your static
-  # assets are served by the web server and not the application
-  #
-  # This configuration allows creating a regexp for paths that should be excluded
-  # from solarwinds_apm processing.
-  #
-  # For example:
-  # - static assets that aren't served by the web server, or
-  # - healthcheck endpoints that respond to a heart beat.
-  #
-  # :dnt_regexp is the regular expression that is applied to the incoming path
-  # to determine whether the request should be measured and traced or not.
-  #
-  # :dnt_opts can be commented out, nil, or Regexp::IGNORECASE
-  #
-  # The matching happens before routes are applied.
-  # The path originates from the rack layer and is retrieved as follows:
-  #   req = ::Rack::Request.new(env)
-  #   path = URI.unescape(req.path)
-  #
-  SolarWindsOTelAPM::Config[:dnt_regexp] = '\.(jpg|jpeg|gif|png|ico|css|zip|tgz|gz|rar|bz2|pdf|txt|tar|wav|bmp|rtf|js|flv|swf|otf|eot|ttf|woff|woff2|svg|less)(\?.+){0,1}$'
-  SolarWindsOTelAPM::Config[:dnt_opts] = Regexp::IGNORECASE
-
-  #
-  # GraphQL
-  #
-  # Enable tracing for GraphQL.
-  # (true | false, default: true)
-  SolarWindsOTelAPM::Config[:graphql][:enabled] = true
-  # Replace query arguments with a '?' when sent with a trace.
-  # (true | false, default: true)
-  SolarWindsOTelAPM::Config[:graphql][:sanitize] = true
-  # Remove comments from queries when sent with a trace.
-  # (true | false, default: true)
-  SolarWindsOTelAPM::Config[:graphql][:remove_comments] = true
-  # Create a transaction name by combining
-  # "query" or "mutation" with the first word of the query.
-  # This overwrites the default transaction name, which is a combination of
-  # controller + action and would be the same for all graphql queries.
-  # (true | false, default: true)
-  SolarWindsOTelAPM::Config[:graphql][:transaction_name] = true
-
-  #
-  # Rack::Cache
-  #
-  # Create a transaction name like `rack-cache.<cache-store>`,
-  # e.g. `rack-cache.memcached`
-  # This can reduce the number of transaction names, when many requests are
-  # served directly from the cache without hitting a controller action.
-  # When set to `false` the path will be used for the transaction name.
-  #
-  SolarWindsOTelAPM::Config[:rack_cache] = {transaction_name: true}
-
-  #
   # Transaction Settings
   #
   # Use this configuration to add exceptions to the global tracing mode and
@@ -247,15 +152,6 @@ if defined?(SolarWindsOTelAPM::Config)
   }
 
   #
-  # Rails Exception Logging
-  #
-  # In Rails, raised exceptions with rescue handlers via
-  # <tt>rescue_from</tt> are not reported to the SolarWinds   # dashboard by default.  Setting this value to true will
-  # report all raised exceptions regardless.
-  #
-  SolarWindsOTelAPM::Config[:report_rescued_errors] = false
-
-  #
   # EC2 Metadata Fetching Timeout
   #
   # The timeout can be in the range 0 - 3000 (milliseconds)
@@ -265,99 +161,21 @@ if defined?(SolarWindsOTelAPM::Config)
   #
   SolarWindsOTelAPM::Config[:ec2_metadata_timeout] = 1000
 
-  #############################################
-  ## SETTINGS FOR OPENTELEMETRY COMPONENT     ##
-  #############################################
-
-  SolarWindsOTelAPM::Config[:otel_propagator]        = 'tracecontext,baggage,solarwinds'
-
-  SolarWindsOTelAPM::Config[:otel_exporter]          = 'solarwinds'
-
-  SolarWindsOTelAPM::Config[:trigger_tracing_mode]   = 'enabled'
-
-  #############################################
-  ## SETTINGS FOR INDIVIDUAL GEMS/FRAMEWORKS ##
-  #############################################
-
   #
-  # Bunny Controller and Action
+  # Trigger Trace Mode
+  # 
+  # Trace options is a custom HTTP header X-Trace-Options that can be set on a request to carry additional information 
+  # to the agents, one such option being trigger-trace which we’ll call a trigger trace request.
   #
-  # The bunny (Rabbitmq) instrumentation can optionally report
-  # Controller and Action values to allow filtering of bunny
-  # message handling in # the UI.  Use of Controller and Action
-  # for filters is temporary until the UI is updated with
-  # additional filters.
-  #
-  # These values identify which properties of
-  # Bunny::MessageProperties to report as Controller
-  # and Action.  The defaults are to report :app_id (as
-  # Controller) and :type (as Action).  If these values
-  # are not specified in the publish, then nothing
-  # will be reported here.
-  #
-  SolarWindsOTelAPM::Config[:bunny][:controller] = :app_id
-  SolarWindsOTelAPM::Config[:bunny][:action] = :type
-
-  #
-  # Enabling/Disabling Instrumentation
-  #
-  # If you're having trouble with one of the instrumentation libraries, they
-  # can be individually disabled here by setting the :enabled
-  # value to false.
-  #
-  # :enabled settings are read on startup and can't be changed afterwards
-  #
-  SolarWindsOTelAPM::Config[:trilogy][:enabled] = true
-  SolarWindsOTelAPM::Config[:active_support][:enabled] = true
-  SolarWindsOTelAPM::Config[:action_pack][:enabled] = true
-  SolarWindsOTelAPM::Config[:active_job][:enabled] = true
-  SolarWindsOTelAPM::Config[:active_record][:enabled] = true
-  SolarWindsOTelAPM::Config[:action_view][:enabled] = true
-  SolarWindsOTelAPM::Config[:aws_sdk][:enabled] = true
-  SolarWindsOTelAPM::Config[:bunny][:enabled] = true
-  SolarWindsOTelAPM::Config[:lmdb][:enabled] = true
-  SolarWindsOTelAPM::Config[:http][:enabled] = true
-  SolarWindsOTelAPM::Config[:koala][:enabled] = true
-  SolarWindsOTelAPM::Config[:active_model_serializers][:enabled] = true
-  SolarWindsOTelAPM::Config[:concurrent_ruby][:enabled] = true
-  SolarWindsOTelAPM::Config[:dalli][:enabled] = true
-  SolarWindsOTelAPM::Config[:delayed_job][:enabled] = true
-  SolarWindsOTelAPM::Config[:ethon][:enabled] = true
-  SolarWindsOTelAPM::Config[:excon][:enabled] = true
-  SolarWindsOTelAPM::Config[:faraday][:enabled] = true
-  SolarWindsOTelAPM::Config[:graphql][:enabled] = true
-  SolarWindsOTelAPM::Config[:http_client][:enabled] = true
-  SolarWindsOTelAPM::Config[:mongo][:enabled] = true
-  SolarWindsOTelAPM::Config[:mysql2][:enabled] = true
-  SolarWindsOTelAPM::Config[:net_http][:enabled] = true
-  SolarWindsOTelAPM::Config[:pg][:enabled] = true
-  SolarWindsOTelAPM::Config[:que][:enabled] = true
-  SolarWindsOTelAPM::Config[:racecar][:enabled] = true
-  SolarWindsOTelAPM::Config[:rack][:enabled] = true
-  SolarWindsOTelAPM::Config[:rails][:enabled] = true
-  SolarWindsOTelAPM::Config[:rake][:enabled] = true
-  SolarWindsOTelAPM::Config[:rdkafka][:enabled] = true
-  SolarWindsOTelAPM::Config[:redis][:enabled] = true
-  SolarWindsOTelAPM::Config[:restclient][:enabled] = true
-  SolarWindsOTelAPM::Config[:resque][:enabled] = true
-  SolarWindsOTelAPM::Config[:ruby_kafka][:enabled] = true
-  SolarWindsOTelAPM::Config[:sidekiq][:enabled] = true
-  SolarWindsOTelAPM::Config[:sinatra][:enabled] = true
+  SolarWindsOTelAPM::Config[:trigger_tracing_mode] = 'enabled'
 
   #
   # Argument logging
-  #
   #
   # For http requests:
   # By default the query string parameters are included in the URLs reported.
   # Set :log_args to false and instrumentation will stop collecting
   # and reporting query arguments from URLs.
   #
-  SolarWindsOTelAPM::Config[:bunny][:log_args] = true
-  SolarWindsOTelAPM::Config[:excon][:log_args] = true
-  SolarWindsOTelAPM::Config[:http_client][:log_args] = true
-  SolarWindsOTelAPM::Config[:net_http][:log_args] = true
-  SolarWindsOTelAPM::Config[:rack][:log_args] = true
-  SolarWindsOTelAPM::Config[:resque][:log_args] = true
-  SolarWindsOTelAPM::Config[:sidekiq][:log_args] = true
+  SolarWindsOTelAPM::Config[:log_args] = true
 end

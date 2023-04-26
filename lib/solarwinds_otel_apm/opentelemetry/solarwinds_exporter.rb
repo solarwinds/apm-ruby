@@ -64,7 +64,7 @@ module SolarWindsOTelAPM
           add_info_instrumented_framework(event, span_data)
 
           SolarWindsOTelAPM.logger.debug "####### old span_data.attributes: #{span_data.attributes.inspect}"
-          span_data_attributes = remove_args_from_attribtues(span_data)
+          span_data_attributes = remove_args_from_attributes(span_data)
           span_data_attributes&.each {|k,v| event.addInfo(k, v)}
           SolarWindsOTelAPM.logger.debug "####### new span_data_attributes: #{span_data_attributes.inspect}"
           
@@ -174,19 +174,14 @@ module SolarWindsOTelAPM
       end
 
       # remove http.target (query/args) if log_args is false
-      def remove_args_from_attribtues(span_data)
+      def remove_args_from_attributes(span_data)
         # determine should send url or sanitized url
         return span_data.attributes if span_data.attributes.nil? 
 
         new_attributes = {}
-        scope_name = span_data.instrumentation_scope.name if span_data.instrumentation_scope.name
-        scope_name.gsub!('OpenTelemetry::Instrumentation::','')
-        scope_name.gsub!('::','_')
-        scope_name.downcase!
-
         span_data.attributes.each do |key, value|
-          if key == 'http.target'
-            value = nil if SolarWindsOTelAPM::Config[scope_name.to_sym] && SolarWindsOTelAPM::Config[scope_name.to_sym][:log_args] == false
+          if key == 'http.target' && SolarWindsOTelAPM::Config[:log_args] == false
+            new_attributes[key] = value.split('?').first
           end
           new_attributes[key] = value
         end

@@ -1,5 +1,3 @@
-require_relative './otel_instrumentation'
-
 module SolarWindsOTelAPM
   # OTelConfig module
   # For configure otel component: configurable: propagator, exporter
@@ -231,23 +229,6 @@ module SolarWindsOTelAPM
       end
     end
 
-    def self.resolve_config_map_from_config_file
-      otel_instrumentations = SolarWindsOTelAPM::OTelInstrumentation::INSTRUMENTATION
-      
-      configs = SolarWindsOTelAPM::Config.class_variable_get(:@@config)
-      configs.each do |key,value|
-        next unless otel_instrumentations.has_key? key.to_sym
-        
-        unless value.has_key?(:enabled) && value[:enabled]
-          if @@config_map[otel_instrumentations[key.to_sym]]
-            @@config_map[otel_instrumentations[key.to_sym]][:enabled] = false
-          else
-            @@config_map[otel_instrumentations[key.to_sym]] = {:enabled => false} 
-          end
-        end
-      end
-    end
-
     def self.[](key)
       @@config[key.to_sym]
     end
@@ -279,7 +260,6 @@ module SolarWindsOTelAPM
       resolve_sampler
       resolve_exporter
       resolve_span_processor
-      resolve_config_map_from_config_file
       resolve_for_response_propagator
 
       print_config if SolarWindsOTelAPM.logger.level.zero?

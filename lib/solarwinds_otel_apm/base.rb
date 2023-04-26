@@ -34,11 +34,6 @@ module SolarWindsOTelAPMBase
   # trace context is used to store incoming w3c trace information
   thread_local :trace_context
 
-  # transaction_name is used for custom transaction naming
-  # It needs to be globally accessible, but is only set by the request processors of the different frameworks
-  # and read by rack
-  thread_local :transaction_name
-
   # Semaphore used during the test suite to test
   # global config options.
   thread_local :config_lock
