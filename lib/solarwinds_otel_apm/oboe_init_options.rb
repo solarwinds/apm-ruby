@@ -140,8 +140,8 @@ module SolarWindsOTelAPM
       
       if otel_service_name && validate_transform_service_name(otel_service_name)
         service_name = otel_service_name
-      else
-        ENV['OTEL_SERVICE_NAME'] = service_name if ENV['OTEL_SERVICE_NAME'].nil?
+      elsif ENV['OTEL_SERVICE_NAME'].nil?
+        ENV['OTEL_SERVICE_NAME'] = service_name
       end
 
       "#{token}:#{service_name}"

@@ -31,6 +31,8 @@ require 'opentelemetry/sdk'
 require 'opentelemetry-sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
+require 'opentelemetry-propagator-b3'
+require 'opentelemetry-exporter-otlp'
 require 'bson'
 
 # write to a file as well as STDOUT (comes in handy with docker runs)
@@ -398,8 +400,6 @@ end
 def clean_old_setting
   ENV.delete('OTEL_PROPAGATORS')
   ENV.delete('OTEL_TRACES_EXPORTER')
-  SolarWindsOTelAPM::Config[:otel_propagator] = nil
-  SolarWindsOTelAPM::Config[:otel_exporter]   = nil
 end
 
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
