@@ -61,96 +61,10 @@ task 'smoke' do
   exec('test/run_otel_tests/smoke_test/smoketest.sh')
 end
 
-desc 'Fetch oboe files from STAGING'
-task :fetch_oboe_file_from_staging do
-  begin
-    swig_version = %x(swig -version)
-  rescue StandardError => e
-    swig_version = ''
-    puts "Checking swig version failed. Error: #{e.message}"
-  end
-  swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
-  if swig_valid_version.empty?
-    $stderr.puts '== ERROR ================================================================='
-    $stderr.puts "Could not find required swig version > 3.0.8, found #{swig_version.inspect}"
-    $stderr.puts 'Please install swig "> 3.0.8" and try again.'
-    $stderr.puts '=========================================================================='
-    raise
-  else
-    $stderr.puts "+++++++++++ Using #{swig_version.strip.split("\n")[0]}"
-  end
-
-  ext_src_dir = File.expand_path('ext/oboe_metal/src')
-  ext_lib_dir = File.expand_path('ext/oboe_metal/lib')
-
-  # The c-lib version is different from the gem version
-  oboe_version = File.read(File.join(ext_src_dir, 'VERSION')).strip
-  puts "!!!!!! C-Lib VERSION: #{oboe_version} !!!!!!!"
-
-  oboe_stg_dir = "https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/#{oboe_version}"
-  puts 'Fetching c-lib from STAGING'
-
-  # remove all oboe* files, they may hang around because of name changes
-  # from oboe* to oboe_api*
-  Dir.glob(File.join(ext_src_dir, 'oboe*')).each { |file| File.delete(file) }
-
-  # inform when there is a newer oboe version
-  remote_file = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/latest', 'VERSION')
-  local_file  = File.join(ext_src_dir, 'VERSION_latest')
-
-  IO.copy_stream(URI.parse(remote_file).open, local_file)
-
-  # oboe and bson header files
-  FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
-  files = %w[bson/bson.h bson/platform_hacks.h]
-
-  if ENV['OBOE_WIP'] || ENV['OBOE_LOCAL']
-    wip_src_dir = File.expand_path('../oboe/liboboe')
-    FileUtils.cp(File.join(wip_src_dir, 'oboe_api.cpp'), ext_src_dir)
-    FileUtils.cp(File.join(wip_src_dir, 'oboe_api.h'), ext_src_dir)
-    FileUtils.cp(File.join(wip_src_dir, 'oboe_debug.h'), ext_src_dir)
-    FileUtils.cp(File.join(wip_src_dir, 'oboe.h'), ext_src_dir)
-    FileUtils.cp(File.join(wip_src_dir, 'swig', 'oboe.i'), ext_src_dir)
-  else
-    files += ['oboe.h', 'oboe_api.h', 'oboe_api.cpp', 'oboe_debug.h', 'oboe.i']
-  end
-
-  files.each do |filename|
-    remote_file = File.join(oboe_stg_dir, 'include', filename)
-    local_file = File.join(ext_src_dir, filename)
-
-    puts "fetching #{remote_file}"
-    puts "      to #{local_file}"
-
-    IO.copy_stream(URI.parse(remote_file).open, local_file)
-  end
-
-  unless ENV['OBOE_LOCAL']
-    sha_files = ['liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
-                 'liboboe-1.0-x86_64.so.0.0.0.sha256']
-
-    sha_files.each do |filename|
-      remote_file = File.join(oboe_stg_dir, filename)
-      local_file = File.join(ext_lib_dir, filename)
-
-      puts "fetching #{remote_file}"
-      puts "      to #{local_file}"
-      IO.copy_stream(URI.parse(remote_file).open, local_file)
-      puts "%%% #{filename} %%%"
-    end
-  end
-
-  api_hpp_patch = File.join(ext_src_dir, 'api_hpp.patch')
-  api_cpp_patch = File.join(ext_src_dir, 'api_cpp.patch')
-  `patch -N #{File.join(ext_src_dir, 'oboe_api.h')} #{api_hpp_patch}`   if File.exist?(api_hpp_patch)
-  `patch -N #{File.join(ext_src_dir, 'oboe_api.cpp')} #{api_cpp_patch}` if File.exist?(api_cpp_patch)
-  FileUtils.cd(ext_src_dir) do
-    system('swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i')
-    FileUtils.rm('oboe.i')
-  end
+desc 'alias for fetch_oboe_file_from_staging'
+task :fetch do
+  Rake::Task["fetch_oboe_file"].invoke("stg")
 end
-
-task :fetch => :fetch_oboe_file_from_staging
 
 @files = %w[oboe.h oboe_api.h oboe_api.cpp oboe.i oboe_debug.h bson/bson.h bson/platform_hacks.h]
 @ext_dir = File.expand_path('ext/oboe_metal')
@@ -183,17 +97,55 @@ def oboe_github_fetch
   end
 end
 
-desc 'Fetch oboe files from cloud.solarwinds.com and create swig wrapper'
-task :fetch_oboe_file_from_prod do
-  oboe_version = File.read('ext/oboe_metal/src/VERSION').strip
-  files_solarwinds = "https://agent-binaries.cloud.solarwinds.com/apm/c-lib/#{oboe_version}"
+desc 'fetch oboe file from different environment'
+task :fetch_oboe_file, [:env] do |_t, args|
+  abort("Missing env argument (abort)") if args["env"].nil? || args["env"].empty?
+  
+  begin
+    swig_version = %x(swig -version)
+  rescue StandardError => e
+    swig_version = ''
+    puts "Error getting swig version: #{e.message}"
+  end
+  swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
+  if swig_valid_version.empty?
+    $stderr.puts '== ERROR ================================================================='
+    $stderr.puts "Could not find required swig version > 3.0.8, found #{swig_version.inspect}"
+    $stderr.puts 'Please install swig "> 3.0.8" and try again.'
+    $stderr.puts '=========================================================================='
+    raise
+  else
+    $stderr.puts "+++++++++++ Using #{swig_version.strip.split("\n")[0]}"
+  end
 
-  FileUtils.mkdir_p(File.join(@ext_dir, 'src', 'bson'))
+  ext_src_dir = File.expand_path('ext/oboe_metal/src')
+  ext_lib_dir = File.expand_path('ext/oboe_metal/lib')
+  oboe_version = File.read(File.join(ext_src_dir, 'VERSION')).strip
 
-  # fetch files
-  @files.each do |filename|
-    remote_file = File.join(files_solarwinds, 'include', filename)
-    local_file = File.join(@ext_dir, 'src', filename)
+  case args["env"]
+  when "dev"
+    oboe_dir = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly/"
+    puts "Fetching c-lib from DEVELOPMENT"
+    puts "This is an unstable build and this gem should only be used for testing"
+  when "stg"
+    oboe_dir = "https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/#{oboe_version}"
+    puts "Fetching c-lib from STAGING !!!!!! C-Lib VERSION: #{oboe_version} !!!!!!!"
+  when "prod"
+    oboe_dir = "https://agent-binaries.cloud.solarwinds.com/apm/c-lib/#{oboe_version}"
+    puts "Fetching c-lib from PRODUCTION !!!!!! C-Lib VERSION: #{oboe_version} !!!!!!!"
+  end
+
+  # remove all oboe* files, they may hang around because of name changes
+  Dir.glob(File.join(ext_src_dir, 'oboe*')).each { |file| File.delete(file) }
+
+  # oboe and bson header files
+  FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
+  files = %w[bson/bson.h bson/platform_hacks.h]
+  files += ['oboe.h', 'oboe_api.h', 'oboe_api.cpp', 'oboe_debug.h', 'oboe.i']
+
+  files.each do |filename|
+    remote_file = File.join(oboe_dir, 'include', filename)
+    local_file = File.join(ext_src_dir, filename)
 
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
@@ -201,22 +153,37 @@ task :fetch_oboe_file_from_prod do
     IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
-  sha_files = ['liboboe-1.0-alpine-x86_64.so.0.0.0.sha256',
-               'liboboe-1.0-x86_64.so.0.0.0.sha256']
+  sha_files = ['liboboe-1.0-x86_64.so.sha256',
+               'liboboe-1.0-lambda-x86_64.so.sha256',
+               'liboboe-1.0-aarch64.so.sha256',
+               'liboboe-1.0-aarch64.so.sha256',
+               'liboboe-1.0-alpine-x86_64.so.sha256',
+               'liboboe-1.0-alpine-aarch64.so.sha256',
+               'liboboe-1.0-alpine-aarch64.so.sha256',
+               'liboboe-1.0-alpine-x86_64.so.sha256',
+               'liboboe-1.0-x86_64.so.sha256']
 
   sha_files.each do |filename|
-    remote_file = File.join(files_solarwinds, filename)
-    local_file = File.join(@ext_dir, 'lib', filename)
+    remote_file = File.join(oboe_dir, filename)
+    local_file  = File.join(ext_lib_dir, filename)
 
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
 
-    IO.copy_stream(URI.parse(remote_file).open, local_file)
+    begin
+      IO.copy_stream(URI.parse(remote_file).open, local_file)
+    rescue StandardError => e
+      puts "File #{remote_file} missing. #{e.message}"
+    end
+
   end
 
-  FileUtils.cd(File.join(@ext_dir, 'src')) do
+  FileUtils.cd(ext_src_dir) do
     system('swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i')
+    FileUtils.rm('oboe.i') if args["env"] != "prod"
   end
+
+  puts "Fetching finished."
 end
 
 desc 'Verify files'
@@ -359,7 +326,7 @@ task :build_gem do
 
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
-  Rake::Task['fetch_oboe_file_from_staging'].execute # if production, then use fetch_oboe_file_from_prod
+  Rake::Task["fetch_oboe_file"].invoke("stg")
   system('gem build solarwinds_otel_apm.gemspec')
   
   gemname = Dir['solarwinds_otel_apm*.gem'].first

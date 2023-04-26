@@ -50,8 +50,8 @@ module SolarWindsOTelAPM
       SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
-      set_log_level       # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
-      set_verbose_level   # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
+      set_log_level        # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
+      set_verbose_level    # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
     end
 
     def self.config_from_env
@@ -158,13 +158,8 @@ module SolarWindsOTelAPM
         @@config[key.to_sym] = new_value.to_i
         SolarWindsOTelAPM.sample_rate(new_value) if SolarWindsOTelAPM.loaded
 
-      when :action_blacklist
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :action_blacklist has been deprecated and no longer functions."
-
-      when :blacklist
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :blacklist has been deprecated and no longer functions."
-
       when :dnt_regexp
+        # :dnt_compiled is used for filtering out url path for asset
         dnt_compiled = Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
         @@config[:dnt_compiled] = value.nil? || value == '' ? nil : dnt_compiled
 
@@ -194,22 +189,6 @@ module SolarWindsOTelAPM
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
-
-      # otel-related config (will affect load_opentelemetry directly)
-      # default is from solarwinds_otel_apm_initializer.rb
-      # ENV always has the highest priorities
-      # config.rb -> oboe_init_options
-      when :otel_propagator # SWO_OTEL_PROPAGATOR
-        @@config[key.to_sym] = value
-
-      when :service_name    # SWO_OTEL_SERVICE_NAME
-        @@config[key.to_sym] = value
-
-      when :otel_exporter   # SWO_OTEL_EXPORTER
-        @@config[key.to_sym] = value 
-
-      when :swo_otel_default
-        @@config[key.to_sym] = value.to_s.downcase == "true"
 
       else
         @@config[key.to_sym] = value

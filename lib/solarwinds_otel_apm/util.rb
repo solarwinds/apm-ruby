@@ -129,104 +129,6 @@ module SolarWindsOTelAPM
       end
 
       ##
-      # legacy_build_init_report
-      #
-      # Internal: Build a hash of KVs that reports on the status of the
-      # running environment.  This is used on stack boot in __Init reporting
-      # and for SolarWindsOTelAPM.support_report.
-      #
-      # This legacy version of build_init_report is used for apps without Bundler.
-      #
-      # @deprecated Please use {#build_init_report} instead
-      def legacy_build_init_report
-        SolarWindsOTelAPM.logger.warn '[solarwinds_apm/deprecated] Oboe::API will be deprecated in a future version.'
-        platform_info = {}
-
-        begin
-          # Report the framework in use
-          if defined?(::RailsLts::VERSION)
-            platform_info['Ruby.RailsLts.Version']  = "RailsLts-#{::RailsLts::VERSION}"
-          elsif defined?(::Rails.version)
-            platform_info['Ruby.Rails.Version']     = "Rails-#{::Rails.version}"
-          end
-          platform_info['Ruby.Grape.Version']       = "Grape-#{::Grape::VERSION}" if defined?(::Grape::VERSION)
-          platform_info['Ruby.Cramp.Version']       = "Cramp-#{::Cramp::VERSION}" if defined?(::Cramp::VERSION)
-
-          if defined?(::Padrino::VERSION)
-            platform_info['Ruby.Padrino.Version']   = "Padrino-#{::Padrino::VERSION}"
-          elsif defined?(::Sinatra::VERSION)
-            platform_info['Ruby.Sinatra.Version']   = "Sinatra-#{::Sinatra::VERSION}"
-          end
-
-          # Report the instrumented libraries
-          platform_info['Ruby.Curb.Version']       = "Curb-#{::Curl::VERSION}"             if defined?(::Curl::VERSION)
-          platform_info['Ruby.Dalli.Version']      = "Dalli-#{::Dalli::VERSION}"           if defined?(::Dalli::VERSION)
-          platform_info['Ruby.Excon.Version']      = "Excon-#{::Excon::VERSION}"           if defined?(::Excon::VERSION)
-          platform_info['Ruby.Faraday.Version']    = "Faraday-#{::Faraday::VERSION}"       if defined?(::Faraday::VERSION)
-          platform_info['Ruby.HTTPClient.Version'] = "HTTPClient-#{::HTTPClient::VERSION}" if defined?(::HTTPClient::VERSION)
-          platform_info['Ruby.Memcached.Version']  = "Memcached-#{::Memcached::VERSION}"   if defined?(::Memcached::VERSION)
-          platform_info['Ruby.Moped.Version']      = "Moped-#{::Moped::VERSION}"           if defined?(::Moped::VERSION)
-          platform_info['Ruby.Redis.Version']      = "Redis-#{::Redis::VERSION}"           if defined?(::Redis::VERSION)
-          platform_info['Ruby.Resque.Version']     = "Resque-#{::Resque::VERSION}"         if defined?(::Resque::VERSION)
-          platform_info['Ruby.RestClient.Version'] = "RestClient-#{::RestClient::VERSION}" if defined?(::RestClient::VERSION)
-          platform_info['Ruby.Sidekiq.Version']    = "Sidekiq-#{::Sidekiq::VERSION}"       if defined?(::Sidekiq::VERSION)
-          platform_info['Ruby.Typhoeus.Version']   = "Typhoeus-#{::Typhoeus::VERSION}"     if defined?(::Typhoeus::VERSION)
-
-          if Gem.loaded_specs.has_key?('delayed_job')
-            # Oddly, DelayedJob doesn't have an embedded version number so we get it from the loaded
-            # gem specs.
-            version = Gem.loaded_specs['delayed_job'].version.to_s
-            platform_info['Ruby.DelayedJob.Version']       = "DelayedJob-#{version}"
-          end
-
-          # Special case since the Mongo 1.x driver doesn't embed the version number in the gem directly
-          platform_info['Ruby.Mongo.Version']   = "Mongo-#{::Gem.loaded_specs['mongo'].version}" if ::Gem.loaded_specs.has_key?('mongo')
-
-          # Report the DB adapter in use
-          platform_info['Ruby.Mysql.Version']   = Mysql::GemVersion::VERSION   if defined?(Mysql::GemVersion::VERSION)
-          platform_info['Ruby.PG.Version']      = PG::VERSION                  if defined?(PG::VERSION)
-          platform_info['Ruby.Mysql2.Version']  = Mysql2::VERSION              if defined?(Mysql2::VERSION)
-          platform_info['Ruby.Sequel.Version']  = ::Sequel::VERSION            if defined?(::Sequel::VERSION)
-        rescue StandardError, ScriptError => e
-          # Also rescue ScriptError (aka SyntaxError) in case one of the expected
-          # version defines don't exist
-
-          platform_info['Error'] = "Error in legacy_build_init_report: #{e.message}"
-
-          SolarWindsOTelAPM.logger.warn "[solarwinds_apm/legacy] Error in legacy_build_init_report: #{e.message}"
-          SolarWindsOTelAPM.logger.debug e.backtrace
-        end
-        platform_info
-      end
-
-      ##
-      #  build_init_report
-      #
-      # Internal: Build a hash of KVs that reports on the status of the
-      # running environment.  This is used on stack boot in __Init reporting
-      # and for SolarWindsOTelAPM.support_report.
-      #
-      def build_init_report
-        platform_info = {'__Init' => 1}
-        begin
-          platform_info['Force']                                   = true
-          platform_info['Ruby.Platform.Version']                   = RUBY_PLATFORM
-          platform_info['Ruby.Version']                            = RUBY_VERSION
-          platform_info['Ruby.SolarWindsOTelAPM.Version']          = SolarWindsOTelAPM::Version::STRING
-          platform_info['Ruby.SolarWindsOTelAPMExtension.Version'] = extension_lib_version
-          platform_info['RubyHeroku.SolarWindsOTelAPM.Version']    = SolarWindsOTelAPMHeroku::Version::STRING if defined?(SolarWindsOTelAPMHeroku)
-          platform_info['Ruby.TraceMode.Version']                  = SolarWindsOTelAPM::Config[:tracing_mode]
-          platform_info.merge!(report_gem_in_use)
-          platform_info.merge!(report_server_in_use)
-        rescue StandardError, ScriptError => e
-          platform_info['Error'] = "Error in build_report: #{e.message}"
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
-          SolarWindsOTelAPM.logger.debug e.backtrace
-        end
-        platform_info
-      end
-
-      ##
       #  build_swo_init_report
       #
       # Internal: Build a hash of KVs that reports on the status of the
@@ -252,6 +154,7 @@ module SolarWindsOTelAPM
 
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
           begin
+            require 'opentelemetry/sdk'
             ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
             ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
           rescue StandardError => e
@@ -293,36 +196,6 @@ module SolarWindsOTelAPM
         clib_version_file = File.join(gem_location&.gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
         File.read(clib_version_file).strip
       end
-
-      ##
-      # build_init_report
-      #
-      # Internal: Build a hash of KVs that reports on the server in use
-      ##
-      def report_server_in_use
-        platform_info = {}
-        # Report the server in use (if possible)
-        if defined?(::Unicorn::Const::UNICORN_VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "Unicorn-#{::Unicorn::Const::UNICORN_VERSION}"
-        elsif defined?(::Puma::Const::PUMA_VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "Puma-#{::Puma::Const::PUMA_VERSION} (#{::Puma::Const::CODE_NAME})"
-        elsif defined?(::PhusionPassenger::PACKAGE_NAME)
-          platform_info['Ruby.AppContainer.Version'] = "#{::PhusionPassenger::PACKAGE_NAME}-#{::PhusionPassenger::VERSION_STRING}"
-        elsif defined?(::Thin::VERSION::STRING)
-          platform_info['Ruby.AppContainer.Version'] = "Thin-#{::Thin::VERSION::STRING} (#{::Thin::VERSION::CODENAME})"
-        elsif defined?(::Mongrel::Const::MONGREL_VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "Mongrel-#{::Mongrel::Const::MONGREL_VERSION}"
-        elsif defined?(::Mongrel2::VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "Mongrel2-#{::Mongrel2::VERSION}"
-        elsif defined?(::Trinidad::VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "Trinidad-#{::Trinidad::VERSION}"
-        elsif defined?(::WEBrick::VERSION)
-          platform_info['Ruby.AppContainer.Version'] = "WEBrick-#{::WEBrick::VERSION}"
-        else
-          platform_info['Ruby.AppContainer.Version'] = File.basename($PROGRAM_NAME)
-        end
-        platform_info
-      end
-    end    
+    end
   end
 end
