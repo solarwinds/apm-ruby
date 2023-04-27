@@ -102,11 +102,11 @@ module SolarWindsOTelAPM
       return unless @@agent_enabled
 
       resolve_sampler
-
+      
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_config_map_for_instrumentation
-      
+
       print_config if SolarWindsOTelAPM.logger.level.zero?
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].nil?
