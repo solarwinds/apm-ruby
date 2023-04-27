@@ -31,6 +31,8 @@ require 'opentelemetry/sdk'
 require 'opentelemetry-sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
+require 'opentelemetry-propagator-b3'
+require 'opentelemetry-exporter-otlp'
 require 'bson'
 
 # write to a file as well as STDOUT (comes in handy with docker runs)
@@ -393,6 +395,11 @@ def create_context(trace_id:,
         trace_flags: trace_flags)))
   conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
   context.set_value(conext_key, true)
+end
+
+def clean_old_setting
+  ENV.delete('OTEL_PROPAGATORS')
+  ENV.delete('OTEL_TRACES_EXPORTER')
 end
 
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0

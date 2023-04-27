@@ -10,7 +10,7 @@ module SolarWindsOTelAPM
     
       def initialize(txn_manager: nil)
         @shutdown           = false
-        @apm_txname_manager = txn_manager
+        @txn_manager        = txn_manager
         @reporter           = SolarWindsOTelAPM::Reporter
         @context            = SolarWindsOTelAPM::Context
         @metadata           = SolarWindsOTelAPM::Metadata
@@ -27,11 +27,11 @@ module SolarWindsOTelAPM
         SUCCESS
       end
 
-      def force_flush(_timeout: nil)
+      def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
         SUCCESS
       end
 
-      def shutdown(_timeout: nil)
+      def shutdown(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
         @shutdown = true
         SUCCESS
       end
@@ -120,7 +120,7 @@ module SolarWindsOTelAPM
           begin
             require framework
             framework_version = Gem.loaded_specs[framework].version.to_s
-          rescue LoadError
+          rescue LoadError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
           rescue StandardError => e
             SolarWindsOTelAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
@@ -145,11 +145,11 @@ module SolarWindsOTelAPM
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name(span_data, evt)
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
-        SolarWindsOTelAPM.logger.debug "#{@apm_txname_manager.inspect},\n span_data: #{span_data.inspect}"
-        txname = @apm_txname_manager.get(trace_span_id).nil?? "" : @apm_txname_manager.get(trace_span_id)
+        SolarWindsOTelAPM.logger.debug "#{@txn_manager.inspect},\n span_data: #{span_data.inspect}"
+        txname = @txn_manager.get(trace_span_id).nil?? "" : @txn_manager.get(trace_span_id)
         SolarWindsOTelAPM.logger.debug "######## txname #{txname} ########"
         evt.addInfo("TransactionName", txname)
-        @apm_txname_manager.del(trace_span_id)
+        @txn_manager.del(trace_span_id)
       end
 
       def report_exception_event(span_event)

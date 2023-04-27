@@ -13,6 +13,28 @@ describe 'SolarWindsProcessor' do
     instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
     trace_flags = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
     tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
+    span_limits = ::OpenTelemetry::SDK::Trace::SpanLimits.new(attribute_count_limit: 1,
+                                                              event_count_limit: 1,
+                                                              link_count_limit: 1,
+                                                              event_attribute_count_limit: 1,
+                                                              link_attribute_count_limit: 1,
+                                                              attribute_length_limit: 32,
+                                                              event_attribute_length_limit: 32)
+
+    span_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "1\xE1u\x12\x8E\xFC@\x18", trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j")
+    @span = ::OpenTelemetry::SDK::Trace::Span.new(span_context,
+                                                  ::OpenTelemetry::Context.empty,
+                                                  ::OpenTelemetry::Trace::Span::INVALID,
+                                                  'name',
+                                                  ::OpenTelemetry::Trace::SpanKind::INTERNAL,
+                                                  nil,
+                                                  span_limits,
+                                                  [],
+                                                  attributes,
+                                                  nil,
+                                                  Time.now,
+                                                  nil,
+                                                  nil)
     
     @span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
                                                            :internal,
@@ -52,8 +74,8 @@ describe 'SolarWindsProcessor' do
   end
 
   it 'test calculate_transaction_names' do 
-    result = @processor.send(:calculate_transaction_names, @span_data)
-    _(result).must_equal "connect"
+    result = @processor.send(:calculate_transaction_names, @span)
+    _(result).must_equal "name"
   end
 
   it 'test get_http_status_code' do 
@@ -73,6 +95,20 @@ describe 'SolarWindsProcessor' do
   it 'test span_http?' do 
     result = @processor.send(:span_http?, @span_data)
     _(result).must_equal false 
+  end
+
+  it 'test on_start' do
+    @processor.on_start(@span, ::OpenTelemetry::Context.current)
+    _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)).must_equal '77cb6ccc522d3106114dd6ecbb70036a'
+    _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)).must_equal '31e175128efc4018'
+  end
+
+  it 'test calculate_transaction_names with custom_naming' do
+    SolarWindsOTelAPM::OTelConfig.initialize
+    processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).last
+    processor.on_start(@span, ::OpenTelemetry::Context.current)
+    SolarWindsOTelAPM.set_transaction_name(custom_name: 'abcdf')
+    _(processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
   end
 
 end

@@ -47,7 +47,6 @@ Gem::Specification.new do |s|
   # this still gives a warning, would have to be pinned to a minor version
   # but that is not necessary and may restrict other gems
   s.add_runtime_dependency('json', '~> 2.0')
-  s.add_runtime_dependency('no_proxy_fix', '~> 0.1.2', '>= 0.1.2')
 
   s.required_ruby_version = '>= 2.5.0'
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }

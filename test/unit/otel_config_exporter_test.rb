@@ -6,23 +6,11 @@ require 'minitest_helper'
 describe 'Loading Opentelemetry Test' do
 
   before do
-    ENV.delete('OTEL_PROPAGATORS')
-    SolarWindsOTelAPM::Config[:otel_propagator] = nil
-
-    ENV.delete('OTEL_TRACES_EXPORTER')
-
+    clean_old_setting
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
     sleep 1
-  end
-
-  after do 
-    ENV.delete('OTEL_TRACES_EXPORTER')
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
-    SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
-    sleep 5
   end
 
   # Exporter Testing
@@ -30,65 +18,31 @@ describe 'Loading Opentelemetry Test' do
 
     SolarWindsOTelAPM::OTelConfig.initialize
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).count).must_equal 1
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].instance_variable_get(:@exporter).class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
   end
 
-  it 'test_exporter_with_invalid_exporter' do
+  it 'test_exporter_with_default_otlp_exporter' do
 
-    ENV["OTEL_TRACES_EXPORTER"] = 'dummy'
-    SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter]).must_equal nil
-  end
-
-  it 'test_exporter_with_solarwinds' do
-
-    ENV["OTEL_TRACES_EXPORTER"] = 'solarwinds'
+    ENV['OTEL_TRACES_EXPORTER'] = 'otlp'
     SolarWindsOTelAPM::OTelConfig.initialize
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).count).must_equal 2
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].class).must_equal ::OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].instance_variable_get(:@exporter).class).must_equal OpenTelemetry::Exporter::OTLP::Exporter
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[1].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[1].instance_variable_get(:@exporter).class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
   end
 
-  it 'test_exporter_with_in_code_valid_exporter' do
+  it 'test_exporter_with_bad_exporter' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
-      config['OpenTelemetry::Exporter'] = ::OpenTelemetry::SDK::Trace::Export::SpanExporter.new
-    end
+    ENV['OTEL_TRACES_EXPORTER'] = 'abcd'
+    SolarWindsOTelAPM::OTelConfig.initialize
     _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter].class).must_equal ::OpenTelemetry::SDK::Trace::Export::SpanExporter
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).count).must_equal 1
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor
+    _(::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)[0].instance_variable_get(:@exporter).class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
   end
-
-  it 'test_exporter_with_in_code_invalid_exporter' do
-
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
-      config['OpenTelemetry::Exporter'] = ::OpenTelemetry::SDK::Trace::Export::SpanExporter
-    end
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter]).must_equal nil
-  end
-
-  it 'test_exporter_with_in_code_invalid_exporter' do
-
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
-      config['OpenTelemetry::Exporter'] = Exporter::Dummy.new
-    end
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter]).must_equal nil
-  end
-
-  # exporter variable from config file
-  it 'test_resolve_exporter_with_solarwinds_from_config' do
-    SolarWindsOTelAPM::Config[:otel_exporter] = 'solarwinds'
-    SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter].class).must_equal SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter
-  end
-
-  it 'test_resolve_exporter_with_wrong_exporter_from_config' do
-    SolarWindsOTelAPM::Config[:otel_exporter] = 'dummy'
-    SolarWindsOTelAPM::OTelConfig.initialize
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:exporter]).must_equal nil
-  end
-
 end
 

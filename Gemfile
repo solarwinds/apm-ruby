@@ -11,6 +11,5 @@ group :development, :test do
   gem 'memory_profiler'
   gem 'package_cloud'
   gem 'rubocop'
+  gemspec
 end
-
-gemspec

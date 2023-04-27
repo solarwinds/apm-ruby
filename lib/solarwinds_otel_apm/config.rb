@@ -50,7 +50,6 @@ module SolarWindsOTelAPM
       SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
-      set_otel_config      # determine if the otel config is default or customized
       set_log_level        # sets SolarWindsOTelAPM::Config[:debug_level], SolarWindsOTelAPM.logger.level
       set_verbose_level    # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
     end
@@ -78,11 +77,6 @@ module SolarWindsOTelAPM
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsOTelAPM::Config[:debug_level] || 3).to_i
       SolarWindsOTelAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
-    end
-
-    def self.set_otel_config
-      otel_config = ENV['SWO_OTEL_DEFAULT'] || SolarWindsOTelAPM::Config[:swo_otel_default] || 'true'
-      SolarWindsOTelAPM::Config[:swo_otel_default] = otel_config
     end
 
     ##
@@ -164,13 +158,8 @@ module SolarWindsOTelAPM
         @@config[key.to_sym] = new_value.to_i
         SolarWindsOTelAPM.sample_rate(new_value) if SolarWindsOTelAPM.loaded
 
-      when :action_blacklist
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :action_blacklist has been deprecated and no longer functions."
-
-      when :blacklist
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] :blacklist has been deprecated and no longer functions."
-
       when :dnt_regexp
+        # :dnt_compiled is used for filtering out url path for asset
         dnt_compiled = Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
         @@config[:dnt_compiled] = value.nil? || value == '' ? nil : dnt_compiled
 
@@ -200,33 +189,6 @@ module SolarWindsOTelAPM
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
-
-      when :transaction_settings
-        # this settings help to setup url_enabled_regexps and url_disabled_regexps that
-        # are used for filtering
-        if value.is_a?(Hash)
-          SolarWindsOTelAPM::TransactionSettings.compile_settings(value[:url], kind: 'url')
-          SolarWindsOTelAPM::TransactionSettings.compile_settings(value[:spankind], kind: 'spankind')
-        else
-          SolarWindsOTelAPM::TransactionSettings.reset_url_regexps
-          SolarWindsOTelAPM::TransactionSettings.reset_spankind_regexps
-        end
-
-      # otel-related config (will affect load_opentelemetry directly)
-      # default is from solarwinds_otel_apm_initializer.rb
-      # ENV always has the highest priorities
-      # config.rb -> oboe_init_options
-      when :otel_propagator # SWO_OTEL_PROPAGATOR
-        @@config[key.to_sym] = value
-
-      when :service_name    # SWO_OTEL_SERVICE_NAME
-        @@config[key.to_sym] = value
-
-      when :otel_exporter   # SWO_OTEL_EXPORTER
-        @@config[key.to_sym] = value 
-
-      when :swo_otel_default
-        @@config[key.to_sym] = value.to_s.downcase == "true"
 
       else
         @@config[key.to_sym] = value
