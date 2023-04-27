@@ -144,8 +144,21 @@ module SolarWindsOTelAPMBase
 
     # one way to get processor
     # processor = SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
-    processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).first
-    SolarWindsOTelAPM.logger.debug "####### current processor is #{processor.inspect}"
+
+    solarwinds_processor = nil
+    processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
+
+    processors&.each do |processor|
+      solarwinds_processor = processor if processor.instance_of?(SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor)
+    end
+    SolarWindsOTelAPM.logger.debug "####### current processor is #{processors.map(&:class)}"
+
+    if solarwinds_processor
+      SolarWindsOTelAPM.logger.debug "####### current processor is #{solarwinds_processor.inspect}"
+    else
+      SolarWindsOTelAPM.logger.warn "####### Solarwinds processor is missing. Set transaction name failed."
+      return false
+    end
 
     entry_trace_id = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
     entry_span_id  = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
@@ -156,7 +169,7 @@ module SolarWindsOTelAPMBase
     end
 
     trace_span_id = "#{entry_trace_id}-#{entry_span_id}"
-    processor.txn_manager.set(trace_span_id,custom_name)
+    solarwinds_processor.txn_manager.set(trace_span_id,custom_name) 
     SolarWindsOTelAPM.logger.warn "####### Cached custom transaction name for #{trace_span_id} as #{custom_name}"
     true
   end
