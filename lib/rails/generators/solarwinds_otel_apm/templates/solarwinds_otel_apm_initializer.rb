@@ -114,11 +114,8 @@ if defined?(SolarWindsOTelAPM::Config)
   # Use this configuration to add exceptions to the global tracing mode and
   # disable/enable metrics and traces for certain transactions.
   #
-  # Currently allowed hash keys:
-  # :url to apply listed filters to urls.
-  #      The matching of settings to urls happens before routes are applied.
-  #      The url is extracted from the env argument passed to rack: `env['PATH_INFO']`
-  #
+  # Currently allowed array of hash
+  # 
   # and the hashes within the :url list either:
   #   :extensions  takes an array of strings for filtering (not regular expressions!)
   #   :tracing     defaults to :disabled, can be set to :enabled to override
@@ -132,36 +129,20 @@ if defined?(SolarWindsOTelAPM::Config)
   # Be careful not to add too many :regexp configurations as they will slow
   # down execution.
   #
-  SolarWindsOTelAPM::Config[:transaction_settings] = {
-    url: [
-      #   {
-      #     extensions: %w[long_job],
-      #     tracing: :disabled
-      #   },
-      #   {
-      #     regexp: '^.*\/long_job\/.*$',
-      #     opts: Regexp::IGNORECASE,
-      #     tracing: :disabled
-      #   },
-      #   {
-      #     regexp: /batch/,
-      #   }
-    ],
-    spankind: [
-      #   {
-      #     extensions: %w[long_job],
-      #     tracing: :disabled
-      #   },
-      #   {
-      #     regexp: '^.*\/long_job\/.*$',
-      #     opts: Regexp::IGNORECASE,
-      #     tracing: :disabled
-      #   },
-      #   {
-      #     regexp: /batch/,
-      #   }
-    ]
-  }
+  SolarWindsOTelAPM::Config[:transaction_settings] = [
+    #   {
+    #     extensions: %w[long_job],
+    #     tracing: :disabled
+    #   },
+    #   {
+    #     regexp: '^.*\/long_job\/.*$',
+    #     opts: Regexp::IGNORECASE,
+    #     tracing: :disabled
+    #   },
+    #   {
+    #     regexp: /batch/,
+    #   }
+  ]
 
   #
   # EC2 Metadata Fetching Timeout

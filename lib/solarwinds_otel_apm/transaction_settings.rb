@@ -20,9 +20,15 @@ module SolarWindsOTelAPM
     end
 
     # kind: url/spankind
-    def calculate_trace_mode(kind: nil)
-      cvalue = kind == 'url' ? @url : "#{@name}:#{@kind}"
-      tracing_mode_enabled? && tracing_enabled?(cvalue, kind: kind) ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
+    # def calculate_trace_mode(kind: nil)
+    #   cvalue = kind == 'url' ? @url : "#{@name}:#{@kind}"
+    #   tracing_mode_enabled? && tracing_enabled?(cvalue, kind: kind) ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
+    # end
+
+    # calculate trace mode to set either 1 or 0 based on url and name+kind
+    # first check if url match, if not match, then match the name+kind
+    def calculate_trace_mode
+      tracing_mode_enabled? && tracing_enabled? ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
     end
 
     private
@@ -31,27 +37,30 @@ module SolarWindsOTelAPM
       SolarWindsOTelAPM::Config[:tracing_mode] && ![:disabled, :never].include?(SolarWindsOTelAPM::Config[:tracing_mode])
     end
 
-    def tracing_enabled?(value, kind: nil)
-      enabled_regexps = kind == 'url' ? SolarWindsOTelAPM::Config[:url_enabled_regexps] : SolarWindsOTelAPM::Config[:spankind_enabled_regexps]
-      disabled_regexps = kind == 'url' ? SolarWindsOTelAPM::Config[:url_disabled_regexps] : SolarWindsOTelAPM::Config[:spankind_disabled_regexps]
+    def tracing_enabled?
+      span_layer = "#{@name}:#{@kind}"
 
-      if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(value) }
-        false
-      elsif enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(value) }
-        true
-      else
-        enabled_regexps.nil? ? true : enabled_regexps.empty?  # permit by default if no regexps are defined
-      end
+      enabled_regexps = SolarWindsOTelAPM::Config[:enabled_regexps]
+      disabled_regexps = SolarWindsOTelAPM::Config[:disabled_regexps]
+
+      SolarWindsOTelAPM.logger.debug "[solarwinds_otel_apm/transaction_settings] enabled_regexps: #{enabled_regexps&.inspect}"
+      SolarWindsOTelAPM.logger.debug "[solarwinds_otel_apm/transaction_settings] disabled_regexps: #{disabled_regexps&.inspect}"
+
+      return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(@url) }
+      return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(@url) }
+      return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(span_layer) }
+      return true if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(span_layer) }
+
+      true
     rescue StandardError => e
       SolarWindsOTelAPM.logger.warn "[SolarWindsOTelAPM/filter_error] Could not determine tracing status for #{kind}. #{e.inspect}"
-      false
+      true
     end
 
-
     class << self
-      def compile_settings(settings, kind: nil)
+      def compile_settings(settings)
         if !settings.is_a?(Array) || settings.empty?
-          kind == 'url' ? reset_url_regexps : reset_spankind_regexps
+          reset_regexps
           return
         end
 
@@ -59,14 +68,8 @@ module SolarWindsOTelAPM
         disabled = settings.select { |v| !v.has_key?(:tracing) || v[:tracing] == :disabled }
         enabled = settings.select { |v| v[:tracing] == :enabled }
 
-        case kind
-        when 'url'
-          SolarWindsOTelAPM::Config[:url_enabled_regexps] = compile_regexp(enabled)
-          SolarWindsOTelAPM::Config[:url_disabled_regexps] = compile_regexp(disabled)
-        when 'spankind'
-          SolarWindsOTelAPM::Config[:spankind_enabled_regexps] = compile_regexp(enabled)
-          SolarWindsOTelAPM::Config[:spankind_disabled_regexps] = compile_regexp(disabled)
-        end
+        SolarWindsOTelAPM::Config[:enabled_regexps] = compile_regexp(enabled)
+        SolarWindsOTelAPM::Config[:disabled_regexps] = compile_regexp(disabled)
       end
 
       def compile_regexp(settings)
@@ -109,15 +112,11 @@ module SolarWindsOTelAPM
         extensions.empty? ? nil : Regexp.new("(#{Regexp.union(extensions).source})(\\?.+){0,1}$")
       end
 
-      def reset_url_regexps
-        SolarWindsOTelAPM::Config[:url_enabled_regexps] = nil
-        SolarWindsOTelAPM::Config[:url_disabled_regexps] = nil
+      def reset_regexps
+        SolarWindsOTelAPM::Config[:enabled_regexps] = nil
+        SolarWindsOTelAPM::Config[:disabled_regexps] = nil
       end
 
-      def reset_spankind_regexps
-        SolarWindsOTelAPM::Config[:spankind_enabled_regexps] = nil
-        SolarWindsOTelAPM::Config[:spankind_disabled_regexps] = nil
-      end
     end
   end
 end
