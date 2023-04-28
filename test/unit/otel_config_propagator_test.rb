@@ -13,6 +13,10 @@ describe 'Loading Opentelemetry Test' do
     sleep 1
   end
 
+  after do 
+    clean_old_setting
+  end
+
   # propagation in_code testing
   it 'test_propagators_with_default' do
     SolarWindsOTelAPM::OTelConfig.initialize
