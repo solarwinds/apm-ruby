@@ -45,7 +45,7 @@ module SolarWindsOTelAPM
     # More fliexable way is to disable loading opentelemetry by default, and then user can load swo-customized configuration (for otel) manually
     # Because reporter initialization is before opentelemetry initialization
     # 
-    def self.resolve_config_map_for_instrumentation
+    def self.resolve_for_response_propagator
       response_propagators_list = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
       if @@config_map["OpenTelemetry::Instrumentation::Rack"]
         @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
@@ -102,6 +102,7 @@ module SolarWindsOTelAPM
       return unless @@agent_enabled
 
       resolve_sampler
+      
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_config_map_for_instrumentation

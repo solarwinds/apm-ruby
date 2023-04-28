@@ -22,6 +22,7 @@ module SolarWindsOTelAPM
     INTL_SWO_SUPPORT_EMAIL           = "SWO-support@solarwinds.com".freeze
     INTL_SWO_CURRENT_SPAN_ID         = "sw-current-entry-span-id".freeze
     INTL_SWO_CURRENT_TRACE_ID        = "sw-current-trace-id".freeze
+    INTL_SWO_CURRENT_TRACE_FLAG      = "sw-current-trace-flag".freeze
 
     INTL_SWO_OTEL_SCOPE_NAME         = "otel.scope.name".freeze
     INTL_SWO_OTEL_SCOPE_VERSION      = "otel.scope.version".freeze
