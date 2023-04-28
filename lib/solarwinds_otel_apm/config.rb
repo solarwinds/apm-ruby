@@ -11,14 +11,6 @@ module SolarWindsOTelAPM
   module Config
     @@config = {}
 
-    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
-                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
-                         :dalli, :delayed_jobclient, :delayed_jobworker,
-                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
-                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
-                         :resqueclient, :resqueworker, :rest_client,
-                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus]
-
     ##
     # load_config_file
     #
@@ -99,10 +91,6 @@ module SolarWindsOTelAPM
     # The defaults are read from the template configuration file.
     # 
     def self.initialize(_data={})
-      @@instrumentation.each { |k| @@config[k] = {} }
-
-      @@config[:transaction_name] = {}
-
       @@config[:profiling] = :disabled
       @@config[:profiling_interval] = 5
 
@@ -157,17 +145,6 @@ module SolarWindsOTelAPM
         # Assure value is an integer
         @@config[key.to_sym] = new_value.to_i
         SolarWindsOTelAPM.sample_rate(new_value) if SolarWindsOTelAPM.loaded
-
-      when :dnt_regexp
-        # :dnt_compiled is used for filtering out url path for asset
-        dnt_compiled = Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
-        @@config[:dnt_compiled] = value.nil? || value == '' ? nil : dnt_compiled
-
-      when :dnt_opts
-        if SolarWindsOTelAPM::Config[:dnt_regexp] && SolarWindsOTelAPM::Config[:dnt_regexp] != ''
-          @@config[:dnt_compiled] =
-            Regexp.new(SolarWindsOTelAPM::Config[:dnt_regexp], SolarWindsOTelAPM::Config[:dnt_opts] || nil)
-        end
 
       when :profiling
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available." 

@@ -25,6 +25,7 @@ module SolarWindsOTelAPM
       # @param [Context] parent_context the parent {Context} of the newly
       #  started span.
       def on_start(span, parent_context)
+
         SolarWindsOTelAPM.logger.debug "####### processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
 
         parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
