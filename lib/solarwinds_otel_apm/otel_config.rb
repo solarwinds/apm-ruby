@@ -46,11 +46,15 @@ module SolarWindsOTelAPM
     # Because reporter initialization is before opentelemetry initialization
     # 
     def self.resolve_for_response_propagator
-      response_propagators_list = [SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new]
+      response_propagator = SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
       if @@config_map["OpenTelemetry::Instrumentation::Rack"]
-        @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = response_propagators_list
+        if @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators].instance_of?(Array)
+          @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators].append(response_propagator)
+        else
+          @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = [response_propagator]
+        end
       else
-        @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: response_propagators_list}
+        @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: [response_propagator]}
       end
     end
 
@@ -105,7 +109,7 @@ module SolarWindsOTelAPM
       
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
-      resolve_config_map_for_instrumentation
+      resolve_for_response_propagator
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 
