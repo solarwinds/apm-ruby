@@ -42,32 +42,9 @@ SolarWindsOTelAPM::OTelConfig.initialize do |config|
 end
 ```
 
-An example that creates three different propagators and provides them to `config["OpenTelemetry::Propagators"]` with in-code configuration. 
-```ruby
-require 'opentelemetry/sdk'
-
-trace_context = ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new
-baggage       = ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new
-solarwinds    = SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
-
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Propagators"] = [trace_context, baggage, solarwinds]
-end
-```
-
-The above example initialized opentelemetry otlp exporter and provide it to `config["OpenTelemetry::Exporter"]` with in-code configuration. 
-```ruby
-require 'opentelemetry/sdk'
-require 'opentelemetry/exporter/otlp'
-
-exporter = OpenTelemetry::Exporter::OTLP::Exporter.new
-
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Exporter"] = exporter
-end
-```
-
 ### Environmental Variable
+
+More environmental variable can be found in [CONFIG.md](https://github.com/solarwindscloud/swotel-ruby/blob/main/CONFIG.md)
 
 #### OTEL_TRACES_EXPORTER
 
@@ -77,20 +54,18 @@ Supported exporters: solarwinds
 
 Example:
 ```bash
-export OTEL_TRACES_EXPORTER=solarwinds
+export OTEL_TRACES_EXPORTER=otlp
 ```
 
 #### OTEL_PROPAGATORS
 
 Used to define list of propagators
 
-Supported propagators: tracecontext, baggage, solarwinds
+Supported propagators can be found [here](https://github.com/open-telemetry/opentelemetry-ruby/blob/main/sdk/lib/opentelemetry/sdk/configurator.rb#L199-L208)
 
 ```bash
-export OTEL_PROPAGATORS=tracecontext,baggage,solarwinds
+export OTEL_PROPAGATORS=tracecontext,baggage
 ```
-
-tracecontext and solarwinds are mandatory propagators, and tracecontext has to be in front of solarwinds propagators (e.g. tracecontext,solarwinds)
 
 #### OTEL_SERVICE_NAME
 
