@@ -1,29 +1,20 @@
 # Copyright (c) 2018 SolarWinds, LLC.
 # All rights reserved.
 #
-
-SWO_TRACING_ENABLED      = 1
-SWO_TRACING_DISABLED     = 0
-SWO_TRACING_UNSET        = -1
-SWO_TRACING_DECISIONS_OK = 0
-OBOE_SETTINGS_UNSET      = -1
-
 module SolarWindsOTelAPM
   ##
   # This module helps with setting up the transaction filters and applying them
   #
   class TransactionSettings
+
+    SWO_TRACING_ENABLED      = 1
+    SWO_TRACING_DISABLED     = 0
+
     def initialize(url: '', name: '', kind: '')
       @url = url
       @name = name
       @kind = kind
     end
-
-    # kind: url/spankind
-    # def calculate_trace_mode(kind: nil)
-    #   cvalue = kind == 'url' ? @url : "#{@name}:#{@kind}"
-    #   tracing_mode_enabled? && tracing_enabled?(cvalue, kind: kind) ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
-    # end
 
     # calculate trace mode to set either 1 or 0 based on url and name+kind
     # first check if url match, if not match, then match the name+kind
@@ -49,7 +40,7 @@ module SolarWindsOTelAPM
       return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(@url) }
       return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(@url) }
       return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(span_layer) }
-      return true if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(span_layer) }
+      return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(span_layer) }
 
       true
     rescue StandardError => e

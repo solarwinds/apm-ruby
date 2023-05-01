@@ -15,8 +15,8 @@ module SolarWindsOTelAPM
     end
 
     def self.set(key, value)
-      SolarWindsOTelAPM.logger.debug "############## current TransactionCache #{@cache.inspect}"
       @cache[key] = value
+      SolarWindsOTelAPM.logger.debug "############## current TransactionCache #{@cache.inspect}"
     end
   end
 end

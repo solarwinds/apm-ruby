@@ -54,7 +54,7 @@ module SolarWindsOTelAPM
         xtraceoptions       = SolarWindsOTelAPM::XTraceOptions.new(parent_context)
         SolarWindsOTelAPM.logger.debug "####### xtraceoptions: #{xtraceoptions.inspect}"
         
-        liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions, links, name, kind, attributes)
+        liboboe_decision    = calculate_liboboe_decision(parent_span_context, xtraceoptions, name, kind, attributes)
         SolarWindsOTelAPM.logger.debug "####### liboboe_decision: #{liboboe_decision.inspect}"
 
         otel_decision   = otel_decision_from_liboboe(liboboe_decision)
@@ -79,7 +79,7 @@ module SolarWindsOTelAPM
       private
 
       # return Hash
-      def calculate_liboboe_decision(parent_span_context, xtraceoptions, links, name, kind, attributes)
+      def calculate_liboboe_decision(parent_span_context, xtraceoptions, name, kind, attributes)
 
         tracestring = nil
         if parent_span_context.valid? && parent_span_context.remote?
@@ -87,7 +87,7 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.logger.debug "####### calculate_liboboe_decision parent_span_context.remote? #{parent_span_context.remote?} with #{tracestring}"
         end
 
-        SolarWindsOTelAPM.logger.debug "####### links: #{links}, name: #{name}, kind: #{kind}, attributes: #{attributes.inspect}"
+        SolarWindsOTelAPM.logger.debug "####### name: #{name}, kind: #{kind}, attributes: #{attributes.inspect}"
 
         url = attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
         transaction_naming_key = "#{url}-#{name}-#{kind}"
