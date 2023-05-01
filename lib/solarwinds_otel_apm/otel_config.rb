@@ -39,11 +39,8 @@ module SolarWindsOTelAPM
       @@config[:sampler_config] = sampler_config
     end
 
-    # 
-    # Current strategy is to have the ENV or config to detect the possible configuration for each instrumentation.
-    # When initialize, there is no change allowed (resolve_instrumentation_config_map happens before initialize)
-    # More fliexable way is to disable loading opentelemetry by default, and then user can load swo-customized configuration (for otel) manually
-    # Because reporter initialization is before opentelemetry initialization
+    #
+    # append/add solarwinds_response_propagator into rack instrumentation
     # 
     def self.resolve_for_response_propagator
       response_propagator = SolarWindsOTelAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
