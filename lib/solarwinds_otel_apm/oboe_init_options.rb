@@ -132,17 +132,28 @@ module SolarWindsOTelAPM
       token = match[1]
       service_name = match[3]
 
-      return '' unless validate_token(token)
-      return '' unless validate_transform_service_name(service_name)
+      return '' unless validate_token(token)   # return if token is not even valid
 
+      # check OTEL_RESOURCE_ATTRIBUTES
+      otel_resource_service_name = nil
+      ENV['OTEL_RESOURCE_ATTRIBUTES']&.split(',')&.each do |pair|
+        key, value = pair.split('=')
+        otel_resource_service_name = value; break if key == 'service.name'
+      end
+
+      SolarWindsOTelAPM.logger.debug "############ provided otel_resource_service_name #{otel_resource_service_name}" if otel_resource_service_name
+      service_name = otel_resource_service_name if otel_resource_service_name && validate_transform_service_name(otel_resource_service_name)
+
+      # check OTEL_SERVICE_NAME
       otel_service_name = ENV['OTEL_SERVICE_NAME']
-      SolarWindsOTelAPM.logger.debug "############ provided otel_service_name #{otel_service_name}" if otel_service_name
-      
       if otel_service_name && validate_transform_service_name(otel_service_name)
         service_name = otel_service_name
+        SolarWindsOTelAPM.logger.debug "############ provided otel_service_name #{otel_service_name}"
       elsif ENV['OTEL_SERVICE_NAME'].nil?
         ENV['OTEL_SERVICE_NAME'] = service_name
       end
+
+      return '' unless validate_transform_service_name(service_name)
 
       "#{token}:#{service_name}"
     end
