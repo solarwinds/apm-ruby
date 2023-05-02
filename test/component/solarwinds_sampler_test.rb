@@ -24,12 +24,12 @@ describe 'SolarWindsSamplerTest' do
 
   end
 
-  it 'test calculate_attributes should return nil' do 
+  it 'test_calculate_attributes should return nil' do 
     attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes).must_equal nil
   end
 
-  it 'test add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 
+  it 'test_add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 
 
     @attributes_dict["sw.w3c.tracestate"] = "abc"
     attributes_dict = @sampler.send(:add_tracestate_capture_to_attributes_dict, @attributes_dict, @decision, @tracestate, @parent_context)
@@ -37,12 +37,12 @@ describe 'SolarWindsSamplerTest' do
 
   end
 
-  it 'test add_tracestate_capture_to_attributes_dict' do 
+  it 'test_add_tracestate_capture_to_attributes_dict' do 
     attributes_dict = @sampler.send(:add_tracestate_capture_to_attributes_dict, @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes_dict["a"]).must_equal "b"
   end
 
-  it 'test calculate_trace_state' do 
+  it 'test_calculate_trace_state' do 
     trace_state = @sampler.send(:calculate_trace_state, @decision, @parent_context, @xtraceoptions)
 
     _(trace_state.to_h.keys.size).must_equal 2
@@ -50,7 +50,7 @@ describe 'SolarWindsSamplerTest' do
     _(trace_state.value("xtrace_options_response")).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
   end
 
-  it 'test calculate_trace_state with parent_context contains different kv' do 
+  it 'test_calculate_trace_state with parent_context contains different kv' do 
     content = {}
     content["abc"] = "cba"
     tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash(content)
@@ -63,19 +63,19 @@ describe 'SolarWindsSamplerTest' do
     _(trace_state.value("xtrace_options_response")).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
   end
 
-  it 'test create_xtraceoptions_response_value default setting' do 
+  it 'test_create_xtraceoptions_response_value default setting' do 
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested;ignored####sample_xtraceoptions"
   end
 
-  it 'test create_xtraceoptions_response_value with empty otel_context xtraceoptions' do
+  it 'test_create_xtraceoptions_response_value with empty otel_context xtraceoptions' do
     otel_context = ::OpenTelemetry::Context.new({})
     @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested"
   end
 
-  it 'test create_xtraceoptions_response_value with decision and sw_xtraceoptions setup' do
+  it 'test_create_xtraceoptions_response_value with decision and sw_xtraceoptions setup' do
     @decision["status_msg"] = "status"
     @decision["auth"] = 0
 
@@ -88,7 +88,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "trigger-trace####status"
   end
 
-  it 'test create_xtraceoptions_response_value with span_context valid and remote' do
+  it 'test_create_xtraceoptions_response_value with span_context valid and remote' do
     @decision["status_msg"] = "status"
     @decision["auth"] = 0
     @decision["decision_type"] = 0
@@ -104,7 +104,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "trigger-trace####not-requested;ignored####AAAabcdefg"
   end
 
-  it 'test create_xtraceoptions_response_value with signature' do
+  it 'test_create_xtraceoptions_response_value with signature' do
     @decision["auth_msg"] = "auth"
 
     context_value = {}
@@ -116,7 +116,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "auth####auth;trigger-trace####not-requested"
   end
 
-  it 'test create_xtraceoptions_response_value without signature' do
+  it 'test_create_xtraceoptions_response_value without signature' do
     @decision["auth"] = nil
 
     context_value = {}
@@ -128,7 +128,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "trigger-trace####not-requested;ignored####1and1"
   end
 
-  it 'test create_xtraceoptions_response_value with custom value' do
+  it 'test_create_xtraceoptions_response_value with custom value' do
     @decision["status_msg"] = "status"
     @decision["auth"] = 0
 
@@ -147,7 +147,7 @@ describe 'SolarWindsSamplerTest' do
     _(response).must_equal "trigger-trace####status"
   end
 
-  it 'test otel_decision_from_liboboe' do 
+  it 'test_otel_decision_from_liboboe' do 
     @decision["do_metrics"]    = nil
     @decision["do_sample"]     = nil
     otel_decision = @sampler.send(:otel_decision_from_liboboe, @decision)
@@ -164,9 +164,9 @@ describe 'SolarWindsSamplerTest' do
     assert_equal(otel_decision, ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY)
   end
 
-  it 'test calculate_liboboe_decision' do 
+  it 'test_calculate_liboboe_decision' do 
     
-    decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions)
+    decision = @sampler.send(:calculate_liboboe_decision, @parent_context, @xtraceoptions, '', '', {})
     _(decision["do_metrics"]).must_equal true
     _(decision["do_sample"]).must_equal false
     _(decision["rate"]).must_equal 1_000_000

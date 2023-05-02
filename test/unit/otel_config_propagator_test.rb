@@ -7,11 +7,14 @@ describe 'Loading Opentelemetry Test' do
 
   before do
     clean_old_setting
-
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config, {})
     SolarWindsOTelAPM::OTelConfig.class_variable_set(:@@config_map, {})
     sleep 1
+  end
+
+  after do 
+    clean_old_setting
   end
 
   # propagation in_code testing

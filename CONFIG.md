@@ -20,22 +20,39 @@ Name | Description | Default
 
 SolarWindsOTelAPM allows the in-code configuration for setting the options of otel instrumentations. More information about what option can be configured, please consult [opentelemetry-ruby-contrib](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) pages.
 
-### Example:
-
 Below example sets Dalli otel instrumentation to disable (e.g. `{:enabled: false}`); and sets Rack otel instrumentation to have header1 and header2 to allowed request headers. More information about Rack's [allowed_request_headers](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/main/instrumentation/rack/lib/opentelemetry/instrumentation/rack/instrumentation.rb#L23).
 
 Note: in order to set the customized configuration, please set `SW_APM_AUTO_CONFIGURE=false`
 ```ruby
 require 'solarwinds_otel_apm'
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
+SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
   config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers: ['header1', 'header2']}
 end
 ```
-
 
 ## SolarWindsOTelAPM config file
 
 `SolarWindsOTelAPM::Config` is a nested hash used by the solarwinds_apm gem to store preferences and switches.
 
 See [this Rails generator template file](https://github.com/solarwindscloud/swotel-ruby/blob/main/lib/rails/generators/solarwinds_otel_apm/templates/solarwinds_otel_apm_initializer.rb) for documentation on all of the supported values.
+
+### Transaction Filtering (`[:transaction_settings]`)
+
+Sample configuration:
+```ruby
+SolarWindsOTelAPM::Config[:transaction_settings] = [
+  {
+    extensions: %w[long_job],
+    tracing: :disabled
+  },
+  {
+    regexp: '^.*\/long_job\/.*$',
+    opts: Regexp::IGNORECASE,
+    tracing: :disabled
+  },
+  {
+    regexp: /batch/,
+  }
+]
+```

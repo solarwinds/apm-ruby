@@ -8,6 +8,8 @@ begin
   require 'solarwinds_otel_apm/util'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/constants'
+  require 'solarwinds_otel_apm/transaction_cache'
+  require 'solarwinds_otel_apm/transaction_settings'
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/config'
 
