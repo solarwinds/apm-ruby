@@ -31,9 +31,11 @@ module SolarWindsOTelAPM
         parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
         return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
 
+        trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID, span.context.hex_trace_id))
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID, span.context.hex_span_id))
-
+        ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG, trace_flags))
+        
         SolarWindsOTelAPM.logger.debug "####### current baggage values: #{::OpenTelemetry::Baggage.values}"
       end
 

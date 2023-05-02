@@ -25,6 +25,7 @@ if defined?(SolarWindsOTelAPM::Config)
   # E.g.: 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service
   #
   # SolarWindsOTelAPM::Config[:service_key] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
+  SolarWindsOTelAPM::Config[:service_key] = 'hu9jWyIFwjWGV-xH9WOlubwzw2Z5s2fJIjuYcS1sg5b2zXI-wSryctIv6HYPYqPnm60V_zw:ruby-post-release-test'
 
   #
   # Set SW_APM_HOSTNAME_ALIAS
@@ -61,7 +62,7 @@ if defined?(SolarWindsOTelAPM::Config)
   # -1 disabled, 0 fatal, 1 error, 2 warning, 3 info (the default), 4 debug low, 5 debug medium, 6 debug high.
   # Values out of range (< -1 or > 6) are ignored and the log level is set to the default (info).
   #
-  SolarWindsOTelAPM::Config[:debug_level] = 3
+  SolarWindsOTelAPM::Config[:debug_level] = 6
 
   #
   # :debug_level will be used in the c-extension of the gem and also mapped to the
@@ -108,7 +109,7 @@ if defined?(SolarWindsOTelAPM::Config)
   #           "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00"
   #           when there is no tracing context.
   #
-  SolarWindsOTelAPM::Config[:log_traceId] = :never
+  SolarWindsOTelAPM::Config[:log_traceId] = :always
 
   #
   # Transaction Settings

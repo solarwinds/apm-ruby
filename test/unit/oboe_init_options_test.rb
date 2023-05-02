@@ -402,12 +402,12 @@ describe 'OboeInitOptions' do
     ENV['OTEL_SERVICE_NAME']  = nil
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
+    _(ENV['OTEL_SERVICE_NAME']).must_equal ''
 
     ENV['OTEL_SERVICE_NAME']  = nil
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:'
     SolarWindsOTelAPM::OboeInitOptions.instance.re_init
-    _(ENV['OTEL_SERVICE_NAME']).must_equal nil
+    _(ENV['OTEL_SERVICE_NAME']).must_equal ''
 
   end
 
