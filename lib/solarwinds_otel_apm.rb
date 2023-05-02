@@ -56,7 +56,7 @@ begin
     if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: Ruby agent is not initilaized.
                                   You may need to initialize ruby agent in application like the followings. 
-                                  SolarWindsOTelAPM::OTelConfig.initialize do |config|
+                                  SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
                                     ...
                                   end"
     else

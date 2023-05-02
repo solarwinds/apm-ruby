@@ -105,7 +105,7 @@ module SolarWindsOTelAPM
       
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
-      resolve_config_map_for_instrumentation
+      resolve_for_response_propagator
 
       print_config if SolarWindsOTelAPM.logger.level.zero?
 

@@ -30,15 +30,15 @@ Options to control the Ruby Library behavior can be set several ways, with the f
 
 ### In-code Configuration
 
-Additional configuration can be set within the `SolarWindsOTelAPM::OTelConfig.initialize` block, this will overwrite the same options set via environment variable or configuration file.
+Additional configuration can be set within the `SolarWindsOTelAPM::OTelConfig.initialize_with_config` block, this will overwrite the same options set via environment variable or configuration file.
 
 An example that disables the Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes.
 ```ruby
 require 'solarwinds_otel_apm'
 
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
-  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers: ['header1', 'header2']}
+SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
+  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
+  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
 end
 ```
 

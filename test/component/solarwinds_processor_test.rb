@@ -104,6 +104,7 @@ describe 'SolarWindsProcessor' do
   end
 
   it 'test calculate_transaction_names with custom_naming' do
+    clean_old_setting
     SolarWindsOTelAPM::OTelConfig.initialize
     processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).last
     processor.on_start(@span, ::OpenTelemetry::Context.current)
