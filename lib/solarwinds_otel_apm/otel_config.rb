@@ -130,11 +130,6 @@ module SolarWindsOTelAPM
     # Allow initialize after set new value to SolarWindsOTelAPM::Config[:key]=value
     # 
     # Usage:
-    # With extra config 
-    # SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
-    #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
-    #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
-    # end
     # 
     # Default using the use_all to load all instrumentation 
     # But with specific instrumentation disabled, use {:enabled: false} in config
