@@ -180,9 +180,7 @@ module SolarWindsOTelAPM
 
         new_attributes = {}
         span_data.attributes.each do |key, value|
-          if key == 'http.target' && SolarWindsOTelAPM::Config[:log_args] == false
-            new_attributes[key] = value.split('?').first
-          end
+          new_attributes[key] = value.split('?').first if key == 'http.target' && SolarWindsOTelAPM::Config[:log_args] == false
           new_attributes[key] = value
         end
 

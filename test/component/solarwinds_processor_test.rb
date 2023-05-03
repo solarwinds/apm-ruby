@@ -62,7 +62,7 @@ describe 'SolarWindsProcessor' do
   end
 
   
-  it 'test calculate_span_time' do 
+  it 'test_calculate_span_time' do 
     result = @processor.send(:calculate_span_time, start_time: @span_data.start_timestamp, end_time: @span_data.end_timestamp)
     _(result).must_equal 44_853
 
@@ -73,12 +73,12 @@ describe 'SolarWindsProcessor' do
     _(result).must_equal 0
   end
 
-  it 'test calculate_transaction_names' do 
+  it 'test_calculate_transaction_names' do 
     result = @processor.send(:calculate_transaction_names, @span)
     _(result).must_equal "name"
   end
 
-  it 'test get_http_status_code' do 
+  it 'test_get_http_status_code' do 
     result = @processor.send(:get_http_status_code, @span_data)
     _(result).must_equal 0
 
@@ -87,23 +87,23 @@ describe 'SolarWindsProcessor' do
     _(result).must_equal 200
   end
 
-  it 'test error?' do 
+  it 'test_error?' do 
     result = @processor.send(:error?, @span_data)
     _(result).must_equal 0 
   end
 
-  it 'test span_http?' do 
+  it 'test_span_http?' do 
     result = @processor.send(:span_http?, @span_data)
     _(result).must_equal false 
   end
 
-  it 'test on_start' do
+  it 'test_on_start' do
     @processor.on_start(@span, ::OpenTelemetry::Context.current)
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)).must_equal '77cb6ccc522d3106114dd6ecbb70036a'
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)).must_equal '31e175128efc4018'
   end
 
-  it 'test calculate_transaction_names with custom_naming' do
+  it 'calculate_transaction_names_with_custom_naming' do
     clean_old_setting
     SolarWindsOTelAPM::OTelConfig.initialize
     processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).last

@@ -13,6 +13,10 @@ describe 'Loading Opentelemetry Test' do
     sleep 1
   end
 
+  after do 
+    clean_old_setting
+  end
+
   # Exporter Testing
   it 'test_exporter_with_default' do
 
