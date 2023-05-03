@@ -30,44 +30,21 @@ Options to control the Ruby Library behavior can be set several ways, with the f
 
 ### In-code Configuration
 
-Additional configuration can be set within the `SolarWindsOTelAPM::OTelConfig.initialize` block, this will overwrite the same options set via environment variable or configuration file.
+Additional configuration can be set within the `SolarWindsOTelAPM::OTelConfig.initialize_with_config` block, this will overwrite the same options set via environment variable or configuration file.
 
 An example that disables the Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes.
 ```ruby
 require 'solarwinds_otel_apm'
 
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
-  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers: ['header1', 'header2']}
-end
-```
-
-An example that creates three different propagators and provides them to `config["OpenTelemetry::Propagators"]` with in-code configuration. 
-```ruby
-require 'opentelemetry/sdk'
-
-trace_context = ::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator.new
-baggage       = ::OpenTelemetry::Baggage::Propagation::TextMapPropagator.new
-solarwinds    = SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
-
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Propagators"] = [trace_context, baggage, solarwinds]
-end
-```
-
-The above example initialized opentelemetry otlp exporter and provide it to `config["OpenTelemetry::Exporter"]` with in-code configuration. 
-```ruby
-require 'opentelemetry/sdk'
-require 'opentelemetry/exporter/otlp'
-
-exporter = OpenTelemetry::Exporter::OTLP::Exporter.new
-
-SolarWindsOTelAPM::OTelConfig.initialize do |config|
-  config["OpenTelemetry::Exporter"] = exporter
+SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
+  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
+  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
 end
 ```
 
 ### Environmental Variable
+
+More environmental variable can be found in [CONFIG.md](https://github.com/solarwindscloud/swotel-ruby/blob/main/CONFIG.md)
 
 #### OTEL_TRACES_EXPORTER
 
@@ -77,20 +54,18 @@ Supported exporters: solarwinds
 
 Example:
 ```bash
-export OTEL_TRACES_EXPORTER=solarwinds
+export OTEL_TRACES_EXPORTER=otlp
 ```
 
 #### OTEL_PROPAGATORS
 
 Used to define list of propagators
 
-Supported propagators: tracecontext, baggage, solarwinds
+Supported propagators can be found [here](https://github.com/open-telemetry/opentelemetry-ruby/blob/main/sdk/lib/opentelemetry/sdk/configurator.rb#L199-L208)
 
 ```bash
-export OTEL_PROPAGATORS=tracecontext,baggage,solarwinds
+export OTEL_PROPAGATORS=tracecontext,baggage
 ```
-
-tracecontext and solarwinds are mandatory propagators, and tracecontext has to be in front of solarwinds propagators (e.g. tracecontext,solarwinds)
 
 #### OTEL_SERVICE_NAME
 

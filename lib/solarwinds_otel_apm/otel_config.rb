@@ -91,7 +91,7 @@ module SolarWindsOTelAPM
       end
     end
 
-    def self.setup_otel_config
+    def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
         SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/otel_config] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
         disable_agent
@@ -131,25 +131,28 @@ module SolarWindsOTelAPM
     # Allow initialize after set new value to SolarWindsOTelAPM::Config[:key]=value
     # 
     # Usage:
-    # With extra config 
-    # SolarWindsOTelAPM::OTelConfig.initialize do |config|
-    #   config["OpenTelemetry::Instrumentation::Rack"] = {"a" => "b"}
-    #   config["OpenTelemetry::Instrumentation::Dalli"] = {"a" => "b"}
-    # end
     # 
     # Default using the use_all to load all instrumentation 
     # But with specific instrumentation disabled, use {:enabled: false} in config
-    # SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    # SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
     # end
     #
-    def self.initialize
-      SolarWindsOTelAPM.logger.info '[solarwinds_otel_apm/otel_config] Block not given while doing initialize.' unless block_given?
+    def self.initialize_with_config
+      unless block_given?
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] Block not given while doing in-code configuration. Agent disabled.'
+        return
+      end
 
-      yield @@config_map if block_given?
+      yield @@config_map
 
-      setup_otel_config
+      if @@config_map.empty?
+        SolarWindsOTelAPM.logger.warn '[solarwinds_otel_apm/otel_config] No configuration given for in-code configuration. Agent disabled.'
+        return
+      end
+
+      initialize
     end
   end
 end
