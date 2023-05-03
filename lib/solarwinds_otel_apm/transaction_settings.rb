@@ -6,7 +6,6 @@ module SolarWindsOTelAPM
   # This module helps with setting up the transaction filters and applying them
   #
   class TransactionSettings
-
     SWO_TRACING_ENABLED      = 1
     SWO_TRACING_DISABLED     = 0
 
@@ -107,7 +106,6 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM::Config[:enabled_regexps] = nil
         SolarWindsOTelAPM::Config[:disabled_regexps] = nil
       end
-
     end
   end
 end

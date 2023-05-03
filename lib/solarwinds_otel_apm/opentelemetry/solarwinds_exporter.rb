@@ -63,11 +63,21 @@ module SolarWindsOTelAPM
           add_info_instrumentation_scope(event, span_data)
           add_info_instrumented_framework(event, span_data)
 
-          SolarWindsOTelAPM.logger.debug "####### old span_data.attributes: #{span_data.attributes.inspect}"
-          span_data_attributes = remove_args_from_attributes(span_data)
-          span_data_attributes&.each {|k,v| event.addInfo(k, v)}
-          SolarWindsOTelAPM.logger.debug "####### new span_data_attributes: #{span_data_attributes.inspect}"
-          
+          if span_data.attributes
+            if span_data.attributes['http.target']
+              http_target = span_data.attributes['http.target']
+              http_target = http_target.split('?').first if SolarWindsOTelAPM::Config[:log_args] == false # remove url parameters
+              event.addInfo('http.target', http_target)
+              span_data.attributes.each do |k, v|
+                next if k == 'http.target'
+                
+                event.addInfo(k, v)
+              end
+            else
+              span_data.attributes.each { |k, v| event.addInfo(k, v) }
+            end
+          end
+
           @reporter.send_report(event, with_system_timestamp: false)
 
           # info / exception event
@@ -171,20 +181,6 @@ module SolarWindsOTelAPM
         end
         SolarWindsOTelAPM.logger.debug "######## exception event #{evt.metadataString} ########"
         @reporter.send_report(evt, with_system_timestamp: false)
-      end
-
-      # remove http.target (query/args) if log_args is false
-      def remove_args_from_attributes(span_data)
-        # determine should send url or sanitized url
-        return span_data.attributes if span_data.attributes.nil? 
-
-        new_attributes = {}
-        span_data.attributes.each do |key, value|
-          new_attributes[key] = value.split('?').first if key == 'http.target' && SolarWindsOTelAPM::Config[:log_args] == false
-          new_attributes[key] = value
-        end
-
-        new_attributes
       end
 
       def report_info_event(span_event)
