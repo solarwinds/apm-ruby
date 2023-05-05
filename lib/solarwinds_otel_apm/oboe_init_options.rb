@@ -133,6 +133,12 @@ module SolarWindsOTelAPM
       service_name = match[3]
 
       return '' unless validate_token(token)   # return if token is not even valid
+      
+      if service_name.empty?
+        ENV.delete('OTEL_SERVICE_NAME')
+        SolarWindsOTelAPM.logger.warn "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY format problem. Service Name is missing."
+        return ''
+      end
 
       # check OTEL_RESOURCE_ATTRIBUTES
       otel_resource_service_name = nil
