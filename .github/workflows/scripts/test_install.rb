@@ -10,7 +10,7 @@
 require 'solarwinds_otel_apm'
 require 'net/http'
 
-unless SolarWindsOTelAPM::SDK.solarwinds_ready?(10_000)
+unless SolarWindsOTelAPM.loaded
   puts "aborting!!! Agent not ready after 10 seconds"
   exit false
 end

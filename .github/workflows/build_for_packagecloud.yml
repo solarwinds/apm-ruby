@@ -43,17 +43,3 @@ jobs:
           bundle exec rake build_gem_push_to_packagecloud[${{ steps.version.outputs.gem_version }}]
         env:
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-
-# Run this test manually, github is having problems reading the index at packagecloud
-# TODO: AO-20355
-#      - name: Test install (give packagecloud 60 seconds to index)
-#        working-directory: .github/workflows/
-#        env:
-#          SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
-#          SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR}}
-#          OBOE_STAGING: true
-#        run: |
-#          sleep 60
-#          gem sources --add https://packagecloud.io/solarwinds/solarwinds-apm-ruby
-#          gem install solarwinds_apm --version ${{ steps.gemstep.outputs.GEM_VERSION }} --verbose
-#          ruby ./scripts/test_install.rb

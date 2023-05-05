@@ -33,8 +33,7 @@ task :docker_tests, :environment do
 
   Dir.chdir('test/run_otel_tests')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os} \
-              /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh test copy")
+              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os}")
 end
 
 task :docker_test => :docker_tests
@@ -46,8 +45,7 @@ task :docker, :environment do
 
   Dir.chdir('test/run_otel_tests')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os} \
-              /code/ruby-solarwinds/test/run_otel_tests/ruby_setup.sh bash")
+              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
 end
 
 desc 'Stop all containers that were started for testing and debugging'
