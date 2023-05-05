@@ -145,6 +145,14 @@ describe 'SolarWindsExporterTest' do
     traces = obtain_all_traces
     _(traces.count).must_equal 2
     _(traces[0]['http.target']).must_equal 'google.com/page1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
   end
 
   it 'test_log_args_with_url_parameter_with_log_args_true' do     
@@ -157,6 +165,14 @@ describe 'SolarWindsExporterTest' do
     traces = obtain_all_traces
     _(traces.count).must_equal 2
     _(traces[0]['http.target']).must_equal 'google.com/page1?query1=value1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
 
   end
 
@@ -171,6 +187,14 @@ describe 'SolarWindsExporterTest' do
     traces = obtain_all_traces
     _(traces.count).must_equal 2
     _(traces[0]['http.target']).must_equal 'google.com/page1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
 
   end
   
