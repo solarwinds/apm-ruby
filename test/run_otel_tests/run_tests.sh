@@ -33,7 +33,7 @@
 # !!! When changing or adding ruby versions, the versions have to be
 # updated in the docker images as well, locally and in github !!!
 ##
-rubies=("3.1.0" "3.0.3" "2.7.5" "2.6.9")
+rubies=("3.1.0" "3.0.6" "2.7.5" "2.6.9")
 
 gemfiles=(
   "gemfiles/unit.gemfile"

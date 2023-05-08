@@ -1,7 +1,3 @@
-# Dockerfile
-# Copyright (c) 2023 SolarWinds, LLC.
-# All rights reserved.
-
 FROM alpine:3.16.2
 
 VOLUME [ "/sys/fs/cgroup" ]
@@ -9,6 +5,7 @@ VOLUME [ "/sys/fs/cgroup" ]
 # install OS packages
 RUN apk update
 
+# is needed for rbenv to install ruby
 RUN apk add --upgrade \
       autoconf \
       automake \
@@ -71,14 +68,13 @@ RUN source  ~/.profile \
    && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
    && rbenv install 2.6.9 \
    && rbenv install 2.7.5 \
-   && rbenv install 3.0.3 \
+   && rbenv install 3.0.6 \
    && rbenv install 3.1.0
 
 # Alpine needs config.h symlinked into the default location for gtests
-RUN ln -s /root/.rbenv/versions/2.5.9/include/ruby-2.5.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.5.9/include/ruby-2.5.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/2.6.9/include/ruby-2.6.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.6.9/include/ruby-2.6.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/2.7.5/include/ruby-2.7.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.7.5/include/ruby-2.7.0/ruby/config.h
-RUN ln -s /root/.rbenv/versions/3.0.3/include/ruby-3.0.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.0.3/include/ruby-3.0.0/ruby/config.h
+RUN ln -s /root/.rbenv/versions/3.0.6/include/ruby-3.0.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.0.6/include/ruby-3.0.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/3.1.0/include/ruby-3.1.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.1.0/include/ruby-3.1.0/ruby/config.h
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
@@ -91,9 +87,13 @@ RUN curl -SL https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz \
     && cd \
     && rm -rf /tmp/swig-4.0.2
 
-RUN apk add --upgrade openrc
+RUN apk add --upgrade \
+      memcached \
+      openrc
 
-RUN rc-update add sysinit
+RUN rc-update add memcached sysinit
+
+RUN apk add --update mysql-client mysql mariadb
 
 ENV PATH="/root/.rbenv/bin:/root/.rbenv/shims:$PATH"
 

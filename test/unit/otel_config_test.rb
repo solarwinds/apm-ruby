@@ -23,7 +23,7 @@ describe 'Loading Opentelemetry Test' do
 
   it 'default_response_propagators_with_other_rack_config' do
 
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
       config['OpenTelemetry::Instrumentation::Rack'] = {:record_frontend_span => true}
     end
     rack_config = SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
@@ -33,7 +33,7 @@ describe 'Loading Opentelemetry Test' do
   end
 
   it 'default_response_propagators_with_other_response_propagators' do
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
       config['OpenTelemetry::Instrumentation::Rack'] = {:response_propagators => ['String']}
     end
     rack_config = SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
@@ -44,7 +44,7 @@ describe 'Loading Opentelemetry Test' do
   end
 
   it 'default_response_propagators_with_non_array_response_propagators' do
-    SolarWindsOTelAPM::OTelConfig.initialize do |config|
+    SolarWindsOTelAPM::OTelConfig.initialize_with_config do |config|
       config['OpenTelemetry::Instrumentation::Rack'] = {:response_propagators => 'String'}
     end
     rack_config = SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']

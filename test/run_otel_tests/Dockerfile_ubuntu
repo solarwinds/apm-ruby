@@ -60,7 +60,7 @@ RUN . ~/.profile \
     && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
     && rbenv install 2.6.9 \
     && rbenv install 2.7.5 \
-    && rbenv install 3.0.3 \
+    && rbenv install 3.0.6 \
     && rbenv install 3.1.0
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
