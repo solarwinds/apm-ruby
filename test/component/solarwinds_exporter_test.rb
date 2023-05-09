@@ -8,33 +8,18 @@ describe 'SolarWindsExporterTest' do
   before do
     
     # create sample span
-    status = ::OpenTelemetry::Trace::Status.ok("good") 
-    attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
-    resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
-    instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
-    trace_flags = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
-    tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
-    @span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
-                                                           :internal,
-                                                           status,
-                                                           ("\0" * 8).b,
-                                                           2,
-                                                           2,
-                                                           0,
-                                                           1_669_317_386_253_789_212,
-                                                           1_669_317_386_298_642_087,
-                                                           attributes,
-                                                           nil,
-                                                           nil,
-                                                           resource,
-                                                           instrumentation_scope,
-                                                           "\xA4\xA49\x9D\xAC\xA5\x98\xC1",
-                                                           "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7",
-                                                           trace_flags,
-                                                           tracestate)
+    @status = ::OpenTelemetry::Trace::Status.ok("good") 
+    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
+    @resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
+    @instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
+    @trace_flags = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
+    @tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
+
+    create_span_data
+
     txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
     @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
-                                                
+    SolarWindsOTelAPM::Config[:log_args] = true                                     
   end
 
   
@@ -148,6 +133,90 @@ describe 'SolarWindsExporterTest' do
     _(traces[1]["Layer"]).must_equal "connect"
 
   end
+
+  it 'test_log_args_with_url_parameter' do     
+    clear_all_traces
+    SolarWindsOTelAPM::Config[:log_args] = false
+    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1?query1=value1'}
+    
+    create_span_data
+
+    @exporter.send(:log_span_data, @span_data)
+    traces = obtain_all_traces
+    _(traces.count).must_equal 2
+    _(traces[0]['http.target']).must_equal 'google.com/page1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
+  end
+
+  it 'test_log_args_with_url_parameter_with_log_args_true' do     
+    clear_all_traces
+    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1?query1=value1'}
+    
+    create_span_data
+
+    @exporter.send(:log_span_data, @span_data)
+    traces = obtain_all_traces
+    _(traces.count).must_equal 2
+    _(traces[0]['http.target']).must_equal 'google.com/page1?query1=value1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
+
+  end
+
+  it 'test_log_args_with_url_parameter_with_no_parameter' do     
+    clear_all_traces
+    SolarWindsOTelAPM::Config[:log_args] = false
+    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1'}
+    
+    create_span_data  
+
+    @exporter.send(:log_span_data, @span_data)
+    traces = obtain_all_traces
+    _(traces.count).must_equal 2
+    _(traces[0]['http.target']).must_equal 'google.com/page1'
+    _(traces[0]['Layer']).must_equal 'connect'
+    _(traces[0]['sw.span_kind']).must_equal 'internal'
+    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
+    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
+    _(traces[0]['net.peer.port']).must_equal 8002
+
+    _(traces[1]['Label']).must_equal 'exit'
+    _(traces[1]['Layer']).must_equal 'connect'
+
+  end
   
+  def create_span_data
+    @span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
+                                                           :internal,
+                                                           @status,
+                                                           ("\0" * 8).b,
+                                                           2,
+                                                           2,
+                                                           0,
+                                                           1_669_317_386_253_789_212,
+                                                           1_669_317_386_298_642_087,
+                                                           @attributes,
+                                                           nil,
+                                                           nil,
+                                                           @resource,
+                                                           @instrumentation_scope,
+                                                           "\xA4\xA49\x9D\xAC\xA5\x98\xC1",
+                                                           "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7",
+                                                           @trace_flags,
+                                                           @tracestate)
+  end
 
 end
