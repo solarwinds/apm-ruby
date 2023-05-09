@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Ruby 2.7 and bundle
         uses: ruby/setup-ruby@v1
@@ -35,7 +35,7 @@ jobs:
       - name: Grab current version
         id: version
         run: |
-          echo ::set-output name=gem_version::`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`
+          echo "gem_version=`ruby -e 'require "./lib/solarwinds_otel_apm/version"; puts SolarWindsOTelAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Build gem and publish to packagecloud
         id: gemstep
@@ -43,17 +43,3 @@ jobs:
           bundle exec rake build_gem_push_to_packagecloud[${{ steps.version.outputs.gem_version }}]
         env:
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-
-# Run this test manually, github is having problems reading the index at packagecloud
-# TODO: AO-20355
-#      - name: Test install (give packagecloud 60 seconds to index)
-#        working-directory: .github/workflows/
-#        env:
-#          SW_APM_SERVICE_KEY: ${{ secrets.SW_APM_SERVICE_KEY }}
-#          SW_APM_COLLECTOR: ${{ secrets.SW_APM_COLLECTOR}}
-#          OBOE_STAGING: true
-#        run: |
-#          sleep 60
-#          gem sources --add https://packagecloud.io/solarwinds/solarwinds-apm-ruby
-#          gem install solarwinds_apm --version ${{ steps.gemstep.outputs.GEM_VERSION }} --verbose
-#          ruby ./scripts/test_install.rb

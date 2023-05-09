@@ -1,22 +1,10 @@
-FROM alpine:3.12
+FROM alpine:3.16.2
 
 VOLUME [ "/sys/fs/cgroup" ]
 
 # install OS packages
 RUN apk update
 
-# TODO I don't think grpc is needed, but grpc tests currently are SEGV in alpine
-# way too many packages, but at least one of the recenlty added :
-# coreutils
-# dpkg
-# gcc
-# gdbm
-# glib-dev
-# libffi
-# libxml
-# libxlst
-# libc
-#
 # is needed for rbenv to install ruby
 RUN apk add --upgrade \
       autoconf \
@@ -54,12 +42,12 @@ RUN apk add --upgrade \
       postgresql-dev \
       readline-dev \
       tree \
-      ttf-ubuntu-font-family \
+      ttf-freefont \
       tzdata \
       vim \
-      wkhtmltopdf \
       yaml \
       zlib-dev \
+      icu-libs \ 
    && rm -rf /var/lib/apt/lists/*
 
 # rbenv setup
@@ -78,17 +66,15 @@ RUN echo 'alias be="bundle exec"' >> ~/.profile
 # install rubies to build our gem against
 RUN source  ~/.profile \
    && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
-   && rbenv install 2.5.9 \
    && rbenv install 2.6.9 \
    && rbenv install 2.7.5 \
-   && rbenv install 3.0.3 \
+   && rbenv install 3.0.6 \
    && rbenv install 3.1.0
 
 # Alpine needs config.h symlinked into the default location for gtests
-RUN ln -s /root/.rbenv/versions/2.5.9/include/ruby-2.5.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.5.9/include/ruby-2.5.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/2.6.9/include/ruby-2.6.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.6.9/include/ruby-2.6.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/2.7.5/include/ruby-2.7.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/2.7.5/include/ruby-2.7.0/ruby/config.h
-RUN ln -s /root/.rbenv/versions/3.0.3/include/ruby-3.0.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.0.3/include/ruby-3.0.0/ruby/config.h
+RUN ln -s /root/.rbenv/versions/3.0.6/include/ruby-3.0.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.0.6/include/ruby-3.0.0/ruby/config.h
 RUN ln -s /root/.rbenv/versions/3.1.0/include/ruby-3.1.0/x86_64-linux-musl/ruby/config.h /root/.rbenv/versions/3.1.0/include/ruby-3.1.0/ruby/config.h
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
@@ -106,28 +92,8 @@ RUN apk add --upgrade \
       openrc
 
 RUN rc-update add memcached sysinit
-#    && touch /run/openrc/softlevel \
-#    && rc-service memcached start
-# Attempt to disable transparent huge pages because redis complains
-#RUN echo never > /sys/kernel/mm/transparent_hugepage/enabled
-#RUN echo never > /sys/kernel/mm/transparent_hugepage/defrag
-
-# install redis-server
-RUN curl -SL https://download.redis.io/releases/redis-6.2.4.tar.gz | tar xzC /tmp \
-    && cd /tmp/redis-6.2.4/ \
-    && make && make install && cd \
-    && rm -rf /tmp/redis-6.2.4/
 
 RUN apk add --update mysql-client mysql mariadb
-
-# postgres running in separate container and
-# this way of starting it doesn't seem to work anymore
-#RUN apk add --update postgresql postgresql-contrib
-#RUN service postgresql start \
-#   && echo "psql --command \"CREATE USER docker WITH SUPERUSER PASSWORD 'docker';\"" >> /tmp/config \
-#   && echo "createdb -O docker test_db" >> /tmp/config \
-#   && su postgres -c "bash /tmp/config"
-#   && rm -f /tmp/config
 
 ENV PATH="/root/.rbenv/bin:/root/.rbenv/shims:$PATH"
 
