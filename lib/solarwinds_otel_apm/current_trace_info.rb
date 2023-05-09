@@ -39,10 +39,11 @@ module SolarWindsOTelAPM
       private_constant :REGEXP
 
       def initialize
-        @trace_id    = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
-        @span_id     = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
-        @trace_flags = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
-        @tracestring = "00-#{@trace_id}-#{@span_id}-#{@trace_flags}"
+        @trace_id     = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
+        @span_id      = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
+        @trace_flags  = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
+        @service_name = ENV['OTEL_SERVICE_NAME']
+        @tracestring  = "00-#{@trace_id}-#{@span_id}-#{@trace_flags}"
         @do_log = log? # true if the tracecontext should be added to logs
         @do_sql = sql? # true if the tracecontext should be added to sql
       end
@@ -55,12 +56,12 @@ module SolarWindsOTelAPM
       # :sampled, :traced, or :always.
       #
       def for_log
-        @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags}" : ''
+        @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags} service.name=#{@service_name}" : ''
       end
 
       def hash_for_log
         @hash_for_log = {}
-        @hash_for_log = {trace_id: @trace_id, span_id: @span_id, trace_flags: @trace_flags} if @do_log
+        @hash_for_log = {trace_id: @trace_id, span_id: @span_id, trace_flags: @trace_flags, service_name: @service_name} if @do_log
       end
 
       def for_sql
