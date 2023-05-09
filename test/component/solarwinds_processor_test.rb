@@ -55,10 +55,9 @@ describe 'SolarWindsProcessor' do
                                                            trace_flags,
                                                            tracestate)
 
-    txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
-    exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)                                    
-    @processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_name_manager)
-                                                
+    @txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
+    @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)                                    
+    @processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)                                             
   end
 
   
@@ -98,7 +97,8 @@ describe 'SolarWindsProcessor' do
   end
 
   it 'test_on_start' do
-    @processor.on_start(@span, ::OpenTelemetry::Context.current)
+    processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)
+    processor.on_start(@span, ::OpenTelemetry::Context.current)
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)).must_equal '77cb6ccc522d3106114dd6ecbb70036a'
     _(::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)).must_equal '31e175128efc4018'
   end
@@ -106,10 +106,11 @@ describe 'SolarWindsProcessor' do
   it 'calculate_transaction_names_with_custom_naming' do
     clean_old_setting
     SolarWindsOTelAPM::OTelConfig.initialize
-    processor = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).last
-    processor.on_start(@span, ::OpenTelemetry::Context.current)
+    processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
+    solarwinds_processor = processors.last
+    solarwinds_processor.on_start(@span, ::OpenTelemetry::Context.current)
     SolarWindsOTelAPM.set_transaction_name(custom_name: 'abcdf')
-    _(processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
+    _(solarwinds_processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
   end
 
 end
