@@ -3,14 +3,13 @@ name: Build docker images
 on:
   # push:
   #   paths:
-  #   - 'test/run_tests/Dockerfile_*'
+  #   - 'test/run_otel_tests/Dockerfile_*'
   # Allows running this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/apm_ruby
-  DOCKERFILE: test/run_tests/Dockerfile
 
 jobs:
 
@@ -54,6 +53,6 @@ jobs:
         context: .
         push: true
         # platforms: linux/amd64, linux/arm64
-        file: test/run_tests/Dockerfile_${{ matrix.os }}
+        file: test/run_otel_tests/Dockerfile_${{ matrix.os }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}

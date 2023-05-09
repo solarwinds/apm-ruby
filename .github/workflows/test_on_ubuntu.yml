@@ -8,7 +8,7 @@ on:
   #   branches-ignore:
   #     - main
   #   paths-ignore:
-  #     - 'test/run_tests/Dockerfile_*'
+  #     - 'test/run_otel_tests/Dockerfile_*'
   workflow_dispatch:
 
 jobs:
@@ -52,4 +52,4 @@ jobs:
         version=`rbenv versions --bare | grep ${{ matrix.ruby }}`
         rbenv global $version
         echo "testing with ruby version: $version"
-        test/run_tests/run_tests.sh -r $version
+        test/run_otel_tests/run_tests.sh -r $version
