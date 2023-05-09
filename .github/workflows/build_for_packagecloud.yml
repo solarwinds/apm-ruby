@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Ruby 2.7 and bundle
         uses: ruby/setup-ruby@v1
@@ -35,7 +35,7 @@ jobs:
       - name: Grab current version
         id: version
         run: |
-          echo ::set-output name=gem_version::`ruby -e 'require "./lib/solarwinds_otel_apm/version"; puts SolarWindsAPM::Version::STRING'`
+          echo "gem_version=`ruby -e 'require "./lib/solarwinds_otel_apm/version"; puts SolarWindsOTelAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Build gem and publish to packagecloud
         id: gemstep
