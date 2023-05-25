@@ -3,6 +3,9 @@
 # All rights reserved.
 #++
 
+SW_APM_STR_LAYER = 'Layer'.freeze
+SW_APM_STR_LABEL = 'Label'.freeze
+
 module SolarWindsOTelAPM
   ##
   # Provides methods related to layer initialization and reporting
