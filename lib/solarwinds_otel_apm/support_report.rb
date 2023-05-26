@@ -31,10 +31,6 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn "ARGV: #{ARGV.inspect}" 
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM.loaded == #{SolarWindsOTelAPM.loaded}"
 
-    on_heroku = SolarWindsOTelAPM.heroku?
-    SolarWindsOTelAPM.logger.warn "On Heroku?: #{yesno(on_heroku)}"
-    SolarWindsOTelAPM.logger.warn "SW_APM_URL: #{ENV['SW_APM_URL']}" if on_heroku
-
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM::Ruby defined?: #{yesno(defined?(SolarWindsOTelAPM::Ruby))}"
     SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM.reporter: #{SolarWindsOTelAPM.reporter}"
 

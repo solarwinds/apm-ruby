@@ -42,7 +42,7 @@ begin
 
   # Auto-start the Reporter unless we are running Unicorn on Heroku
   # In that case, we start the reporters after fork
-  unless SolarWindsOTelAPM.heroku? && SolarWindsOTelAPM.forking_webserver?
+  unless SolarWindsOTelAPM.forking_webserver?
     SolarWindsOTelAPM::Reporter.start if SolarWindsOTelAPM.loaded
   end
   if SolarWindsOTelAPM.loaded
