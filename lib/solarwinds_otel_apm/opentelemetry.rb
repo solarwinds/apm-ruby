@@ -3,6 +3,7 @@ require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
 
 require_relative './opentelemetry/transaction_cache'
+require_relative './opentelemetry/transaction_settings'
 require_relative './opentelemetry/oboe_tracing_mode'
 require_relative './opentelemetry/solarwinds_txn_name_manager'
 require_relative './opentelemetry/transformer'

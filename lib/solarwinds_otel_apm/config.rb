@@ -163,7 +163,7 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM::CProfiler.interval_setup(value) if defined? SolarWindsOTelAPM::CProfiler
 
       when :transaction_settings
-        SolarWindsOTelAPM::TransactionSettings.compile_settings(value)
+        SolarWindsOTelAPM::API.compile_settings(value)
 
       when :tracing_mode
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings

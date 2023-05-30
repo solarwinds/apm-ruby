@@ -6,7 +6,6 @@ begin
   require 'solarwinds_otel_apm/thread_local'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/constants'
-  require 'solarwinds_otel_apm/transaction_settings'
   require 'solarwinds_otel_apm/api'
   require 'solarwinds_otel_apm/base'
   require 'solarwinds_otel_apm/logger'
@@ -17,7 +16,6 @@ begin
   begin
     if RUBY_PLATFORM =~ /linux/
       require_relative './libsolarwinds_apm.so'
-      require 'solarwinds_otel_apm/layerinit'
       require 'solarwinds_otel_apm/oboe_init_options'
       require_relative './oboe_metal'  # initialize Reporter; sets SolarWindsOTelAPM.loaded = true if successful
     else

@@ -25,7 +25,7 @@ module SolarWindsOTelAPM
           SolarWindsOTelAPM.reporter = Oboe_metal::Reporter.new(*options)
 
           # report __Init
-          SolarWindsOTelAPM::LayerInit.report_init
+          SolarWindsOTelAPM::API.report_init
         rescue StandardError=> e
           $stderr.puts e.message
           raise

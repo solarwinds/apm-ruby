@@ -7,7 +7,6 @@ module SolarWindsOTelAPM
   # of instrumenting code
   module API
     module InitializationReport
-
       ##
       #  build_swo_init_report
       #
