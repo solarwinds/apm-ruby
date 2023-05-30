@@ -4,17 +4,15 @@
 begin
   require 'solarwinds_otel_apm/version'
   require 'solarwinds_otel_apm/thread_local'
-  require 'solarwinds_otel_apm/logger'
-  require 'solarwinds_otel_apm/util'
   require 'solarwinds_otel_apm/support_report'
   require 'solarwinds_otel_apm/constants'
-  require 'solarwinds_otel_apm/transaction_cache'
   require 'solarwinds_otel_apm/transaction_settings'
+  require 'solarwinds_otel_apm/api'
   require 'solarwinds_otel_apm/base'
+  require 'solarwinds_otel_apm/logger'
   require 'solarwinds_otel_apm/config'
 
   SolarWindsOTelAPM::Config.load_config_file
-
   SolarWindsOTelAPM.loaded = false
   begin
     if RUBY_PLATFORM =~ /linux/
@@ -45,15 +43,10 @@ begin
   unless SolarWindsOTelAPM.forking_webserver?
     SolarWindsOTelAPM::Reporter.start if SolarWindsOTelAPM.loaded
   end
+
   if SolarWindsOTelAPM.loaded
-
-    # for log_TraceId
-    require 'solarwinds_otel_apm/current_trace_info'
-    require 'solarwinds_otel_apm/logger_formatter'
-    require 'solarwinds_otel_apm/logging_log_event'
-    require 'solarwinds_otel_apm/lumberjack_formatter'
-
-    require 'solarwinds_otel_apm/load_opentelemetry'
+    require 'solarwinds_otel_apm/support'
+    require 'solarwinds_otel_apm/opentelemetry'
     require 'solarwinds_otel_apm/otel_config'
     if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsOTelAPM.logger.warn "SolarWindsOTelAPM warning: Ruby agent is not initilaized.
@@ -74,8 +67,6 @@ begin
     require 'solarwinds_otel_apm/noop/context'
     require 'solarwinds_otel_apm/noop/metadata'
   end
-
-  require 'solarwinds_otel_apm/test' if ENV['SW_APM_GEM_TEST']
 rescue StandardError => e
   $stderr.puts "[solarwinds_otel_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace

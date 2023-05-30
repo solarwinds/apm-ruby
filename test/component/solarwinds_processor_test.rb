@@ -109,7 +109,7 @@ describe 'SolarWindsProcessor' do
     processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
     solarwinds_processor = processors.last
     solarwinds_processor.on_start(@span, ::OpenTelemetry::Context.current)
-    SolarWindsOTelAPM.set_transaction_name(custom_name: 'abcdf')
+    SolarWindsOTelAPM::API.set_transaction_name(custom_name: 'abcdf')
     _(solarwinds_processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
   end
 

@@ -215,12 +215,11 @@ module SolarWindsOTelAPM
     end
 
     def read_certificates
-
-      file = ''
+      file = String.new
       file = "#{__dir__}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
       file = ENV['SW_APM_TRUSTEDPATH'] if !ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?
       
-      return String.new if file.empty?
+      return file if file.empty?
       
       begin
         certificate = File.open(file,"r").read

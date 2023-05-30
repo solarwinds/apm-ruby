@@ -11,7 +11,6 @@ require 'digest'
 require 'open-uri'
 require 'bundler/setup'
 require 'rake/testtask'
-require 'solarwinds_otel_apm/test'
 
 Rake::TestTask.new do |t|
   t.verbose = false
@@ -19,11 +18,9 @@ Rake::TestTask.new do |t|
   t.ruby_opts = []
   t.libs << 'test'
 
-  case SolarWindsOTelAPM::Test.gemfile
-  when /unit/
-    t.test_files = FileList['test/unit/*_test.rb'] +
-                   FileList['test/component/*_test.rb']
-  end
+  t.test_files = FileList['test/unit/*_test.rb'] +
+                 FileList['test/component/*_test.rb']
+
 end
 
 desc 'Run all test suites defined by travis'
@@ -302,9 +299,6 @@ task :environment do
 
   Bundler.require(:default, :development)
   SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
-  SolarWindsOTelAPM::Test.load_extras
-
-  require 'delayed/tasks' if SolarWindsOTelAPM::Test.gemfile?(:delayed_job)
 end
 
 # Used when testing Resque locally

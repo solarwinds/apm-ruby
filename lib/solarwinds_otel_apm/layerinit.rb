@@ -19,7 +19,7 @@ module SolarWindsOTelAPM
       # isn't fully loaded (e.g. missing c-extension)
       return if ENV.has_key?('SW_APM_GEM_TEST') || !SolarWindsOTelAPM.loaded
 
-      platform_info = SolarWindsOTelAPM::Util.build_swo_init_report
+      platform_info = SolarWindsOTelAPM::API.build_swo_init_report
       log_init(layer, platform_info)
     end
 

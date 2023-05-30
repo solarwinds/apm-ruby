@@ -119,9 +119,12 @@ module SolarWindsOTelAPM
 
       return unless @@agent_enabled
 
-      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators]) # append our propagators
+      # append our propagators
+      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators]) 
+      
       # append our processors (with our exporter)      
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
+      
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
       nil

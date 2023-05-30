@@ -18,7 +18,7 @@ module SolarWindsOTelAPM
       def insert_trace_id(msg)
         return msg if msg =~ /trace_id=/
 
-        current_trace = SolarWindsOTelAPM.current_trace_info
+        current_trace = SolarWindsOTelAPM::API.current_trace_info
         if current_trace.do_log
           case msg
           when ::String
@@ -40,4 +40,6 @@ module SolarWindsOTelAPM
   end
 end
 
+# To use the trace context in log, ::Logger::Formatter.new must be defined
+# e.g. config.log_formatter = ::Logger::Formatter.new
 Logger::Formatter.prepend(SolarWindsOTelAPM::Logger::Formatter) if SolarWindsOTelAPM.loaded
