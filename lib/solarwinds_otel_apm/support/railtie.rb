@@ -30,21 +30,23 @@ module SolarWindsOTelAPM
         ActiveJob::Base.class_eval do
           around_perform do |job, block|
             begin
-              Marginalia::Comment.update_job! job
+              SWOMarginalia::Comment.update_job! job
               block.call
             ensure
-              Marginalia::Comment.clear_job!
+              SWOMarginalia::Comment.clear_job!
             end
           end
         end
       end      
 
       def self.insert_into_action_controller
+        return unless defined? ActionController::Base
+
         ActionController::Base.include SWOMarginalia::ActionControllerInstrumentation
+        
         return unless defined? ActionController::API
 
         ActionController::API.include SWOMarginalia::ActionControllerInstrumentation
-        
       end
 
       def self.insert_into_active_record
