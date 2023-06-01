@@ -79,8 +79,8 @@ module SolarWindsOTelAPM
       end
 
       def self.application
-        if defined?(Rails.application)
-          SWOMarginalia.application_name ||= Rails.application.class.name.split("::").first
+        if defined?(::Rails.application)
+          SWOMarginalia.application_name ||= ::Rails.application.class.name.split("::").first
         else
           SWOMarginalia.application_name ||= "rails"
         end
@@ -163,16 +163,15 @@ module SolarWindsOTelAPM
 
       def self.traceparent
         # this can be changed to CurrentTraceInfo.add_traceparent_to_sql (add_traceparent_to_sql include add original sql to kvs)
-        current_span = ::OpenTelemetry::Trace.current_span
-        return if current_span == ::OpenTelemetry::Trace::Span::INVALID
-
-        span_context = current_span.context
+        span_context = ::OpenTelemetry::Trace.current_span.context
         trace_flag   = span_context.trace_flags.sampled? ? '01': '00'
         format(
           '00-%<trace_id>s-%<span_id>s-%<trace_flags>.2d',
           trace_id: span_context.hex_trace_id,
           span_id: span_context.hex_span_id,
           trace_flags: trace_flag)
+      rescue NameError => e
+        SolarWindsOTelAPM.logger.error "Couldn't find OpenTelemetry. Error: #{e.message}" 
       end
 
       if Gem::Version.new(ActiveRecord::VERSION::STRING) < Gem::Version.new('6.1')

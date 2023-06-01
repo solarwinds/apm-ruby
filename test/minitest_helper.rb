@@ -16,6 +16,7 @@ if ENV['SIMPLECOV_COVERAGE']
   end
 end
 
+require 'opentelemetry/exporter/otlp/version'
 require 'rubygems'
 require 'bundler/setup'
 require 'fileutils'
