@@ -7,8 +7,7 @@
 module SolarWindsOTelAPMBase
   extend SolarWindsOTelAPM::ThreadLocal
 
-  attr_accessor :reporter
-  attr_accessor :loaded
+  attr_accessor :reporter, :loaded
 
   ##
   # Determines if we are running under a forking webserver

@@ -32,6 +32,7 @@ require 'opentelemetry-sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'opentelemetry-propagator-b3'
+require 'opentelemetry/exporter/otlp/version'
 require 'opentelemetry-exporter-otlp'
 require 'bson'
 

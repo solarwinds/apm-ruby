@@ -17,13 +17,22 @@ module SolarWindsOTelAPM
       #                            span_id: '49e60702469db05f',
       #                            trace_flags: ''}  or {} depends on Config
       #
+      # Configure options for injection with log:
+      #
+      #   The following options are available:
+      #   :never    (default)
+      #   :sampled  only include the Trace ID of sampled requests
+      #   :traced   include the Trace ID for all traced requests
+      #   :always   always add a Trace ID, it will be
+      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00"
+      #             when there is no tracing context.
+      #
       # Configure trace info injection with lograge:
       #
       #    Lograge.custom_options = lambda do |event|
       #       SolarWindsOTelAPM::API.current_trace_info.hash_for_log
       #    end
       #
-
       def current_trace_info
         TraceInfo.new
       end

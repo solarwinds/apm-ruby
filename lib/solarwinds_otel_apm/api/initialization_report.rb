@@ -2,9 +2,6 @@
 # All rights reserved.
 
 module SolarWindsOTelAPM
-  ##
-  # Provides utility methods for use while in the business
-  # of instrumenting code
   module API
     module InitializationReport
       ##
