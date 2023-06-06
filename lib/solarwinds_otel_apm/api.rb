@@ -6,6 +6,7 @@ require_relative './api/current_trace_info'
 require_relative './api/initialization_report'
 require_relative './api/transaction_settings'
 require_relative './api/layerinit'
+require_relative './api/tracing'
 
 module SolarWindsOTelAPM
   module API
@@ -14,5 +15,6 @@ module SolarWindsOTelAPM
     extend SolarWindsOTelAPM::API::InitializationReport
     extend SolarWindsOTelAPM::API::TransactionSettings
     extend SolarWindsOTelAPM::API::LayerInit
+    extend SolarWindsOTelAPM::API::Tracing
   end
 end

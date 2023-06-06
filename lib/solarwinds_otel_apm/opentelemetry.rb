@@ -1,5 +1,4 @@
 require 'opentelemetry/sdk'
-require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
 
 require_relative './opentelemetry/transaction_cache'
