@@ -55,7 +55,7 @@ describe 'SolarWindsProcessor' do
                                                            trace_flags,
                                                            tracestate)
 
-    @txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
+    @txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::TxnNameManager.new
     @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)                                    
     @processor = SolarWindsOTelAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)                                             
   end

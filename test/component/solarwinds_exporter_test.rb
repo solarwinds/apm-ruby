@@ -17,7 +17,7 @@ describe 'SolarWindsExporterTest' do
 
     create_span_data
 
-    txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::SolarWindsTxnNameManager.new
+    txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::TxnNameManager.new
     @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
     SolarWindsOTelAPM::Config[:log_args] = true                                     
   end
