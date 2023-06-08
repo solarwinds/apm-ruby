@@ -17,7 +17,8 @@ module SolarWindsOTelAPM
       #                            span_id: '49e60702469db05f',
       #                            trace_flags: ''}  or {} depends on Config
       #
-      # Configure options for injection with log:
+      #   The <tt>SolarWindsOTelAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
+      #   return value of methods in this module.
       #
       #   The following options are available:
       #   :never    (default)
@@ -49,9 +50,7 @@ module SolarWindsOTelAPM
         private_constant :REGEXP
 
         def initialize
-          @trace_id     = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
-          @span_id      = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
-          @trace_flags  = ::OpenTelemetry::Baggage.value(::SolarWindsOTelAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
+          @trace_id, @span_id, @trace_flags = current_span
           @service_name = ENV['OTEL_SERVICE_NAME']
           @tracestring  = "00-#{@trace_id}-#{@span_id}-#{@trace_flags}"
           @do_log = log? # true if the tracecontext should be added to logs
@@ -60,42 +59,58 @@ module SolarWindsOTelAPM
 
         # for_log returns a string in the format
         # 'trace_id=<trace_id> span_id=<span_id> trace_flags=<trace_flags>' or ''.
-        #
+        # 
         # An empty string is returned depending on the setting for
         # <tt>SolarWindsOTelAPM::Config[:log_traceId]</tt>, which can be :never,
         # :sampled, :traced, or :always.
+        #
+        # === Argument:
+        #
+        # === Example:
+        #
+        #   trace = SolarWindsOTelAPM::API.current_trace_info
+        #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01' or '' depends on Config
+        #
+        # === Returns:
+        # * String
         #
         def for_log
           @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags} service.name=#{@service_name}" : ''
         end
 
+        # Construct the trace_id and span_id for log insertion.
+        #
+        # === Argument:
+        #
+        # === Example:
+        #
+        #   trace = SolarWindsOTelAPM::API.current_trace_info
+        #   trace.hash_for_log   # { trace_id: '7435a9fe510ae4533414d425dadf4e18',
+        #                            span_id: '49e60702469db05f',
+        #                            trace_flags: ''}  or {} depends on Config
+        #   
+        #   For lograge:
+        #   Lograge.custom_options = lambda do |event|
+        #     SolarWindsOTelAPM::API.current_trace_info.hash_for_log
+        #   end
+        #
+        # === Returns:
+        # * Hash
+        #
         def hash_for_log
           @hash_for_log = {}
           @hash_for_log = {trace_id: @trace_id, span_id: @span_id, trace_flags: @trace_flags, service_name: @service_name} if @do_log
         end
 
-        def for_sql
-          @for_sql ||= @do_sql ? "/*traceparent='#{@tracestring}'*/" : ''
-        end
-
-        ##
-        # add_traceparent_to_sql
-        #
-        # returns the sql with "/*traceparent='#{@tracestring}'*/" prepended
-        # and adds the QueryTag kv to kvs
-        #
-        def add_traceparent_to_sql(sql, kvs)
-          sql = sql.gsub(SQL_REGEX, '') # remove if it was added before
-
-          unless for_sql.empty?
-            kvs[:QueryTag] = for_sql
-            return "#{for_sql}#{sql}"
-          end
-
-          sql
-        end
-
         private
+
+        def current_span
+          span     = ::OpenTelemetry::Trace.current_span if defined?(::OpenTelemetry::Trace)
+          trace_id = span.context.hex_trace_id
+          span_id  = span.context.hex_span_id
+          trace_flags = span.context.trace_flags.sampled?? '01' : '00'
+          [trace_id, span_id, trace_flags]
+        end
 
         # if true the trace info should be added to the log message
         def log?

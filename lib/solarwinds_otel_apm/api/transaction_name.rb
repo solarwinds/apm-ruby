@@ -1,23 +1,39 @@
 module SolarWindsOTelAPM
   module API
     module TransactionName
-      # Public: Change the transaction name for the current trace.
+      ##
+      # Provide a custom transaction name
       #
-      # Examples
+      # The SolarWindsOTelAPM gem tries to create meaningful transaction names from controller+action
+      # or something similar depending on the framework used. However, you may want to override the
+      # transaction name to better describe your instrumented operation.
       #
-      #   SolarWindsOTelAPM::API.set_transaction_name('new_name')
-      #   # => true
+      # === Argument:
       #
+      # * +custom_name+ - A non-empty string with the custom transaction name
       #
-      # Parameters:
-      #   custom_name - The name you want to change the current transaction name (String)
+      # === Example:
       #
-      # Returns:
-      #   True or False (Boolean)
+      #   class DogfoodsController < ApplicationController
+      #
+      #     def create
+      #       @dogfood = Dogfood.new(params.permit(:brand, :name))
+      #       @dogfood.save
+      #
+      #       SolarWindsOTelAPM::API.set_transaction_name("dogfoodscontroller.create_for_#{params[:brand]}")
+      #
+      #       redirect_to @dogfood
+      #     end
+      #
+      #   end
+      #
+      # === Returns:
+      # * True or False (Boolean)
       #
       def set_transaction_name(custom_name=nil)
         
-        return false if custom_name.nil? || custom_name.empty?
+        return false if custom_name.nil? || custom_name.empty? 
+        return true if SolarWindsOTelAPM::Context.toString == '00-00000000000000000000000000000000-0000000000000000-00'
 
         solarwinds_processor = SolarWindsOTelAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
         if solarwinds_processor.nil?
