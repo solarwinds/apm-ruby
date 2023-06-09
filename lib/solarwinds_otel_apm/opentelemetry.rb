@@ -1,13 +1,8 @@
 require 'opentelemetry/sdk'
-require 'opentelemetry/exporter/otlp'
 require 'opentelemetry/instrumentation/all'
 
-require_relative './opentelemetry/oboe_tracing_mode'
-require_relative './opentelemetry/solarwinds_txn_name_manager'
-require_relative './opentelemetry/transformer'
 require_relative './opentelemetry/solarwinds_propagator'
 require_relative './opentelemetry/solarwinds_processor'
-require_relative './opentelemetry/x_trace_options'
 require_relative './opentelemetry/solarwinds_sampler'
 require_relative './opentelemetry/solarwinds_exporter'
 require_relative './opentelemetry/solarwinds_response_propagator'

@@ -1,0 +1,5 @@
+--no-private
+--readme yardoc_frontpage.md
+lib/solarwinds_otel_apm/api/tracing.rb
+lib/solarwinds_otel_apm/api/current_trace_info.rb
+lib/solarwinds_otel_apm/api/transaction_name.rb
