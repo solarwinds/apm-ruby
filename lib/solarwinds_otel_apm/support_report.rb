@@ -80,12 +80,6 @@ module SolarWindsOTelAPM
     SolarWindsOTelAPM.logger.warn "RAILS_ENV: #{ENV['RAILS_ENV']}" if using_rails
 
     SolarWindsOTelAPM.logger.warn '********************************************************'
-    SolarWindsOTelAPM.logger.warn '* Raw __Init KVs'
-    SolarWindsOTelAPM.logger.warn '********************************************************'
-    platform_info = SolarWindsOTelAPM::API.build_swo_init_report
-    platform_info.each {|k,v| SolarWindsOTelAPM.logger.warn "#{k}: #{v}"}
-
-    SolarWindsOTelAPM.logger.warn '********************************************************'
     SolarWindsOTelAPM.logger.warn '* END SolarWindsOTelAPM Support Report'
     SolarWindsOTelAPM.logger.warn '*   Support Email: technicalsupport@solarwinds.com'
     SolarWindsOTelAPM.logger.warn '*   Github: https://github.com/librato/ruby-solarwinds'
