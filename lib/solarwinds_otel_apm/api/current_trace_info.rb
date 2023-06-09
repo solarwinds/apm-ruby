@@ -12,10 +12,11 @@ module SolarWindsOTelAPM
       # === Example:
       #
       #   trace = SolarWindsOTelAPM::API.current_trace_info
-      #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01' or '' depends on Config
+      #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 service.name=otel_service_name' or '' depends on Config
       #   trace.hash_for_log   # { trace_id: '7435a9fe510ae4533414d425dadf4e18',
       #                            span_id: '49e60702469db05f',
-      #                            trace_flags: ''}  or {} depends on Config
+      #                            trace_flags: '',
+      #                            service.name: 'otel_service_name' }  or {} depends on Config
       #
       #   The <tt>SolarWindsOTelAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
       #   return value of methods in this module.
@@ -25,7 +26,7 @@ module SolarWindsOTelAPM
       #   :sampled  only include the Trace ID of sampled requests
       #   :traced   include the Trace ID for all traced requests
       #   :always   always add a Trace ID, it will be
-      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00"
+      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 service.name=otel_service_name"
       #             when there is no tracing context.
       #
       # Configure trace info injection with lograge:
@@ -69,7 +70,7 @@ module SolarWindsOTelAPM
         # === Example:
         #
         #   trace = SolarWindsOTelAPM::API.current_trace_info
-        #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01' or '' depends on Config
+        #   trace.for_log  # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 service.name=otel_service_name' or '' depends on Config
         #
         # === Returns:
         # * String
@@ -87,7 +88,8 @@ module SolarWindsOTelAPM
         #   trace = SolarWindsOTelAPM::API.current_trace_info
         #   trace.hash_for_log   # { trace_id: '7435a9fe510ae4533414d425dadf4e18',
         #                            span_id: '49e60702469db05f',
-        #                            trace_flags: ''}  or {} depends on Config
+        #                            trace_flags: 01,
+        #                            service.name: 'otel_service_name' }  or {} depends on Config
         #   
         #   For lograge:
         #   Lograge.custom_options = lambda do |event|
