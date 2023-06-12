@@ -25,9 +25,9 @@ module SolarWindsOTelAPM
       end
 
       def self.insert_into_active_job
-        return unless defined? ActiveJob::Base
+        return unless defined? ::ActiveJob::Base
         
-        ActiveJob::Base.class_eval do
+        ::ActiveJob::Base.class_eval do
           around_perform do |job, block|
             begin
               SWOMarginalia::Comment.update_job! job
@@ -40,40 +40,22 @@ module SolarWindsOTelAPM
       end      
 
       def self.insert_into_action_controller
-        return unless defined? ActionController::Base
+        return unless defined? ::ActionController::Base
 
-        ActionController::Base.include SWOMarginalia::ActionControllerInstrumentation
+        ::ActionController::Base.include SWOMarginalia::ActionControllerInstrumentation
         
-        return unless defined? ActionController::API
+        return unless defined? ::ActionController::API
 
-        ActionController::API.include SWOMarginalia::ActionControllerInstrumentation
+        ::ActionController::API.include SWOMarginalia::ActionControllerInstrumentation
       end
 
       def self.insert_into_active_record
-        if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
-          ActiveRecord::ConnectionAdapters::Mysql2Adapter.module_eval do
-            include SWOMarginalia::ActiveRecordInstrumentation
-          end
-        end
-
-        if defined? ActiveRecord::ConnectionAdapters::MysqlAdapter
-          ActiveRecord::ConnectionAdapters::MysqlAdapter.module_eval do
-            include SWOMarginalia::ActiveRecordInstrumentation
-          end
-        end
-
-        if defined? ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
-          ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.module_eval do
-            include SWOMarginalia::ActiveRecordInstrumentation
-          end
-        end
-
+        ActiveRecord::ConnectionAdapters::Mysql2Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
+        ActiveRecord::ConnectionAdapters::MysqlAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::MysqlAdapter
+        ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         return unless defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
 
-        ActiveRecord::ConnectionAdapters::SQLite3Adapter.module_eval do
-          include SWOMarginalia::ActiveRecordInstrumentation
-        end
-        
+        ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
       end
     end
   end
