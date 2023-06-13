@@ -17,8 +17,6 @@ puts "Current rails version: #{Rails.version}"
 # Shim for compatibility with older versions of MiniTest
 MiniTest::Test = MiniTest::Unit::TestCase unless defined?(MiniTest::Test)
 
-RAILS_ROOT = __dir__
-
 ActiveRecord::Base.establish_connection({
   adapter: 'sqlite3',
   database: 'database.db'
@@ -50,8 +48,23 @@ class PostsSidekiqJob
   end
 end
 
+# has to override the traceparent for testing purpose
+module SolarWindsOTelAPM
+  module SWOMarginalia
+    module Comment
+      def self.traceparent
+        format(
+          '00-%<trace_id>s-%<span_id>s-%<trace_flags>.2d',
+          trace_id: '85e9b1a685e9b1a685e9b1a685e9b1a6',
+          span_id: '85e9b1a685e9b1a6',
+          trace_flags: '01')
+      end
+    end
+  end
+end
+
 # Has to insert after ActiveRecord defined
-SolarWindsOTelAPM::SWOMarginalia::Railtie.insert
+SolarWindsOTelAPM::SWOMarginalia::LoadSWOMarginalia.insert
 
 describe 'SWOMarginaliaTestForRails6' do
   before do
@@ -67,30 +80,31 @@ describe 'SWOMarginaliaTestForRails6' do
   after do 
     SolarWindsOTelAPM::SWOMarginalia.application_name = nil
     SolarWindsOTelAPM::SWOMarginalia::Comment.lines_to_ignore = nil
-    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:application, :controller, :action, :traceparent]
+    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:traceparent]
     ActiveSupport::Notifications.unsubscribe "sql.active_record"
   end
 
-  it 'test_query_commenting_on_sqlite3_driver_with_no_action' do
+  it 'test_query_commenting_on_sqlite3_driver_with_application_function' do
+    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:application, :traceparent]
     Post.where(first_name: 'fake_name')
-    _(@queries.first).must_equal "PRAGMA table_info(\"posts\") /*application:rails,traceparent:00-00000000000000000000000000000000-0000000000000000-00*/"
+    _(@queries.first).must_equal "PRAGMA table_info(\"posts\") /*application='rails',traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
   end
 
   # Only ActiveRecord::Base.connection.raw_connection.prepare can do the prepare statement (the native connection)
   it 'test_query_commenting_on_sqlite3_driver_with_random_chars' do
     ActiveRecord::Base.connection.execute "select id from posts /* random_char */"
-    _(@queries.first).must_equal 'select id from posts /* random_char */ /*application:rails,traceparent:00-00000000000000000000000000000000-0000000000000000-00*/'
+    _(@queries.first).must_equal "select id from posts /* random_char */ /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
   end
 
   it 'test_query_commenting_on_sqlite3_driver_with_action' do
     PostsController.action(:driver_only).call(@env)
-    _(@queries.first).must_equal "select id from posts /*application:rails,controller:posts,action:driver_only,traceparent:00-00000000000000000000000000000000-0000000000000000-00*/"
+    _(@queries.first).must_equal "select id from posts /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
   end
 
-  it 'test_query_commenting_on_sqlite3_driver_with_span' do
-    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:traceparent]
+  it 'test_query_commenting_on_sqlite3_driver_with_nothing' do
+    SolarWindsOTelAPM::SWOMarginalia::Comment.components = []
     ActiveRecord::Base.connection.execute "select id from posts"
-    _(@queries.last).must_equal "select id from posts /*traceparent:00-00000000000000000000000000000000-0000000000000000-00*/"
+    _(@queries.last).must_equal "select id from posts"
   end
 
   it 'test_proc_function_traceparent_for_rails_7' do

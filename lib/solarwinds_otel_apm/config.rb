@@ -170,6 +170,13 @@ module SolarWindsOTelAPM
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
 
+      when :sql_tracecontext
+        if ENV.has_key?('SW_APM_SQL_TRACECONTEXT')
+          @@config[key.to_sym] = (ENV['SW_APM_SQL_TRACECONTEXT'] == 'true')  
+        else
+          @@config[key.to_sym] = value
+        end
+
       else
         @@config[key.to_sym] = value
 

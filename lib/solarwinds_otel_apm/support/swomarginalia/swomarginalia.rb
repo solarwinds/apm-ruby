@@ -28,8 +28,6 @@ module SolarWindsOTelAPM
       end
 
       def annotate_sql(sql)
-        sql = remove_previous_traceparent(sql)
-
         SWOMarginalia::Comment.update_adapter!(self)            # switch to current sql adapter
         comment = SWOMarginalia::Comment.construct_comment      # comment will include traceparent
         if comment.present? && !sql.include?(comment)
@@ -50,12 +48,6 @@ module SolarWindsOTelAPM
         end
 
         sql
-      end
-
-      # Sample string for pattern: "SELECT 1; /* traceparent=1234567890abcdef */"
-      def remove_previous_traceparent(sql)
-        sql_regex = /\/\*\s*traceparent=.*\*\/\s*/.freeze
-        sql.gsub(sql_regex, '')
       end
     end
 

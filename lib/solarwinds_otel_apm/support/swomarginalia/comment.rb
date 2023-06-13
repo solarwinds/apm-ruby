@@ -7,7 +7,7 @@ module SolarWindsOTelAPM
   module SWOMarginalia
     module Comment
       mattr_accessor :components, :lines_to_ignore, :prepend_comment
-      SWOMarginalia::Comment.components ||= [:application, :controller, :action, :traceparent]
+      SWOMarginalia::Comment.components ||= [:traceparent]
       # To add new components: 
       # Create file and load after swotel-ruby, and add following:
       # SolarWindsOTelAPM::SWOMarginalia::Comment.component = [:user_defined]
@@ -28,11 +28,10 @@ module SolarWindsOTelAPM
         ret = String.new
         components.each do |c|
           component_value = send(c)
-          ret << "#{c}:#{component_value}," if component_value.present?
+          ret << "#{c}='#{component_value}'," if component_value.present?
         end
         ret.chop!
         escape_sql_comment(ret)
-        
       end
 
       def self.construct_inline_comment
@@ -161,10 +160,19 @@ module SolarWindsOTelAPM
         connection_config[:database]
       end
 
+      ## 
+      # Insert trace string as traceparent to sql statement
+      # Not insert if:
+      #   there is no valid current trace context
+      #   current trace context is not sampled
+      # 
       def self.traceparent
-        # this can be changed to CurrentTraceInfo.add_traceparent_to_sql (add_traceparent_to_sql include add original sql to kvs)
         span_context = ::OpenTelemetry::Trace.current_span.context
-        trace_flag   = span_context.trace_flags.sampled? ? '01': '00'
+        return '' if span_context == ::OpenTelemetry::Trace::SpanContext::INVALID
+
+        trace_flag = span_context.trace_flags.sampled? ? '01': '00'
+        return '' if trace_flag == '00'
+
         format(
           '00-%<trace_id>s-%<span_id>s-%<trace_flags>.2d',
           trace_id: span_context.hex_trace_id,
