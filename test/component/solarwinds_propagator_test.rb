@@ -8,7 +8,7 @@ describe 'SolarWindsPropagatorTest' do
   
   before do
     
-    @text_map_propagator = SolarWindsOTelAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
+    @text_map_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
     @mock = MiniTest::Mock.new
   end
 
@@ -66,7 +66,7 @@ describe 'SolarWindsPropagatorTest' do
 
     @mock.expect(:call, nil, [OpenTelemetry::Trace::SpanContext])
 
-    SolarWindsOTelAPM::OpenTelemetry::Transformer.stub(:sw_from_context, @mock) do
+    SolarWindsAPM::OpenTelemetry::Transformer.stub(:sw_from_context, @mock) do
       otel_context = create_context(
         trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
         span_id: 'e457b5a2e4d86bd1',

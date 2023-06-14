@@ -35,7 +35,7 @@ jobs:
       - name: Grab current version
         id: version
         run: |
-          echo "gem_version=`ruby -e 'require "./lib/solarwinds_otel_apm/version"; puts SolarWindsOTelAPM::Version::STRING'`" >> $GITHUB_OUTPUT
+          echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Build gem and publish to packagecloud
         id: gemstep

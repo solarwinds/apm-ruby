@@ -99,7 +99,7 @@ bundle install
 bundle exec rake build_gem
 
 # install the built gem
-gem install builds/solarwinds_otel_apm-<version>.gem
+gem install builds/solarwinds_apm-<version>.gem
 ```
 
 ## Linting

@@ -8,7 +8,7 @@ describe 'SolarWindsSamplerTest' do
 
     sampler_config = {}
     sampler_config["trigger_trace"] =  "enabled"
-    @sampler = SolarWindsOTelAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
+    @sampler = SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
     @decision = {}
     @attributes_dict = {}
     @attributes_dict["a"] = "b"
@@ -20,7 +20,7 @@ describe 'SolarWindsSamplerTest' do
     context_value["sw_signature"] = "sample_signature"
     context_value["sw_xtraceoptions"] = "sample_xtraceoptions"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
 
   end
 
@@ -70,7 +70,7 @@ describe 'SolarWindsSamplerTest' do
 
   it 'test_create_xtraceoptions_response_value with empty otel_context xtraceoptions' do
     otel_context = ::OpenTelemetry::Context.new({})
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested"
   end
@@ -82,7 +82,7 @@ describe 'SolarWindsSamplerTest' do
     context_value = {}
     context_value["sw_xtraceoptions"] = "trigger-trace"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
 
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####status"
@@ -96,7 +96,7 @@ describe 'SolarWindsSamplerTest' do
     context_value = {}
     context_value["sw_xtraceoptions"] = "AAAabcdefg"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
 
     @parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", remote: true)
 
@@ -110,7 +110,7 @@ describe 'SolarWindsSamplerTest' do
     context_value = {}
     context_value["sw_signature"] = "signature_made"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
     
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "auth####auth;trigger-trace####not-requested"
@@ -122,7 +122,7 @@ describe 'SolarWindsSamplerTest' do
     context_value = {}
     context_value["sw_xtraceoptions"] = "1and1=candc"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
     
     response = @sampler.send(:create_xtraceoptions_response_value, @decision, @parent_context, @xtraceoptions)
     _(response).must_equal "trigger-trace####not-requested;ignored####1and1"
@@ -135,7 +135,7 @@ describe 'SolarWindsSamplerTest' do
     context_value = {}
     context_value["sw_xtraceoptions"] = "sw-keys=hereiskeyyyy;trigger-trace;custom-key=12345"
     otel_context = ::OpenTelemetry::Context.new(context_value)
-    @xtraceoptions  = SolarWindsOTelAPM::XTraceOptions.new(otel_context)
+    @xtraceoptions  = SolarWindsAPM::XTraceOptions.new(otel_context)
     
     @parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", remote: true)
 

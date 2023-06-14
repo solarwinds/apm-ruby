@@ -2075,7 +2075,7 @@ Lint/OutOfRangeRegexpRef:
   Safe: false
   VersionAdded: '0.89'
   Exclude:
-    - 'lib/solarwinds_otel_apm/support_report.rb'
+    - 'lib/solarwinds_apm/support_report.rb'
 
 Lint/ParenthesesAsGroupedExpression:
   Description: >-
@@ -2825,7 +2825,7 @@ Naming/MethodName:
     - snake_case
     - camelCase
   Exclude:
-    - 'lib/solarwinds_otel_apm/noop/*.rb'
+    - 'lib/solarwinds_apm/noop/*.rb'
   # Method names matching patterns are always allowed.
   #
   #   AllowedPatterns:
@@ -4705,7 +4705,7 @@ Style/PercentLiteralDelimiters:
     '%W': '[]'
   VersionChanged: '0.48'
   Exclude:
-    - 'lib/solarwinds_otel_apm/oboe_init_options.rb'
+    - 'lib/solarwinds_apm/oboe_init_options.rb'
 
 Style/PercentQLiterals:
   Description: 'Checks if uses of %Q/%q match the configured preference.'

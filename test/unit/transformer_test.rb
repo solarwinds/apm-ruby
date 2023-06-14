@@ -10,7 +10,7 @@ describe 'TransformerTest' do
                                                             span_id: "\x8D\xB5\xDC?$l\x84W")
 
     @tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
-    @transformer = SolarWindsOTelAPM::OpenTelemetry::Transformer
+    @transformer = SolarWindsAPM::OpenTelemetry::Transformer
                                                 
   end
 
