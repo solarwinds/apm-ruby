@@ -24,7 +24,7 @@ module SolarWindsAPM
 
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* BEGIN SolarWindsAPM Support Report'
-    SolarWindsAPM.logger.warn '*   Please email the output of this report to technicalsupport@solarwinds.com'
+    SolarWindsAPM.logger.warn '*   Please email the output of this report to SWO-support@solarwinds.com'
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn "Ruby: #{RUBY_DESCRIPTION}"
     SolarWindsAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}"   # replace $0 to get executing script
@@ -82,7 +82,7 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* END SolarWindsAPM Support Report'
     SolarWindsAPM.logger.warn '*   Support Email: technicalsupport@solarwinds.com'
-    SolarWindsAPM.logger.warn '*   Github: https://github.com/librato/ruby-solarwinds'
+    SolarWindsAPM.logger.warn '*   Github: https://github.com/solarwindscloud/swotel-ruby'
     SolarWindsAPM.logger.warn '********************************************************'
 
     SolarWindsAPM.logger.level = @logger_level

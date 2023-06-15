@@ -47,8 +47,8 @@ begin
     require 'solarwinds_apm/opentelemetry'
     require 'solarwinds_apm/otel_config'
     if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
-      SolarWindsAPM.logger.warn "SolarWindsAPM warning: Ruby agent is not initilaized.
-                                  You may need to initialize ruby agent in application like the followings. 
+      SolarWindsAPM.logger.warn "SolarWindsAPM warning: Ruby library is not initilaized.
+                                  You may need to initialize Ruby library in application like the following: 
                                   SolarWindsAPM::OTelConfig.initialize_with_config do |config|
                                     ...
                                   end"
