@@ -1,3 +1,5 @@
+require_relative './swomarginalia'
+
 module SolarWindsOTelAPM
   module SWOMarginalia
     module LoadSWOMarginalia

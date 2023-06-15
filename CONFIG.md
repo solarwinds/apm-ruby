@@ -14,7 +14,7 @@ Name | Description | Default
 `SW_APM_TRUSTEDPATH` | The library uses the trusted CA certificates installed in the system to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format.
 `SW_APM_DEBUG_LEVEL` | level at which log messages will be written to log file (0-6) | 3
 `SW_APM_AUTO_CONFIGURE` | By default the custom distro is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to false to custom initialize the distro with configuration options for instrumentation, see (link to in-code configuration section) for details. | `true`
-`SW_APM_SQL_TRACECONTEXT` | Determine whether injecting trace context information in sql statement that will be sent to sql server | `true`
+`SW_APM_SQL_TRACECONTEXT` | Enables injecting trace context into supported SQL statements | `false`
 
 
 ## In-code Configuration

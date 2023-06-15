@@ -28,7 +28,6 @@ module SolarWindsOTelAPM
       end
 
       def annotate_sql(sql)
-        sql = remove_traceparent(sql)
         SWOMarginalia::Comment.update_adapter!(self)            # switch to current sql adapter
         comment = SWOMarginalia::Comment.construct_comment      # comment will include traceparent
         if comment.present? && !sql.include?(comment)
@@ -56,11 +55,6 @@ module SolarWindsOTelAPM
       def ignore_payload?(name)
         %w(SCHEMA EXPLAIN CACHE).include?(name.to_s)
       end
-
-      def remove_traceparent(sql)
-        sql.gsub(/\/\*traceparent='[^']*'\*\//.freeze, '') 
-      end
-
     end
 
     module ActionControllerInstrumentation

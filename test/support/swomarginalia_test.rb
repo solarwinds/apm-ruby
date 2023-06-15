@@ -12,6 +12,8 @@ require 'action_dispatch/middleware/request_id'
 
 require 'minitest_helper'
 
+require_relative './../../lib/solarwinds_otel_apm/support/swomarginalia/load_swomarginalia'
+
 puts "Current rails version: #{Rails.version}"
 
 # Shim for compatibility with older versions of MiniTest
@@ -99,30 +101,6 @@ describe 'SWOMarginaliaTestForRails6' do
   it 'test_query_commenting_on_sqlite3_driver_with_action' do
     PostsController.action(:driver_only).call(@env)
     _(@queries.first).must_equal "select id from posts /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
-  end
-
-  it 'test_remove_previous_traceparent_from_the_sql' do
-    sql = "SELECT * FROM posts /*traceparent='abcdefg'*/ WHERE id = 1;"
-    ActiveRecord::Base.connection.execute(sql)
-    _(@queries.first).must_equal "SELECT * FROM posts  WHERE id = 1; /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
-  end
-
-  it 'test_remove_previous_traceparent_from_the_sql_without_traceparent' do
-    sql = "SELECT * FROM posts WHERE id = 1;"
-    ActiveRecord::Base.connection.execute(sql)
-        _(@queries.first).must_equal "SELECT * FROM posts WHERE id = 1; /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
-  end
-
-  it 'test_remove_previous_traceparent_from_the_sql_with_multiple_traceparents' do
-    sql = "SELECT * FROM posts /*traceparent='abcdefg'*/ WHERE id = 1; /*traceparent='123456'*/"
-    ActiveRecord::Base.connection.execute(sql)
-    _(@queries.first).must_equal "SELECT * FROM posts  WHERE id = 1;  /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
-  end
-
-  it 'test_remove_previous_traceparent_from_the_sql_with_traceparent_in_different_positions' do
-    sql = "/*traceparent='abcdefg'*/ SELECT * FROM posts WHERE id = 1; /*traceparent='123456'*/"
-    ActiveRecord::Base.connection.execute(sql)
-    _(@queries.first).must_equal " SELECT * FROM posts WHERE id = 1;  /*traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
   end
 
   it 'test_query_commenting_on_sqlite3_driver_with_nothing' do

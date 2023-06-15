@@ -1,6 +1,5 @@
 require 'rails/railtie'
 require_relative './load_swomarginalia'
-require_relative './swomarginalia'
 
 module SolarWindsOTelAPM
   module SWOMarginalia

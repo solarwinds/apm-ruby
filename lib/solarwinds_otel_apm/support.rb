@@ -14,7 +14,7 @@ require_relative './support/txn_name_manager'
 require_relative './support/transformer'
 require_relative './support/x_trace_options'
 
-if SolarWindsOTelAPM::Config[:sql_tracecontext]
+if SolarWindsOTelAPM::Config[:tag_sql]
   if defined?(::Rails)
     if ::Rails.version < '7'
       require_relative './support/swomarginalia/railtie'
