@@ -12,11 +12,11 @@ module SolarWindsOTelAPM
       # === Example:
       #
       #   trace = SolarWindsOTelAPM::API.current_trace_info
-      #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 service.name=otel_service_name' or '' depends on Config
+      #   trace.for_log        # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 resource.service.name=otel_service_name' or '' depends on Config
       #   trace.hash_for_log   # { trace_id: '7435a9fe510ae4533414d425dadf4e18',
       #                            span_id: '49e60702469db05f',
       #                            trace_flags: '',
-      #                            service.name: 'otel_service_name' }  or {} depends on Config
+      #                            resource.service.name: 'otel_service_name' }  or {} depends on Config
       #
       #   The <tt>SolarWindsOTelAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
       #   return value of methods in this module.
@@ -26,7 +26,7 @@ module SolarWindsOTelAPM
       #   :sampled  only include the Trace ID of sampled requests
       #   :traced   include the Trace ID for all traced requests
       #   :always   always add a Trace ID, it will be
-      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 service.name=otel_service_name"
+      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name"
       #             when there is no tracing context.
       #
       # Configure trace info injection with lograge:
@@ -46,8 +46,6 @@ module SolarWindsOTelAPM
         attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
         REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/.freeze
-        SQL_REGEX=/\/\*\s*traceparent=.*\*\/\s*/.freeze
-
         private_constant :REGEXP
 
         def initialize
@@ -70,13 +68,13 @@ module SolarWindsOTelAPM
         # === Example:
         #
         #   trace = SolarWindsOTelAPM::API.current_trace_info
-        #   trace.for_log  # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 service.name=otel_service_name' or '' depends on Config
+        #   trace.for_log  # 'trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=01 resource.service.name=otel_service_name' or '' depends on Config
         #
         # === Returns:
         # * String
         #
         def for_log
-          @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags} service.name=#{@service_name}" : ''
+          @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags} resource.service.name=#{@service_name}" : ''
         end
 
         # Construct the trace_id and span_id for log insertion.
@@ -89,7 +87,7 @@ module SolarWindsOTelAPM
         #   trace.hash_for_log   # { trace_id: '7435a9fe510ae4533414d425dadf4e18',
         #                            span_id: '49e60702469db05f',
         #                            trace_flags: 01,
-        #                            service.name: 'otel_service_name' }  or {} depends on Config
+        #                            resource.service.name: 'otel_service_name' }  or {} depends on Config
         #   
         #   For lograge:
         #   Lograge.custom_options = lambda do |event|

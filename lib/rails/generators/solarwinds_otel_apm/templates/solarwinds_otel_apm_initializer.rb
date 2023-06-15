@@ -96,14 +96,14 @@ if defined?(SolarWindsOTelAPM::Config)
   # the current Trace ID in log messages.
   #
   # The added string will look like:
-  # "trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=00 service.name=otel_service_name"
+  # "trace_id=7435a9fe510ae4533414d425dadf4e18 span_id=49e60702469db05f trace_flags=00 resource.service.name=service_name"
   #
   # The following options are available:
   # :never    (default)
   # :sampled  only include the Trace ID of sampled requests
   # :traced   include the Trace ID for all traced requests
   # :always   always add a Trace ID, it will be
-  #           "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 service.name=otel_service_name"
+  #           "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name"
   #           when there is no tracing context.
   #
   SolarWindsOTelAPM::Config[:log_traceId] = :never
