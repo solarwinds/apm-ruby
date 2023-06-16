@@ -43,6 +43,9 @@ Gem::Specification.new do |s|
   s.add_dependency('opentelemetry-sdk', '~> 1.2.0')
   s.add_dependency('opentelemetry-instrumentation-all', '~> 0.31.0')
 
+  # Other dependencies
+  s.add_dependency('ruby2_keywords', '~> 0.0.5')
+
   # this still gives a warning, would have to be pinned to a minor version
   # but that is not necessary and may restrict other gems
   s.add_runtime_dependency('json', '~> 2.0')

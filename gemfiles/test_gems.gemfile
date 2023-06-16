@@ -26,7 +26,7 @@ group :development, :test do
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
 
   gem 'opentelemetry-sdk'
-  gem 'opentelemetry-exporter-otlp'
+  gem 'opentelemetry-exporter-otlp', '~> 0.24.0'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
   

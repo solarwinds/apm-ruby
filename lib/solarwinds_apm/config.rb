@@ -97,7 +97,7 @@ module SolarWindsAPM
     #
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
-    # 
+    #
     def self.initialize(_data={})
       @@config[:profiling] = :disabled
       @@config[:profiling_interval] = 5
@@ -130,7 +130,7 @@ module SolarWindsAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
-    # 
+    #
     def self.[]=(key, value)
       key = key.to_sym
       @@config[key] = value
@@ -181,6 +181,13 @@ module SolarWindsAPM
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
+
+      when :tag_sql
+        if ENV.has_key?('SW_APM_TAG_SQL')
+          @@config[key.to_sym] = (ENV['SW_APM_TAG_SQL'] == 'true')
+        else
+          @@config[key.to_sym] = value
+        end
 
       else
         @@config[key.to_sym] = value

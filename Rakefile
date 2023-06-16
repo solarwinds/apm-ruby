@@ -18,8 +18,16 @@ Rake::TestTask.new do |t|
   t.ruby_opts = []
   t.libs << 'test'
 
-  t.test_files = FileList['test/unit/*_test.rb'] +
-                 FileList['test/component/*_test.rb']
+  gem_file = ENV['BUNDLE_GEMFILE']&.split('/')&.last
+  
+  case gem_file
+  when 'rails_6x.gemfile'
+    t.test_files = FileList['test/support/swomarginalia_test.rb']
+
+  when 'unit.gemfile'
+    t.test_files = FileList['test/unit/*_test.rb'] +
+                   FileList['test/component/*_test.rb']
+  end
 
 end
 

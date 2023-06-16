@@ -55,6 +55,8 @@ sample_start.rb
 
 # test
 test/.DS_Store
+test/support/*.db
+*.db
 
 # rubocop
 rubocop.sarif

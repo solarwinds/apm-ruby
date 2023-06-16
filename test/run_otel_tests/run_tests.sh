@@ -37,6 +37,7 @@ rubies=("3.1.0" "3.0.6" "2.7.5" "2.6.9")
 
 gemfiles=(
   "gemfiles/unit.gemfile"
+  "gemfiles/rails_6x.gemfile"
 )
 
 dbtypes=("mysql" "postgresql")
