@@ -1,0 +1,8 @@
+source "https://rubygems.org"
+
+eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile'))) # rubocop:disable Security/Eval
+gemspec :path => File.expand_path("#{__dir__}/../")
+
+gem 'rails',  '~> 6.0.0.0'
+gem 'sqlite3', '~> 1.6.3'
+gem 'sidekiq', '~> 7.1.1'

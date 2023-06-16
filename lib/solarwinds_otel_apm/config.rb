@@ -89,7 +89,7 @@ module SolarWindsOTelAPM
     #
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
-    # 
+    #
     def self.initialize(_data={})
       @@config[:profiling] = :disabled
       @@config[:profiling_interval] = 5
@@ -118,7 +118,7 @@ module SolarWindsOTelAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
-    # 
+    #
     def self.[]=(key, value)
       key = key.to_sym
       @@config[key] = value
@@ -147,11 +147,11 @@ module SolarWindsOTelAPM
         SolarWindsOTelAPM.sample_rate(new_value) if SolarWindsOTelAPM.loaded
 
       when :profiling
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available." 
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available."
         @@config[:profiling] = :disabled
 
       when  :profiling_interval
-        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available. :profiling_interval setting is not configured." 
+        SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/config] Profiling feature is currently not available. :profiling_interval setting is not configured."
         value = if value.is_a?(Integer) && value > 0
                   [100, value].min
                 else
@@ -169,6 +169,13 @@ module SolarWindsOTelAPM
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
         @@config[key.to_sym] = value.to_sym
+
+      when :tag_sql
+        if ENV.has_key?('SW_APM_TAG_SQL')
+          @@config[key.to_sym] = (ENV['SW_APM_TAG_SQL'] == 'true')
+        else
+          @@config[key.to_sym] = value
+        end
 
       else
         @@config[key.to_sym] = value

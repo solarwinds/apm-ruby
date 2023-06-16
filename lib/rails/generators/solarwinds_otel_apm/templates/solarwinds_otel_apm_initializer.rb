@@ -103,7 +103,7 @@ if defined?(SolarWindsOTelAPM::Config)
   # :sampled  only include the Trace ID of sampled requests
   # :traced   include the Trace ID for all traced requests
   # :always   always add a Trace ID, it will be
-  #           "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=service_name"
+  #           "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name"
   #           when there is no tracing context.
   #
   SolarWindsOTelAPM::Config[:log_traceId] = :never
@@ -171,4 +171,20 @@ if defined?(SolarWindsOTelAPM::Config)
   # and reporting query arguments from URLs.
   #
   SolarWindsOTelAPM::Config[:log_args] = true
+
+  #
+  # Tracecontext in sql
+  #
+  # Appending trace contenxt (i.e. traceparent) as an sql comment
+  # at the beginning or end of sql. This modified sql will be
+  # sent to sql server for trace correlation.
+  # 
+  # Example:
+  #   SELECT `posts`.* FROM `posts` /*traceparent=00-a448f096d441e167d12ebd32a927c1a5-a29655a47e430119-01*/
+  # 
+  # This option can add a small overhead for prepared statements since the traceparent value is unique per execution. 
+  # This feature uses marginalia, see its caveat and possible workaround 
+  # https://github.com/basecamp/marginalia/blob/master/README.md#prepared-statements
+  #
+  SolarWindsOTelAPM::Config[:tag_sql] = false
 end
