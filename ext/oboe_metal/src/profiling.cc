@@ -421,8 +421,8 @@ extern "C" void Init_profiling(void) {
     Frames::reserve_cached_frames();
 
     // create Ruby Module: SolarWindsOtelAPM::CProfiler
-    static VALUE rb_mSolarWindsOTelAPM = rb_define_module("SolarWindsOTelAPM");
-    static VALUE rb_mCProfiler = rb_define_module_under(rb_mSolarWindsOTelAPM, "CProfiler");
+    static VALUE rb_mSolarWindsAPM = rb_define_module("SolarWindsAPM");
+    static VALUE rb_mCProfiler = rb_define_module_under(rb_mSolarWindsAPM, "CProfiler");
 
     rb_define_singleton_method(rb_mCProfiler, "interval", reinterpret_cast<VALUE (*)(...)>(Profiling::interval), 0);
     rb_define_singleton_method(rb_mCProfiler, "interval_setup", reinterpret_cast<VALUE (*)(...)>(Profiling::interval_setup), 1);

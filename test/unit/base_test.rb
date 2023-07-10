@@ -4,10 +4,10 @@
 require 'minitest_helper'
 require 'mocha/minitest'
 
-describe 'SolarWindsOTelAPMBase' do
+describe 'SolarWindsAPMBase' do
   
   describe 'thread local variables' do
-    it "SolarWindsOTelAPM.trace_context instances are thread local" do
+    it "SolarWindsAPM.trace_context instances are thread local" do
       contexts = []
       ths = []
       2.times do |i|

@@ -12,7 +12,7 @@ require 'action_dispatch/middleware/request_id'
 
 require 'minitest_helper'
 
-require_relative './../../lib/solarwinds_otel_apm/support/swomarginalia/load_swomarginalia'
+require_relative './../../lib/solarwinds_apm/support/swomarginalia/load_swomarginalia'
 
 puts "Current rails version: #{Rails.version}"
 
@@ -51,7 +51,7 @@ class PostsSidekiqJob
 end
 
 # has to override the traceparent for testing purpose
-module SolarWindsOTelAPM
+module SolarWindsAPM
   module SWOMarginalia
     module Comment
       def self.traceparent
@@ -66,11 +66,11 @@ module SolarWindsOTelAPM
 end
 
 # Has to insert after ActiveRecord defined
-SolarWindsOTelAPM::SWOMarginalia::LoadSWOMarginalia.insert
+SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
 
 describe 'SWOMarginaliaTestForRails6' do
   before do
-    SolarWindsOTelAPM::SWOMarginalia.application_name = 'rails'
+    SolarWindsAPM::SWOMarginalia.application_name = 'rails'
     @queries = []
     ActiveSupport::Notifications.subscribe "sql.active_record" do |*args|
       @queries << args.last[:sql]
@@ -80,14 +80,14 @@ describe 'SWOMarginaliaTestForRails6' do
   end
 
   after do 
-    SolarWindsOTelAPM::SWOMarginalia.application_name = nil
-    SolarWindsOTelAPM::SWOMarginalia::Comment.lines_to_ignore = nil
-    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:traceparent]
+    SolarWindsAPM::SWOMarginalia.application_name = nil
+    SolarWindsAPM::SWOMarginalia::Comment.lines_to_ignore = nil
+    SolarWindsAPM::SWOMarginalia::Comment.components = [:traceparent]
     ActiveSupport::Notifications.unsubscribe "sql.active_record"
   end
 
   it 'test_query_commenting_on_sqlite3_driver_with_application_function' do
-    SolarWindsOTelAPM::SWOMarginalia::Comment.components = [:application, :traceparent]
+    SolarWindsAPM::SWOMarginalia::Comment.components = [:application, :traceparent]
     Post.where(first_name: 'fake_name')
     _(@queries.first).must_equal "PRAGMA table_info(\"posts\") /*application='rails',traceparent='00-85e9b1a685e9b1a685e9b1a685e9b1a6-85e9b1a685e9b1a6-01'*/"
   end
@@ -104,13 +104,13 @@ describe 'SWOMarginaliaTestForRails6' do
   end
 
   it 'test_query_commenting_on_sqlite3_driver_with_nothing' do
-    SolarWindsOTelAPM::SWOMarginalia::Comment.components = []
+    SolarWindsAPM::SWOMarginalia::Comment.components = []
     ActiveRecord::Base.connection.execute "select id from posts"
     _(@queries.last).must_equal "select id from posts"
   end
 
   it 'test_proc_function_traceparent_for_rails_7' do
-    traceparent = SolarWindsOTelAPM::SWOMarginalia::Comment.traceparent
+    traceparent = SolarWindsAPM::SWOMarginalia::Comment.traceparent
     traceparent = traceparent.split('-')
     _(traceparent[0]).must_equal '00'
     _(traceparent[1].size).must_equal 32

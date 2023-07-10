@@ -3,8 +3,8 @@
 
 # Disable docs and Camelcase warns since we're implementing
 # an interface here.  See OboeBase for details.
-module SolarWindsOTelAPM
-  extend SolarWindsOTelAPMBase
+module SolarWindsAPM
+  extend SolarWindsAPMBase
   include Oboe_metal
 
   # Reporter that send span data to SWO
@@ -13,16 +13,16 @@ module SolarWindsOTelAPM
       ##
       # start
       #
-      # Start the SolarWindsOTelAPM Reporter
+      # Start the SolarWindsAPM Reporter
       #
       def start
-        SolarWindsOTelAPM.loaded = false unless SolarWindsOTelAPM::OboeInitOptions.instance.service_key_ok?
-        return unless SolarWindsOTelAPM.loaded
+        SolarWindsAPM.loaded = false unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
+        return unless SolarWindsAPM.loaded
 
         begin
-          options = SolarWindsOTelAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
+          options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
 
-          SolarWindsOTelAPM.reporter = Oboe_metal::Reporter.new(*options)
+          SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
 
           report_init
         rescue StandardError=> e
@@ -38,7 +38,7 @@ module SolarWindsOTelAPM
       # Send the report for the given event
       #
       def send_report(evt, with_system_timestamp: true)
-        SolarWindsOTelAPM.reporter.sendReport(evt, with_system_timestamp)
+        SolarWindsAPM.reporter.sendReport(evt, with_system_timestamp)
       end
 
       ##
@@ -47,7 +47,7 @@ module SolarWindsOTelAPM
       # Send the report for the given event
       #
       def send_status(evt, context=nil, with_system_timestamp: true)
-        SolarWindsOTelAPM.reporter.sendStatus(evt, context, with_system_timestamp)
+        SolarWindsAPM.reporter.sendStatus(evt, context, with_system_timestamp)
       end
 
       ##
@@ -56,7 +56,7 @@ module SolarWindsOTelAPM
       # Truncates the trace output file to zero
       #
       def clear_all_traces
-        File.truncate(SolarWindsOTelAPM::OboeInitOptions.instance.host, 0)
+        File.truncate(SolarWindsAPM::OboeInitOptions.instance.host, 0)
       end
 
       ##
@@ -65,7 +65,7 @@ module SolarWindsOTelAPM
       # Retrieves all traces written to the trace file
       #
       def obtain_all_traces
-        io = File.open(SolarWindsOTelAPM::OboeInitOptions.instance.host, 'r')
+        io = File.open(SolarWindsAPM::OboeInitOptions.instance.host, 'r')
         contents = io.readlines(nil)
         io.close
 
@@ -103,9 +103,9 @@ module SolarWindsOTelAPM
       # layer.
       #
       def report_init(layer=:rack) # :nodoc:
-        # Don't send __Init in test or if SolarWindsOTelAPM
+        # Don't send __Init in test or if SolarWindsAPM
         # isn't fully loaded (e.g. missing c-extension)
-        return if ENV.has_key?('SW_APM_GEM_TEST') || !SolarWindsOTelAPM.loaded
+        return if ENV.has_key?('SW_APM_GEM_TEST') || !SolarWindsAPM.loaded
 
         platform_info = build_swo_init_report
         log_init(layer, platform_info)
@@ -120,8 +120,8 @@ module SolarWindsOTelAPM
       # * +layer+ - The layer the reported event belongs to
       # * +kvs+ - A hash containing key/value pairs that will be reported along with this event
       def log_init(layer=:rack, kvs={})
-        context = SolarWindsOTelAPM::Metadata.makeRandom
-        return SolarWindsOTelAPM::Context.toString unless context.isValid
+        context = SolarWindsAPM::Metadata.makeRandom
+        return SolarWindsAPM::Context.toString unless context.isValid
 
         event = context.createEvent
         event.addInfo('Layer', layer.to_s)
@@ -130,8 +130,8 @@ module SolarWindsOTelAPM
           event.addInfo(k, v.to_s)
         end
 
-        SolarWindsOTelAPM::Reporter.send_status(event, context, with_system_timestamp: true)
-        SolarWindsOTelAPM::Context.toString
+        SolarWindsAPM::Reporter.send_status(event, context, with_system_timestamp: true)
+        SolarWindsAPM::Context.toString
       end
 
       ##
@@ -139,21 +139,21 @@ module SolarWindsOTelAPM
       #
       # Internal: Build a hash of KVs that reports on the status of the
       # running environment for swo only. This is used on stack boot in __Init reporting
-      # and for SolarWindsOTelAPM.support_report.
+      # and for SolarWindsAPM.support_report.
       #
       def build_swo_init_report
 
         platform_info = {'__Init' => true}
 
         begin
-          platform_info['APM.Version']             = SolarWindsOTelAPM::Version::STRING
+          platform_info['APM.Version']             = SolarWindsAPM::Version::STRING
           platform_info['APM.Extension.Version']   = extension_lib_version
           
           # OTel Resource Attributes (Optional)
           platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
           platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
           platform_info['process.command_line']    = $PROGRAM_NAME
-          platform_info['process.telemetry.path']  = Gem::Specification.find_by_name('solarwinds_otel_apm')&.full_gem_path
+          platform_info['process.telemetry.path']  = Gem::Specification.find_by_name('solarwinds_apm')&.full_gem_path
           platform_info['os.type']                 = RUBY_PLATFORM
 
           platform_info.merge!(report_gem_in_use)
@@ -164,7 +164,7 @@ module SolarWindsOTelAPM
             ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
             ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
           rescue StandardError => e
-            SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Fail to extract telemetry attributes. Error: #{e.message}"
+            SolarWindsAPM.logger.warn "[solarwinds_apm/warn] Fail to extract telemetry attributes. Error: #{e.message}"
           end
         rescue StandardError, ScriptError => e
           # Also rescue ScriptError (aka SyntaxError) in case one of the expected
@@ -172,8 +172,8 @@ module SolarWindsOTelAPM
 
           platform_info['Error'] = "Error in build_report: #{e.message}"
 
-          SolarWindsOTelAPM.logger.warn "[solarwinds_otel_apm/warn] Error in build_init_report: #{e.message}"
-          SolarWindsOTelAPM.logger.debug e.backtrace
+          SolarWindsAPM.logger.warn "[solarwinds_apm/warn] Error in build_init_report: #{e.message}"
+          SolarWindsAPM.logger.debug e.backtrace
         end
         platform_info
       end
@@ -196,7 +196,7 @@ module SolarWindsOTelAPM
       # oboe not loaded yet, can't use oboe_api function to read oboe VERSION
       ##
       def extension_lib_version
-        gem_location = Gem::Specification.find_by_name('solarwinds_otel_apm')
+        gem_location = Gem::Specification.find_by_name('solarwinds_apm')
         clib_version_file = File.join(gem_location&.gem_dir, 'ext', 'oboe_metal', 'src', 'VERSION')
         File.read(clib_version_file).strip
       end
@@ -205,13 +205,13 @@ module SolarWindsOTelAPM
 
   class << self
     def sample_rate(rate)
-      return unless SolarWindsOTelAPM.loaded
+      return unless SolarWindsAPM.loaded
 
       # Update liboboe with the new SampleRate value
-      SolarWindsOTelAPM::Context.setDefaultSampleRate(rate.to_i)
+      SolarWindsAPM::Context.setDefaultSampleRate(rate.to_i)
     end
   end
 end
 
-SolarWindsOTelAPM.loaded = true
+SolarWindsAPM.loaded = true
 # rubocop:enable Style/Documentation

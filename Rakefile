@@ -210,7 +210,7 @@ desc 'Build and publish to Rubygems'
 # !!! publishing requires gem >=3.0.5 !!!
 # Don't run with Ruby versions < 2.7 they have gem < 3.0.5
 task :build_and_publish_gem do
-  gemspec_file = 'solarwinds_otel_apm.gemspec'
+  gemspec_file = 'solarwinds_apm.gemspec'
   gemspec = Gem::Specification.load(gemspec_file)
   gem_file = "#{gemspec.full_name}.gem"
 
@@ -306,7 +306,7 @@ task :environment do
   ENV['SW_APM_GEM_VERBOSE'] = 'true'
 
   Bundler.require(:default, :development)
-  SolarWindsOTelAPM::Config[:tracing_mode] = :enabled
+  SolarWindsAPM::Config[:tracing_mode] = :enabled
 end
 
 # Used when testing Resque locally
@@ -327,16 +327,16 @@ task :build_gem do
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
   Rake::Task["fetch_oboe_file"].invoke("stg")
-  system('gem build solarwinds_otel_apm.gemspec')
+  system('gem build solarwinds_apm.gemspec')
   
-  gemname = Dir['solarwinds_otel_apm*.gem'].first
+  gemname = Dir['solarwinds_apm*.gem'].first
   FileUtils.mv(gemname, 'builds/')
 
   puts "\n=== last 5 built gems ===\n"
-  puts Dir['builds/solarwinds_otel_apm*.gem']
+  puts Dir['builds/solarwinds_apm*.gem']
 
   puts "\n=== SHA256 ===\n"
-  result = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
+  result = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
   system("shasum -a256 #{result.strip}")
 
   puts "\n=== Finished ===\n"
@@ -350,11 +350,11 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].nil? || ENV['PACKAGECLOUD_TOKEN'].empty? 
   abort('No version specified.') if args[:version].nil? || args[:version].empty?
 
-  gems = Dir["builds/solarwinds_otel_apm-#{args[:version]}.gem"]
+  gems = Dir["builds/solarwinds_apm-#{args[:version]}.gem"]
   gem_to_push = nil
   if gems.empty?
     Rake::Task['build_gem'].execute
-    gem_to_push = `ls -dt1 builds/solarwinds_otel_apm-[^pre]*.gem | head -1`
+    gem_to_push = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
   else
     gem_to_push = gems.first
   end

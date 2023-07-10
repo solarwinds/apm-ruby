@@ -5,7 +5,7 @@ require 'minitest_helper'
 
 describe 'OboeTracingModeTest.rb' do
   before do
-    @oboe_tracing_mode = SolarWindsOTelAPM::OpenTelemetry::OboeTracingMode
+    @oboe_tracing_mode = SolarWindsAPM::OpenTelemetry::OboeTracingMode
   end
 
   it 'test get_oboe_trace_mode' do

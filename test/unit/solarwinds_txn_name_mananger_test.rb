@@ -6,7 +6,7 @@ require 'minitest_helper'
 describe 'SolarWindsTXNNameManangerTest.rb' do
   before do
 
-    @txn_manager = SolarWindsOTelAPM::OpenTelemetry::TxnNameManager.new
+    @txn_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
     @txn_manager.set("c","d")
   end
 

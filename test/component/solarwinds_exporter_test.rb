@@ -17,9 +17,9 @@ describe 'SolarWindsExporterTest' do
 
     create_span_data
 
-    txn_name_manager = SolarWindsOTelAPM::OpenTelemetry::TxnNameManager.new
-    @exporter = SolarWindsOTelAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
-    SolarWindsOTelAPM::Config[:log_args] = true                                     
+    txn_name_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
+    @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
+    SolarWindsAPM::Config[:log_args] = true                                     
   end
 
   
@@ -109,7 +109,7 @@ describe 'SolarWindsExporterTest' do
     clear_all_traces
 
     md = @exporter.send(:build_meta_data, @span_data)
-    event = SolarWindsOTelAPM::Context.createEntry(md, (@span_data.start_timestamp.to_i / 1000).to_i)
+    event = SolarWindsAPM::Context.createEntry(md, (@span_data.start_timestamp.to_i / 1000).to_i)
     result = @exporter.send(:add_info_transaction_name, @span_data, event)
     _(result).must_equal nil
 
@@ -136,7 +136,7 @@ describe 'SolarWindsExporterTest' do
 
   it 'test_log_args_with_url_parameter' do     
     clear_all_traces
-    SolarWindsOTelAPM::Config[:log_args] = false
+    SolarWindsAPM::Config[:log_args] = false
     @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1?query1=value1'}
     
     create_span_data
@@ -178,7 +178,7 @@ describe 'SolarWindsExporterTest' do
 
   it 'test_log_args_with_url_parameter_with_no_parameter' do     
     clear_all_traces
-    SolarWindsOTelAPM::Config[:log_args] = false
+    SolarWindsAPM::Config[:log_args] = false
     @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1'}
     
     create_span_data  

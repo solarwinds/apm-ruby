@@ -99,7 +99,7 @@ ENV['RACK_ENV'] = 'test'
 MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
 
 Bundler.require(:default, :test)
-SolarWindsOTelAPM.logger.level = 1
+SolarWindsAPM.logger.level = 1
 
 ##
 # clear_all_traces
@@ -107,10 +107,10 @@ SolarWindsOTelAPM.logger.level = 1
 # Truncates the trace output file to zero
 #
 def clear_all_traces
-  return unless SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+  return unless SolarWindsAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
     
-  while SolarWindsOTelAPM::Reporter.obtain_all_traces.size != 0
-    SolarWindsOTelAPM::Reporter.clear_all_traces
+  while SolarWindsAPM::Reporter.obtain_all_traces.size != 0
+    SolarWindsAPM::Reporter.clear_all_traces
     sleep 0.2
   end
 end
@@ -121,10 +121,10 @@ end
 # Retrieves all traces written to the trace file
 #
 def obtain_all_traces
-  return [] unless SolarWindsOTelAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
+  return [] unless SolarWindsAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
 
   sleep 0.5
-  SolarWindsOTelAPM::Reporter.obtain_all_traces
+  SolarWindsAPM::Reporter.obtain_all_traces
 end
 
 ##
@@ -187,16 +187,16 @@ end
 #
 def edge?(edge, traces)
   traces.each do |t|
-    return true if SolarWindsOTelAPM::TraceString.span_id(t['sw.trace_context']) == edge
+    return true if SolarWindsAPM::TraceString.span_id(t['sw.trace_context']) == edge
   end
-  SolarWindsOTelAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
+  SolarWindsAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
   false
 end
 
 def assert_entry_exit(traces, num=nil, check_trace_id: true)
   if check_trace_id
-    trace_id = SolarWindsOTelAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
-    refute traces.find { |tr| SolarWindsOTelAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, 'trace ids not matching'
+    trace_id = SolarWindsAPM::TraceString.trace_id(traces[0]['sw.trace_context'])
+    refute traces.find { |tr| SolarWindsAPM::TraceString.trace_id(tr['sw.trace_context']) != trace_id }, 'trace ids not matching'
   end
   num_entries = traces.select { |tr| tr ['Label'] == 'entry' }.size
   num_exits = traces.select { |tr| tr ['Label'] == 'exit' }.size
@@ -252,7 +252,7 @@ end
 # 
 def same_trace_id?(traces)
   traces.map do |t|
-    SolarWindsOTelAPM::TraceString.trace_id(t["sw.trace_context"])
+    SolarWindsAPM::TraceString.trace_id(t["sw.trace_context"])
   end.uniq.count == 1
 end
 
@@ -326,7 +326,7 @@ def not_sampled?(tracestring)
 end
 
 def sampled?(tracestring)
-  SolarWindsOTelAPM::TraceString.sampled?(tracestring)
+  SolarWindsAPM::TraceString.sampled?(tracestring)
 end
 
 #########################            ###            ###            ###            ###            ###

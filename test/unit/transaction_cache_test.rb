@@ -5,17 +5,17 @@ require 'minitest_helper'
 
 describe 'SolarWinds TransactionCache Test' do
   before do
-    SolarWindsOTelAPM::TransactionCache.initialize
+    SolarWindsAPM::TransactionCache.initialize
   end
 
   it 'test set and get' do
-    SolarWindsOTelAPM::TransactionCache.set('a','b')
-    _(SolarWindsOTelAPM::TransactionCache.get("a")).must_equal "b"
+    SolarWindsAPM::TransactionCache.set('a','b')
+    _(SolarWindsAPM::TransactionCache.get("a")).must_equal "b"
   end
 
   it 'test del' do
-    SolarWindsOTelAPM::TransactionCache.set('a','b')
-    SolarWindsOTelAPM::TransactionCache.del('a')
-    _(SolarWindsOTelAPM::TransactionCache.get("a")).must_equal nil
+    SolarWindsAPM::TransactionCache.set('a','b')
+    SolarWindsAPM::TransactionCache.del('a')
+    _(SolarWindsAPM::TransactionCache.get("a")).must_equal nil
   end
 end
