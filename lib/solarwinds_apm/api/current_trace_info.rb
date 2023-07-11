@@ -5,9 +5,21 @@
 module SolarWindsAPM
   module API
     module CurrentTraceInfo
-      # Creates an instance of {TraceInfo} with instance methods {TraceInfo#trace_id},
-      # {TraceInfo#span_id}, {TraceInfo#trace_flags}, {TraceInfo#for_log},
-      # and {TraceInfo#hash_for_log}.
+      # Creates an instance of {TraceInfo} with instance methods:<br>
+      # {TraceInfo#trace_id}<br>
+      # {TraceInfo#span_id}<br>
+      # {TraceInfo#trace_flags}<br>
+      # {TraceInfo#for_log}<br>
+      # {TraceInfo#hash_for_log}
+      # 
+      # The <tt>SolarWindsAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
+      # return value of methods in this module.
+      #
+      # The following options are available:<br>
+      # :never    (default)<br>
+      # :sampled  only include the Trace ID of sampled requests<br>
+      # :traced   include the Trace ID for all traced requests<br>
+      # :always   always add a Trace ID, it will be "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name" when there is no tracing context.
       #
       # === Example:
       #
@@ -18,16 +30,6 @@ module SolarWindsAPM
       #                            trace_flags: '',
       #                            resource.service.name: 'otel_service_name' }  or {} depends on Config
       #
-      #   The <tt>SolarWindsAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
-      #   return value of methods in this module.
-      #
-      #   The following options are available:
-      #   :never    (default)
-      #   :sampled  only include the Trace ID of sampled requests
-      #   :traced   include the Trace ID for all traced requests
-      #   :always   always add a Trace ID, it will be
-      #             "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name"
-      #             when there is no tracing context.
       #
       # Configure trace info injection with lograge:
       #
@@ -39,9 +41,11 @@ module SolarWindsAPM
         TraceInfo.new
       end
 
-      # @attr trace_id
-      # @attr span_id
-      # @attr trace_flags
+      # @attr [String] tracestring
+      # @attr [String] trace_id
+      # @attr [String] span_id
+      # @attr [String] trace_flags
+      # @attr [Boolean] do_log
       class TraceInfo
         attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
@@ -49,20 +53,17 @@ module SolarWindsAPM
         private_constant :REGEXP
 
         def initialize
-          @trace_id, @span_id, @trace_flags = current_span
+          @trace_id, @span_id, @trace_flags, @tracestring = current_span
           @service_name = ENV['OTEL_SERVICE_NAME']
-          @tracestring  = "00-#{@trace_id}-#{@span_id}-#{@trace_flags}"
           @do_log = log? # true if the tracecontext should be added to logs
         end
 
         # for_log returns a string in the format
-        # 'trace_id=<trace_id> span_id=<span_id> trace_flags=<trace_flags>' or ''.
+        # 'trace_id=<trace_id> span_id=<span_id> trace_flags=<trace_flags>' or empty string.
         # 
         # An empty string is returned depending on the setting for
         # <tt>SolarWindsAPM::Config[:log_traceId]</tt>, which can be :never,
         # :sampled, :traced, or :always.
-        #
-        # === Argument:
         #
         # === Example:
         #
@@ -76,9 +77,7 @@ module SolarWindsAPM
           @for_log ||= @do_log ? "trace_id=#{@trace_id} span_id=#{@span_id} trace_flags=#{@trace_flags} resource.service.name=#{@service_name}" : ''
         end
 
-        # Construct the trace_id and span_id for log insertion.
-        #
-        # === Argument:
+        # Construct the trace_id, span_id, trace_flags and resource.service.name for log insertion.
         #
         # === Example:
         #
@@ -88,7 +87,7 @@ module SolarWindsAPM
         #                            trace_flags: 01,
         #                            resource.service.name: 'otel_service_name' }  or {} depends on Config
         #   
-        #   For lograge:
+        #   # For lograge:
         #   Lograge.custom_options = lambda do |event|
         #     SolarWindsAPM::API.current_trace_info.hash_for_log
         #   end
@@ -108,7 +107,9 @@ module SolarWindsAPM
           trace_id = span.context.hex_trace_id
           span_id  = span.context.hex_span_id
           trace_flags = span.context.trace_flags.sampled?? '01' : '00'
-          [trace_id, span_id, trace_flags]
+          tracestring = "00-#{trace_id}-#{span_id}-#{trace_flags}"
+          
+          [trace_id, span_id, trace_flags, tracestring]
         end
 
         # if true the trace info should be added to the log message

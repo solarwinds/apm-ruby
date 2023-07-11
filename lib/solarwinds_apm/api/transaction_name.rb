@@ -1,7 +1,6 @@
 module SolarWindsAPM
   module API
     module TransactionName
-      ##
       # Provide a custom transaction name
       #
       # The SolarWindsAPM gem tries to create meaningful transaction names from controller+action
@@ -28,7 +27,7 @@ module SolarWindsAPM
       #   end
       #
       # === Returns:
-      # * True or False (Boolean)
+      # * Boolean
       #
       def set_transaction_name(custom_name=nil)
         

@@ -9,7 +9,7 @@ module SolarWindsAPM
       #
       # === Argument:
       #
-      # * +wait_milliseconds+ (int, default 3000) the maximum time to wait in milliseconds
+      # * +wait_milliseconds+ - (int, default 3000) the maximum time to wait in milliseconds
       #
       # === Example:
       #
@@ -18,7 +18,7 @@ module SolarWindsAPM
       #   end
       # 
       # === Returns:
-      # * True or False (Boolean)
+      # * Boolean
       #
       def solarwinds_ready?(wait_milliseconds=3000)
         return false unless SolarWindsAPM.loaded && SolarWindsAPM::Context.toString != '00-00000000000000000000000000000000-0000000000000000-00'
