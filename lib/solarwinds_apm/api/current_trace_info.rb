@@ -16,10 +16,10 @@ module SolarWindsAPM
       # return value of methods in this module.
       #
       # The following options are available:<br>
-      # :never    (default)<br>
-      # :sampled  only include the Trace ID of sampled requests<br>
-      # :traced   include the Trace ID for all traced requests<br>
-      # :always   always add a Trace ID, it will be "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name" when there is no tracing context.
+      # <tt>:never</tt>    (default)<br>
+      # <tt>:sampled</tt>  only include the Trace ID of sampled requests<br>
+      # <tt>:traced</tt>   include the Trace ID for all traced requests<br>
+      # <tt>:always</tt>   always add a Trace ID, it will be "trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name=otel_service_name" when there is no tracing context.
       #
       # === Example:
       #
