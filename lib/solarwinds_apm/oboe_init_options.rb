@@ -232,7 +232,7 @@ module SolarWindsAPM
     end
 
     def determine_the_metric_model
-      appoptics_collector? ? 1 : 0
+      appoptics_collector? ? 1 : 2
     end
 
     def appoptics_collector?
