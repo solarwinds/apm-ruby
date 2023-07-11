@@ -71,7 +71,7 @@ describe 'OboeInitOptions' do
     _(options[16]).must_equal 1
     _(options[17]).must_equal 1234
     _(options[18]).must_equal 'http://the.proxy:1234'
-    _(options[20]).must_equal 0
+    _(options[20]).must_equal 2
   end
 
   it 'env vars override config vars' do
@@ -110,7 +110,7 @@ describe 'OboeInitOptions' do
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
     _(options.size).must_equal 21
-    _(options[20]).must_equal 0
+    _(options[20]).must_equal 2
   end
 
   it 'checks for metric mode nighthawk' do
@@ -121,7 +121,7 @@ describe 'OboeInitOptions' do
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
     _(options.size).must_equal 21
-    _(options[20]).must_equal 0
+    _(options[20]).must_equal 2
   end
 
   it 'checks for metric mode default' do
@@ -132,7 +132,7 @@ describe 'OboeInitOptions' do
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
     _(options.size).must_equal 21
-    _(options[20]).must_equal 0
+    _(options[20]).must_equal 2
   end
 
   it 'checks for metric mode when sw_apm_collector is nil' do
@@ -142,7 +142,7 @@ describe 'OboeInitOptions' do
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
     _(options.size).must_equal 21
-    _(options[20]).must_equal 0
+    _(options[20]).must_equal 2
   end
 
   it 'checks for default certificates for ao' do
