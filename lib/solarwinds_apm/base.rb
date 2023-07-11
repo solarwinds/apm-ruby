@@ -27,8 +27,7 @@ module SolarWindsAPM
 end
 
 # Setup an alias
-SolarwindsAPM = SolarWindsAPM
 SolarWindsApm = SolarWindsAPM
 SolarwindsApm = SolarWindsAPM
-SolarwindsApm = SolarWindsAPM
 SolarwindsAPM = SolarWindsAPM
+Solarwindsapm = SolarWindsAPM
