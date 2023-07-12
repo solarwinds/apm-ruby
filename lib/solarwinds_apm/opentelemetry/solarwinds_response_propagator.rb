@@ -25,16 +25,16 @@ module SolarWindsAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
-          SolarWindsAPM.logger.debug "####### response propagator context: #{context.inspect}"
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] response propagator context: #{context.inspect}"
           span_context = ::OpenTelemetry::Trace.current_span(context).context
-          SolarWindsAPM.logger.debug "####### response propagator span_context: #{span_context.inspect}"
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] response propagator span_context: #{span_context.inspect}"
           return unless span_context.valid?
           
           x_trace = Transformer.traceparent_from_context(span_context)
           setter.set(carrier, XTRACE_HEADER_NAME, x_trace)
           exposed_headers = [XTRACE_HEADER_NAME]
 
-          SolarWindsAPM.logger.debug "####### response propagator span_context.tracestate: #{span_context.tracestate.inspect}"
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] response propagator span_context.tracestate: #{span_context.tracestate.inspect}"
           xtraceoptions_response = recover_response_from_tracestate(span_context.tracestate)
 
           unless xtraceoptions_response.empty?
@@ -42,7 +42,7 @@ module SolarWindsAPM
             setter.set(carrier, XTRACEOPTIONS_RESPONSE_HEADER_NAME, xtraceoptions_response)
           end
 
-          SolarWindsAPM.logger.debug "####### response propagator exposed_headers: #{exposed_headers.inspect}"
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] response propagator exposed_headers: #{exposed_headers.inspect}"
           setter.set(carrier, HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, exposed_headers.join(","))
 
         end
@@ -63,7 +63,7 @@ module SolarWindsAPM
           sanitized = "" if sanitized.nil?
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED, SolarWindsAPM::Constants::INTL_SWO_EQUALS)
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED, SolarWindsAPM::Constants::INTL_SWO_COMMA)
-          SolarWindsAPM.logger.debug "####### recover_response_from_tracestate sanitized: #{sanitized.inspect}"
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] recover_response_from_tracestate sanitized: #{sanitized.inspect}"
           sanitized
         end
       end

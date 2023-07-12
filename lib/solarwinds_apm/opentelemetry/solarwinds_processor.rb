@@ -26,7 +26,7 @@ module SolarWindsAPM
       #  started span.
       def on_start(span, parent_context)
 
-        SolarWindsAPM.logger.debug "####### processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
+        SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
 
         parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
         return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
@@ -36,7 +36,7 @@ module SolarWindsAPM
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID, span.context.hex_span_id))
         ::OpenTelemetry::Context.attach(::OpenTelemetry::Baggage.set_value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG, trace_flags))
         
-        SolarWindsAPM.logger.debug "####### current baggage values: #{::OpenTelemetry::Baggage.values}"
+        SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] current baggage values: #{::OpenTelemetry::Baggage.values}"
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}
@@ -64,7 +64,7 @@ module SolarWindsAPM
           status_code = get_http_status_code(span)
           request_method = span.attributes[HTTP_METHOD]
 
-          SolarWindsAPM.logger.debug "####### createHttpSpan with\n
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] createHttpSpan with\n
                                           trans_name: #{trans_name}\n
                                           url_tran: #{url_tran}\n
                                           domain: #{domain}\n
@@ -78,7 +78,7 @@ module SolarWindsAPM
   
         else
           
-          SolarWindsAPM.logger.debug "####### createSpan with \n
+          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] createSpan with \n
                                           trans_name: #{trans_name}\n
                                           domain: #{domain}\n
                                           span_time: #{span_time}\n
@@ -87,7 +87,7 @@ module SolarWindsAPM
           liboboe_txn_name = SolarWindsAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 
-        SolarWindsAPM.logger.debug "####### liboboe_txn_name: #{liboboe_txn_name}"
+        SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] liboboe_txn_name: #{liboboe_txn_name}"
         @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
 
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
@@ -121,7 +121,7 @@ module SolarWindsAPM
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def span_http?(span)
-        SolarWindsAPM.logger.debug "######## span.kind #{span.kind}  span.attributes: #{span.attributes[HTTP_METHOD]}"
+        SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] span.kind #{span.kind}  span.attributes: #{span.attributes[HTTP_METHOD]}"
         (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
       end
 

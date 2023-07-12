@@ -13,7 +13,7 @@ module SolarWindsAPM
       return unless @@agent_enabled  # only show the msg once
       
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn '[solarwinds_apm/otel_config] Agent disabled. No Trace exported.'
+      SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Agent disabled. No Trace exported."
     end
 
     def self.validate_service_key
@@ -61,10 +61,10 @@ module SolarWindsAPM
 
     def self.print_config
       @@config.each do |config, value|
-        SolarWindsAPM.logger.warn "[solarwinds_apm/otel_config] config:     #{config} = #{value}"
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] config:     #{config} = #{value}"
       end
       @@config_map.each do |config, value|
-        SolarWindsAPM.logger.warn "[solarwinds_apm/otel_config] config_map: #{config} = #{value}"
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] config_map: #{config} = #{value}"
       end
     end
 
@@ -84,16 +84,16 @@ module SolarWindsAPM
         return
       end
 
-      SolarWindsAPM.logger.debug "[solarwinds_apm/otel_config] propagators: #{propagators.map(&:class)}"
+      SolarWindsAPM.logger.debug "[#{self.name}/#{__method__}] propagators: #{propagators.map(&:class)}"
       unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty? # rubocop:disable Style/GuardClause
-        SolarWindsAPM.logger.warn "[solarwinds_apm/otel_config] Missing tracecontext propagator."
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Missing tracecontext propagator."
         disable_agent
       end
     end
 
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
-        SolarWindsAPM.logger.warn "[solarwinds_apm/otel_config] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
         disable_agent
         return
       end
@@ -144,14 +144,14 @@ module SolarWindsAPM
     #
     def self.initialize_with_config
       unless block_given?
-        SolarWindsAPM.logger.warn '[solarwinds_apm/otel_config] Block not given while doing in-code configuration. Agent disabled.'
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Block not given while doing in-code configuration. Agent disabled."
         return
       end
 
       yield @@config_map
 
       if @@config_map.empty?
-        SolarWindsAPM.logger.warn '[solarwinds_apm/otel_config] No configuration given for in-code configuration. Agent disabled.'
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] No configuration given for in-code configuration. Agent disabled."
         return
       end
 

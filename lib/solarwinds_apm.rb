@@ -1,7 +1,7 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-begin
+begin  
   require 'solarwinds_apm/version'
   require 'solarwinds_apm/thread_local'
   require 'solarwinds_apm/support_report'

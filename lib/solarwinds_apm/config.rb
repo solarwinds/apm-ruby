@@ -47,7 +47,7 @@ module SolarWindsAPM
       config_file = File.join(Dir.pwd, 'solarwinds_apm_config.rb')
       config_files << config_file if File.exist?(config_file)
 
-      SolarWindsAPM.logger.warn "[solarwinds_apm/config] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
+      SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}" if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
       set_log_level        # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
@@ -61,7 +61,7 @@ module SolarWindsAPM
       elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb'))
         config_files << File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb')
       else
-        SolarWindsAPM.logger.warn "[solarwinds_apm/config] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"
       end
       config_files
     end
@@ -86,9 +86,9 @@ module SolarWindsAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.warn "# General configurations"
+      SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] General configurations list blow:"
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn "Config Key/Value: #{k}, #{v.inspect}"
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"
       end
     end
 
@@ -137,21 +137,18 @@ module SolarWindsAPM
 
       case key
       when :sampling_rate
-        SolarWindsAPM.logger.warn '[solarwinds_apm/config] sampling_rate is not a supported setting for SolarWindsAPM::Config.  ' \
-                                 'Please use :sample_rate.'
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] sampling_rate is not a supported setting for SolarWindsAPM::Config. Please use :sample_rate."
 
       when :sample_rate
         unless value.is_a?(Integer) || value.is_a?(Float)
-          SolarWindsAPM.logger.warn "[solarwinds_apm/config] :sample_rate must be a number between 0 and 1000000 (1m) " \
-                                   "(provided: #{value}), corrected to 0"
+          SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] :sample_rate must be a number between 0 and 1000000 (1m) (provided: #{value}), corrected to 0"
           value = 0
         end
 
         # Validate :sample_rate value
         unless value.between?(0, 1e6)
           new_value = value < 0 ? 0 : 1_000_000
-          SolarWindsAPM.logger.warn "[solarwinds_apm/config] :sample_rate must be between 0 and 1000000 (1m) " \
-                                   "(provided: #{value}), corrected to #{new_value}"
+          SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] :sample_rate must be between 0 and 1000000 (1m) (provided: #{value}), corrected to #{new_value}"
         end
 
         # Assure value is an integer
@@ -159,11 +156,11 @@ module SolarWindsAPM
         SolarWindsAPM.sample_rate(new_value) if SolarWindsAPM.loaded
 
       when :profiling
-        SolarWindsAPM.logger.warn "[solarwinds_apm/config] Profiling feature is currently not available." 
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Profiling feature is currently not available." 
         @@config[:profiling] = :disabled
 
       when  :profiling_interval
-        SolarWindsAPM.logger.warn "[solarwinds_apm/config] Profiling feature is currently not available. :profiling_interval setting is not configured." 
+        SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Profiling feature is currently not available. :profiling_interval setting is not configured." 
         value = if value.is_a?(Integer) && value > 0
                   [100, value].min
                 else
@@ -233,7 +230,7 @@ module SolarWindsAPM
         begin
           v[:regexp].is_a?(String) ? Regexp.new(v[:regexp], v[:opts]) : Regexp.new(v[:regexp])
         rescue StandardError => e
-          SolarWindsAPM.logger.warn "[solarwinds_apm/config] Problem compiling transaction_settings item #{v}, will ignore. Error: #{e.message}"
+          SolarWindsAPM.logger.warn "[#{self.name}/#{__method__}] Problem compiling transaction_settings item #{v}, will ignore. Error: #{e.message}"
           nil
         end
       end

@@ -15,7 +15,7 @@ module SolarWindsAPM
       end
 
       def set(key, value)
-        SolarWindsAPM.logger.debug "############## current cache #{@cache.inspect}"
+        SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] current cache #{@cache.inspect}"
         @cache[key] = value
       end
 
