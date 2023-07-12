@@ -164,7 +164,7 @@ module SolarWindsAPM
             ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
             ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
           rescue StandardError => e
-            SolarWindsAPM.logger.warn "[#{self.class}/#{__method__}] Fail to extract telemetry attributes. Error: #{e.message}"
+            SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Fail to extract telemetry attributes. Error: #{e.message}"}
           end
         rescue StandardError, ScriptError => e
           # Also rescue ScriptError (aka SyntaxError) in case one of the expected
@@ -172,8 +172,8 @@ module SolarWindsAPM
 
           platform_info['Error'] = "Error in build_report: #{e.message}"
 
-          SolarWindsAPM.logger.warn "[#{self.class}/#{__method__}] Error in build_init_report: #{e.message}"
-          SolarWindsAPM.logger.debug e.backtrace
+          SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Error in build_init_report: #{e.message}"}
+          SolarWindsAPM.logger.debug {e.backtrace}
         end
         platform_info
       end

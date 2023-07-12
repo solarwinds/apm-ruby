@@ -26,17 +26,17 @@ module SolarWindsAPM
         #   if extraction fails
         def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter)
 
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] context(before): #{context.inspect} #{context.nil?}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] context(before): #{context.inspect} #{context.nil?}"}
 
           context = ::OpenTelemetry::Context.new({}) if context.nil?
 
           xtraceoptions_header = getter.get(carrier, XTRACEOPTIONS_HEADER_NAME)
           context = context.set_value(INTL_SWO_X_OPTIONS_KEY, xtraceoptions_header) if xtraceoptions_header
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] xtraceoptions_header: #{xtraceoptions_header}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] xtraceoptions_header: #{xtraceoptions_header}"}
 
           signature_header = getter.get(carrier, XTRACEOPTIONS_SIGNATURE_HEADER_NAME)
           context = context.set_value(INTL_SWO_SIGNATURE_KEY, signature_header) if signature_header
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] signature_header: #{signature_header}; propagator extract context: #{context.inspect}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] signature_header: #{signature_header}; propagator extract context: #{context.inspect}"}
 
           context
         end
@@ -50,17 +50,17 @@ module SolarWindsAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] inject context: #{context.inspect}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] inject context: #{context.inspect}"}
           
           cspan = ::OpenTelemetry::Trace.current_span(context)
           span_context = cspan&.context
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] cspan #{cspan.inspect}; span_context #{span_context.inspect}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] cspan #{cspan.inspect}; span_context #{span_context.inspect}"}
           return unless span_context&.valid?
 
           sw_value = Transformer.sw_from_context(span_context)  # sw_value is a string
           trace_state_header = carrier[TRACESTATE_HEADER_NAME].nil?? nil : carrier[TRACESTATE_HEADER_NAME]
 
-          SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] sw_value: #{sw_value}; trace_state_header: #{trace_state_header}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] sw_value: #{sw_value}; trace_state_header: #{trace_state_header}"}
 
           # Prepare carrier with carrier's or new tracestate
           trace_state = nil
@@ -69,11 +69,11 @@ module SolarWindsAPM
             return if span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
               
             trace_state = ::OpenTelemetry::Trace::Tracestate.create({SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY => sw_value})
-            SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] creating new trace state: #{trace_state.inspect}"
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] creating new trace state: #{trace_state.inspect}"}
           else
             trace_state_from_string = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
             trace_state = trace_state_from_string.set_value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_value)
-            SolarWindsAPM.logger.debug "[#{self.class}/#{__method__}] Updating/Adding trace state for injection #{trace_state.inspect}"
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Updating/Adding trace state for injection #{trace_state.inspect}"}
           end
 
           setter.set(carrier, TRACESTATE_HEADER_NAME, Transformer.trace_state_header(trace_state))
