@@ -8,6 +8,7 @@ The following environment variables are detected by the solarwinds_apm gem and a
 
 Name | Description | Default
 ---- | ----------- | -------
+`SOLARWINDS_APM_ENABLED` | Enables/Disables the solarwinds apm agent | `true`
 `SW_APM_SERVICE_KEY` | API token + service name combination, mandatory for metrics and traces to show in the dashboard |
 `SW_APM_GEM_VERBOSE` | sets the verbose flag (`SolarWindsAPM::Config[:verbose]`) early in the gem loading process which may output valuable information | `false`
 `SW_APM_COLLECTOR` | ingestion endpoint the library connects and exports data to. It should be defined using the format host:port. | apm.collector.cloud.solarwinds.com:443

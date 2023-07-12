@@ -28,7 +28,6 @@ require 'minitest/debugger' if ENV['DEBUG']
 require 'minitest/hooks/default'  # adds after(:all)
 require 'opentelemetry'
 require 'opentelemetry/sdk'
-require 'opentelemetry-sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'opentelemetry-propagator-b3'
@@ -401,6 +400,7 @@ end
 def clean_old_setting
   ENV.delete('OTEL_PROPAGATORS')
   ENV.delete('OTEL_TRACES_EXPORTER')
+  ENV.delete('SOLARWINDS_APM_ENABLED')
 end
 
 if (File.basename(ENV['BUNDLE_GEMFILE']) =~ /^frameworks/) == 0
