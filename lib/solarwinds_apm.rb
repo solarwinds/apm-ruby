@@ -2,6 +2,9 @@
 # All rights reserved.
 
 begin
+
+  return if ENV.has_key?('SOLARWINDS_APM_ENABLED') && (ENV['SOLARWINDS_APM_ENABLED'] == 'false' || ENV['SOLARWINDS_APM_ENABLED'] == false)
+
   require 'solarwinds_apm/version'
   require 'solarwinds_apm/thread_local'
   require 'solarwinds_apm/support_report'
