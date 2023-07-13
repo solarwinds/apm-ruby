@@ -124,7 +124,7 @@ module SolarWindsAPM
 
       service_key = ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
       unless service_key
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY not configured."
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured."}
         return ''
       end
 
@@ -136,7 +136,7 @@ module SolarWindsAPM
       
       if service_name.empty?
         ENV.delete('OTEL_SERVICE_NAME')
-        SolarWindsAPM.logger.warn "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY format problem. Service Name is missing."
+        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."}
         return ''
       end
 
@@ -147,14 +147,14 @@ module SolarWindsAPM
         otel_resource_service_name = value; break if key == 'service.name'
       end
 
-      SolarWindsAPM.logger.debug "############ provided otel_resource_service_name #{otel_resource_service_name}" if otel_resource_service_name
+      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] provided otel_resource_service_name #{otel_resource_service_name}"} if otel_resource_service_name
       service_name = otel_resource_service_name if otel_resource_service_name && validate_transform_service_name(otel_resource_service_name)
 
       # check OTEL_SERVICE_NAME
       otel_service_name = ENV['OTEL_SERVICE_NAME']
       if otel_service_name && validate_transform_service_name(otel_service_name)
         service_name = otel_service_name
-        SolarWindsAPM.logger.debug "############ provided otel_service_name #{otel_service_name}"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] provided otel_service_name #{otel_service_name}"}
       elsif ENV['OTEL_SERVICE_NAME'].nil?
         ENV['OTEL_SERVICE_NAME'] = service_name
       end
@@ -167,7 +167,7 @@ module SolarWindsAPM
     def validate_token(token)
       if (token !~ /^[0-9a-zA-Z_-]{71}$/) && ENV['SW_APM_COLLECTOR'] !~ /java-collector:1222/
         masked = "#{token[0..3]}...#{token[-4..]}"
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"}
         return false
       end
 
@@ -177,7 +177,7 @@ module SolarWindsAPM
     def validate_transform_service_name(service_name)
       service_name = 'test_ssl_collector' if ENV['SW_APM_COLLECTOR'] =~ /java-collector:1222/
       if service_name.empty?
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY problem. Service Name is missing"
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name is missing"}
         return false
       end
 
@@ -187,7 +187,7 @@ module SolarWindsAPM
       name = name[0..254]
 
       if name != service_name
-        SolarWindsAPM.logger.warn "[solarwinds_apm/oboe_options] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name}"
+        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name}"}
         service_name = name
       end
       @service_name = service_name # instance variable used in testing
@@ -207,7 +207,7 @@ module SolarWindsAPM
       return proxy if proxy == ''
 
       unless proxy =~ /http:\/\/.*:\d+$/
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] SW_APM_PROXY/http_proxy doesn't start with 'http://', #{proxy}"
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_PROXY/http_proxy doesn't start with 'http://', #{proxy}"}
         return '' # try without proxy, it may work, shouldn't crash but may not report
       end
 
@@ -224,7 +224,7 @@ module SolarWindsAPM
       begin
         certificate = File.open(file,"r").read
       rescue StandardError => e
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] certificates: #{file} doesn't exist or caused by #{e.message}."
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] certificates: #{file} doesn't exist or caused by #{e.message}."}
         certificate = String.new
       end
       
@@ -249,7 +249,7 @@ module SolarWindsAPM
         sanitized_uri = URI("http://#{uri}").host
         return sanitized_uri unless sanitized_uri.nil?
       rescue StandardError => e
-        SolarWindsAPM.logger.error "[solarwinds_apm/oboe_options] uri for collector #{uri} is malformat. Error: #{e.message}"
+        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"}
       end
       ""    
     end

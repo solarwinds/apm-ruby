@@ -20,7 +20,7 @@ module SolarWindsAPM
       def export(span_data, _timeout: nil)
         return FAILURE if @shutdown
         
-        SolarWindsAPM.logger.debug "####### span_data: #{span_data} " 
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data: #{span_data}"}
         span_data.each do |data|
           log_span_data(data)
         end
@@ -47,11 +47,11 @@ module SolarWindsAPM
           if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
 
             parent_md = build_meta_data(span_data, parent: true)
-            SolarWindsAPM.logger.debug "Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent. parent_md: #{parent_md}, span_data: #{span_data.inspect}"}
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
           else
 
-            SolarWindsAPM.logger.debug "#######  Start a new trace."
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}]  Start a new trace."}
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
             add_info_transaction_name(span_data, event)
           end
@@ -88,9 +88,9 @@ module SolarWindsAPM
           event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
           event.addInfo('Layer', span_data.name)
           @reporter.send_report(event, with_system_timestamp: false)
-          SolarWindsAPM.logger.debug "####### Exit a trace: #{event.metadataString}"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
         rescue StandardError => e
-          SolarWindsAPM.logger.debug "######## \n\n #{e.message} #{e.backtrace}\n\n ########"
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] \n #{e.message} #{e.backtrace}\n"}
           raise
         end
 
@@ -111,7 +111,7 @@ module SolarWindsAPM
       # get the framework version (the real version not the sdk instrumentation version)
       # 
       def add_info_instrumented_framework(event, span_data)
-        SolarWindsAPM.logger.debug "####### add_info_instrumented_framework: #{span_data.instrumentation_scope.name}"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] add_info_instrumented_framework: #{span_data.instrumentation_scope.name}"}
         scope_name = span_data.instrumentation_scope.name
         scope_name = scope_name.downcase if scope_name
         return unless scope_name&.include? "opentelemetry::instrumentation"
@@ -135,14 +135,14 @@ module SolarWindsAPM
             require framework
             framework_version = Gem.loaded_specs[framework].version.to_s
           rescue LoadError => e
-            SolarWindsAPM.logger.debug "######## couldn't load #{framework} with error #{e.message}; skip ########" 
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] couldn't load #{framework} with error #{e.message}; skip"}
           rescue StandardError => e
-            SolarWindsAPM.logger.debug "######## couldn't find #{framework} with error #{e.message}; skip ########" 
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] couldn't find #{framework} with error #{e.message}; skip"}
           ensure
             @version_cache[framework] = framework_version
           end
         end
-        SolarWindsAPM.logger.debug "######## Current framework version cached: #{@version_cache.inspect}"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Current framework version cached: #{@version_cache.inspect}"}
         framework_version
       end
 
@@ -159,9 +159,9 @@ module SolarWindsAPM
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name(span_data, evt)
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
-        SolarWindsAPM.logger.debug "#{@txn_manager.inspect},\n span_data: #{span_data.inspect}"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] #{@txn_manager.inspect},\n span_data: #{span_data.inspect}"}
         txname = @txn_manager.get(trace_span_id).nil?? "" : @txn_manager.get(trace_span_id)
-        SolarWindsAPM.logger.debug "######## txname #{txname} ########"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txname: #{txname}"}
         evt.addInfo("TransactionName", txname)
         @txn_manager.del(trace_span_id)
       end
@@ -179,7 +179,7 @@ module SolarWindsAPM
             evt.addInfo(key, value) unless ['exception.type', 'exception.message','exception.stacktrace'].include? key
           end
         end
-        SolarWindsAPM.logger.debug "######## exception event #{evt.metadataString} ########"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] exception event #{evt.metadataString}"}
         @reporter.send_report(evt, with_system_timestamp: false)
       end
 
@@ -189,7 +189,7 @@ module SolarWindsAPM
         span_event.attributes&.each do |key, value|
           evt.addInfo(key, value)
         end
-        SolarWindsAPM.logger.debug "######## info event #{evt.metadataString} ########"
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] info event #{evt.metadataString}"}
         @reporter.send_report(evt, with_system_timestamp: false)
       end
 

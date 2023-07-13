@@ -188,7 +188,7 @@ def edge?(edge, traces)
   traces.each do |t|
     return true if SolarWindsAPM::TraceString.span_id(t['sw.trace_context']) == edge
   end
-  SolarWindsAPM.logger.debug "[solarwinds_apm/test] edge #{edge} not found in traces."
+  SolarWindsAPM.logger.debug {"[solarwinds_apm/test] edge #{edge} not found in traces."}
   false
 end
 
