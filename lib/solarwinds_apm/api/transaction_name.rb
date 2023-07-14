@@ -32,6 +32,7 @@ module SolarWindsAPM
       def set_transaction_name(custom_name=nil)
         
         return false if custom_name.nil? || custom_name.empty? 
+        return true  if SolarWindsAPM::Context.toString == '00-00000000000000000000000000000000-0000000000000000-00' # noop
 
         solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
         if solarwinds_processor.nil?
