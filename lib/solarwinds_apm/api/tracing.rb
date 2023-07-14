@@ -21,7 +21,7 @@ module SolarWindsAPM
       # * Boolean
       #
       def solarwinds_ready?(wait_milliseconds=3000)
-        return false unless SolarWindsAPM.loaded && SolarWindsAPM::Context.toString != '00-00000000000000000000000000000000-0000000000000000-00'
+        return false unless SolarWindsAPM.loaded
 
         SolarWindsAPM::Context.isReady(wait_milliseconds) == 1
       end

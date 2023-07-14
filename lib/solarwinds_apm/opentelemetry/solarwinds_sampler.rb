@@ -89,17 +89,14 @@ module SolarWindsAPM
 
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] name: #{name}, kind: #{kind}, attributes: #{attributes.inspect}"}
 
-        url = attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
+        url = attributes.nil?? '' : attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
         transaction_naming_key = "#{url}-#{name}-#{kind}"
         
         tracing_mode           = SolarWindsAPM::TransactionCache.get(transaction_naming_key)
         
         if tracing_mode.nil?
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] transaction cache NOT found: #{transaction_naming_key}."}
-          trans_settings = SolarWindsAPM::TransactionSettings.new(url: url, name: name, kind: kind)
-          
-          # tracing_mode   = (trans_settings.calculate_trace_mode(kind: 'url') == 1 && trans_settings.calculate_trace_mode(kind: 'spankind') == 1)? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
-          
+          trans_settings = SolarWindsAPM::TransactionSettings.new(url: url, name: name, kind: kind)          
           tracing_mode   = trans_settings.calculate_trace_mode == 1 ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
           SolarWindsAPM::TransactionCache.set(transaction_naming_key, tracing_mode)
         else

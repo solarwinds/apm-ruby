@@ -179,7 +179,7 @@ module SolarWindsAPM
           span_id: span_context.hex_span_id,
           trace_flags: trace_flag)
       rescue NameError => e
-        SolarWindsAPM.logger.error {"[#{self.name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}"}
+        SolarWindsAPM.logger.error {"[#{name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}"}
       end
 
       if Gem::Version.new(ActiveRecord::VERSION::STRING) < Gem::Version.new('6.1')
