@@ -92,6 +92,7 @@ jobs:
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
+        shell: sh
       
 
   terminate_arm64_runner:
