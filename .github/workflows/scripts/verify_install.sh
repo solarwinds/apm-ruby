@@ -19,9 +19,9 @@ fi
 
 # verification
 echo "$PWD"
-ruby scripts/test_install.rb
+ruby test_install.rb
 
-if [[ $? -ne 0 ]]; then
+if [ $? -ne 0 ]; then
   echo "Problem encountered"
   exit 1
 fi
