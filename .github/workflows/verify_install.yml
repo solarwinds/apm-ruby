@@ -81,8 +81,7 @@ jobs:
           - hostname: rb3.2.2-slim-bullseye
             image: ruby:3.2.2-slim-bullseye
 
-    # runs-on: ${{ fromJSON(needs.start_arm64_runner.outputs.matrix)[matrix.os].label }}
-    runs-on: ${{ matrix.arch == 'arm64' && fromJSON(needs.launch-arm64.outputs.matrix)[matrix.image].label || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.arch == 'arm64' && fromJSON(needs.start_arm64_runner.outputs.matrix)[matrix.image].label || 'ubuntu-latest' }}
 
     container:
       image: "${{ matrix.image }}"
