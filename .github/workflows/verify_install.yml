@@ -90,7 +90,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Verify install
-        working-directory: ./github/workflows/scripts
+        working-directory: .github/workflows/scripts
         run: ./verify_install.sh
       
 
