@@ -53,7 +53,7 @@ module SolarWindsAPM
       # We don't want to trace framework caches.
       # Only instrument SQL that directly hits the database.
       def ignore_payload?(name)
-        %w(SCHEMA EXPLAIN CACHE).include?(name.to_s)
+        %w[SCHEMA EXPLAIN CACHE].include?(name.to_s)
       end
     end
 

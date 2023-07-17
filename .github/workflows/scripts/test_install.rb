@@ -1,18 +1,23 @@
 # Copyright (c) 2021 SolarWinds, LLC.
 # All rights reserved.
 
-# Test script used to check if a newly created gem installs and connects to
-# the collector
-# requires env vars:
-# - SW_APM_SERVICE_KEY
-# - SW_APM_COLLECTOR (optional if the key is for production)
-
+# Test script used to check if a newly created gem install successfully
 require 'solarwinds_apm'
-require 'net/http'
 
-unless SolarWindsAPM.loaded
+unless SolarWindsAPM::API.solarwinds_ready?(10_000)
   puts "aborting!!! Agent not ready after 10 seconds"
   exit false
 end
 
-Net::HTTP.get(URI('https://www.google.com'))
+op = lambda { 10.times {[9, 6, 12, 2, 7, 1, 9, 3, 4, 14, 5, 8].sort} }
+
+tracer_service = ENV['SW_APM_SERVICE_KEY'].split(':')&.last || ENV['OTEL_SERVICE_NAME']
+begin
+  OpenTelemetry.tracer_provider.tracer(tracer_service).in_span('verify_install') do |span|
+    op.call
+    puts "Looks good!"
+  end
+rescue StandardError => e
+  puts "aborting!!! Agent error: #{e.message}"
+  exit false
+end

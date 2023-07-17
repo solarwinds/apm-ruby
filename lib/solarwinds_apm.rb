@@ -1,8 +1,7 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-begin  
-
+begin
   if ENV.has_key?('SOLARWINDS_APM_ENABLED') && (ENV['SOLARWINDS_APM_ENABLED'] == 'false' || ENV['SOLARWINDS_APM_ENABLED'] == false)
     SolarWindsAPM.logger.warn 'SOLARWINDS_APM_ENABLED environment variable detected and was set to false; SolarWindsAPM disabled'
     return

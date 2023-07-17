@@ -64,25 +64,28 @@ module SolarWindsAPM
           status_code = get_http_status_code(span)
           request_method = span.attributes[HTTP_METHOD]
 
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] createHttpSpan with\n
+          SolarWindsAPM.logger.debug do 
+            "[#{self.class}/#{__method__}] createHttpSpan with\n
                                           trans_name: #{trans_name}\n
                                           url_tran: #{url_tran}\n
                                           domain: #{domain}\n
                                           span_time: #{span_time}\n
                                           status_code: #{status_code}\n
                                           request_method: #{request_method}\n
-                                          has_error: #{has_error}"}
+                                          has_error: #{has_error}"
+          end
 
-          liboboe_txn_name = SolarWindsAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,
-                                                                    request_method,has_error)
+          liboboe_txn_name = SolarWindsAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,request_method,has_error)
   
         else
           
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] createSpan with \n
+          SolarWindsAPM.logger.debug do 
+            "[#{self.class}/#{__method__}] createSpan with \n
                                           trans_name: #{trans_name}\n
                                           domain: #{domain}\n
                                           span_time: #{span_time}\n
-                                          has_error: #{has_error}"}
+                                          has_error: #{has_error}"
+          end
 
           liboboe_txn_name = SolarWindsAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end

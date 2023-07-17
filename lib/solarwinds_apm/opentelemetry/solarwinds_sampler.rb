@@ -37,14 +37,16 @@ module SolarWindsAPM
       # parent_context: OpenTelemetry::Context
       def should_sample?(trace_id:, parent_context:, links:, name:, kind:, attributes:)
 
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] should_sample? parameters \n
+        SolarWindsAPM.logger.debug do 
+          "[#{self.class}/#{__method__}] should_sample? parameters \n
                                         trace_id: #{trace_id.unpack1('H*')}\n
                                         parent_context:  #{parent_context}\n
                                         parent_context.inspect:  #{parent_context.inspect}\n
                                         links: #{links}\n
                                         name: #{name}\n
                                         kind: #{kind}\n
-                                        attributes: #{attributes}"}
+                                        attributes: #{attributes}"
+        end
 
         # if the upstream has tracestate: sw=.... then it should capture it 
 
@@ -89,17 +91,14 @@ module SolarWindsAPM
 
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] name: #{name}, kind: #{kind}, attributes: #{attributes.inspect}"}
 
-        url = attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
+        url = attributes.nil?? '' : attributes['http.host'] || attributes['http.url'] || attributes['net.peer.name']  # otel-ruby contrib use different key to store url info
         transaction_naming_key = "#{url}-#{name}-#{kind}"
         
         tracing_mode           = SolarWindsAPM::TransactionCache.get(transaction_naming_key)
         
         if tracing_mode.nil?
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] transaction cache NOT found: #{transaction_naming_key}."}
-          trans_settings = SolarWindsAPM::TransactionSettings.new(url: url, name: name, kind: kind)
-          
-          # tracing_mode   = (trans_settings.calculate_trace_mode(kind: 'url') == 1 && trans_settings.calculate_trace_mode(kind: 'spankind') == 1)? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
-          
+          trans_settings = SolarWindsAPM::TransactionSettings.new(url: url, name: name, kind: kind)          
           tracing_mode   = trans_settings.calculate_trace_mode == 1 ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
           SolarWindsAPM::TransactionCache.set(transaction_naming_key, tracing_mode)
         else
@@ -123,7 +122,8 @@ module SolarWindsAPM
           timestamp = xtraceoptions.timestamp
         end
 
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] decision parameters \n
+        SolarWindsAPM.logger.debug do 
+          "[#{self.class}/#{__method__}] decision parameters \n
                                          tracestring: #{tracestring}\n
                                          sw_member_value: #{sw_member_value}\n
                                          tracing_mode:    #{tracing_mode}\n
@@ -132,7 +132,8 @@ module SolarWindsAPM
                                          trigger_trace_mode:    #{trigger_trace_mode}\n
                                          options:      #{options}\n
                                          signature:    #{signature}\n
-                                         timestamp:    #{timestamp}"}
+                                         timestamp:    #{timestamp}"
+        end
 
         args = [tracestring,sw_member_value,tracing_mode,sample_rate,trigger_trace,trigger_trace_mode,options,signature,timestamp] 
         do_metrics, do_sample, rate, source, bucket_rate, \

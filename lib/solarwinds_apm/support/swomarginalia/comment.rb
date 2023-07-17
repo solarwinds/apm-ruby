@@ -107,7 +107,7 @@ module SolarWindsAPM
         marginalia_job["class"] if marginalia_job.respond_to?(:[])
       end
 
-      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}.freeze
+      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}
 
       def self.line
         SWOMarginalia::Comment.lines_to_ignore ||= DEFAULT_LINES_TO_IGNORE_REGEX
@@ -179,7 +179,7 @@ module SolarWindsAPM
           span_id: span_context.hex_span_id,
           trace_flags: trace_flag)
       rescue NameError => e
-        SolarWindsAPM.logger.error {"[#{self.name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}"}
+        SolarWindsAPM.logger.error {"[#{name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}"}
       end
 
       if Gem::Version.new(ActiveRecord::VERSION::STRING) < Gem::Version.new('6.1')
