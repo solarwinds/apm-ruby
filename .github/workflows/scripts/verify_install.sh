@@ -2,9 +2,9 @@
 # All rights reserved.
 
 # setup the system
-if [[ -r /etc/alpine-release ]]; then
+if [ -r /etc/alpine-release ]; then
   apk update && apk add --upgrade ruby-dev g++ make
-elif [[ -r /etc/debian_version ]]; then
+elif [ -r /etc/debian_version ]; then
   apt-get update && apt-get install -y ruby-dev g++ make
 fi
 
@@ -18,9 +18,10 @@ elif [ "$MODE" = "packagecloud" ]; then
 fi
 
 # verification
-ruby ./scripts/test_install.rb
+echo "$PWD"
+ruby test_install.rb
 
-if [[ $? -ne 0 ]]
+if [ $? -ne 0 ]; then
   echo "Problem encountered"
   exit 1
 fi

@@ -11,9 +11,8 @@ end
 
 op = lambda { 10.times {[9, 6, 12, 2, 7, 1, 9, 3, 4, 14, 5, 8].sort} }
 
-tracer_service = ENV['SW_APM_SERVICE_KEY'].split(':')&.last || ENV['OTEL_SERVICE_NAME']
 begin
-  OpenTelemetry.tracer_provider.tracer(tracer_service).in_span('verify_install') do |span|
+  OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME']).in_span('verify_install') do |span|
     op.call
     puts "Looks good!"
   end

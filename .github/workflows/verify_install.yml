@@ -80,9 +80,13 @@ jobs:
             image: ruby:3.2.2-alpine3.17
           - hostname: rb3.2.2-slim-bullseye
             image: ruby:3.2.2-slim-bullseye
+        exclude:
+          - hostname: rb3.0.6-alpine3.16
+            arch: arm64
+          - hostname: rb3.2.2-alpine3.17
+            arch: arm64
 
-    # runs-on: ${{ fromJSON(needs.start_arm64_runner.outputs.matrix)[matrix.os].label }}
-    runs-on: ${{ matrix.arch == 'arm64' && fromJSON(needs.launch-arm64.outputs.matrix)[matrix.image].label || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.arch == 'arm64' && fromJSON(needs.start_arm64_runner.outputs.matrix)[matrix.image].label || 'ubuntu-latest' }}
 
     container:
       image: "${{ matrix.image }}"
@@ -91,8 +95,9 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Verify install
-        working-directory: ./github/workflows/scripts
+        working-directory: .github/workflows/scripts
         run: ./verify_install.sh
+        shell: sh
       
 
   terminate_arm64_runner:
