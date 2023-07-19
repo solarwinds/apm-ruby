@@ -46,6 +46,9 @@ jobs:
             ruby:3.0.6-slim-bullseye
             ruby:3.2.2-alpine3.17
             ruby:3.2.2-slim-bullseye
+            amazonlinux:2
+            amazonlinux:2023
+            ubuntu:22.04
           github-token: ${{ secrets.CI_GITHUB_TOKEN }}
           runner-user: github
           runner-directory: /gh
@@ -68,6 +71,9 @@ jobs:
           - rb3.0.6-slim-bullseye
           - rb3.2.2-alpine3.17
           - rb3.2.2-slim-bullseye
+          - rb3.1.0-amazlinux2
+          - rb3.1.0-amazlinux2023
+          - rb3.0.2-ubuntu2204
         arch:
           - x64
           - arm64
@@ -80,6 +86,12 @@ jobs:
             image: ruby:3.2.2-alpine3.17
           - hostname: rb3.2.2-slim-bullseye
             image: ruby:3.2.2-slim-bullseye
+          - hostname: rb3.1.0-amazlinux2
+            image: amazonlinux:2
+          - hostname: rb3.1.0-amazlinux2023
+            image: amazonlinux:2023
+          - hostname: rb3.0.2-ubuntu2204
+            image: ubuntu:22.04
         exclude:
           - hostname: rb3.0.6-alpine3.16
             arch: arm64
@@ -92,8 +104,9 @@ jobs:
       image: "${{ matrix.image }}"
       options: --hostname "${{ matrix.hostname }}"
     steps:
+      - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
+        run: yum install -y tar gzip
       - uses: actions/checkout@v3
-
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
