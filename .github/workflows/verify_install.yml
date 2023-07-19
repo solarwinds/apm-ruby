@@ -47,7 +47,7 @@ jobs:
             ruby:3.2.2-alpine3.17
             ruby:3.2.2-slim-bullseye
             amazonlinux:2
-            amazonlinux:latest
+            amazonlinux:2023
             ubuntu:22.04
           github-token: ${{ secrets.CI_GITHUB_TOKEN }}
           runner-user: github
@@ -89,7 +89,7 @@ jobs:
           - hostname: rb3.1.0-amazlinux2
             image: amazonlinux:2
           - hostname: rb3.1.0-amazlinux2023
-            image: amazonlinux:latest
+            image: amazonlinux:2023
           - hostname: rb3.0.2-ubuntu2204
             image: ubuntu:22.04
         exclude:
@@ -104,8 +104,9 @@ jobs:
       image: "${{ matrix.image }}"
       options: --hostname "${{ matrix.hostname }}"
     steps:
+      - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
+        run: yum install -y tar gzip
       - uses: actions/checkout@v3
-
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
