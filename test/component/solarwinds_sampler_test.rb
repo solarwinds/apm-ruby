@@ -2,6 +2,14 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/opentelemetry'
+require './lib/solarwinds_apm/support/x_trace_options'
+require './lib/solarwinds_apm/constants'
+require './lib/solarwinds_apm/support/transformer'
+require './lib/solarwinds_apm/support/transaction_cache'
+require './lib/solarwinds_apm/support/transaction_settings'
+require './lib/solarwinds_apm/support/oboe_tracing_mode'
+require './lib/solarwinds_apm/config'
 
 describe 'SolarWindsSamplerTest' do
   before do

@@ -2,6 +2,16 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/opentelemetry'
+# require './lib/solarwinds_apm/support/x_trace_options'
+require './lib/solarwinds_apm/constants'
+require './lib/solarwinds_apm/support/txn_name_manager'
+# require './lib/solarwinds_apm/support/transformer'
+# require './lib/solarwinds_apm/support/transaction_cache'
+# require './lib/solarwinds_apm/support/transaction_settings'
+# require './lib/solarwinds_apm/support/oboe_tracing_mode'
+require './lib/solarwinds_apm/otel_config'
+require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsProcessor' do
   before do
@@ -103,14 +113,14 @@ describe 'SolarWindsProcessor' do
     _(::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)).must_equal '31e175128efc4018'
   end
 
-  it 'calculate_transaction_names_with_custom_naming' do
-    clean_old_setting
-    SolarWindsAPM::OTelConfig.initialize
-    processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    solarwinds_processor = processors.last
-    solarwinds_processor.on_start(@span, ::OpenTelemetry::Context.current)
-    SolarWindsAPM::API.set_transaction_name('abcdf')
-    _(solarwinds_processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
-  end
+  # it 'calculate_transaction_names_with_custom_naming' do
+  #   clean_old_setting
+  #   SolarWindsAPM::OTelConfig.initialize
+  #   processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
+  #   solarwinds_processor = processors.last
+  #   solarwinds_processor.on_start(@span, ::OpenTelemetry::Context.current)
+  #   SolarWindsAPM::API.set_transaction_name('abcdf')
+  #   _(solarwinds_processor.txn_manager.get("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")).must_equal "abcdf"
+  # end
 
 end

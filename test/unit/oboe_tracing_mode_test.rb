@@ -2,6 +2,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/support/oboe_tracing_mode'
 
 describe 'OboeTracingModeTest.rb' do
   before do

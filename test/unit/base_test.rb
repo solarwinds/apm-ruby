@@ -24,7 +24,6 @@ describe 'SolarWindsAPMBase' do
         end
       end
       ths.each(&:join)
-      # ths.map(&:join)
       assert contexts[0]
       assert contexts[1]
       refute_equal contexts[0][0], contexts[1][0]

@@ -17,11 +17,8 @@ on:
         description: 'Solarwinds apm version'
 
 env:
-  SW_APM_GEM_TEST: true
-  SW_APM_REPORTER: file
-  SW_APM_COLLECTOR: /tmp/sw_apm_traces.bson
-  SW_APM_REPORTER_FILE_SINGLE: false
-  TEST_RUNS_TO_FILE: "true"
+  SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
+  SW_APM_COLLECTOR: ${{ secrets.APM_RUBY_INSTALL_TESTING_COLLECTOR }}
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
