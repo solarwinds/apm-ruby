@@ -75,7 +75,6 @@ describe 'SolarWindsExporterTest' do
     _(result).must_equal 'solarwinds'
   end
 
-
   it 'test_add_info_instrumented_framework' do
 
   end

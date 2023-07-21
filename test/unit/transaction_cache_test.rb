@@ -4,7 +4,6 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/support/transaction_cache'
 
-
 describe 'SolarWinds TransactionCache Test' do
   before do
     SolarWindsAPM::TransactionCache.initialize

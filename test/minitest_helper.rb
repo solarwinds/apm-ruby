@@ -84,13 +84,16 @@ module Exporter
   end
 end
 
+# rubocop:disable Naming/MethodName
 module SolarWindsAPM
   module Context
     def self.toString
       '00-00000000000000000000000000000000-0000000000000000-00'
     end
+
     def self.clear; end
-    def self.getDecisions(*args)
+
+    def self.getDecisions(*_args)
       do_metrics = 1
       do_sample = 0
       rate = 1_000_000
@@ -102,14 +105,14 @@ module SolarWindsAPM
       bucket_cap = 0
       ype = 0
       auth = 0
-      return do_metrics, do_sample, rate, source, bucket_rate, bucket_cap, ype, auth, status_msg, auth_msg, status
+      [do_metrics, do_sample, rate, source, bucket_rate, bucket_cap, ype, auth, status_msg, auth_msg, status]
     end
 
-    def self.createEvent(args)
+    def self.createEvent(_args)
       self
     end
-    def self.addInfo(k,v)
-    end
+
+    def self.addInfo(_key, value); end
   end
 end
 
@@ -119,7 +122,7 @@ module SolarWindsAPM
       Metadata.new
     end
 
-    def self.fromString(str)
+    def self.fromString(_str)
       '00-00000000000000000000000000000000-0000000000000000-00'
     end
 
@@ -128,18 +131,21 @@ module SolarWindsAPM
     end
   end
 end
+# rubocop:enable Naming/MethodName
 
 module SolarWindsAPM
   class Reporter
     class << self
-      def send_report(evt, with_system_timestamp: true);
+      def send_report(*)
         true
       end
-      def send_status(evt, context=nil, with_system_timestamp: true);
+
+      def send_status(*)
         true
       end
     end
   end
+
   def self.loaded
     true
   end
@@ -162,26 +168,26 @@ def create_span_data
   span_id_hex  = "\xA4\xA49\x9D\xAC\xA5\x98\xC1"
   trace_id_hex = "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7"
   
-  span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
-                                                         layer,
-                                                         status,
-                                                         ("\0" * 8).b,
-                                                         2,
-                                                         2,
-                                                         0,
-                                                         1_669_317_386_253_789_212,
-                                                         1_669_317_386_298_642_087,
-                                                         attributes,
-                                                         nil,
-                                                         nil,
-                                                         resource,
-                                                         instrumentation_scope,
-                                                         span_id_hex,
-                                                         trace_id_hex,
-                                                         trace_flags,
-                                                         tracestate)
+  ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
+                                            layer,
+                                            status,
+                                            ("\0" * 8).b,
+                                            2,
+                                            2,
+                                            0,
+                                            1_669_317_386_253_789_212,
+                                            1_669_317_386_298_642_087,
+                                            attributes,
+                                            nil,
+                                            nil,
+                                            resource,
+                                            instrumentation_scope,
+                                            span_id_hex,
+                                            trace_id_hex,
+                                            trace_flags,
+                                            tracestate)
 
-  span_data
+  
 
 end
 
@@ -192,28 +198,28 @@ end
 #
 def create_span
   span_limits  = ::OpenTelemetry::SDK::Trace::SpanLimits.new(attribute_count_limit: 1,
-                                                            event_count_limit: 1,
-                                                            link_count_limit: 1,
-                                                            event_attribute_count_limit: 1,
-                                                            link_attribute_count_limit: 1,
-                                                            attribute_length_limit: 32,
-                                                            event_attribute_length_limit: 32)
+                                                             event_count_limit: 1,
+                                                             link_count_limit: 1,
+                                                             event_attribute_count_limit: 1,
+                                                             link_attribute_count_limit: 1,
+                                                             attribute_length_limit: 32,
+                                                             event_attribute_length_limit: 32)
   attributes   = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
   span_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "1\xE1u\x12\x8E\xFC@\x18", trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j")
-  span = ::OpenTelemetry::SDK::Trace::Span.new(span_context,
-                                                ::OpenTelemetry::Context.empty,
-                                                ::OpenTelemetry::Trace::Span::INVALID,
-                                                'name',
-                                                ::OpenTelemetry::Trace::SpanKind::INTERNAL,
-                                                nil,
-                                                span_limits,
-                                                [],
-                                                attributes,
-                                                nil,
-                                                Time.now,
-                                                nil,
-                                                nil)
-  span
+  ::OpenTelemetry::SDK::Trace::Span.new(span_context,
+                                        ::OpenTelemetry::Context.empty,
+                                        ::OpenTelemetry::Trace::Span::INVALID,
+                                        'name',
+                                        ::OpenTelemetry::Trace::SpanKind::INTERNAL,
+                                        nil,
+                                        span_limits,
+                                        [],
+                                        attributes,
+                                        nil,
+                                        Time.now,
+                                        nil,
+                                        nil)
+  
 end
 
 ##
