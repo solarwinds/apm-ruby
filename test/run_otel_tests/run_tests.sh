@@ -135,9 +135,9 @@ for ruby in ${rubies[@]} ; do
       cd - || exit 1
     fi
   fi
+
   unset BUNDLE_GEMFILE
   bundle update
-  bundle exec rake clean fetch compile
 
   if [ "$?" -ne 0 ]; then
     echo "Problem while installing c-extension with ruby $ruby"

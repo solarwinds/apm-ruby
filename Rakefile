@@ -18,26 +18,16 @@ Rake::TestTask.new do |t|
   t.ruby_opts = []
   t.libs << 'test'
 
-  # gem_file = ENV['BUNDLE_GEMFILE']&.split('/')&.last
+  gem_file = ENV['BUNDLE_GEMFILE']&.split('/')&.last
   
-  # case gem_file
-  # when 'rails_6x.gemfile'
-  #   t.test_files = FileList['test/support/swomarginalia_test.rb']
+  case gem_file
+  when 'rails_6x.gemfile'
+    t.test_files = FileList['test/support/swomarginalia_test.rb']
 
-  # when 'unit.gemfile'
-  #   t.test_files = FileList['test/unit/*_test.rb'] +
-  #                  FileList['test/component/*_test.rb']
-  # end
-
-  # bundle exec rake test
-  # Bundler.require(:default, :test) will require the entire solarwinds_apm library, that's why we need to cfc first to create the libsolarwinds_apm.so
-  # t.test_files = FileList['test/unit/transformer_test.rb']
-  # t.test_files = FileList['test/unit/transaction_settings_test.rb']
-  # t.test_files = FileList['test/unit/transaction_cache_test.rb']
-  # t.test_files = FileList['test/unit/txn_name_manager_test.rb']
-  # t.test_files = FileList['test/component/solarwinds_sampler_test.rb']
-  t.test_files = FileList['test/component/solarwinds_exporter_test.rb']
-
+  when 'unit.gemfile'
+    t.test_files = FileList['test/unit/*_test.rb'] +
+                   FileList['test/component/*_test.rb']
+  end
 end
 
 desc 'Run all test suites defined by travis'

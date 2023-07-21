@@ -5,35 +5,16 @@ require 'minitest_helper'
 require 'minitest/mock'
 require 'net/http'
 require './lib/solarwinds_apm/opentelemetry'
-# require './lib/solarwinds_apm/support/x_trace_options'
-# require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/support/txn_name_manager'
-# require './lib/solarwinds_apm/support/transformer'
-# require './lib/solarwinds_apm/support/transaction_cache'
-# require './lib/solarwinds_apm/support/transaction_settings'
-# require './lib/solarwinds_apm/support/oboe_tracing_mode'
 require './lib/solarwinds_apm/oboe_init_options'
 require './lib/solarwinds_apm/config'
-# require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsExporterTest' do
   before do
-    
-    # create sample span
-    @status = ::OpenTelemetry::Trace::Status.ok("good") 
-    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
-    @resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
-    @instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
-    @trace_flags = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
-    @tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
-
-    create_span_data
-
     txn_name_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
     @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
     SolarWindsAPM::Config[:log_args] = true                                     
   end
-
 
   it 'test_normalize_framework_name' do
     result = @exporter.send(:normalize_framework_name, 'net::http')
@@ -105,27 +86,6 @@ describe 'SolarWindsExporterTest' do
 
   it 'test_log_span_data' do
 
-  end
-
-  def create_span_data
-    @span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
-                                                           :internal,
-                                                           @status,
-                                                           ("\0" * 8).b,
-                                                           2,
-                                                           2,
-                                                           0,
-                                                           1_669_317_386_253_789_212,
-                                                           1_669_317_386_298_642_087,
-                                                           @attributes,
-                                                           nil,
-                                                           nil,
-                                                           @resource,
-                                                           @instrumentation_scope,
-                                                           "\xA4\xA49\x9D\xAC\xA5\x98\xC1",
-                                                           "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7",
-                                                           @trace_flags,
-                                                           @tracestate)
   end
 
 end

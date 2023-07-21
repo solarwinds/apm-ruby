@@ -146,6 +146,77 @@ module SolarWindsAPM
 end
 
 ##
+# create_span_data
+#
+# create sample otel span_data object
+#
+def create_span_data
+
+  layer  = :internal
+  status = ::OpenTelemetry::Trace::Status.ok("good") 
+  attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
+  resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
+  instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
+  trace_flags  = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
+  tracestate   = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
+  span_id_hex  = "\xA4\xA49\x9D\xAC\xA5\x98\xC1"
+  trace_id_hex = "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7"
+  
+  span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
+                                                         layer,
+                                                         status,
+                                                         ("\0" * 8).b,
+                                                         2,
+                                                         2,
+                                                         0,
+                                                         1_669_317_386_253_789_212,
+                                                         1_669_317_386_298_642_087,
+                                                         attributes,
+                                                         nil,
+                                                         nil,
+                                                         resource,
+                                                         instrumentation_scope,
+                                                         span_id_hex,
+                                                         trace_id_hex,
+                                                         trace_flags,
+                                                         tracestate)
+
+  span_data
+
+end
+
+##
+# create_span
+#
+# create sample otel span object
+#
+def create_span
+  span_limits  = ::OpenTelemetry::SDK::Trace::SpanLimits.new(attribute_count_limit: 1,
+                                                            event_count_limit: 1,
+                                                            link_count_limit: 1,
+                                                            event_attribute_count_limit: 1,
+                                                            link_attribute_count_limit: 1,
+                                                            attribute_length_limit: 32,
+                                                            event_attribute_length_limit: 32)
+  attributes   = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
+  span_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "1\xE1u\x12\x8E\xFC@\x18", trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j")
+  span = ::OpenTelemetry::SDK::Trace::Span.new(span_context,
+                                                ::OpenTelemetry::Context.empty,
+                                                ::OpenTelemetry::Trace::Span::INVALID,
+                                                'name',
+                                                ::OpenTelemetry::Trace::SpanKind::INTERNAL,
+                                                nil,
+                                                span_limits,
+                                                [],
+                                                attributes,
+                                                nil,
+                                                Time.now,
+                                                nil,
+                                                nil)
+  span
+end
+
+##
 # clear_all_traces
 #
 # Truncates the trace output file to zero
