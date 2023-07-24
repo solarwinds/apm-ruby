@@ -16,25 +16,9 @@ x-ao-env: &ao-env
   SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
   OBOE_STAGING: "true"
   SW_APM_GEM_TEST: "true"
-  MONGO_SERVER: "ao-otel-ruby-mongo"
-  RABBITMQ_SERVER: "ao-otel-ruby-rabbitmq"
-  SW_APM_REPORTER: "file"        # for java-collector, set it as ssl
-  SW_APM_REPORTER_FILE_SINGLE: "false"
-  SW_APM_SERVICE_KEY: "${SW_APM_SERVICE_KEY}"
-  SW_APM_TOKEN_BUCKET_CAPACITY: 10000
-  SW_APM_TOKEN_BUCKET_RATE: 10000
-
+  SW_APM_REPORTER: "file"
+  SW_APM_SERVICE_KEY: "SW_APM_SERVICE_KEY"
   BUNDLE_GEMFILE: "gemfiles/unit.gemfile"
-  DOCKER_MYSQL_PASS: "admin"
-  DOCKER_PSQL_PASS: "docker"
-  MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-  MYSQL_ROOT_PASSWORD: "admin"
-  MYSQL_HOST: "ao-otel-ruby-mysql"
-  POSTGRES_PASSWORD: "docker"
-  POSTGRES_USER: "docker"
-  POSTGRES_HOST: "ao-otel-ruby-postgres"
-  RUBY_ENV: "test"
-  TEST_RUNS_TO_FILE: "true"
 
 x-ao-shared: &ao-shared
   mem_limit: 1G
@@ -44,26 +28,19 @@ x-ao-shared: &ao-shared
       max-size: "100m"
   ports:
     - "3000"
-  depends_on:
-    - ao_otel_ruby_wait
-  links:
-    - ao_otel_ruby_wait
   stdin_open: true
   tty: true
   working_dir: /code/ruby-solarwinds
+  privileged: true
 
 services:
   ruby_sw_otel_apm_ubuntu:
     container_name: ruby_sw_apm_ubuntu
-    image: ruby_sw_apm_ubuntu
-    build:
-      context: .
-      dockerfile: Dockerfile_ubuntu
+    image: ubuntu:22.04
     hostname: docker.ao.ubuntu
     << : *ao-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ./.ruby_version_ubuntu:/code/ruby-solarwinds/.ruby-version
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
@@ -72,65 +49,34 @@ services:
 
   ruby_sw_otel_apm_alpine:
     container_name: ruby_sw_apm_alpine
-    image: ruby_sw_apm_alpine
-    build:
-      context: .
-      dockerfile: ./Dockerfile_alpine
+    image: alpine:3.17
     hostname: docker.ao.alpine
     <<: *ao-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
-      - ./.ruby_version_alpine:/code/ruby-solarwinds/.ruby-version
     environment:
       <<: *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_ALPINE"
 
   ruby_sw_otel_apm_debian:
     container_name: ruby_sw_apm_debian
-    image: ruby_sw_apm_debian
-    build:
-      context: .
-      dockerfile: Dockerfile_debian
+    image: debian:bullseye
     hostname: docker.ao.debian
     << : *ao-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
-      - ./.ruby_version_debian:/code/ruby-solarwinds/.ruby-version
     environment:
       << : *ao-env
       SW_APM_HOSTNAME_ALIAS: "AO_RUBY_DEBIAN"
 
-  ruby_sw_otel_apm_centos:
-    container_name: ruby_sw_apm_centos
-    image: ruby_sw_apm_centos
-    build:
-      context: .
-      dockerfile: Dockerfile_centos
-    hostname: docker.ao.centos
-    << : *ao-shared
-    volumes:
-      - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
-      - ./.ruby_version_centos:/code/ruby-solarwinds/.ruby-version
-      - ../../../../repos/rack-cache/:/rack-cache
-    environment:
-      << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_CENTOS"
-    privileged: true
-
-  ruby_sw_otel_apm_amzlinux:
-    container_name: ruby_sw_apm_amzlinux
-    image: ruby_sw_apm_amzlinux
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: Dockerfile_amzlinux
-    hostname: docker.ao.amzlinux
+  ruby_sw_otel_apm_amazonlinux:
+    container_name: ruby_sw_apm_amazonlinux
+    image: amazonlinux:2023
+    hostname: docker.ao.amazonlinux
     << : *ao-shared
     volumes:
       - ../../:/code/ruby-solarwinds
@@ -139,31 +85,21 @@ services:
       - ../../../../repos/rack-cache/:/rack-cache
     environment:
       << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_AMZLINUX"
-    privileged: true
+      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_AMAZONLINUX"
 
-  # the name has to be java-collector to make it work
-  java-collector:
-    container_name: java-collector
-    image: "ghcr.io/librato/apm-agent-test-collector:v1.2.2"
+  ruby_sw_otel_apm_ubuntu_development:
+    container_name: ruby_sw_apm_ubuntu_development
+    image: ruby_sw_apm_ubuntu_development
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: docker.ao.ubuntu.development
+    << : *ao-shared
     volumes:
-      - ./../java_collector/settings.db:/settings.db
-      - ./../java_collector/cert/server-grpc.pem:/server-grpc.pem
-      - ./../java_collector/cert/server-grpc.crt:/server-grpc.crt
-      - ./../java_collector/config-proxy-ao.json:/config.json
-    logging:
-      options:
-        max-file: "1"
-        max-size: 50m
-    ports:
-      - "8181:8181"
-      - "12224:12224"
-    command: java -jar apm-agent-test-collector.jar
+      - ../../:/code/ruby-solarwinds
+      - ../../../oboe/factory-output:/code/oboe/factory-output
+      - ../../../oboe/liboboe:/code/oboe/liboboe
+    environment:
+      << : *ao-env
+      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_UBUNTU_DEVELOPMENT"
 
-  ao_otel_ruby_wait:
-    container_name: ao_otel_ruby_wait
-    image: waisbrot/wait
-    depends_on:
-      - java-collector
-    links:
-      - java-collector

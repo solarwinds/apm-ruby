@@ -42,6 +42,7 @@ gemfiles=(
 
 dbtypes=("mysql" "postgresql")
 prep_stmts=(0 1)
+arch=$(uname -m)
 
 # TODO think about storing and resetting after the tests:
 #  - BUNDLE_GEMFILE in the env (there may be none)
@@ -113,10 +114,9 @@ export TEST_RUNS_FILE_NAME="log/testrun_"$time".log"
 echo "logfile name: $TEST_RUNS_FILE_NAME"
 
 ##
-# loop through rubies, gemfiles, and database types to
-# set up and run tests
-##
+# loop through rubies, gemfiles, and database types to set up and run tests
 for ruby in ${rubies[@]} ; do
+  . ~/.profile
   rbenv local $ruby
   # TODO this patching should be moved to ruby_setup.sh
   # if this is running on alpine and using ruby 3++, we need to patch
@@ -148,11 +148,8 @@ for ruby in ${rubies[@]} ; do
   for gemfile in ${gemfiles[@]} ; do
     export BUNDLE_GEMFILE=$gemfile
 
-    # don't run rails 5 with Ruby >= 3
-    if [[ $gemfile =~ .*rails5.* && $ruby =~ ^3.* ]]; then continue; fi
-
-    # don't run rails 7 with Ruby <= 2.6
-    if [[ $gemfile =~ .*rails7.* && $ruby =~ ^2.[65].* ]]; then continue; fi
+    # alpine ruby seems have problem with google-protobuf
+    if [[ -r /etc/alpine-release && "$arch" == "aarch64" ]]; then continue; fi
 
     echo "*** installing gems from $BUNDLE_GEMFILE ***"
     bundle update # --quiet
@@ -161,14 +158,11 @@ for ruby in ${rubies[@]} ; do
       exit_status=1
       continue
     fi
-
     # and here we are finally running the tests!!!
     bundle exec rake test
     status=$?
     [[ $status -gt $exit_status ]] && exit_status=$status
     [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby !!!"
-
-    pkill -f sidekiq
   done
 done
 
