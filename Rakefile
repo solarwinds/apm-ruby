@@ -32,7 +32,9 @@ end
 
 task :docker_test => :docker_tests
 
-desc 'Start docker container for testing, accepts: alpine, debian, centos, ubuntu, amazonlinux as args, default: ubuntu'
+desc 'Start docker container for testing, os accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu. 
+      It also accept custom ruby version, e.g. 2.7.5, 3.1.0, 3.2.2. default: 3.1.0
+      Example: bundle exec rake docker_tests alpine 3.2.2'
 task :docker_tests, :environment do
   _arg1, arg2, arg3 = ARGV
   os = arg2 || 'ubuntu'
@@ -45,7 +47,8 @@ task :docker_tests, :environment do
 
 end
 
-desc 'Start docker container for different task of testing, accepts: alpine, debian, centos, ubuntu, amazonlinux as args, default: ubuntu'
+desc 'Start minimal setup docker container, accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu
+      In this container, you can install different version of ruby and switch the version for running test.'
 task :docker, :environment do
   _arg1, arg2= ARGV
   os = arg2 || 'ubuntu'
@@ -57,7 +60,7 @@ task :docker, :environment do
 end
 
 task :docker_development => :docker_dev
-desc 'Start docker container for testing and debugging, accepts: alpine, debian, centos as args, default: ubuntu'
+desc 'Start ubuntu docker container for testing and debugging.'
 task :docker_dev, :environment do
 
   Dir.chdir('test/run_otel_tests')

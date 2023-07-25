@@ -12,7 +12,7 @@ version: "2.1"
 # > rake docker_tests
 #
 ########################################################################################################
-x-ao-env: &ao-env
+x-swo-env: &swo-env
   SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
   OBOE_STAGING: "true"
   SW_APM_GEM_TEST: "true"
@@ -20,7 +20,7 @@ x-ao-env: &ao-env
   SW_APM_SERVICE_KEY: "SW_APM_SERVICE_KEY"
   BUNDLE_GEMFILE: "gemfiles/unit.gemfile"
 
-x-ao-shared: &ao-shared
+x-swo-shared: &swo-shared
   mem_limit: 1G
   logging:
     options:
@@ -37,55 +37,55 @@ services:
   ruby_sw_otel_apm_ubuntu:
     container_name: ruby_sw_apm_ubuntu
     image: ubuntu:22.04
-    hostname: docker.ao.ubuntu
-    << : *ao-shared
+    hostname: docker.swo.ubuntu
+    << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
-      << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_UBUNTU"
+      << : *swo-env
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
 
   ruby_sw_otel_apm_alpine:
     container_name: ruby_sw_apm_alpine
     image: alpine:3.17
-    hostname: docker.ao.alpine
-    <<: *ao-shared
+    hostname: docker.swo.alpine
+    <<: *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
-      <<: *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_ALPINE"
+      <<: *swo-env
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
 
   ruby_sw_otel_apm_debian:
     container_name: ruby_sw_apm_debian
     image: debian:bullseye
-    hostname: docker.ao.debian
-    << : *ao-shared
+    hostname: docker.swo.debian
+    << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
-      << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_DEBIAN"
+      << : *swo-env
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
 
   ruby_sw_otel_apm_amazonlinux:
     container_name: ruby_sw_apm_amazonlinux
     image: amazonlinux:2023
-    hostname: docker.ao.amazonlinux
-    << : *ao-shared
+    hostname: docker.swo.amazonlinux
+    << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
       - ../../../../repos/rack-cache/:/rack-cache
     environment:
-      << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_AMAZONLINUX"
+      << : *swo-env
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_AMAZONLINUX"
 
   ruby_sw_otel_apm_ubuntu_development:
     container_name: ruby_sw_apm_ubuntu_development
@@ -93,13 +93,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    hostname: docker.ao.ubuntu.development
-    << : *ao-shared
+    hostname: docker.swo.ubuntu.development
+    << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
       - ../../../oboe/factory-output:/code/oboe/factory-output
       - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
-      << : *ao-env
-      SW_APM_HOSTNAME_ALIAS: "AO_RUBY_UBUNTU_DEVELOPMENT"
+      << : *swo-env
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"
 

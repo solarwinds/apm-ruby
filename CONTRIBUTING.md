@@ -31,7 +31,7 @@ bundle exec rake build_gem
 
 This requires a ruby development environment set up on your laptop, which we'll describe for [rbenv](https://github.com/rbenv/rbenv).  Feel free to use other tools such as RVM.  
 
-## 1. Install rbenv
+### 1. Install rbenv
 
 Mac
 ```bash
@@ -50,7 +50,7 @@ echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
 echo 'eval "$(~/.rbenv/bin/rbenv init - zsh)"' >> ~/.zshrc   # for zsh
 ```
 
-## 2. Install and Set Ruby Runtime
+### 2. Install and Set Ruby Runtime
 
 Install ruby from rbenv:
 ```bash
@@ -78,7 +78,7 @@ rbenv local 3.1.2    # set the Ruby version for this directory
 
 ## Run Development Containers
 
-Current support ubuntu development enviornment
+Currently support ubuntu development enviornment
 
 Install bundler, configure it to skip unneeded groups then install the project dependencies:
 ```bash
@@ -138,7 +138,7 @@ bundle exec rake docker_test alpine 3.1.0
 
 ### 2. Run Test/Debug Containers
 
-This case is applied if you wish to run specific test.
+This section is applied if you wish to run specific test.
 
 Install bundler, configure it to skip unneeded groups then install the project dependencies:
 ```bash
