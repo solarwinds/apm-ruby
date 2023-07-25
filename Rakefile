@@ -33,7 +33,7 @@ end
 task :docker_test => :docker_tests
 
 desc 'Start docker container for testing, os accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu. 
-      It also accept custom ruby version, e.g. 2.7.5, 3.1.0, 3.2.2. default: 3.1.0
+      It also accepts custom ruby versions, e.g. 2.7.5, 3.1.0, 3.2.2. default: 3.1.0
       Example: bundle exec rake docker_tests alpine 3.2.2'
 task :docker_tests, :environment do
   _arg1, arg2, arg3 = ARGV
