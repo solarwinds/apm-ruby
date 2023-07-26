@@ -18,19 +18,23 @@
 ```bash
 bundle exec rake docker
 ```
-2) run all tests in container
+2) setup ruby environment
+```bash
+test/run_otel_tests/ruby_setup.sh
+```
+3) run all tests in container
 ```bash
 test/run_otel_tests/run_tests.sh
 ```
-3) the output goes to the logs in this repo
+4) the output goes to the logs in this repo
 
 search for `FAIL|ERROR` to find the tests that didn't pass
 
 run fewer tests by using the options e.g.
 ```bash
-test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/delayed_job.gemfile
+test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/unit.gemfile
 ```
-4) fix code and rerun, the code base is mounted in the container ;)
+5) fix code and rerun, the code base is mounted in the container ;)
 
 ---
 
@@ -60,35 +64,6 @@ done in Linux.
 
 Please see further down on how to run a single test.
 
-### Services
-The tests require different services to be running, mainly:
-* mysql
-* postgresql
-* redis
-* memcached
-* rabbitmq
-* mongo
-
-### Oboe
-Oboe is the c-library that provides the methods to send data to
-the collector.
-When using the gem from source it needs to be installed once on a
-new platform:
-```bash
-bundle exec rake clean
-bundle exec rake fetch 
-bundle exec rake compile
-```
-or use the short version that does it all
-```bash
-bundle exec rake cfc
-```
-If the ruby version changes it needs to be re-compiled 
-(Don't worry about segfaults, some background job may have been running)
-
-Oboe gets installed automatically when using either `bundle exec rake docker_test`, 
-`run_tests.sh`, or the gem from packagecloud or rubygems.
-
 ## Defining components of a test run
 A single test run is defined by:
 * the ruby version (make sure to use the )
@@ -108,8 +83,13 @@ because it takes care of starting the required services.
 ### Run all tests
 To run all tests:
 ```bash
-rake docker_tests
+bundle exec rake docker_test [alpine|debian|ubuntu|amazonlinux] [{ruby_version}]
 ```
+e.g.
+```bash
+bundle exec rake docker_test ubuntu 3.1.0
+```
+
 >Temporarily commenting out components (e.g. a ruby version) in travis.yml
 is a good way to reduce the time of a test run.
 
@@ -127,17 +107,22 @@ rake docker_down
 In this case we want to start a docker container and then define
 which tests to run from within.
 ```bash
-rake docker
+bundle exec rake docker [alpine|debian|ubuntu|amazonlinux]
+```
+
+Setup the docker container (install ruby and other dependencies)
+```bash
+test/run_otel_tests/ruby_setup.sh
 ```
 
 In the container check out the options:
 ```bash
-run_otel_tests/run_tests.sh -h
+test/run_otel_tests/run_tests.sh -h
 ```
 
 Example: Run the framework tests with ruby 2.7.5
 ```bash
-run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/frameworks.gemfile
+test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/frameworks.gemfile
 ```
 
 ### Run a specific test file, or a specific test
@@ -146,33 +131,19 @@ To run singe tests the env needs to be set up and use `ruby -I test`
 
 One file:
 ```bash
-rbenv local 2.7.5
-export BUNDLE_GEMFILE=gemfiles/delayed_job.gemfile
-export DBTYPE=mysql       # optional, defaults to postgresql
-bundle
-bundle rake cfc           # download, compile oboe_api, and link liboboe
-bundle exec ruby -I test test/queues/delayed_job-client_test.rb
+rbenv local 3.1.0
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb
 ```
 
 A specific test:
 ```bash
-rbenv global 2.7.5
-export BUNDLE_GEMFILE=gemfiles/libraries.gemfile
-export DBTYPE=mysql
-bundle
-bundle exec ruby -I test test/instrumentation/moped_test.rb -n /drop_collection/
+rbenv global 3.1.0
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb -n /test_build_meta_data/
 ```
 
 Gotcha!
-
-Unfortunately the sidekiq background workers are hard to kill programatically, 
-they will bring docker to a halt if not cleaned up periodically.
-
-This is one way to keep them in check and also update the sidekiq worker code 
-for each run:
-```bash
-pkill -f sideqkiq; bundle exec ruby -I test test/...
-```
 
 ## byebug for debugging
 

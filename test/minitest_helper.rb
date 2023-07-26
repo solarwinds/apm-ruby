@@ -18,6 +18,15 @@ require 'bson'
 
 require './lib/solarwinds_apm/logger'
 
+# simplecov coverage information
+require 'simplecov'
+require 'simplecov-console'
+SimpleCov.formatter = SimpleCov::Formatter::Console
+SimpleCov::Formatter::Console.max_rows = 15
+SimpleCov::Formatter::Console.max_lines = 5
+SimpleCov::Formatter::Console.missing_len = 20
+SimpleCov.start
+
 # write to a file as well as STDOUT (comes in handy with docker runs)
 # This approach preserves the coloring of pass fail, which the cli
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
@@ -113,6 +122,14 @@ module SolarWindsAPM
     end
 
     def self.addInfo(_key, value); end
+
+    def self.createEntry(*_args)
+      self
+    end
+
+    def self.createExit(_args)
+      self
+    end
   end
 end
 
