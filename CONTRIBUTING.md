@@ -27,9 +27,9 @@ bundle install
 bundle exec rake build_gem
 ```
 
-## Comprehensive Testing and Debugging Setup
+## Local Dev Environment Setup
 
-This requires a ruby development environment set up on your laptop, which we'll describe for [rbenv](https://github.com/rbenv/rbenv).  Feel free to use other tools such as RVM.  
+This sets up a ruby development environment on your laptop, which we'll describe for [rbenv](https://github.com/rbenv/rbenv).  Feel free to use other tools such as RVM.  This setup is required to run the dev, linting and testing steps below.
 
 ### 1. Install rbenv
 
