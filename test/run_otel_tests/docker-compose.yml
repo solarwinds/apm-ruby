@@ -12,13 +12,6 @@ version: "2.1"
 # > rake docker_tests
 #
 ########################################################################################################
-x-swo-env: &swo-env
-  SW_APM_COLLECTOR: "/tmp/sw_apm_traces.bson"
-  OBOE_STAGING: "true"
-  SW_APM_GEM_TEST: "true"
-  SW_APM_REPORTER: "file"
-  SW_APM_SERVICE_KEY: "SW_APM_SERVICE_KEY"
-  BUNDLE_GEMFILE: "gemfiles/unit.gemfile"
 
 x-swo-shared: &swo-shared
   mem_limit: 1G
@@ -42,7 +35,6 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
     environment:
-      << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
 
   ruby_sw_otel_apm_alpine:
@@ -53,7 +45,6 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
     environment:
-      <<: *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
 
   ruby_sw_otel_apm_debian:
@@ -64,7 +55,6 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
     environment:
-      << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
 
   ruby_sw_otel_apm_amazonlinux:
@@ -89,6 +79,5 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
     environment:
-      << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"
-
+      OBOE_STAGING: "true"
