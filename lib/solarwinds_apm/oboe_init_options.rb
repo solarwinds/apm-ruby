@@ -1,6 +1,7 @@
 # Copyright (c) 2019 SolarWinds, LLC.
 # All rights reserved.
 require 'singleton'
+require 'uri'
 module SolarWindsAPM
   # OboeInitOptions
   class OboeInitOptions
