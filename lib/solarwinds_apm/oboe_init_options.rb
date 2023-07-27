@@ -1,7 +1,6 @@
 # Copyright (c) 2019 SolarWinds, LLC.
 # All rights reserved.
 require 'singleton'
-require 'uri'
 module SolarWindsAPM
   # OboeInitOptions
   class OboeInitOptions
@@ -247,7 +246,7 @@ module SolarWindsAPM
       return uri if uri.nil? || uri.empty?
 
       begin
-        sanitized_uri = URI("http://#{uri}").host
+        sanitized_uri = ::URI("http://#{uri}").host
         return sanitized_uri unless sanitized_uri.nil?
       rescue StandardError => e
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"}
