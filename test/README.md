@@ -143,8 +143,6 @@ export BUNDLE_GEMFILE=gemfiles/unit.gemfile
 bundle exec ruby -I test test/component/solarwinds_exporter_test.rb -n /test_build_meta_data/
 ```
 
-Gotcha!
-
 ## byebug for debugging
 
 The gem is setup to be debugged with `byebug`, add the following lines in the code for a break:
