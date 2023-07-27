@@ -41,8 +41,6 @@ services:
     << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
       << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
@@ -54,8 +52,6 @@ services:
     <<: *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
       <<: *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
@@ -67,8 +63,6 @@ services:
     << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
       << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
@@ -80,9 +74,6 @@ services:
     << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
-      - ../../../../repos/rack-cache/:/rack-cache
     environment:
       << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_AMAZONLINUX"
@@ -97,8 +88,6 @@ services:
     << : *swo-shared
     volumes:
       - ../../:/code/ruby-solarwinds
-      - ../../../oboe/factory-output:/code/oboe/factory-output
-      - ../../../oboe/liboboe:/code/oboe/liboboe
     environment:
       << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"

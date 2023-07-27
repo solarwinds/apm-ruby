@@ -18,7 +18,7 @@ on:
 
 env:
   SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
-  SW_APM_COLLECTOR: ${{ secrets.APM_RUBY_INSTALL_TESTING_COLLECTOR }}
+  SW_APM_COLLECTOR: apm.collector.cloud.solarwinds.com
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
