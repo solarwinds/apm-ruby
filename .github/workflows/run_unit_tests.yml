@@ -36,7 +36,7 @@ jobs:
       image: ruby:${{ matrix.ruby }}-${{ matrix.os }}
 
     env:
-      SW_APM_SERVICE_KEY: ${{ secret.DUMMY_SW_APM_SERVICE_KEY }}
+      SW_APM_SERVICE_KEY: ${{ secrets.DUMMY_SW_APM_SERVICE_KEY }}
       RUBY_VERSION: ${{ matrix.ruby }}
 
     steps:
