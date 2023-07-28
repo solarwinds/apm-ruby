@@ -112,3 +112,21 @@ Default propagators are tracecontext, baggage, solarwinds
 #### Exporter
 
 Default exporter is solarwinds
+
+## Oboe
+Oboe is the c-library that provides the methods to send data to
+the collector.
+When using the gem from source it needs to be installed once on a
+new platform:
+```bash
+bundle exec rake clean
+bundle exec rake fetch 
+bundle exec rake compile
+```
+or use the short version that does it all
+```bash
+bundle exec rake cfc
+```
+If the ruby version changes it needs to be re-compiled 
+(Don't worry about segfaults, some background job may have been running)
+
