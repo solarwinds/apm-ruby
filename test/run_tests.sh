@@ -51,7 +51,6 @@ done
 
 ##
 # setup files and env vars
-
 arch=$(uname -m)
 dir=$(pwd)
 exit_status=-1
