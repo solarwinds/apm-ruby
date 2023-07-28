@@ -20,7 +20,7 @@ bundle exec rake docker
 ```
 2) run all tests in container
 ```bash
-test/run_otel_tests/run_tests.sh
+test/run_tests.sh
 ```
 3) the output goes to the logs in this repo
 
@@ -28,7 +28,7 @@ search for `FAIL|ERROR` to find the tests that didn't pass
 
 run fewer tests by using the options e.g.
 ```bash
-test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/delayed_job.gemfile
+test/run_tests.sh -r 2.7.5 -g gemfiles/delayed_job.gemfile
 ```
 4) fix code and rerun, the code base is mounted in the container ;)
 
@@ -131,13 +131,11 @@ rake docker
 ```
 
 In the container check out the options:
-```bash
-run_otel_tests/run_tests.sh -h
+```bash/run_tests.sh -h
 ```
 
 Example: Run the framework tests with ruby 2.7.5
-```bash
-run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/frameworks.gemfile
+```bash/run_tests.sh -r 2.7.5 -g gemfiles/frameworks.gemfile
 ```
 
 ### Run a specific test file, or a specific test

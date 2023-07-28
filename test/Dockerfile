@@ -2,7 +2,7 @@
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ENV TZ=America/Vancouver
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -30,8 +30,6 @@ RUN apt-get update \
        libsasl2-dev \
        libsqlite3-dev \
        libssl-dev \
-       nodejs \
-       openjdk-8-jdk \
        pkg-config \
        psmisc \
        ruby \
@@ -58,9 +56,6 @@ RUN echo 'alias be="bundle exec"' >> ~/.profile
 # install rubies to build our gem against
 RUN . ~/.profile \
     && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
-    && rbenv install 2.6.9 \
-    && rbenv install 2.7.5 \
-    && rbenv install 3.0.6 \
     && rbenv install 3.1.0
 
 RUN echo 'gem: --no-document' >> ~/.gemrc

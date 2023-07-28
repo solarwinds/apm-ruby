@@ -27,48 +27,87 @@ x-swo-shared: &swo-shared
   privileged: true
 
 services:
-  ruby_sw_otel_apm_ubuntu:
+  ruby_sw_apm_debian_2.7.5:
+    container_name: ruby_sw_apm_debian_27
+    image: ruby:2.7.5-buster
+    hostname: docker.swo.ubuntu
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
+
+  ruby_sw_apm_debian_3.0.3:
+    container_name: ruby_sw_apm_debian_30
+    image: ruby:3.0.6-buster
+    hostname: docker.swo.ubuntu
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
+
+  ruby_sw_apm_debian_3.1.0:
+    container_name: ruby_sw_apm_debian_31
+    image: ruby:3.1.0-bullseye
+    hostname: docker.swo.ubuntu
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
+
+  ruby_sw_apm_debian_3.2.2:
+    container_name: ruby_sw_apm_debian_32
+    image: ruby:3.2.2-bullseye
+    hostname: docker.swo.ubuntu
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
+
+  ruby_sw_apm_ubuntu:
     container_name: ruby_sw_apm_ubuntu
     image: ubuntu:22.04
     hostname: docker.swo.ubuntu
     << : *swo-shared
     volumes:
-      - ../../:/code/ruby-solarwinds
+      - ../:/code/ruby-solarwinds
     environment:
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU"
 
-  ruby_sw_otel_apm_alpine:
+  ruby_sw_apm_alpine:
     container_name: ruby_sw_apm_alpine
     image: alpine:3.17
     hostname: docker.swo.alpine
     <<: *swo-shared
     volumes:
-      - ../../:/code/ruby-solarwinds
+      - ../:/code/ruby-solarwinds
     environment:
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
 
-  ruby_sw_otel_apm_debian:
+  ruby_sw_apm_debian:
     container_name: ruby_sw_apm_debian
     image: debian:bullseye
     hostname: docker.swo.debian
     << : *swo-shared
     volumes:
-      - ../../:/code/ruby-solarwinds
+      - ../:/code/ruby-solarwinds
     environment:
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
 
-  ruby_sw_otel_apm_amazonlinux:
+  ruby_sw_apm_amazonlinux:
     container_name: ruby_sw_apm_amazonlinux
     image: amazonlinux:2023
     hostname: docker.swo.amazonlinux
     << : *swo-shared
     volumes:
-      - ../../:/code/ruby-solarwinds
+      - ../:/code/ruby-solarwinds
     environment:
-      << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_AMAZONLINUX"
 
-  ruby_sw_otel_apm_ubuntu_development:
+  ruby_sw_apm_ubuntu_development:
     container_name: ruby_sw_apm_ubuntu_development
     image: ruby_sw_apm_ubuntu_development
     build:
@@ -77,7 +116,7 @@ services:
     hostname: docker.swo.ubuntu.development
     << : *swo-shared
     volumes:
-      - ../../:/code/ruby-solarwinds
+      - ../:/code/ruby-solarwinds
     environment:
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"
       OBOE_STAGING: "true"

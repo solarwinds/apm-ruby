@@ -157,9 +157,9 @@ The default ruby version is 3.1.0, but you can install other ruby version throug
 
 In the container, execute the script:
 ```bash
-test/run_otel_tests/ruby_setup.sh # Install ruby
+test/ruby_setup.sh # Install ruby
 
-test/run_otel_tests/run_tests.sh  # Run the all test case
+test/run_tests.sh  # Run the all test case
 
 bundle exec ruby -I test test/unit/otel_config_propagator_test.rb # One file
 

@@ -47,7 +47,7 @@ if [ ! -z "$RUBY_VERSION" ]; then {
   # If there is version provide, then run the test
   echo "Start Run Unit Test"
   mkdir log
-  test/run_otel_tests/run_tests.sh -r "$RUBY_VERSION"
+  test/run_tests.sh -r "$RUBY_VERSION"
   echo "Finished Unit Test"
 }
 fi
