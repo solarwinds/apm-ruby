@@ -26,12 +26,7 @@ jobs:
       image: ghcr.io/${{ github.repository }}/apm_ruby_ubuntu
 
     env:
-      SW_APM_GEM_TEST: true
-      SW_APM_REPORTER: file
-      SW_APM_COLLECTOR: /tmp/sw_apm_traces.bson
-      SW_APM_REPORTER_FILE_SINGLE: false
-      OBOE_STAGING: true
-      TEST_RUNS_TO_FILE: "true"
+      SW_APM_SERVICE_KEY: ${{ secret.DUMMY_SW_APM_SERVICE_KEY }}
 
     steps:
     - name: Checkout ${{ github.ref }}

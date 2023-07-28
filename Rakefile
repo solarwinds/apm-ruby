@@ -28,29 +28,44 @@ Rake::TestTask.new do |t|
     t.test_files = FileList['test/unit/*_test.rb'] +
                    FileList['test/component/*_test.rb']
   end
-
-end
-
-desc 'Run all test suites defined by travis'
-task :docker_tests, :environment do
-  _arg1, arg2 = ARGV
-  os = arg2 || 'ubuntu'
-
-  Dir.chdir('test/run_otel_tests')
-  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_apm_#{os} ruby_sw_apm_#{os}")
 end
 
 task :docker_test => :docker_tests
 
-desc 'Start docker container for testing and debugging, accepts: alpine, debian, centos as args, default: ubuntu'
+desc 'Start docker container for testing, os accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu. 
+      It also accepts custom ruby versions, e.g. 2.7.5, 3.1.0, 3.2.2. default: 3.1.0
+      Example: bundle exec rake docker_tests alpine 3.2.2'
+task :docker_tests, :environment do
+  _arg1, arg2, arg3 = ARGV
+  os = arg2 || 'ubuntu'
+  rversion = arg3 || '3.1.0'
+
+  Dir.chdir('test/run_otel_tests')
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
+            --entrypoint test/run_otel_tests/ruby_setup.sh -e RUBY_VERSION=#{rversion} \
+            --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
+
+end
+
+desc 'Start minimal setup docker container, accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu
+      In this container, you can install different version of ruby and switch the version for running test.'
 task :docker, :environment do
-  _arg1, arg2 = ARGV
+  _arg1, arg2= ARGV
   os = arg2 || 'ubuntu'
 
   Dir.chdir('test/run_otel_tests')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
+            --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
+
+end
+
+task :docker_development => :docker_dev
+desc 'Start ubuntu docker container for testing and debugging.'
+task :docker_dev, :environment do
+
+  Dir.chdir('test/run_otel_tests')
+  exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
+              --name ruby_sw_otel_apm_ubuntu_development ruby_sw_otel_apm_ubuntu_development")
 end
 
 desc 'Stop all containers that were started for testing and debugging'

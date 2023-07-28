@@ -2,6 +2,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/support/transformer'
 
 describe 'TransformerTest' do
   before do

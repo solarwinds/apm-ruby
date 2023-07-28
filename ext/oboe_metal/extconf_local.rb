@@ -21,18 +21,18 @@ ext_dir = __dir__
 
 # Set the mkmf lib paths so we have no issues linking to
 # the SolarWindsAPM libs.
-ao_lib_dir = File.join(ext_dir, 'lib')
-ao_path = '../../../oboe/factory-output'
-ao_clib = "liboboe-1.0-x86_64.so.0.0.0"
-ao_item = File.join(ao_path, ao_clib)
-clib = File.join(ao_lib_dir, ao_clib)
+swo_lib_dir = File.join(ext_dir, 'lib')
+swo_path = '../../../oboe/factory-output'
+swo_clib = "liboboe-1.0-x86_64.so.0.0.0"
+swo_item = File.join(swo_path, swo_clib)
+clib = File.join(swo_lib_dir, swo_clib)
 
-FileUtils.cp(ao_item, clib)
+FileUtils.cp(swo_item, clib)
 
 # Create relative symlinks for the SolarWindsAPM library
-Dir.chdir(ao_lib_dir) do
-  File.symlink(ao_clib, 'liboboe.so')
-  File.symlink(ao_clib, 'liboboe-1.0.so.0')
+Dir.chdir(swo_lib_dir) do
+  File.symlink(swo_clib, 'liboboe.so')
+  File.symlink(swo_clib, 'liboboe-1.0.so.0')
 end
 
 dir_config('oboe', 'src', 'lib')

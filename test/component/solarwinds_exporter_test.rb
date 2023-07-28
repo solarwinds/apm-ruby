@@ -2,221 +2,89 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'minitest/mock'
 require 'net/http'
+require './lib/solarwinds_apm/opentelemetry'
+require './lib/solarwinds_apm/support/txn_name_manager'
+require './lib/solarwinds_apm/oboe_init_options'
+require './lib/solarwinds_apm/config'
 
 describe 'SolarWindsExporterTest' do
   before do
-    
-    # create sample span
-    @status = ::OpenTelemetry::Trace::Status.ok("good") 
-    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
-    @resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
-    @instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
-    @trace_flags = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
-    @tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
-
-    create_span_data
-
     txn_name_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
     @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
     SolarWindsAPM::Config[:log_args] = true                                     
   end
 
-  
-  # Intergration test is to test the entire trace workflow from sampler to exporter
-  # 1. instrument the net/http simple call (e.g. call https://www.google.com)
-  # There will be two spans. 
-  # a. The one is connect which contains 3 entries (i.e. entry, info, exit). 
-  # b. The second one is HTTP GET, which contains 3 entries (i.e. entry, info, exit).
-  it 'integration test' do 
-    clear_all_traces
-    Net::HTTP.get(URI('https://www.google.com'))
-    traces = obtain_all_traces
+  it 'test_normalize_framework_name' do
+    result = @exporter.send(:normalize_framework_name, 'net::http')
+    _(result).must_equal 'net/http'
 
-    _(traces.count).must_equal 4
+    result = @exporter.send(:normalize_framework_name, 'elasticsearch')
+    _(result).must_equal 'elasticsearch'
+  end
 
-    _(traces[0]["TransactionName"]).must_equal "connect"
-    _(traces[0]["Layer"]).must_equal "connect"
-    _(traces[0]["sw.span_kind"]).must_equal "internal"
-    _(traces[0]["Label"]).must_equal "entry"
-    _(traces[0]["Timestamp_u"].to_s.length).must_equal 16
-    _(traces[0]["sw.trace_context"].split("-").size).must_equal 4
+  it 'test_check_framework_version' do
+    result = @exporter.send(:check_framework_version, 'opentelemetry-instrumentation-net_http')
+    _(result.scan(/\d+.\d+.\d+/).length).must_equal 1
 
-    _(traces[1]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[1]["Label"]).must_equal "exit"
-    _(traces[1]["Layer"]).must_equal "connect"
-    _(traces[1]["Edge"].size).must_equal 16
-    _(traces[1]["Timestamp_u"].to_s.length).must_equal 16
-    assert_equal(traces[0]["TID"], traces[1]["TID"])
+    result = @exporter.send(:check_framework_version, 'opentelemetry-instrumentation-bunny')
+    _(result.scan(/\d+.\d+.\d+/).length).must_equal 1
 
-    _(traces[2]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[2]["TransactionName"]).must_equal "HTTP GET"
-    _(traces[2]["Layer"]).must_equal "HTTP GET"
-    _(traces[2]["sw.span_kind"]).must_equal "client"
-    _(traces[2]["Language"]).must_equal "Ruby"
-    _(traces[2]["Timestamp_u"].to_s.length).must_equal 16
-    assert_equal(traces[0]["TID"], traces[2]["TID"])
+    result = @exporter.send(:check_framework_version, 'opentelemetry-instrumentation-dummy')
+    assert_nil(result)
+  end
 
-    _(traces[3]["sw.trace_context"].split("-").size).must_equal 4
-    _(traces[3]["Label"]).must_equal "exit"
-    _(traces[3]["Layer"]).must_equal "HTTP GET"
-    _(traces[3]["sw.parent_span_id"].size).must_equal 16
-    _(traces[3]["Timestamp_u"].to_s.length).must_equal 16
-    assert_equal(traces[0]["TID"], traces[3]["TID"])
+  it 'test_check_framework_version_with_version_cache' do
+    @exporter.instance_variable_get(:@version_cache)['opentelemetry-instrumentation-net_http'] = '9.9.9'
+
+    result = @exporter.send(:check_framework_version, 'opentelemetry-instrumentation-net_http')
+    _(result).must_equal '9.9.9'
+
+    @exporter.instance_variable_get(:@version_cache).delete('opentelemetry-instrumentation-net_http')
+  end
+
+  it 'test_build_meta_data' do
+    span_data = create_span_data
+    result = @exporter.send(:build_meta_data, span_data, parent: false)
+    _(result).must_equal '00-00000000000000000000000000000000-0000000000000000-00'
+  end
+
+  it 'test_report_info_event' do
+    span_event = ::OpenTelemetry::SDK::Trace::Event.new
+    span_event.name='test'
+    span_event.attributes={:test => 1}
+    span_event.timestamp=1
+    result = @exporter.send(:report_info_event, span_event)
+    _(result).must_equal true
+  end
+
+  it 'test_report_exception_event' do
+    span_event = ::OpenTelemetry::SDK::Trace::Event.new
+    span_event.name='test'
+    span_event.attributes={:test => 1}
+    span_event.timestamp=1
+    result = @exporter.send(:report_exception_event, span_event)
+    _(result).must_equal true
+  end
+
+  it 'test_add_info_transaction_name' do
+    span_data = create_span_data
+    @exporter.instance_variable_get(:@txn_manager).set('32c45e377a528ec9161631f7f758e1a7-a4a4399daca598c1','solarwinds')
+    result = @exporter.send(:add_info_transaction_name, span_data, SolarWindsAPM::Context)
+    _(result).must_equal 'solarwinds'
+  end
+
+  it 'test_add_info_instrumented_framework' do
 
   end
 
-  it 'test build_meta_data false' do
-
-    clear_all_traces
-    md = @exporter.send(:build_meta_data, @span_data, parent: false)
-    _(md.class.to_s).must_equal "Oboe_metal::Metadata"
+  it 'test_add_info_instrumentation_scope' do
 
   end
 
-  it 'test build_meta_data true' do
+  it 'test_log_span_data' do
 
-    clear_all_traces
-    md = @exporter.send(:build_meta_data, @span_data, parent: true)
-    _(md.class.to_s).must_equal "Oboe_metal::Metadata"
-
-  end
-
-  it 'test report_exception_event' do
-
-    Net::HTTP.get(URI('https://www.google.com'))
-    clear_all_traces
-    sample_events = ::OpenTelemetry::SDK::Trace::Event.new(name: "name", attributes: {"key" => "value"}.freeze, timestamp: 1_669_317_386_298_642_087)
-    @exporter.send(:report_exception_event, sample_events)
-    
-    traces = obtain_all_traces
-
-    _(traces.count).must_equal 1
-    _(traces[0]["sw.trace_context"].empty?).must_equal false
-    _(traces[0]["X-Trace"].empty?).must_equal false
-    _(traces[0]["X-Trace"].size).must_equal 60
-    _(traces[0]["sw.parent_span_id"].empty?).must_equal false
-    _(traces[0]["Edge"].empty?).must_equal false
-    _(traces[0]["Timestamp_u"]).must_equal 0
-    _(traces[0]["Label"]).must_equal "error"
-    _(traces[0]["Spec"]).must_equal "error"
-
-  end
-
-  # this add_info_transaction_name is not testable, need to make it testable
-  it 'test add_info_transaction_name ' do
-
-    clear_all_traces
-
-    md = @exporter.send(:build_meta_data, @span_data)
-    event = SolarWindsAPM::Context.createEntry(md, (@span_data.start_timestamp.to_i / 1000).to_i)
-    result = @exporter.send(:add_info_transaction_name, @span_data, event)
-    _(result).must_equal nil
-
-  end
-
-  it 'test log_span_data ' do
-    # this add_info_transaction_name is not testable, need to make it testable
-
-    clear_all_traces
-    @exporter.send(:log_span_data, @span_data)
-    traces = obtain_all_traces
-
-    _(traces.count).must_equal 2
-    _(traces[0]["Label"]).must_equal "entry"
-    _(traces[0]["Layer"]).must_equal "connect"
-    _(traces[0]["sw.span_kind"]).must_equal "internal"
-    _(traces[0]["Timestamp_u"]).must_equal 1_669_317_386_253_789
-
-    _(traces[1]["Label"]).must_equal "exit"
-    _(traces[1]["Timestamp_u"]).must_equal 1_669_317_386_298_642
-    _(traces[1]["Layer"]).must_equal "connect"
-
-  end
-
-  it 'test_log_args_with_url_parameter' do     
-    clear_all_traces
-    SolarWindsAPM::Config[:log_args] = false
-    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1?query1=value1'}
-    
-    create_span_data
-
-    @exporter.send(:log_span_data, @span_data)
-    traces = obtain_all_traces
-    _(traces.count).must_equal 2
-    _(traces[0]['http.target']).must_equal 'google.com/page1'
-    _(traces[0]['Layer']).must_equal 'connect'
-    _(traces[0]['sw.span_kind']).must_equal 'internal'
-    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
-    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
-    _(traces[0]['net.peer.port']).must_equal 8002
-
-    _(traces[1]['Label']).must_equal 'exit'
-    _(traces[1]['Layer']).must_equal 'connect'
-  end
-
-  it 'test_log_args_with_url_parameter_with_log_args_true' do     
-    clear_all_traces
-    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1?query1=value1'}
-    
-    create_span_data
-
-    @exporter.send(:log_span_data, @span_data)
-    traces = obtain_all_traces
-    _(traces.count).must_equal 2
-    _(traces[0]['http.target']).must_equal 'google.com/page1?query1=value1'
-    _(traces[0]['Layer']).must_equal 'connect'
-    _(traces[0]['sw.span_kind']).must_equal 'internal'
-    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
-    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
-    _(traces[0]['net.peer.port']).must_equal 8002
-
-    _(traces[1]['Label']).must_equal 'exit'
-    _(traces[1]['Layer']).must_equal 'connect'
-
-  end
-
-  it 'test_log_args_with_url_parameter_with_no_parameter' do     
-    clear_all_traces
-    SolarWindsAPM::Config[:log_args] = false
-    @attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002, "http.target"=>'google.com/page1'}
-    
-    create_span_data  
-
-    @exporter.send(:log_span_data, @span_data)
-    traces = obtain_all_traces
-    _(traces.count).must_equal 2
-    _(traces[0]['http.target']).must_equal 'google.com/page1'
-    _(traces[0]['Layer']).must_equal 'connect'
-    _(traces[0]['sw.span_kind']).must_equal 'internal'
-    _(traces[0]['otel.scope.name']).must_equal 'OpenTelemetry::Instrumentation::Net::HTTP'
-    _(traces[0]['net.peer.name']).must_equal 'sample-rails'
-    _(traces[0]['net.peer.port']).must_equal 8002
-
-    _(traces[1]['Label']).must_equal 'exit'
-    _(traces[1]['Layer']).must_equal 'connect'
-
-  end
-  
-  def create_span_data
-    @span_data = ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
-                                                           :internal,
-                                                           @status,
-                                                           ("\0" * 8).b,
-                                                           2,
-                                                           2,
-                                                           0,
-                                                           1_669_317_386_253_789_212,
-                                                           1_669_317_386_298_642_087,
-                                                           @attributes,
-                                                           nil,
-                                                           nil,
-                                                           @resource,
-                                                           @instrumentation_scope,
-                                                           "\xA4\xA49\x9D\xAC\xA5\x98\xC1",
-                                                           "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7",
-                                                           @trace_flags,
-                                                           @tracestate)
   end
 
 end

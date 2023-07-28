@@ -17,11 +17,8 @@ on:
         description: 'Solarwinds apm version'
 
 env:
-  SW_APM_GEM_TEST: true
-  SW_APM_REPORTER: file
-  SW_APM_COLLECTOR: /tmp/sw_apm_traces.bson
-  SW_APM_REPORTER_FILE_SINGLE: false
-  TEST_RUNS_TO_FILE: "true"
+  SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
+  SW_APM_COLLECTOR: apm.collector.cloud.solarwinds.com
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
@@ -61,7 +58,7 @@ jobs:
             Name=xuan-cao-ec2-runner
 
   verify_installation:
-    needs: 
+    needs:
       - start_arm64_runner
     strategy:
       fail-fast: false
@@ -93,6 +90,7 @@ jobs:
           - hostname: rb3.0.2-ubuntu2204
             image: ubuntu:22.04
         exclude:
+          # alpine not yet supported on self-hosted runners https://github.com/actions/runner/issues/801
           - hostname: rb3.0.6-alpine3.16
             arch: arm64
           - hostname: rb3.2.2-alpine3.17
@@ -111,7 +109,7 @@ jobs:
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
         shell: sh
-      
+
 
   terminate_arm64_runner:
     if: ${{ always() }}
@@ -130,4 +128,3 @@ jobs:
           action: terminate
           github-token: ${{ secrets.CI_GITHUB_TOKEN }}
           matrix: ${{ needs.start_arm64_runner.outputs.matrix }} # passing a matrix will terminate all runners, not just one
-

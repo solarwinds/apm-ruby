@@ -2,6 +2,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/support/txn_name_manager'
 
 describe 'SolarWindsTXNNameManangerTest.rb' do
   before do

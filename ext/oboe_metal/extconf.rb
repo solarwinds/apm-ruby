@@ -21,54 +21,54 @@ ext_dir = __dir__
 
 # Set the mkmf lib paths so we have no issues linking to
 # the SolarWindsAPM libs.
-ao_lib_dir = File.join(ext_dir, 'lib')
-ao_include = File.join(ext_dir, 'src')
+swo_lib_dir = File.join(ext_dir, 'lib')
+swo_include = File.join(ext_dir, 'src')
 
 # Download the appropriate liboboe from Staging or Production
-version = File.read(File.join(ao_include, 'VERSION')).strip
+version = File.read(File.join(swo_include, 'VERSION')).strip
 if ENV['OBOE_DEV'].to_s.downcase == 'true'
-  ao_path = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly"
+  swo_path = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly"
   puts 'Fetching c-lib from DEVELOPMENT Build'
 elsif ENV['OBOE_STAGING'].to_s.downcase == 'true'
-  ao_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
+  swo_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
   puts 'Fetching c-lib from STAGING'
 else
-  ao_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version)
+  swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version)
 end
 
-ao_arch = 'x86_64'
+swo_arch = 'x86_64'
 system_arch = `uname -m` # for mac, the command is `uname` # "Darwin\n"; try `uname -a`
 case system_arch.gsub("\n","")
 when 'x86_64'
-  ao_arch = 'x86_64'
+  swo_arch = 'x86_64'
 when 'aarch64'
-  ao_arch = 'aarch64'
+  swo_arch = 'aarch64'
 end
 
 if File.exist?('/etc/alpine-release')
   version = File.read('/etc/alpine-release').strip
 
-  tmp_ao_arch = ao_arch.clone
-  ao_arch =
+  tmp_swo_arch = swo_arch.clone
+  swo_arch =
     if Gem::Version.new(version) < Gem::Version.new('3.9')
-      "alpine-libressl-#{tmp_ao_arch}"
+      "alpine-libressl-#{tmp_swo_arch}"
     else # openssl
-      "alpine-#{tmp_ao_arch}"
+      "alpine-#{tmp_swo_arch}"
     end
 end
 
-ao_clib = "liboboe-1.0-#{ao_arch}.so"
-ao_item = File.join(ao_path, ao_clib)
-ao_checksum_file = File.join(ao_lib_dir, "#{ao_clib}.sha256")
-clib = File.join(ao_lib_dir, ao_clib)
+swo_clib = "liboboe-1.0-#{swo_arch}.so"
+swo_item = File.join(swo_path, swo_clib)
+swo_checksum_file = File.join(swo_lib_dir, "#{swo_clib}.sha256")
+clib = File.join(swo_lib_dir, swo_clib)
 
 retries = 3
 success = false
 while retries > 0
   begin
-    IO.copy_stream(URI.parse(ao_item).open, clib)
+    IO.copy_stream(URI.parse(swo_item).open, clib)
     clib_checksum = Digest::SHA256.file(clib).hexdigest
-    checksum      =  File.read(ao_checksum_file).strip
+    checksum      =  File.read(swo_checksum_file).strip
 
     # unfortunately these messages only show if the install command is run
     # with the `--verbose` flag
@@ -93,7 +93,7 @@ while retries > 0
       $stderr.puts 'Download of the c-extension for the solarwinds_apm gem failed.'
       $stderr.puts 'solarwinds_apm will not instrument the code. No tracing will occur.'
       $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
-      $stderr.puts "error: #{ao_item}\n#{e.message}"
+      $stderr.puts "error: #{swo_item}\n#{e.message}"
       $stderr.puts '==================================================================='
       create_makefile('oboe_noop', 'noop')
     end
@@ -103,9 +103,9 @@ end
 
 if success
   # Create relative symlinks for the SolarWindsAPM library
-  Dir.chdir(ao_lib_dir) do
-    File.symlink(ao_clib, 'liboboe.so')
-    File.symlink(ao_clib, 'liboboe-1.0.so.0')
+  Dir.chdir(swo_lib_dir) do
+    File.symlink(swo_clib, 'liboboe.so')
+    File.symlink(swo_clib, 'liboboe-1.0.so.0')
   end
 
   dir_config('oboe', 'src', 'lib')
