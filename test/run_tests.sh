@@ -66,7 +66,6 @@ echo "logfile name: $TEST_RUNS_FILE_NAME"
 ##
 # loop through rubies, gemfiles, and database types to set up and run tests
 for ruby in ${rubies[@]} ; do
-  . ~/.profile && rbenv local $ruby
 
   for gemfile in ${gemfiles[@]} ; do
     export BUNDLE_GEMFILE=$gemfile

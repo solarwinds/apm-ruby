@@ -8,11 +8,11 @@ on:
   #   branches-ignore:
   #     - main
   #   paths-ignore:
-  #     - 'test/Dockerfile_*'
+  #     - 'test/Dockerfile'
   workflow_dispatch:
 
 jobs:
-
+  # run act to test locally: act -j unit_test --container-architecture linux/arm64 -s SW_APM_SERVICE_KEY=your_key
   unit_test:
     name: ${{ matrix.os }} - ruby ${{ matrix.ruby }}
     runs-on: ubuntu-latest
@@ -20,8 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.0.6'] # ['3.2.2','3.1.0','3.0.6','2.7.5']
-        os: ['buster'] # ['buster', 'alpine3.17']
+        # ruby: ['3.1.0'] # ['3.2.2','3.1.0','3.0.6','2.7.5']
+        # os: ['bullseye'] # ['bullseye', 'alpine3.17']
+        include:
+          - ruby: '3.2.2'
+            os: 'alpine3.17'
 
     container:
       image: ruby:${{ matrix.ruby }}-${{ matrix.os }}
@@ -46,7 +49,5 @@ jobs:
     - name: ruby tests
       run: |
         export HOME=/root
-        version=`rbenv versions --bare | grep ${{ matrix.ruby }}`
-        rbenv global $version
-        echo "testing with ruby version: $version"
+        echo "testing with ruby version: $RUBY_VERSION"
         test/test_setup.sh
