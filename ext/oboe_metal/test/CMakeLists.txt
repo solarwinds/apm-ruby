@@ -35,7 +35,6 @@ enable_testing()
 set (sources
   test_main.cc
   frames_test.cc
-  profiling_test.cc
 )
 
 ## Link runTests with what we want to test and the GTest and pthread library

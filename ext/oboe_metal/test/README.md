@@ -31,17 +31,6 @@ run
 cd build && ctest && cd -
 ```
 
-Most testing of profiling is done via Ruby integration tests
-
-For example logging is tested in Ruby tests that verify the different
-KVs and values in the resulting traces, using the same approach as 
-for traces without profiling.
-
-Gotchas:
- 
-- In alpine the `ruby/config.h` file is in an architecture specific folder and needs 
-  to be symlinked to the location set via RUBY_INC_DIR (see: Dockerfile_alpine)
-  
 TODO:
 
 - write a script for this
