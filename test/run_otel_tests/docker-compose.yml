@@ -65,7 +65,7 @@ services:
     volumes:
       - ../../:/code/ruby-solarwinds
     environment:
-      # << : *swo-env
+      << : *swo-env
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_AMAZONLINUX"
 
   ruby_sw_otel_apm_ubuntu_development:

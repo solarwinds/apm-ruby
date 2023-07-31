@@ -10,7 +10,7 @@ elif [ -r /etc/debian_version ]; then
   apt-get update && apt-get install -y ruby-dev g++ make
 elif [ "$pretty_name" = "Amazon Linux 2" ]; then
   amazon-linux-extras install epel -y
-  yum update && yum install -y ruby-devel gcc-c++ make tar openssl-devel git
+  yes | yum update && yum install -y ruby-devel gcc-c++ make tar openssl-devel git
   git clone https://github.com/rbenv/rbenv.git ~/.rbenv \
     && git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build \
     && git clone https://github.com/rbenv/rbenv-default-gems.git ~/.rbenv/plugins/rbenv-default-gems \
