@@ -99,9 +99,6 @@ module SolarWindsAPM
     # The defaults are read from the template configuration file.
     #
     def self.initialize(_data={})
-      @@config[:profiling] = :disabled
-      @@config[:profiling_interval] = 5
-
       # for config file backward compatibility
       @@instrumentation.each {|inst| @@config[inst] = {}}
       @@config[:transaction_name] = {}
@@ -154,22 +151,6 @@ module SolarWindsAPM
         # Assure value is an integer
         @@config[key.to_sym] = new_value.to_i
         SolarWindsAPM.sample_rate(new_value) if SolarWindsAPM.loaded
-
-      when :profiling
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Profiling feature is currently not available." }
-        @@config[:profiling] = :disabled
-
-      when  :profiling_interval
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Profiling feature is currently not available. :profiling_interval setting is not configured."}
-        value = if value.is_a?(Integer) && value > 0
-                  [100, value].min
-                else
-                  10
-                end
-        @@config[:profiling_interval] = value
-        # CProfiler may not be loaded yet, the profiler will send the value
-        # after it is loaded
-        SolarWindsAPM::CProfiler.interval_setup(value) if defined? SolarWindsAPM::CProfiler
 
       when :transaction_settings
         compile_settings(value)
