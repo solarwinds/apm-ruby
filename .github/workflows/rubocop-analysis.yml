@@ -1,3 +1,6 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
 name: RuboCop Analysis
 
 on:

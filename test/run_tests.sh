@@ -30,13 +30,13 @@ gemfiles=(
 ##
 # Read opts
 copy=0
-while getopts ":r:g:d:p:n:c:" opt; do
+while getopts ":r:g:" opt; do
   case ${opt} in
     r ) # process option a
-      rubies=($OPTARG)
+      rubies=("$OPTARG")
       ;;
     g ) # process option t
-      gemfiles=($OPTARG)
+      gemfiles=("$OPTARG")
       ;;
     \? ) echo "
 Usage: $0 [-r ruby-version] [-g gemfile] [-d database type] [-p prepared_statements] [-c copy files]
@@ -58,23 +58,22 @@ exit_status=-1
 rm -f gemfiles/*.lock
 
 time=$(date "+%Y%m%d_%H%M")
-export TEST_RUNS_FILE_NAME="log/testrun_"$time".log"
+export TEST_RUNS_FILE_NAME="log/testrun_$time.log"
 export TEST_RUNS_TO_FILE=true
 echo "logfile name: $TEST_RUNS_FILE_NAME"
 
 ##
 # loop through rubies, gemfiles, and database types to set up and run tests
-for ruby in ${rubies[@]} ; do
+for ruby in "${rubies[@]}" ; do
 
-  for gemfile in ${gemfiles[@]} ; do
+  for gemfile in "${gemfiles[@]}" ; do
     export BUNDLE_GEMFILE=$gemfile
 
     # alpine ruby seems have problem with google-protobuf
     if [[ -r /etc/alpine-release && "$arch" == "aarch64" ]]; then continue; fi
 
     echo "*** installing gems from $BUNDLE_GEMFILE ***"
-    bundle update # --quiet
-    if [ "$?" -ne 0 ]; then
+    if ! bundle update; then
       echo "Problem during gem install. Skipping tests for $gemfile"
       exit_status=1
       continue

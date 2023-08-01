@@ -68,7 +68,7 @@ task :docker_dev, :environment do
 
   Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_otel_apm_ubuntu_development ruby_sw_otel_apm_ubuntu_development")
+              --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development")
 end
 
 desc 'Stop all containers that were started for testing and debugging'
