@@ -11,5 +11,6 @@ group :development, :test do
   gem 'memory_profiler'
   gem 'package_cloud'
   gem 'rubocop'
+  gem 'rubocop-rake', require: false
   gemspec
 end

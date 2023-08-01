@@ -19,7 +19,7 @@ Rake::TestTask.new do |t|
   t.libs << 'test'
 
   gem_file = ENV['BUNDLE_GEMFILE']&.split('/')&.last
-  
+
   case gem_file
   when 'rails_6x.gemfile'
     t.test_files = FileList['test/support/swomarginalia_test.rb']
@@ -30,27 +30,26 @@ Rake::TestTask.new do |t|
   end
 end
 
-task :docker_test => :docker_tests
-
-desc 'Start docker container for testing, os accepts: alpine, debianas args, default: debian. 
-      It also accepts custom ruby versions, accepts: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0
-      Example: bundle exec rake docker_tests alpine 3.2.2'
-task :docker_tests, :environment do
-  _arg1, arg2, arg3 = ARGV
-  os = arg2 || 'debian'
-  rversion = arg3 || '3.1.0'
-
+desc 'Run tests in a container for the specified OS and Ruby version.
+OS: alpine, debian. default: debian.
+Ruby version: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0
+Example:
+  bundle exec rake docker_tests
+  bundle exec rake docker_tests[,2.7.5]
+  bundle exec rake docker_tests[alpine,3.2.2]'
+task :docker_tests, [:os, :ruby_version] do |_, args|
+  args.with_defaults(:os => 'debian', :ruby_version => '3.1.0')
   Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-            --entrypoint test/test_setup.sh -e RUBY_VERSION=#{rversion} \
-            --name ruby_sw_apm_#{os}_#{rversion} ruby_sw_apm_#{os}_#{rversion}")
+            --entrypoint test/test_setup.sh -e RUBY_VERSION=#{args.ruby_version} \
+            --name ruby_sw_apm_#{args.os}_#{args.ruby_version} ruby_sw_apm_#{args.os}_#{args.ruby_version}")
 
 end
 
 desc 'Start minimal setup docker container, accepts: debian, alpine as args, default: debian
       It also accepts custom ruby versions, accepts: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0
       Example: bundle exec rake docker alpine 3.2.2'
-task :docker, :environment do
+task :docker do
   _arg1, arg2, arg3 = ARGV
   os = arg2 || 'debian'
   rversion = arg3 || '3.1.0'
@@ -61,11 +60,8 @@ task :docker, :environment do
 
 end
 
-task :docker_development => :docker_dev
-
 desc 'Start ubuntu docker container for testing and debugging.'
-task :docker_dev, :environment do
-
+task :docker_dev do
   Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
               --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development")
@@ -116,7 +112,7 @@ end
 desc 'fetch oboe file from different environment'
 task :fetch_oboe_file, [:env] do |_t, args|
   abort("Missing env argument (abort)") if args["env"].nil? || args["env"].empty?
-  
+
   begin
     swig_version = %x(swig -version)
   rescue StandardError => e
@@ -315,25 +311,13 @@ task :recompile => [:distclean, :compile]
 desc 'Build the gem c extension ...'
 task :cfc => [:clean, :fetch, :compile]
 
-task :environment do
-  ENV['SW_APM_GEM_VERBOSE'] = 'true'
-
-  Bundler.require(:default, :development)
-  SolarWindsAPM::Config[:tracing_mode] = :enabled
-end
-
-# Used when testing Resque locally
-task 'resque:setup' => :environment do
-  require 'resque/tasks'
-end
-
 desc 'Build gem locally for testing'
 task :build_gem do
 
   puts "\n=== building for MRI ===\n"
   FileUtils.mkdir_p('builds') if Dir['builds'].empty?
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
-  
+
   puts "\n=== install required dependencies ===\n"
   system('bundle install --without development --without test')
 
@@ -341,7 +325,7 @@ task :build_gem do
   Rake::Task['distclean'].execute
   Rake::Task["fetch_oboe_file"].invoke("stg")
   system('gem build solarwinds_apm.gemspec')
-  
+
   gemname = Dir['solarwinds_apm*.gem'].first
   FileUtils.mv(gemname, 'builds/')
 
@@ -360,7 +344,7 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
 
   require 'package_cloud'
 
-  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].nil? || ENV['PACKAGECLOUD_TOKEN'].empty? 
+  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].nil? || ENV['PACKAGECLOUD_TOKEN'].empty?
   abort('No version specified.') if args[:version].nil? || args[:version].empty?
 
   gems = Dir["builds/solarwinds_apm-#{args[:version]}.gem"]
@@ -375,9 +359,9 @@ task :build_gem_push_to_packagecloud, [:version] do |_, args|
   puts "\n=== Gem will be pushed #{gem_to_push} ===\n"
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.gsub('-', '')
   gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.pre/).to_s.gsub('-', '') if args[:version].include? 'pre'
-  
+
   abort('Could not find the required gem file.') if gem_to_push.nil? || gem_to_push_version != args[:version]
-    
+
   cli = PackageCloud::CLI::Entry.new
   cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
 
@@ -388,7 +372,7 @@ desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
       If want to safely autocorrect enabled, just use bundle exec rake rubocop auto-safe
       If want to all autocorrect enabled, just use bundle exec rake rubocop auto-all
       If want to specific lint rule for autocorrection, run as bundle exec rubocop -A --only'
-task :rubocop, :environment do
+task :rubocop do
   _arg1, arg2 = ARGV
 
   rubocop_file = "#{__dir__}/rubocop_result.txt"
