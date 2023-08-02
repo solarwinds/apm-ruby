@@ -1,0 +1,59 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
+name: Run Ruby Unit Test
+
+on:
+  push:
+    branches-ignore:
+      - main
+    paths-ignore:
+      - 'test/Dockerfile'
+  workflow_dispatch:
+
+jobs:
+  # run act to test locally: act -j unit_test --container-architecture linux/arm64 -s SW_APM_SERVICE_KEY=your_key
+  unit_test:
+    name: ${{ matrix.os }} - ruby ${{ matrix.ruby }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ['3.2.2','3.1.0','3.0.6','2.7.5']
+        os: ['bullseye']
+        include:
+          - ruby: '3.2.2'
+            os: 'alpine3.17'
+          - ruby: '3.1.0'
+            os: 'alpine3.15'
+          - ruby: '3.0.6'
+            os: 'alpine3.16'
+          - ruby: '2.7.5'
+            os: 'alpine3.15'
+
+    container:
+      image: ruby:${{ matrix.ruby }}-${{ matrix.os }}
+
+    env:
+      SW_APM_SERVICE_KEY: ${{ secrets.DUMMY_SW_APM_SERVICE_KEY }}
+      RUBY_VERSION: ${{ matrix.ruby }}
+
+    steps:
+    - name: Checkout ${{ github.ref }}
+      uses: actions/checkout@v3
+
+    - name: print some info
+      run: |
+        user=`whoami`
+        pwd=`pwd`
+        echo "User: $user"
+        echo "Current dir: $pwd"
+        echo "Home dir: $HOME"
+        echo "Branch: ${GITHUB_REF#refs/*/}"
+
+    - name: ruby tests
+      run: |
+        export HOME=/root
+        echo "testing with ruby version: $RUBY_VERSION"
+        test/test_setup.sh

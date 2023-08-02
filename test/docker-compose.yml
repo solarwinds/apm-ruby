@@ -1,0 +1,122 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
+version: "2.1"
+
+#########################################################################################################
+#
+# docker-compose to set up containers to run tests
+#
+# used by
+# > rake docker
+# > rake docker_tests
+#
+########################################################################################################
+
+x-swo-shared: &swo-shared
+  mem_limit: 1G
+  logging:
+    options:
+      max-file: "1"
+      max-size: "100m"
+  ports:
+    - "3000"
+  stdin_open: true
+  tty: true
+  working_dir: /code/ruby-solarwinds
+  privileged: true
+
+services:
+  ruby_sw_apm_debian_2.7.5:
+    container_name: ruby_sw_apm_debian_27
+    image: ruby:2.7.5-bullseye
+    hostname: docker.swo.debian
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
+
+  ruby_sw_apm_debian_3.0.6:
+    container_name: ruby_sw_apm_debian_30
+    image: ruby:3.0.6-bullseye
+    hostname: docker.swo.debian
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
+
+  ruby_sw_apm_debian_3.1.0:
+    container_name: ruby_sw_apm_debian_31
+    image: ruby:3.1.0-bullseye
+    hostname: docker.swo.debian
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
+
+  ruby_sw_apm_debian_3.2.2:
+    container_name: ruby_sw_apm_debian_32
+    image: ruby:3.2.2-bullseye
+    hostname: docker.swo.debian
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_DEBIAN"
+
+  ruby_sw_apm_alpine_2.7.5:
+    container_name: ruby_sw_apm_alpine_27
+    image: ruby:2.7.5-alpine3.15
+    hostname: docker.swo.alpine
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
+
+  ruby_sw_apm_alpine_3.0.6:
+    container_name: ruby_sw_apm_alpine_30
+    image: ruby:3.0.6-alpine3.16
+    hostname: docker.swo.alpine
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
+
+  ruby_sw_apm_alpine_3.1.0:
+    container_name: ruby_sw_apm_alpine_31
+    image: ruby:3.1.0-alpine3.15
+    hostname: docker.swo.alpine
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
+
+  ruby_sw_apm_alpine_3.2.2:
+    container_name: ruby_sw_apm_alpine_32
+    image: ruby:3.2.2-alpine3.17
+    hostname: docker.swo.alpine
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_ALPINE"
+
+  ruby_sw_apm_ubuntu_development:
+    container_name: ruby_sw_apm_ubuntu_development
+    image: ruby_sw_apm_ubuntu_development
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: docker.swo.ubuntu.development
+    << : *swo-shared
+    volumes:
+      - ../:/code/ruby-solarwinds
+    environment:
+      SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"
+      OBOE_STAGING: "true"

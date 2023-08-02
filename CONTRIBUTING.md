@@ -128,7 +128,7 @@ bundle install
 
 Starting the test
 ```bash
-bundle exec rake docker_test [alpine|debian|ubuntu|amazonlinux] [{ruby_version}]
+bundle exec rake docker_test [alpine|debian] [{ruby_version}]
 ```
 
 Example of running ruby 3.1.0 on alpine
@@ -149,23 +149,16 @@ bundle install
 
 Start the testing/debugging container and supporting services:
 ```bash
-bundle exec rake docker [alpine|debian|ubuntu|amazonlinux]
+bundle exec rake docker [alpine|debian]
 ```
-
-The default ruby version is 3.1.0, but you can install other ruby version through rbenv e.g. `rbenv install 2.7.0 && rbenv local 2.7.0`
-
 
 In the container, execute the script:
 ```bash
-test/run_otel_tests/ruby_setup.sh # Install ruby
+test/test_setup.sh # Setup testing enviornment
 
-test/run_otel_tests/run_tests.sh  # Run the all test case
+test/run_tests.sh  # Run the all test case
 
 bundle exec ruby -I test test/unit/otel_config_propagator_test.rb # One file
 
 bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/  # A specific test
 ```
-
-### Trouble-shooting
-
-You may need to run `. ~/.profile` again to apply `rbenv` globally to all shell sessions

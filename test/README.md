@@ -20,11 +20,11 @@ bundle exec rake docker
 ```
 2) setup ruby environment
 ```bash
-test/run_otel_tests/ruby_setup.sh
+test/test_setup.sh
 ```
 3) run all tests in container
 ```bash
-test/run_otel_tests/run_tests.sh
+test/run_tests.sh -r [installed_ruby_version]
 ```
 4) the output goes to the logs in this repo
 
@@ -32,7 +32,7 @@ search for `FAIL|ERROR` to find the tests that didn't pass
 
 run fewer tests by using the options e.g.
 ```bash
-test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/unit.gemfile
+test/run_tests.sh -r 2.7.5 -g gemfiles/unit.gemfile
 ```
 5) fix code and rerun, the code base is mounted in the container ;)
 
@@ -83,7 +83,7 @@ because it takes care of starting the required services.
 ### Run all tests
 To run all tests:
 ```bash
-bundle exec rake docker_test [alpine|debian|ubuntu|amazonlinux] [{ruby_version}]
+bundle exec rake docker_test [alpine|debian] [{ruby_version}]
 ```
 e.g.
 ```bash
@@ -110,19 +110,19 @@ which tests to run from within.
 bundle exec rake docker [alpine|debian|ubuntu|amazonlinux]
 ```
 
-Setup the docker container (install ruby and other dependencies)
+Setup the docker container (install test dependencies)
 ```bash
-test/run_otel_tests/ruby_setup.sh
+test/test_setup.sh
 ```
 
 In the container check out the options:
 ```bash
-test/run_otel_tests/run_tests.sh -h
+test/run_tests.sh -h
 ```
 
 Example: Run the framework tests with ruby 2.7.5
 ```bash
-test/run_otel_tests/run_tests.sh -r 2.7.5 -g gemfiles/frameworks.gemfile
+test/run_tests.sh -r 2.7.5 -g gemfiles/unit.gemfile
 ```
 
 ### Run a specific test file, or a specific test
@@ -142,26 +142,6 @@ rbenv global 3.1.0
 export BUNDLE_GEMFILE=gemfiles/unit.gemfile
 bundle exec ruby -I test test/component/solarwinds_exporter_test.rb -n /test_build_meta_data/
 ```
-
-## byebug for debugging
-
-The gem is setup to be debugged with `byebug`, add the following lines in the code for a break:
-```ruby
-require 'byebug'
-byebug
-```
-See here for docu: https://github.com/deivid-rodriguez/byebug
-
-## Duplication (◔_◔) and missing tests ( •̆௰•̆ )
-Sorry, it takes some time to run all the tests. There is
-duplication as well as omissions. The test code is a bit of a jungle, so
-for now the aim is to get good coverage for added and refactored code and
-clean up tests whenever it makes sense.
-
-If you are contributing, please make sure all the tests pass and add
-tests for your code, so that it can't be broken.
-
-For questions with testing please contact the main contributor.
 
 ## github workflow
 Test run on push in github.

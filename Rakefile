@@ -32,51 +32,49 @@ end
 
 task :docker_test => :docker_tests
 
-desc 'Start docker container for testing, os accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu. 
-      It also accepts custom ruby versions, e.g. 2.7.5, 3.1.0, 3.2.2. default: 3.1.0
+desc 'Start docker container for testing, os accepts: alpine, debianas args, default: debian. 
+      It also accepts custom ruby versions, accepts: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0
       Example: bundle exec rake docker_tests alpine 3.2.2'
 task :docker_tests, :environment do
   _arg1, arg2, arg3 = ARGV
-  os = arg2 || 'ubuntu'
+  os = arg2 || 'debian'
   rversion = arg3 || '3.1.0'
 
-  Dir.chdir('test/run_otel_tests')
+  Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-            --entrypoint test/run_otel_tests/ruby_setup.sh -e RUBY_VERSION=#{rversion} \
-            --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
+            --entrypoint test/test_setup.sh -e RUBY_VERSION=#{rversion} \
+            --name ruby_sw_apm_#{os}_#{rversion} ruby_sw_apm_#{os}_#{rversion}")
 
 end
 
-desc 'Start minimal setup docker container, accepts: alpine, debian, ubuntu, amazonlinux as args, default: ubuntu
-      In this container, you can install different version of ruby and switch the version for running test.'
+desc 'Start minimal setup docker container, accepts: debian, alpine as args, default: debian
+      It also accepts custom ruby versions, accepts: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0
+      Example: bundle exec rake docker alpine 3.2.2'
 task :docker, :environment do
-  _arg1, arg2= ARGV
-  os = arg2 || 'ubuntu'
+  _arg1, arg2, arg3 = ARGV
+  os = arg2 || 'debian'
+  rversion = arg3 || '3.1.0'
 
-  Dir.chdir('test/run_otel_tests')
+  Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-            --name ruby_sw_otel_apm_#{os} ruby_sw_otel_apm_#{os}")
+            --name ruby_sw_apm_#{os}_#{rversion} ruby_sw_apm_#{os}_#{rversion} /bin/sh")
 
 end
 
 task :docker_development => :docker_dev
+
 desc 'Start ubuntu docker container for testing and debugging.'
 task :docker_dev, :environment do
 
-  Dir.chdir('test/run_otel_tests')
+  Dir.chdir('test')
   exec("docker-compose down -v --remove-orphans && docker-compose run --service-ports \
-              --name ruby_sw_otel_apm_ubuntu_development ruby_sw_otel_apm_ubuntu_development")
+              --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development")
 end
 
 desc 'Stop all containers that were started for testing and debugging'
 task 'docker_down' do
-  Dir.chdir('test/run_otel_tests')
+  Dir.chdir('test')
   exec('docker-compose down')
-end
-
-desc 'Run smoke tests'
-task 'smoke' do
-  exec('test/run_otel_tests/smoke_test/smoketest.sh')
 end
 
 desc 'alias for fetch_oboe_file_from_staging'
