@@ -15,6 +15,10 @@ on:
         - RubyGem
         - PackageCloud
 
+      solarwinds-version:
+        required: true
+        description: 'Solarwinds apm version'
+
 jobs:
   # act run as: act -j ad_hoc_test --secret-file act.secrets --container-architecture linux/arm64
   ad_hoc_test:
@@ -23,6 +27,7 @@ jobs:
 
     env:
       SW_APM_AGENT_TYPE: ${{ github.event.inputs.install-registry }}
+      APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
       AGENT_TOKEN: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
 
     steps:
