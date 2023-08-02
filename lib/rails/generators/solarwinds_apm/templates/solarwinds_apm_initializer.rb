@@ -70,15 +70,6 @@ if defined?(SolarWindsAPM::Config)
   # SolarWindsAPM.logger.level = Logger::INFO
 
   #
-  # Set SW_APM_GEM_VERBOSE
-  # This setting will be overridden if SW_APM_GEM_VERBOSE is set as an environment variable
-  #
-  # On startup the components that are being instrumented will be reported if this is set to true.
-  # If true and the log level is 4 or higher this may create extra debug log messages
-  #
-  SolarWindsAPM::Config[:verbose] = false
-
-  #
   # Turn Tracing on or off
   #
   # By default tracing is set to :enabled, the other option is :disabled.
@@ -115,7 +106,7 @@ if defined?(SolarWindsAPM::Config)
   # disable/enable metrics and traces for certain transactions.
   #
   # Currently allowed array of hash
-  # 
+  #
   # and the hashes within the :url list either:
   #   :extensions  takes an array of strings for filtering (not regular expressions!)
   #   :tracing     defaults to :disabled, can be set to :enabled to override
@@ -156,8 +147,8 @@ if defined?(SolarWindsAPM::Config)
 
   #
   # Trigger Trace Mode
-  # 
-  # Trace options is a custom HTTP header X-Trace-Options that can be set on a request to carry additional information 
+  #
+  # Trace options is a custom HTTP header X-Trace-Options that can be set on a request to carry additional information
   # to the agents, one such option being trigger-trace which we’ll call a trigger trace request.
   #
   SolarWindsAPM::Config[:trigger_tracing_mode] = 'enabled'
@@ -178,12 +169,12 @@ if defined?(SolarWindsAPM::Config)
   # Appending trace contenxt (i.e. traceparent) as an sql comment
   # at the beginning or end of sql. This modified sql will be
   # sent to sql server for trace correlation.
-  # 
+  #
   # Example:
   #   SELECT `posts`.* FROM `posts` /*traceparent=00-a448f096d441e167d12ebd32a927c1a5-a29655a47e430119-01*/
-  # 
-  # This option can add a small overhead for prepared statements since the traceparent value is unique per execution. 
-  # This feature uses marginalia, see its caveat and possible workaround 
+  #
+  # This option can add a small overhead for prepared statements since the traceparent value is unique per execution.
+  # This feature uses marginalia, see its caveat and possible workaround
   # https://github.com/basecamp/marginalia/blob/master/README.md#prepared-statements
   #
   SolarWindsAPM::Config[:tag_sql] = false
