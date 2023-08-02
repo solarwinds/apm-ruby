@@ -1,0 +1,70 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
+name: Run Ruby Ad-hoc Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      install-registry:
+        required: true
+        description: 'Registry used for install tests, e.g. RubyGem, PackageCloud'
+        type: choice
+        default: 'RubyGem'
+        options:
+        - RubyGem
+        - PackageCloud
+
+jobs:
+  # act run as: act -j ad_hoc_test --secret-file act.secrets --container-architecture linux/arm64
+  ad_hoc_test:
+    name: Ruby Ad-hoc Test
+    runs-on: ubuntu-latest
+
+    env:
+      SW_APM_AGENT_TYPE: ${{ github.event.inputs.install-registry }}
+      AGENT_TOKEN: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
+
+    steps:
+    - name: Checkout ${{ github.ref }}
+      uses: actions/checkout@v3
+
+    - name: checkout testbed
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.SWO_RUBY_GH_PAT }}
+        repository: solarwindscloud/solarwinds-apm-ruby-testbed
+        path: testbed/
+        ref: main
+
+    - name: Spinning up the docker containers
+      run: |
+        cd testbed/
+        docker compose -f docker-compose-github-workflow.yml build --no-cache
+        docker compose -f docker-compose-github-workflow.yml up -d
+        sleep 10
+
+    - name: Setup the database in mysql
+      run: |
+        sleep 20
+        docker container ps
+        cd testbed/
+        docker cp scripts/mysqlsampledatabase.sql sinatra-mysql:/
+        docker exec sinatra-mysql mysql -uroot -padmin -e 'source mysqlsampledatabase.sql;'
+
+    - name: Run the sample trace
+      run: |
+        sleep 10
+        echo "Run distributed trace"
+        curl 0.0.0.0:9292/call-sinatra
+        echo "----------------------------------------"
+        echo "Run elasticsearch trace"
+        curl 0.0.0.0:9292/call-elasticsearch
+        echo "----------------------------------------"
+        echo "Run rails trace"
+        curl 0.0.0.0:8002/about
+        echo "----------------------------------------"
+        echo "Run grape api trace"
+        curl 0.0.0.0:8001/api/ping
+        echo "----------------------------------------"
+        sleep 10

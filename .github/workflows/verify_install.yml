@@ -5,12 +5,12 @@ on:
     inputs:
       install-registry:
         required: true
-        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        description: 'Registry used for install tests, e.g. RubyGem, PackageCloud'
         type: choice
         default: 'RubyGem'
         options:
         - RubyGem
-        - packagecloud
+        - PackageCloud
 
       solarwinds-version:
         required: true
