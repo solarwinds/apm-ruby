@@ -71,14 +71,14 @@ bundle exec rake -T
 
 ## Run Development Container
 
-The `solarwinds_apm` gem requires a Linux runtime environment, so to work on the codebase we use an Ubuntu container that's set up with tools needed to build, install and work with the project.
+The `solarwinds_apm` gem requires a Linux run time environment. To work on the codebase we set up an Ubuntu container with the tools needed to build, install and work with the project.
 
 Starting the container:
 ```bash
 bundle exec rake docker_dev
 ```
 
-In the container:
+In the container, set up the environment and project dependencies:
 ```bash
 # choose the ruby version to use, setting it at the global level
 rbenv versions
@@ -88,7 +88,9 @@ rbenv global <some-version>
 bundle install
 ```
 
-The gem can be built, installed, and ran inside the container:
+### Building the Gem
+
+The gem can be built, installed, and ran inside the development container:
 ```bash
 # build the gem
 bundle exec rake build_gem
@@ -100,48 +102,67 @@ gem install builds/solarwinds_apm-<version>.gem
 SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 ```
 
-## Run Test Containers
+### Linting
 
-On the host machine, you can run tests several ways.
-
-### Run Testing Directly With Default Ruby Version (3.1.0)
-
-Starting the test
+Use this Rake task to run rubocop inside the development container:
 ```bash
-bundle exec rake docker_tests
-```
-
-Example of running ruby 3.1.0 on alpine
-```bash
-bundle exec rake docker_tests[alpine]
-```
-
-### Run Test/Debug Containers
-
-This section is applied if you wish to run specific test.
-
-Start the testing/debugging container and supporting services:
-```bash
-bundle exec rake docker [alpine|debian]
-```
-
-In the container, execute the script:
-```bash
-test/test_setup.sh # Setup testing enviornment
-
-test/run_tests.sh  # Run the all test case
-
-bundle exec ruby -I test test/unit/otel_config_propagator_test.rb # One file
-
-bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/  # A specific test
-```
-
-## Linting
-
-We use rubocop to lint our code.  In the development container, use this rake task to run it:
-```bash
-# in a dev environment with dependencies installed
 bundle exec rake rubocop
 ```
 
 It will produce the file `rubocop_result.txt`.  Issues found should be addressed prior to commit.
+
+## Run Test Containers
+
+On the host machine, you can use the `docker_tests` Rake task to run the test suite, or launch an interactive shell session into the test container to run specific tests or to debug.
+
+### Run Test Suite
+Run the test suite:
+```bash
+bundle exec rake docker_tests         # runs tests on debian under ruby 3.1.0
+bundle exec rake docker_tests[alpine] # runs tests on alpine under ruby 3.1.0
+bundle exec rake docker_tests[,2.7.5] # runs tests on debian under ruby 2.7.5
+```
+
+Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
+
+### Launch Interactive Shell
+
+Start an interactive session in the container:
+```bash
+bundle exec rake docker_tests[,,false]
+```
+
+In the container, set up the environment:
+```bash
+test/test_setup.sh
+```
+
+To run the full suite:
+```bash
+test/run_tests.sh
+```
+
+To run a single test file:
+```bash
+# most tests require just the unit.gemfile dependencies
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle update
+
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb
+bundle exec ruby -I test test/unit/otel_config_propagator_test.rb
+
+# marginalia tests require the rails_6x.gemfile dependencies
+export BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile
+bundle update
+
+bundle exec ruby -I test test/support/swomarginalia_test.rb
+```
+
+To run a specific test:
+```bash
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle update
+
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb -n /test_build_meta_data/
+bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/
+```
