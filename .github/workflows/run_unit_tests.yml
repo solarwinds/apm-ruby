@@ -55,5 +55,6 @@ jobs:
     - name: ruby tests
       run: |
         export HOME=/root
+        export RUN_TESTS=1
         echo "testing with ruby version: $RUBY_VERSION"
         test/test_setup.sh

@@ -1,6 +1,6 @@
 # Contributing
 
-## Developement Environment Setup
+## Requirements
 
 The descriptions below assume you are in the locally cloned project root directory, i.e. `swotel-ruby`.
 
@@ -8,28 +8,9 @@ Prerequisites
 * Docker
 * Docker Compose
 
-## Minimal Setup to Build the Gem
+## Host Machine Setup
 
-Start a standard ruby container with the working tree bind-mounted:
-```bash
-docker run --rm -it -v $PWD:/work --workdir /work ruby:3.1 bash
-```
-
-In the container:
-```bash
-# install system dependencies, just swig for now
-apt update && apt upgrade -y && apt install swig -y
-
-# install project gem dependencies
-bundle install
-
-# build the gem
-bundle exec rake build_gem
-```
-
-## Local Dev Environment Setup
-
-This sets up a ruby development environment on your laptop, which we'll describe for [rbenv](https://github.com/rbenv/rbenv).  Feel free to use other tools such as RVM.  This setup is required to run the dev, linting and testing steps below.
+You'll need a host environment that can run the various Rake tasks to spin up development and testing containers. The following describes how to do this with [rbenv](https://github.com/rbenv/rbenv).
 
 ### 1. Install rbenv
 
@@ -69,96 +50,119 @@ Enable rbenv by following the instructions printed by this command:
 rbenv init
 ```
 
-Set ruby version to use:
+Set ruby version to use.  Set this at the global level to prevent `.ruby-version` conflicts within the development container which bind mounts the working tree:
 ```bash
 rbenv global 3.1.2   # set the default Ruby version for this machine
-# or:
-rbenv local 3.1.2    # set the Ruby version for this directory
 ```
 
-## Run Development Containers
+### 3. Install Minimal Project Dependencies
 
-Currently supports ubuntu development environment
-
-Install bundler, configure it to skip unneeded groups then install the project dependencies:
+Install bundler, configure it to skip unneeded groups (again, at the global level to prevent conflicts within the development container), then install the project dependencies to allow working with Rake tasks:
 ```bash
 gem install bundler
-bundle config set --local without development test
+bundle config set --global without development test
 bundle install
 ```
 
-Starting the container
+Should now be able to list the Rake tasks:
+```
+bundle exec rake -T
+```
+
+## Run Development Container
+
+The `solarwinds_apm` gem requires a Linux run time environment. To work on the codebase we set up an Ubuntu container with the tools needed to build, install and work with the project.
+
+Starting the container:
 ```bash
 bundle exec rake docker_dev
 ```
 
-In the container:
+In the container, set up the environment and project dependencies:
 ```bash
+# choose the ruby version to use, setting it at the global level
+rbenv versions
+rbenv global <some-version>
+
 # install project gem dependencies
 bundle install
+```
 
+### Building the Gem
+
+The gem can be built, installed, and ran inside the development container:
+```bash
 # build the gem
 bundle exec rake build_gem
 
 # install the built gem
 gem install builds/solarwinds_apm-<version>.gem
+
+# load the gem
+SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 ```
 
-## Linting
+### Linting
 
-We use rubocop to lint our code.  There's a rake task to help run it:
-
+Use this Rake task to run rubocop inside the development container:
 ```bash
-# in a dev environment with dependencies installed
 bundle exec rake rubocop
 ```
 
 It will produce the file `rubocop_result.txt`.  Issues found should be addressed prior to commit.
 
-## Testing
+## Run Test Containers
 
-### 1. Run Testing Directly With Default Ruby Version (3.1.0)
+On the host machine, you can use the `docker_tests` Rake task to run the test suite, or launch an interactive shell session into the test container to run specific tests or to debug.
 
-Install bundler, configure it to skip unneeded groups then install the project dependencies:
+### Run Test Suite
+Run the test suite:
 ```bash
-gem install bundler
-bundle config set --local without development test
-bundle install
+bundle exec rake docker_tests           # runs tests on debian under ruby 3.1.0
+bundle exec rake 'docker_tests[alpine]' # runs tests on alpine under ruby 3.1.0
+bundle exec rake 'docker_tests[,2.7.5]' # runs tests on debian under ruby 2.7.5
 ```
 
-Starting the test
+Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
+
+### Launch Interactive Shell
+
+Start an interactive session in the container:
 ```bash
-bundle exec rake docker_test [alpine|debian] [{ruby_version}]
+bundle exec rake 'docker_tests[,,false]'
 ```
 
-Example of running ruby 3.1.0 on alpine
+In the container, set up the environment:
 ```bash
-bundle exec rake docker_test alpine 3.1.0
+test/test_setup.sh
 ```
 
-### 2. Run Test/Debug Containers
-
-This section is applied if you wish to run specific test.
-
-Install bundler, configure it to skip unneeded groups then install the project dependencies:
+To run the full suite:
 ```bash
-gem install bundler
-bundle config set --local without development test
-bundle install
+test/run_tests.sh
 ```
 
-Start the testing/debugging container and supporting services:
+To run a single test file:
 ```bash
-bundle exec rake docker [alpine|debian]
+# most tests require just the unit.gemfile dependencies
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle update
+
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb
+bundle exec ruby -I test test/unit/otel_config_propagator_test.rb
+
+# marginalia tests require the rails_6x.gemfile dependencies
+export BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile
+bundle update
+
+bundle exec ruby -I test test/support/swomarginalia_test.rb
 ```
 
-In the container, execute the script:
+To run a specific test:
 ```bash
-test/test_setup.sh # Setup testing enviornment
+export BUNDLE_GEMFILE=gemfiles/unit.gemfile
+bundle update
 
-test/run_tests.sh  # Run the all test case
-
-bundle exec ruby -I test test/unit/otel_config_propagator_test.rb # One file
-
-bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/  # A specific test
+bundle exec ruby -I test test/component/solarwinds_exporter_test.rb -n /test_build_meta_data/
+bundle exec ruby -I test test/unit/otel_config_test.rb -n /test_resolve_propagators_with_defaults/
 ```
