@@ -118,9 +118,9 @@ On the host machine, you can use the `docker_tests` Rake task to run the test su
 ### Run Test Suite
 Run the test suite:
 ```bash
-bundle exec rake docker_tests         # runs tests on debian under ruby 3.1.0
-bundle exec rake docker_tests[alpine] # runs tests on alpine under ruby 3.1.0
-bundle exec rake docker_tests[,2.7.5] # runs tests on debian under ruby 2.7.5
+bundle exec rake docker_tests           # runs tests on debian under ruby 3.1.0
+bundle exec rake 'docker_tests[alpine]' # runs tests on alpine under ruby 3.1.0
+bundle exec rake 'docker_tests[,2.7.5]' # runs tests on debian under ruby 2.7.5
 ```
 
 Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
@@ -129,7 +129,7 @@ Test logs are written to the project's `log` directory, which is bind mounted an
 
 Start an interactive session in the container:
 ```bash
-bundle exec rake docker_tests[,,false]
+bundle exec rake 'docker_tests[,,false]'
 ```
 
 In the container, set up the environment:
