@@ -10,9 +10,6 @@ module SolarWindsAPM
     @namespace = "solarwinds_apm:install"
 
     def copy_initializer
-      # Set defaults
-      @verbose = 'false'
-
       print_header
       print_footer
 

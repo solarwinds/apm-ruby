@@ -8,13 +8,12 @@ The following environment variables are detected by the solarwinds_apm gem and a
 
 Name | Description | Default
 ---- | ----------- | -------
-`SOLARWINDS_APM_ENABLED` | Enables/Disables the solarwinds apm agent | `true`
+`SOLARWINDS_APM_ENABLED` | Enables/Disables the SolarWinds APM Ruby library | `true`
 `SW_APM_SERVICE_KEY` | API token + service name combination, mandatory for metrics and traces to show in the dashboard |
-`SW_APM_GEM_VERBOSE` | sets the verbose flag (`SolarWindsAPM::Config[:verbose]`) early in the gem loading process which may output valuable information | `false`
-`SW_APM_COLLECTOR` | ingestion endpoint the library connects and exports data to. It should be defined using the format host:port. | apm.collector.cloud.solarwinds.com:443
-`SW_APM_TRUSTEDPATH` | The library uses the trusted CA certificates installed in the system to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format.
-`SW_APM_DEBUG_LEVEL` | level at which log messages will be written to log file (0-6) | 3
-`SW_APM_AUTO_CONFIGURE` | By default the custom distro is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to false to custom initialize the distro with configuration options for instrumentation, see (link to in-code configuration section) for details. | `true`
+`SW_APM_COLLECTOR` | Collector endpoint the library connects and exports data to. It should be defined using the format host:port. | apm.collector.cloud.solarwinds.com:443
+`SW_APM_TRUSTEDPATH` | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format.
+`SW_APM_DEBUG_LEVEL` | Level at which log messages will be written to log file (0-6) | 3
+`SW_APM_AUTO_CONFIGURE` | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to false to custom initialize the library with configuration options for instrumentation, see [In-code Configuration](#in-code-configuration) for details. | `true`
 `SW_APM_TAG_SQL` | Enables injecting trace context into supported SQL statements | `false`
 
 
