@@ -31,31 +31,31 @@ Rake::TestTask.new do |t|
 end
 
 desc "Run an official docker ruby image with the specified tag. The test suite is launched if
-runtests is set to true, else a shell session is started for interactive test runs.
+runtests is set to true, else a shell session is started for interactive test runs. The platform
+argument can be used to override the image architecture if multi-platform is supported.
 
 tag: any available image tag e.g. 3.2-bookworm, 2.7.5-alpine3.15, etc. default: 3.1-bullseye.
 runtests: true or false. default: true.
+platform: run image for specified OS/Arch, e.g. linux/amd64. default: none.
 
 Example:
   bundle exec rake docker_tests
-  bundle exec rake 'docker_tests[2.7.6-alpine3.15]'
   bundle exec rake 'docker_tests[3.3-rc]'
-  bundle exec rake 'docker_tests[,false]'"
-task :docker_tests, [:tag, :runtests] do |_, args|
+  bundle exec rake 'docker_tests[,false]'
+  bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64]'"
+task :docker_tests, [:tag, :runtests, :platform] do |_, args|
   args.with_defaults(:tag => '3.1-bullseye', :runtests => 'true')
-  #require 'pp'; pp args; exit
+  opt = " --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
+    --name ruby_sw_apm_#{args.tag}"
+  opt << " --platform #{args.platform}" unless args.platform.to_s.empty?
   if args.runtests == 'true'
-    cmd = "docker run --rm --tty \
-    --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
-    --entrypoint test/test_setup.sh -e RUN_TESTS=1 \
-    --name ruby_sw_apm_#{args.tag} ruby:#{args.tag}"
+    opt << " --entrypoint test/test_setup.sh -e RUN_TESTS=1"
   else
-    cmd = "docker run --rm --tty --interactive \
-    --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
-    --name ruby_sw_apm_#{args.tag} ruby:#{args.tag} \
-    /bin/sh"
+    opt << ' --interactive'
+    cmd = '/bin/sh'
   end
-  sh cmd do |ok, res|
+  command = "docker run #{opt} ruby:#{args.tag} #{cmd}"
+  sh command do |ok, res|
     puts "ok: #{ok}, #{res.inspect}"
   end
 end
