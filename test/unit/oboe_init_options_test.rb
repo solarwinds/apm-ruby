@@ -28,8 +28,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'sets all options from ENV vars' do
-    ENV.delete('SW_APM_GEM_TEST')
-
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:test_app'
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_COLLECTOR'] = 'string_2'
@@ -77,7 +75,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'env vars override config vars' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
 
     ENV['SW_APM_HOSTNAME_ALIAS'] = 'string_0'
@@ -118,7 +115,7 @@ describe 'OboeInitOptions' do
   it 'checks for metric mode nighthawk' do
     ENV.delete('SW_APM_COLLECTOR')
     ENV['SW_APM_COLLECTOR'] = 'collector.abc.bbc.solarwinds.com'
-    
+
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
@@ -129,7 +126,7 @@ describe 'OboeInitOptions' do
   it 'checks for metric mode default' do
     ENV.delete('SW_APM_COLLECTOR')
     ENV['SW_APM_COLLECTOR'] = 'www.google.ca'
-    
+
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
@@ -139,7 +136,7 @@ describe 'OboeInitOptions' do
 
   it 'checks for metric mode when sw_apm_collector is nil' do
     ENV.delete('SW_APM_COLLECTOR')
-    
+
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
@@ -163,7 +160,7 @@ describe 'OboeInitOptions' do
     ENV.delete('SW_APM_TRUSTEDPATH')
     ENV.delete('SW_APM_COLLECTOR')
     ENV["SW_APM_COLLECTOR"] = 'collector.abc.bbc.solarwinds.com'
-    
+
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
@@ -183,7 +180,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'checks the service_key for ssl' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_SERVICE_KEY'] = 'string_0'
 
@@ -197,7 +193,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'returns true for the service_key check for other reporters' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'udp'
     ENV['SW_APM_SERVICE_KEY'] = 'string_0'
 
@@ -216,7 +211,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'validates the service key' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_SERVICE_KEY'] = nil
     SolarWindsAPM::Config[:service_key] = nil
@@ -241,7 +235,7 @@ describe 'OboeInitOptions' do
     _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
 
     SolarWindsAPM::Config[:service_key] = nil
-    
+
     ENV['SW_APM_SERVICE_KEY'] = 'blabla'
     SolarWindsAPM::OboeInitOptions.instance.re_init
     _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
@@ -268,7 +262,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'removes invalid characters from the service name' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_SERVICE_KEY'] = 'f7B-kZXtk1sxaJGkv-wew1244444444444444444444444IptKFVPRv0o8keDro9QbKioW4:service#####.:-_0'
 
@@ -278,7 +271,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'transforms the service name to lower case' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_SERVICE_KEY'] = 'f7B-kZXtk1sxaJGkv-wew1244444444444444444444444IptKFVPRv0o8keDro9QbKioW4:SERVICE#####.:-_0'
 
@@ -288,7 +280,6 @@ describe 'OboeInitOptions' do
   end
 
   it 'shortens the service name to 255 characters' do
-    ENV.delete('SW_APM_GEM_TEST')
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['SW_APM_SERVICE_KEY'] = "f7B-kZXtk1sxaJGkv-wew1244444444444444444444444IptKFVPRv0o8keDro9QbKioW4:SERV#_#{'1234567890' * 26}"
 

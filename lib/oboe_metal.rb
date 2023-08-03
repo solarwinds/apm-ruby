@@ -97,7 +97,7 @@ module SolarWindsAPM
       end
 
       private
-      
+
       # Internal: Report that instrumentation for the given layer has been
       # installed, as well as the version of instrumentation and version of
       # layer.
@@ -105,7 +105,7 @@ module SolarWindsAPM
       def report_init(layer=:rack) # :nodoc:
         # Don't send __Init in test or if SolarWindsAPM
         # isn't fully loaded (e.g. missing c-extension)
-        return if ENV.has_key?('SW_APM_GEM_TEST') || !SolarWindsAPM.loaded
+        return unless SolarWindsAPM.loaded
 
         platform_info = build_swo_init_report
         log_init(layer, platform_info)
@@ -148,7 +148,7 @@ module SolarWindsAPM
         begin
           platform_info['APM.Version']             = SolarWindsAPM::Version::STRING
           platform_info['APM.Extension.Version']   = extension_lib_version
-          
+
           # OTel Resource Attributes (Optional)
           platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
           platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
