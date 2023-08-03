@@ -57,10 +57,10 @@ rbenv global 3.1.2   # set the default Ruby version for this machine
 
 ### 3. Install Minimal Project Dependencies
 
-Install bundler, configure it to skip unneeded groups (again, at the global level to prevent conflicts within the development container), then install the project dependencies to allow working with Rake tasks:
+Install bundler, configure it to skip unneeded groups, then install the project dependencies to allow working with Rake tasks:
 ```bash
 gem install bundler
-bundle config set --global without development test
+bundle config set --local without development test
 bundle install
 ```
 

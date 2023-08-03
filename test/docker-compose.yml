@@ -35,5 +35,7 @@ services:
     volumes:
       - ../:/code/ruby-solarwinds
     environment:
+      BUNDLE_SILENCE_ROOT_WARNING: "1"
+      BUNDLE_APP_CONFIG: /usr/local/bundle
       SW_APM_HOSTNAME_ALIAS: "SWO_RUBY_UBUNTU_DEVELOPMENT"
       OBOE_STAGING: "true"

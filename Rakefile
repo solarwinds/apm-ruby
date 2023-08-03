@@ -45,13 +45,12 @@ Example:
   bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64]'"
 task :docker_tests, [:tag, :runtests, :platform] do |_, args|
   args.with_defaults(:tag => '3.1-bullseye', :runtests => 'true')
-  opt = " --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
-    --name ruby_sw_apm_#{args.tag}"
+  opt = " --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds"
   opt << " --platform #{args.platform}" unless args.platform.to_s.empty?
   if args.runtests == 'true'
     opt << " --entrypoint test/test_setup.sh -e RUN_TESTS=1"
   else
-    opt << ' --interactive'
+    opt << " --interactive --name ruby_sw_apm_#{args.tag}"
     cmd = '/bin/sh'
   end
   command = "docker run #{opt} ruby:#{args.tag} #{cmd}"
