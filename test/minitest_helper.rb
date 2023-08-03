@@ -207,8 +207,6 @@ def create_span_data
                                             trace_flags,
                                             tracestate)
 
-
-
 end
 
 ##
@@ -239,7 +237,6 @@ def create_span
                                         Time.now,
                                         nil,
                                         nil)
-
 end
 
 ##
