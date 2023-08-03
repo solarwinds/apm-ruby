@@ -55,15 +55,14 @@ module SolarWindsAPM
     end
 
     def self.config_from_env
-      config_files = []
       if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
-        config_files << ENV['SW_APM_CONFIG_RUBY']
+        config_file = ENV['SW_APM_CONFIG_RUBY']
       elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb'))
-        config_files << File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb')
+        config_file = File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb')
       else
         SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"}
       end
-      config_files
+      config_file
     end
 
     def self.set_verbose_level

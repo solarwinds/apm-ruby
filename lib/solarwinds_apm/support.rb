@@ -30,7 +30,9 @@ if SolarWindsAPM::Config[:tag_sql]
       require_relative './support/swomarginalia/comment'
     end
   else
-    require_relative './support/swomarginalia/load_swomarginalia'
-    SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
+    if defined?(::ActiveRecord) && ::ActiveRecord.version.to_s < '7'
+      require_relative './support/swomarginalia/load_swomarginalia'
+      SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
+    end
   end
 end
