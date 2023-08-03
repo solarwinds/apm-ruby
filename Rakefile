@@ -30,33 +30,33 @@ Rake::TestTask.new do |t|
   end
 end
 
-desc 'Run the test container for the specified OS and Ruby version. The test suite is launched if
+desc "Run an official docker ruby image with the specified tag. The test suite is launched if
 runtests is set to true, else a shell session is started for interactive test runs.
 
-os: alpine, debian. default: debian.
-ruby_version: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0.
+tag: any available image tag e.g. 3.2-bookworm, 2.7.5-alpine3.15, etc. default: 3.1-bullseye.
 runtests: true or false. default: true.
 
 Example:
   bundle exec rake docker_tests
-  bundle exec rake docker_tests[,2.7.5]
-  bundle exec rake docker_tests[alpine,3.2.2]
-  bundle exec rake docker_tests[,3.2.2,false]'
-task :docker_tests, [:os, :ruby_version, :runtests] => [:docker_down] do |_, args|
-  args.with_defaults(:os => 'debian', :ruby_version => '3.1.0', :runtests => 'true')
+  bundle exec rake 'docker_tests[2.7.6-alpine3.15]'
+  bundle exec rake 'docker_tests[3.3-rc]'
+  bundle exec rake 'docker_tests[,false]'"
+task :docker_tests, [:tag, :runtests] do |_, args|
+  args.with_defaults(:tag => '3.1-bullseye', :runtests => 'true')
+  #require 'pp'; pp args; exit
   if args.runtests == 'true'
-    cmd = "docker-compose run --service-ports \
+    cmd = "docker run --rm --tty \
+    --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
     --entrypoint test/test_setup.sh -e RUN_TESTS=1 \
-    --name ruby_sw_apm_#{args.os}_#{args.ruby_version} ruby_sw_apm_#{args.os}_#{args.ruby_version}"
+    --name ruby_sw_apm_#{args.tag} ruby:#{args.tag}"
   else
-    cmd = "docker-compose run --service-ports \
-    --name ruby_sw_apm_#{args.os}_#{args.ruby_version} ruby_sw_apm_#{args.os}_#{args.ruby_version} \
+    cmd = "docker run --rm --tty --interactive \
+    --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds \
+    --name ruby_sw_apm_#{args.tag} ruby:#{args.tag} \
     /bin/sh"
   end
-  Dir.chdir('test') do
-    sh cmd do |ok, res|
-      puts "ok: #{ok}, #{res.inspect}"
-    end
+  sh cmd do |ok, res|
+    puts "ok: #{ok}, #{res.inspect}"
   end
 end
 
