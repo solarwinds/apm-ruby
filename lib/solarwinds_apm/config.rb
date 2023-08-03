@@ -51,7 +51,6 @@ module SolarWindsAPM
       load(config_files[0]) if config_files.size > 0
 
       set_log_level        # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
-      set_verbose_level    # the verbose setting is only relevant for ruby, ENV['SW_APM_GEM_VERBOSE'] overrides
     end
 
     def self.config_from_env
@@ -64,11 +63,6 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"}
       end
       config_files
-    end
-
-    def self.set_verbose_level
-      verbose = ENV.has_key?('SW_APM_GEM_VERBOSE')? ENV['SW_APM_GEM_VERBOSE'].downcase == 'true' : nil
-      SolarWindsAPM::Config[:verbose] = verbose
     end
 
     def self.set_log_level

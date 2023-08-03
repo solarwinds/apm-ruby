@@ -97,9 +97,6 @@ module SolarWindsAPM
     def reporter_and_host
 
       reporter = ENV['SW_APM_REPORTER'] || 'ssl'
-      # override with 'file', e.g. when running tests
-      # changed my mind => set the right reporter in the env when running tests !!!
-      # reporter = 'file' if ENV.key?('SW_APM_GEM_TEST')
 
       host = ''
       case reporter
@@ -134,7 +131,7 @@ module SolarWindsAPM
       service_name = match[3]
 
       return '' unless validate_token(token)   # return if token is not even valid
-      
+
       if service_name.empty?
         ENV.delete('OTEL_SERVICE_NAME')
         SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."}
@@ -198,7 +195,7 @@ module SolarWindsAPM
     def read_and_validate_ec2_md_timeout
       timeout = ENV['SW_APM_EC2_METADATA_TIMEOUT'] || SolarWindsAPM::Config[:ec2_metadata_timeout]
       return 1000 unless timeout.is_a?(Integer) || timeout =~ /^\d+$/
-      
+
       timeout = timeout.to_i
       timeout.between?(0, 3000) ? timeout : 1000
     end
@@ -219,16 +216,16 @@ module SolarWindsAPM
       file = String.new
       file = "#{__dir__}/cert/star.appoptics.com.issuer.crt" if appoptics_collector?
       file = ENV['SW_APM_TRUSTEDPATH'] if !ENV['SW_APM_TRUSTEDPATH'].nil? && !ENV['SW_APM_TRUSTEDPATH']&.empty?
-      
+
       return file if file.empty?
-      
+
       begin
         certificate = File.open(file,"r").read
       rescue StandardError => e
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] certificates: #{file} doesn't exist or caused by #{e.message}."}
         certificate = String.new
       end
-      
+
       certificate
     end
 
@@ -237,7 +234,7 @@ module SolarWindsAPM
     end
 
     def appoptics_collector?
-      allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com', 
+      allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com',
                      'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
 
       (allowed_uri.include? ENV["SW_APM_COLLECTOR"])? true : false
@@ -252,7 +249,7 @@ module SolarWindsAPM
       rescue StandardError => e
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"}
       end
-      ""    
+      ""
     end
   end
 end
