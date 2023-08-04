@@ -30,33 +30,32 @@ Rake::TestTask.new do |t|
   end
 end
 
-desc 'Run the test container for the specified OS and Ruby version. The test suite is launched if
-runtests is set to true, else a shell session is started for interactive test runs.
+desc "Run an official docker ruby image with the specified tag. The test suite is launched if
+runtests is set to true, else a shell session is started for interactive test runs. The platform
+argument can be used to override the image architecture if multi-platform is supported.
 
-os: alpine, debian. default: debian.
-ruby_version: 2.7.5, 3.0.6, 3.1.0, 3.2.2. default: 3.1.0.
+tag: any available image tag e.g. 3.2-bookworm, 2.7.5-alpine3.15, etc. default: 3.1-bullseye.
 runtests: true or false. default: true.
+platform: run image for specified OS/Arch, e.g. linux/amd64. default: none.
 
 Example:
   bundle exec rake docker_tests
-  bundle exec rake docker_tests[,2.7.5]
-  bundle exec rake docker_tests[alpine,3.2.2]
-  bundle exec rake docker_tests[,3.2.2,false]'
-task :docker_tests, [:os, :ruby_version, :runtests] => [:docker_down] do |_, args|
-  args.with_defaults(:os => 'debian', :ruby_version => '3.1.0', :runtests => 'true')
+  bundle exec rake 'docker_tests[3.3-rc]'
+  bundle exec rake 'docker_tests[,false]'
+  bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64]'"
+task :docker_tests, [:tag, :runtests, :platform] do |_, args|
+  args.with_defaults(:tag => '3.1-bullseye', :runtests => 'true')
+  opt = " --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds"
+  opt << " --platform #{args.platform}" unless args.platform.to_s.empty?
   if args.runtests == 'true'
-    cmd = "docker-compose run --service-ports \
-    --entrypoint test/test_setup.sh -e RUN_TESTS=1 \
-    --name ruby_sw_apm_#{args.os}_#{args.ruby_version} ruby_sw_apm_#{args.os}_#{args.ruby_version}"
+    opt << " --entrypoint test/test_setup.sh -e RUN_TESTS=1"
   else
-    cmd = "docker-compose run --service-ports \
-    --name ruby_sw_apm_#{args.os}_#{args.ruby_version} ruby_sw_apm_#{args.os}_#{args.ruby_version} \
-    /bin/sh"
+    opt << " --interactive --name ruby_sw_apm_#{args.tag}"
+    cmd = '/bin/sh'
   end
-  Dir.chdir('test') do
-    sh cmd do |ok, res|
-      puts "ok: #{ok}, #{res.inspect}"
-    end
+  command = "docker run #{opt} ruby:#{args.tag} #{cmd}"
+  sh command do |ok, res|
+    puts "ok: #{ok}, #{res.inspect}"
   end
 end
 

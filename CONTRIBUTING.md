@@ -57,10 +57,10 @@ rbenv global 3.1.2   # set the default Ruby version for this machine
 
 ### 3. Install Minimal Project Dependencies
 
-Install bundler, configure it to skip unneeded groups (again, at the global level to prevent conflicts within the development container), then install the project dependencies to allow working with Rake tasks:
+Install bundler, configure it to skip unneeded groups, then install the project dependencies to allow working with Rake tasks:
 ```bash
 gem install bundler
-bundle config set --global without development test
+bundle config set --local without development test
 bundle install
 ```
 
@@ -118,9 +118,14 @@ On the host machine, you can use the `docker_tests` Rake task to run the test su
 ### Run Test Suite
 Run the test suite:
 ```bash
-bundle exec rake docker_tests           # runs tests on debian under ruby 3.1.0
-bundle exec rake 'docker_tests[alpine]' # runs tests on alpine under ruby 3.1.0
-bundle exec rake 'docker_tests[,2.7.5]' # runs tests on debian under ruby 2.7.5
+# run tests in a ruby:3.1.0-bullseye container
+bundle exec rake docker_tests
+
+# run tests in a ruby:2.7.5 container
+bundle exec rake 'docker_tests[2.7.5]'
+
+# run tests in a ruby:3.2-alpine linux/amd64 container
+bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64]'
 ```
 
 Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
@@ -129,7 +134,7 @@ Test logs are written to the project's `log` directory, which is bind mounted an
 
 Start an interactive session in the container:
 ```bash
-bundle exec rake 'docker_tests[,,false]'
+bundle exec rake 'docker_tests[,false]'
 ```
 
 In the container, set up the environment:

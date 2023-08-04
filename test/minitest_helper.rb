@@ -27,6 +27,9 @@ SimpleCov::Formatter::Console.max_lines = 5
 SimpleCov::Formatter::Console.missing_len = 20
 SimpleCov.start
 
+# needed by most tests
+ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
+
 # write to a file as well as STDOUT (comes in handy with docker runs)
 # This approach preserves the coloring of pass fail, which the cli
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
@@ -107,7 +110,7 @@ module SolarWindsAPM
       do_sample = 0
       rate = 1_000_000
       status_msg = "auth-failed"
-      auth_msg = "bad-signature"   
+      auth_msg = "bad-signature"
       source = 6
       bucket_rate = 0.0
       status = -5
@@ -176,7 +179,7 @@ end
 def create_span_data
 
   layer  = :internal
-  status = ::OpenTelemetry::Trace::Status.ok("good") 
+  status = ::OpenTelemetry::Trace::Status.ok("good")
   attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
   resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
   instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
@@ -184,7 +187,7 @@ def create_span_data
   tracestate   = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
   span_id_hex  = "\xA4\xA49\x9D\xAC\xA5\x98\xC1"
   trace_id_hex = "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7"
-  
+
   ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
                                             layer,
                                             status,
@@ -203,8 +206,6 @@ def create_span_data
                                             trace_id_hex,
                                             trace_flags,
                                             tracestate)
-
-  
 
 end
 
@@ -236,7 +237,6 @@ def create_span
                                         Time.now,
                                         nil,
                                         nil)
-  
 end
 
 ##
@@ -246,7 +246,7 @@ end
 #
 def clear_all_traces
   return unless SolarWindsAPM.loaded && ENV['SW_APM_REPORTER'] == 'file'
-  
+
   sleep 0.5
   File.truncate(SolarWindsAPM::OboeInitOptions.instance.host, 0)
 end
@@ -288,8 +288,8 @@ end
 
 ##
 # create_context
-# 
-# create sample otel context 
+#
+# create sample otel context
 #
 def create_context(trace_id:,
                    span_id:,
@@ -308,7 +308,7 @@ end
 # clean_old_setting
 #
 # return to fresh new state for testing
-# 
+#
 def clean_old_setting
   ENV.delete('OTEL_PROPAGATORS')
   ENV.delete('OTEL_TRACES_EXPORTER')

@@ -13,7 +13,7 @@ if [ -r /etc/alpine-release ]; then
   fi
 elif [ -r /etc/debian_version ]; then
   # this is for ubuntu (> 22.04) and debian
-  apt-get update && apt-get install -y git ruby-dev g++ make curl zlib1g-dev shared-mime-info
+  apt-get update && apt-get install -y git ruby-dev g++ make curl zlib1g-dev shared-mime-info libsqlite3-dev xz-utils
 fi
 echo "Finished Setup"
 
