@@ -7,6 +7,8 @@ FROM ubuntu:22.04
 ENV TZ=America/Vancouver
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+ENV SW_APM_REPORTER=file
+
 # install OS packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -38,6 +40,7 @@ RUN apt-get update \
        tree \
        vim \
        zlib1g-dev \
+       shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 # rbenv setup

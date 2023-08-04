@@ -27,10 +27,14 @@ if SolarWindsAPM::Config[:tag_sql]
       #     } 
       #   }
       # ]
+      SolarWindsAPM.logger.info {"In Rails 7, tag tracecontext on a query by including SolarWindsAPM::SWOMarginalia::Comment.traceparent as function in config.active_record.query_log_tags."}
+      SolarWindsAPM.logger.info {"For more information, please check https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html"}
       require_relative './support/swomarginalia/comment'
     end
-  else
+  elsif defined?(::ActiveRecord) && ::ActiveRecord.version.to_s < '7'
     require_relative './support/swomarginalia/load_swomarginalia'
     SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
+  else
+    SolarWindsAPM.logger.info {"tag_sql currently is not supported in non-rails app that use active_record > 7"}
   end
 end
