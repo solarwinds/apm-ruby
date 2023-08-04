@@ -124,7 +124,7 @@ module SolarWindsAPM
       return '' unless @reporter == 'ssl'
 
       service_key = ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
-      unless service_key
+      if service_key.nil? || service_key == ''
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured."}
         return ''
       end
