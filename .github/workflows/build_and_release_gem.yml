@@ -90,7 +90,7 @@ jobs:
               draft: true
             })
 
-      may need a bit of time for the gem to become available (-> sleep 1)
+      # may need a bit of time for the gem to become available (-> sleep 1)
       - name: Download new Rubygem from rubygems.org and test
         working-directory: .github/workflows/
         env:
