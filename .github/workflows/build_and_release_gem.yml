@@ -49,8 +49,8 @@ jobs:
 
       - name: Build Gem and upload to Rubygems
         id: build
-        # env:
-        #   GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
         run:  |
           bundle exec rake build_and_publish_gem
           checksum=`shasum -a256 *.gem | awk '{print $1;}'`
