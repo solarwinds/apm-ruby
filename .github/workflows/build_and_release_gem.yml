@@ -34,11 +34,7 @@ jobs:
 
       - name: Install swig 4.0.2
         run: |
-          apt update && apt install -y --no-install-recommends bison
-          curl -SL https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz | tar xzC /tmp
-          cd /tmp/swig-4.0.2
-          ./autogen.sh && ./configure && make && sudo make install
-          cd -
+          apt update && apt install -y --no-install-recommends bison swig
 
       - name: Download files from cloud.solarwinds.com and create swig wrapper
         env:
@@ -55,14 +51,14 @@ jobs:
           bundle exec rake build_and_publish_gem
           checksum=`shasum -a256 *.gem | awk '{print $1;}'`
           echo "checksum: $checksum"
-          echo ::set-output name=checksum::$checksum
-          echo ::set-output name=gem_version::`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`
+          echo "checksum=$checksum" >> $GITHUB_OUTPUT
+          echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Get checksum from Rubygems
         id: checksum
         run: |
           gem_version=${{ steps.build.outputs.gem_version }}
-          echo ::set-output name=geminfo::`curl https://rubygems.org/api/v2/rubygems/solarwinds_apm/versions/$gem_version.json`
+          echo "geminfo=`curl https://rubygems.org/api/v2/rubygems/solarwinds_apm/versions/$gem_version.json`" >> $GITHUB_OUTPUT
 
       - name: Print checksums (in case some debugging is needed)
         run: |
@@ -96,6 +92,7 @@ jobs:
         env:
           SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
         run: |
-          sleep 1
+          sleep 20
+          apt update && apt install -y ruby-dev g++ make
           gem install solarwinds_apm --version ${{ steps.build.outputs.gem_version }}
           ruby ./scripts/test_install.rb
