@@ -50,6 +50,6 @@ Gem::Specification.new do |s|
   # Testing
   s.add_development_dependency('opentelemetry-exporter-otlp', '~> 0.26.1')
 
-  s.required_ruby_version = '>= 3.0.0'
+  s.required_ruby_version = '>= 2.7.0'
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
 end
