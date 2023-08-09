@@ -1,8 +1,8 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
-require 'minitest/spec'
 require 'minitest/autorun'
+require 'minitest/spec'
 require 'minitest/reporters'
 require 'minitest'
 require 'minitest/unit'
@@ -13,7 +13,6 @@ require 'opentelemetry/sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'opentelemetry-propagator-b3'
-require 'opentelemetry/exporter/otlp/version'
 require 'opentelemetry-exporter-otlp'
 require 'bson'
 
@@ -54,33 +53,11 @@ end
 puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
 ENV['RACK_ENV'] = 'test'
-MiniTest::Reporters.use! MiniTest::Reporters::SpecReporter.new
+Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
 # Bundler.require(:default, :test) # this load the solarwinds_apm library
 SolarWindsAPM.logger.level = 1
 
-# Extend Minitest with a refute_raises method
-# There are debates whether or not such a method is needed,
-# because the test would fail anyways when an exception is raised
-#
-# The reason to have and use it is for the statistics. The count of
-# assertions, failures, and errors is less informative without refute_raises
-module MiniTest
-  module Assertions
-    def refute_raises *exp
-      begin
-        yield
-      rescue MiniTest::Skip => e
-        return e if exp.include? MiniTest::Skip
-
-        raise e
-      rescue StandardError => e
-        flunk "unexpected exception raised: #{e.message}"
-      end
-
-    end
-  end
-end
 
 # Dummy Propagator for testing
 module Dummy

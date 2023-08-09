@@ -16,9 +16,6 @@ require_relative './../../lib/solarwinds_apm/support/swomarginalia/load_swomargi
 
 puts "Current rails version: #{Rails.version}"
 
-# Shim for compatibility with older versions of MiniTest
-MiniTest::Test = MiniTest::Unit::TestCase unless defined?(MiniTest::Test)
-
 ActiveRecord::Base.establish_connection({
   adapter: 'sqlite3',
   database: 'database.db'
