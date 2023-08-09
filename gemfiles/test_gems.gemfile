@@ -23,6 +23,8 @@ group :development, :test do
   gem "simplecov", require: false, group: :test
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
+  gem 'lumberjack'
+  gem 'logging'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-exporter-otlp', '~> 0.24.0'
