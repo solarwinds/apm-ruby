@@ -5,6 +5,7 @@ require 'minitest/spec'
 require 'minitest/autorun'
 require 'minitest/reporters'
 require 'minitest'
+require 'minitest/unit'
 require 'minitest/focus'
 require 'minitest/debugger' if ENV['DEBUG']
 require 'minitest/hooks/default'  # adds after(:all)
@@ -168,6 +169,12 @@ module SolarWindsAPM
 
   def self.loaded
     true
+  end
+end
+
+module SolarWindsAPM
+  class << self
+    attr_accessor :logger
   end
 end
 
