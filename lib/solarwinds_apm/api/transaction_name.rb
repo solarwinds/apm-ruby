@@ -32,7 +32,7 @@ module SolarWindsAPM
       def set_transaction_name(custom_name=nil)
         
         return false if custom_name.nil? || custom_name.empty? 
-        return true  if SolarWindsAPM::Context.toString == '00-00000000000000000000000000000000-0000000000000000-00' # noop
+        return true  if SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00' # noop
 
         solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
         if solarwinds_processor.nil?
@@ -42,6 +42,9 @@ module SolarWindsAPM
 
         entry_trace_id = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
         entry_span_id  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
+        entry_trace_f  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
+
+        return false if entry_trace_f == '00' || entry_trace_id == '0'*32 || entry_span_id == '0'*16
 
         if entry_trace_id.nil? || entry_span_id.nil? 
           SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Cannot cache custom transaction name #{custom_name} because OTel service entry span not started; ignoring"}
