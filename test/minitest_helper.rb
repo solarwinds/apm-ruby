@@ -5,7 +5,6 @@ require 'minitest/autorun'
 require 'minitest/spec'
 require 'minitest/reporters'
 require 'minitest'
-require 'minitest/unit'
 require 'minitest/focus'
 require 'minitest/debugger' if ENV['DEBUG']
 require 'minitest/hooks/default'  # adds after(:all)
