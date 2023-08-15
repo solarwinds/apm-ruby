@@ -11,8 +11,10 @@ module SolarWindsAPM
         super(annotate_sql(sql), *args)
       end
 
-      def execute_and_clear(sql, *args, &block)
-        super(annotate_sql(sql), *args, &block)
+      # only for postgresql adapter
+      def execute_and_clear(sql, *args)
+        name_, binds, prepare = args
+        super(annotate_sql(sql), name_, binds, prepare: prepare.nil?? nil : prepare[:prepare])
       end
 
       def exec_query(sql, *args, **options)
