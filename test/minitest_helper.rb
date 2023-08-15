@@ -296,5 +296,5 @@ end
 def clean_old_setting
   ENV.delete('OTEL_PROPAGATORS')
   ENV.delete('OTEL_TRACES_EXPORTER')
-  ENV.delete('SOLARWINDS_APM_ENABLED')
+  ENV.delete('SW_APM_ENABLED')
 end

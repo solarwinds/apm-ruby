@@ -8,7 +8,7 @@ The following environment variables are detected by the solarwinds_apm gem and a
 
 Name | Description | Default
 ---- | ----------- | -------
-`SOLARWINDS_APM_ENABLED` | Enables/Disables the SolarWinds APM Ruby library | `true`
+`SW_APM_ENABLED` | Enables/Disables the SolarWinds APM Ruby library | `true`
 `SW_APM_SERVICE_KEY` | API token + service name combination, mandatory for metrics and traces to show in the dashboard |
 `SW_APM_COLLECTOR` | Collector endpoint the library connects and exports data to. It should be defined using the format host:port. | apm.collector.cloud.solarwinds.com:443
 `SW_APM_TRUSTEDPATH` | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format.
