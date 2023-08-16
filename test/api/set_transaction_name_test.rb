@@ -36,7 +36,7 @@ describe 'SolarWinds Set Transaction Name Test' do
   end
 
   it 'calculate_transaction_names_with_sampled_span' do
-  	@span.context.trace_flags.instance_variable_set(:@flags, 1)
+    @span.context.trace_flags.instance_variable_set(:@flags, 1)
     @solarwinds_processor.on_start(@span, ::OpenTelemetry::Context.current)
     result = SolarWindsAPM::API.set_transaction_name('abcdf')
     _(result).must_equal true
