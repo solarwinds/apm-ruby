@@ -31,30 +31,29 @@ module SolarWindsAPM
       #
       def set_transaction_name(custom_name=nil)
         
-        return false if custom_name.nil? || custom_name.empty? 
-        return true  if SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00' # noop
+        status = true
+        if custom_name.nil? || custom_name.empty? 
+          status = false
+        elsif SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00' # noop
+          status = true
+        else
+          solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
+          if solarwinds_processor.nil?
+            SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
+            status = false
+          else
+            entry_trace_id = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
+            entry_span_id  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
+            trace_flags    = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
 
-        solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
-        if solarwinds_processor.nil?
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
-          return false
+            status = false if entry_trace_id.nil? || entry_span_id.nil? || trace_flags.nil?
+            status = false if entry_trace_id == '0'*32 || entry_span_id == '0'*16 || trace_flags == '00' # not sampled
+
+            solarwinds_processor.txn_manager.set("#{entry_trace_id}-#{entry_span_id}",custom_name) 
+            SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{entry_trace_id}-#{entry_span_id} as #{custom_name}"}
+          end
         end
-
-        entry_trace_id = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
-        entry_span_id  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
-        entry_trace_f  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
-
-        return false if entry_trace_f == '00' || entry_trace_id == '0'*32 || entry_span_id == '0'*16
-
-        if entry_trace_id.nil? || entry_span_id.nil? 
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Cannot cache custom transaction name #{custom_name} because OTel service entry span not started; ignoring"}
-          return false
-        end
-
-        trace_span_id = "#{entry_trace_id}-#{entry_span_id}"
-        solarwinds_processor.txn_manager.set(trace_span_id,custom_name) 
-        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{trace_span_id} as #{custom_name}"}
-        true
+        status
       end
     end
   end

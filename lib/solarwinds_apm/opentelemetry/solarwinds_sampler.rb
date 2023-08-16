@@ -65,9 +65,9 @@ module SolarWindsAPM
         new_trace_state = calculate_trace_state(liboboe_decision,parent_span_context,xtraceoptions)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] new_trace_state: #{new_trace_state.inspect}"}
 
-        new_attributes  = calculate_attributes(attributes,liboboe_decision,new_trace_state,parent_span_context,xtraceoptions)
+        new_attributes  = otel_sampled?(otel_decision)? calculate_attributes(attributes,liboboe_decision,new_trace_state,parent_span_context,xtraceoptions) : nil
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] new_attributes: #{new_attributes.inspect}"}
-        
+
         sampling_result = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] sampling_result: #{sampling_result.inspect}"}
 
@@ -234,7 +234,7 @@ module SolarWindsAPM
         if xtraceoptions&.options
           trace_state = trace_state.set_value(
             XTraceOptions.sw_xtraceoptions_response_key.to_s,
-            create_xtraceoptions_response_value(decision,parent_span_context,xtraceoptions))
+            create_xtraceoptions_response_value(decision, parent_span_context, xtraceoptions))
         end
 
         trace_state
@@ -285,11 +285,6 @@ module SolarWindsAPM
       def calculate_attributes(attributes, decision, trace_state, parent_span_context, xtraceoptions)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Received attributes: #{attributes.inspect}; decision:#{decision.inspect}; trace_state:#{trace_state.inspect}; parent_span_context:#{parent_span_context.inspect}; xtraceoptions:#{xtraceoptions.inspect}"}
 
-        otel_decision = otel_decision_from_liboboe(decision)
-        return nil if Transformer.sampled?(otel_decision) == false
-        
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Trace decision is_sampled - setting attributes #{otel_decision.inspect}"}
-
         new_attributes = {}
         # Copy existing MappingProxyType KV into new_attributes for modification.
         attributes&.each {|k,v| new_attributes[k] = v}
@@ -329,6 +324,10 @@ module SolarWindsAPM
       def sw_from_span_and_decision(parent_span_context, decision)
         trace_flag = Transformer.trace_flags_from_boolean(decision["do_sample"])
         Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, trace_flag)
+      end
+
+      def otel_sampled?(otel_decision)
+        otel_decision == ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE
       end
     end
   end
