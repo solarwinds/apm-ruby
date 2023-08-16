@@ -16,7 +16,7 @@ describe 'SolarWindsPropagatorTest' do
   
   before do
     @text_map_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
-    @mock = MiniTest::Mock.new
+    @mock = Minitest::Mock.new
   end
 
   it 'test extract for empty carrier' do

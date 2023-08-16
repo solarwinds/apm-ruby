@@ -10,7 +10,7 @@ group :development, :test do
   gem 'get_process_mem'
   gem 'irb', '>= 1.0.0'
   gem 'memory_profiler'
-  gem 'minitest', '~> 5.18.1'
+  gem 'minitest'
   gem 'minitest-debugger', :require => false
   gem 'minitest-focus', '>=1.1.2'
   gem 'minitest-hooks', '>= 1.5.0'
@@ -23,6 +23,8 @@ group :development, :test do
   gem "simplecov", require: false, group: :test
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
+  gem 'lumberjack'
+  gem 'logging'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-exporter-otlp', '~> 0.24.0'
