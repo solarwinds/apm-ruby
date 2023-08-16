@@ -7,14 +7,13 @@ module SolarWindsAPM
     # This ActiveRecordInstrumentation should only work for activerecord < 7.0 since after rails 7
     # this module won't be prepend to activerecord
     module ActiveRecordInstrumentation
-      def execute(sql, *args)
-        super(annotate_sql(sql), *args)
+      def execute(sql, *args, **options)
+        super(annotate_sql(sql), *args, **options)
       end
 
       # only for postgresql adapter
-      def execute_and_clear(sql, *args)
-        name_, binds, prepare = args
-        super(annotate_sql(sql), name_, binds, prepare: prepare.nil?? nil : prepare[:prepare])
+      def execute_and_clear(sql, *args, **options)
+        super(annotate_sql(sql), *args, **options)
       end
 
       def exec_query(sql, *args, **options)
