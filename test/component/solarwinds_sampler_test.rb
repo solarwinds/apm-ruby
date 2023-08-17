@@ -32,9 +32,13 @@ describe 'SolarWindsSamplerTest' do
 
   end
 
-  it 'test_calculate_attributes should return nil' do 
-    attributes = @sampler.send(:calculate_attributes, "tmp_span", @attributes_dict, @decision, @tracestate, @parent_context)
-    assert_nil(attributes)
+  it 'test_calculate_attributes' do 
+    attributes = @sampler.send(:calculate_attributes, @attributes_dict, @decision, @tracestate, @parent_context, @xtraceoptions)
+    _(attributes['a']).must_equal 'b'
+    _(attributes['BucketCapacity']).must_equal ''
+    _(attributes['BucketRate']).must_equal ''
+    _(attributes['SampleRate']).must_equal nil
+    _(attributes['SampleSource']).must_equal nil
   end
 
   it 'test_add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 
@@ -184,6 +188,17 @@ describe 'SolarWindsSamplerTest' do
     _(decision["bucket_rate"]).must_equal 0.0
     _(decision["status"]).must_equal(-5)
 
+  end
+
+  it 'test_should_sample?' do
+    should_sample = @sampler.send(:otel_sampled?, ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
+    assert(should_sample)
+
+    should_sample = @sampler.send(:otel_sampled?, ::OpenTelemetry::SDK::Trace::Samplers::Decision::DROP)
+    _(should_sample).must_equal false
+
+    should_sample = @sampler.send(:otel_sampled?, ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY)
+    _(should_sample).must_equal false
   end
 
 end

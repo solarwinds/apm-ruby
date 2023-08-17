@@ -40,14 +40,6 @@ describe 'TransformerTest' do
     _(result).must_equal "00"
   end
 
-  it 'test sampled?' do 
-    result = @transformer.sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE)
-    _(result).must_equal true
-
-    result = @transformer.sampled?(::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY)
-    _(result).must_equal false
-  end
-
   it 'test span_id_from_sw' do 
     result = @transformer.span_id_from_sw("a-b")
     _(result).must_equal "a"

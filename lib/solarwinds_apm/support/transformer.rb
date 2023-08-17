@@ -40,10 +40,6 @@ module SolarWindsAPM
         trace_flags == true ? "01" : "00"
       end
 
-      def self.sampled?(decision)
-        decision == ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE
-      end
-
       def self.span_id_from_sw(sw_value)
         sw_value.split("-")[0]
       end

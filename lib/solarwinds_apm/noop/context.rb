@@ -12,7 +12,7 @@ module SolarWindsAPM
     # toString would return the current trace context as string
     #
     def self.toString
-      '00-00000000000000000000000000000000-0000000000000000-00'
+      '99-00000000000000000000000000000000-0000000000000000-00'
     end
 
     ##

@@ -147,6 +147,7 @@ module SolarWindsAPM
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
         if @txn_manager.get(trace_span_id)
           trans_name = @txn_manager.get(trace_span_id)
+          @txn_manager.del(trace_span_id)
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)

@@ -26,7 +26,8 @@ Rake::TestTask.new do |t|
 
   when 'unit.gemfile'
     t.test_files = FileList['test/unit/*_test.rb'] +
-                   FileList['test/component/*_test.rb']
+                   FileList['test/component/*_test.rb'] +
+                   FileList['test/api/*_test.rb']
   end
 end
 
