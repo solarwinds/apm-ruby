@@ -22,12 +22,15 @@ Rake::TestTask.new do |t|
 
   case gem_file
   when 'rails_6x.gemfile'
-    t.test_files = FileList['test/support/swomarginalia_test.rb']
+    t.test_files = FileList['test/support/swomarginalia/*_test.rb']
 
   when 'unit.gemfile'
-    t.test_files = FileList['test/unit/*_test.rb'] +
-                   FileList['test/component/*_test.rb'] +
-                   FileList['test/api/*_test.rb']
+    t.test_files = FileList['test/api/*_test.rb'] +
+                   FileList['test/solarwinds_apm/*_test.rb'] +
+                   FileList['test/opentelemetry/*_test.rb'] +
+                   FileList['test/noop/*_test.rb'] +
+                   FileList['test/support/*_test.rb'] -
+                   FileList['test/support/swomarginalia/*_test.rb']
   end
 end
 

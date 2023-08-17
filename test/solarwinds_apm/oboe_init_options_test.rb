@@ -170,8 +170,8 @@ describe 'OboeInitOptions' do
 
   it 'checks for customized certificates' do
     ENV.delete('SW_APM_TRUSTEDPATH')
-    ENV['SW_APM_TRUSTEDPATH'] = "#{File.expand_path __dir__}/tmp.cert"
-
+    ENV['SW_APM_TRUSTEDPATH'] = "#{File.expand_path __dir__}/tmp.cert".gsub("solarwinds_apm/","")
+    puts "SW_APM_TRUSTEDPATH => #{ENV['SW_APM_TRUSTEDPATH']}"
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
