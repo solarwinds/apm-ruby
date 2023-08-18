@@ -12,7 +12,7 @@ require 'action_dispatch/middleware/request_id'
 
 require 'minitest_helper'
 
-require_relative './../../lib/solarwinds_apm/support/swomarginalia/load_swomarginalia'
+require_relative './../../../lib/solarwinds_apm/support/swomarginalia/load_swomarginalia'
 
 puts "Current rails version: #{Rails.version}"
 
