@@ -29,6 +29,7 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
+      # ERROR -- : OpenTelemetry error: calls to detach should match corresponding calls to attach.
       def set_transaction_name(custom_name=nil)
         
         status = true
@@ -42,9 +43,7 @@ module SolarWindsAPM
             SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
             status = false
           else
-            entry_trace_id = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_ID)
-            entry_span_id  = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_SPAN_ID)
-            trace_flags    = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_FLAG)
+            entry_trace_id, entry_span_id, trace_flags = ::OpenTelemetry::Baggage.value(::SolarWindsAPM::Constants::INTL_SWO_CURRENT_TRACE_INFO)&.split("-")
 
             status = false if entry_trace_id.nil? || entry_span_id.nil? || trace_flags.nil?
             status = false if entry_trace_id == '0'*32 || entry_span_id == '0'*16 || trace_flags == '00' # not sampled
