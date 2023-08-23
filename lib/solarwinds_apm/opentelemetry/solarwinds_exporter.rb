@@ -89,6 +89,7 @@ module SolarWindsAPM
         attributes = span_attributes.dup
         attributes[target] = attributes[target].split('?').first if attributes[target] && SolarWindsAPM::Config[:log_args] == false # remove url parameters
         attributes.each { |k, v| event.addInfo(k, v) }
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data attributes added: #{attributes.inspect}"}
       end
 
       ##
@@ -109,7 +110,6 @@ module SolarWindsAPM
       # add the gem library version to event
       # p.s. gem library version is not same as the opentelemetry-instrumentation-* gem version
       def add_instrumented_framework(event, span_data)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] add_info_instrumented_framework: #{span_data.instrumentation_scope.name}"}
         scope_name = span_data.instrumentation_scope.name
         scope_name = scope_name.downcase if scope_name
         return unless scope_name&.include? "opentelemetry::instrumentation"
@@ -119,6 +119,7 @@ module SolarWindsAPM
         
         framework         = normalize_framework_name(framework)
         framework_version = check_framework_version(framework)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] #{span_data.instrumentation_scope.name} with #{framework} and version #{framework_version}"}
         event.addInfo("Ruby.#{framework}.Version",framework_version) unless framework_version.nil?
       end
 
@@ -142,7 +143,7 @@ module SolarWindsAPM
             @version_cache[framework] = framework_version
           end
         end
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Current framework version cached: #{@version_cache.inspect}"}
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current framework version cached: #{@version_cache.inspect}"}
         framework_version
       end
 
@@ -161,10 +162,9 @@ module SolarWindsAPM
       ##
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name(span_data, event)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] transaction manager: #{@txn_manager.inspect}."}
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] #{@txn_manager.inspect},\n span_data: #{span_data.inspect}"}
-        txname = @txn_manager.get(trace_span_id).nil?? "" : @txn_manager.get(trace_span_id)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txname: #{txname}"}
+        txname = @txn_manager.get(trace_span_id) || ''
         event.addInfo("TransactionName", txname)
         @txn_manager.del(trace_span_id)
       end
