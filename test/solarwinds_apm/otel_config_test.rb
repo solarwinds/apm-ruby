@@ -51,8 +51,7 @@ describe 'Loading Opentelemetry Test' do
     end
     rack_config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
     _(rack_config.count).must_equal 1
-    _(rack_config[:response_propagators].count).must_equal 1
-    _(rack_config[:response_propagators][0].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator
+    _(rack_config[:response_propagators].class).must_equal String
   end
 
 end

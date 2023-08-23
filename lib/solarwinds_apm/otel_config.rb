@@ -52,7 +52,7 @@ module SolarWindsAPM
         elsif rack_setting[:response_propagators].nil?
           rack_setting[:response_propagators] = [response_propagator]
         else
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, require Array"}
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, please provide Array e.g. [#{rack_setting[:response_propagators]}]"}
         end
       else
         @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: [response_propagator]}
