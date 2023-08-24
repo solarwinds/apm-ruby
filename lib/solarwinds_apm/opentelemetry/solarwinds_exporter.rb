@@ -45,13 +45,13 @@ module SolarWindsAPM
           md = build_meta_data(span_data)
           event = nil
           if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."}
             parent_md = build_meta_data(span_data, parent: true)
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."}
           else
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
             event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
             add_info_transaction_name(span_data, event)
+            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
           end
           
           event.addInfo('Layer', span_data.name)
