@@ -2,6 +2,8 @@ module SolarWindsAPM
   module OpenTelemetry
     # SolarWindsTxnNameManager
     class TxnNameManager
+      attr_accessor :root_context
+
       def initialize
         @cache = {}
         @root_context = nil
@@ -21,14 +23,6 @@ module SolarWindsAPM
       end
 
       alias []= set
-
-      def set_root_context(value)
-        @root_context = value
-      end
-
-      def get_root_context
-        @root_context
-      end
     end
   end
 end

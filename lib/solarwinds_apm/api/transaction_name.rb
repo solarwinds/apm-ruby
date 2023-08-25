@@ -42,7 +42,7 @@ module SolarWindsAPM
             SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
             status = false
           else
-            entry_trace_id, entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context&.split('-')
+            entry_trace_id, entry_span_id, trace_flags = solarwinds_processor.txn_manager.root_context&.split('-')
 
             status = false if entry_trace_id.nil? || entry_span_id.nil? || trace_flags.nil?
             status = false if entry_trace_id == '0'*32 || entry_span_id == '0'*16 || trace_flags == '00' # not sampled
