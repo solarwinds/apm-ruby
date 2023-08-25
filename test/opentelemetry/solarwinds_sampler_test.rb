@@ -41,16 +41,16 @@ describe 'SolarWindsSamplerTest' do
     _(attributes['SampleSource']).must_equal nil
   end
 
-  it 'test_add_tracestate_capture_to_attributes_dict with sw.w3c.tracestate' do 
+  it 'test_add_tracestate_capture_to_new_attributes with sw.w3c.tracestate' do 
 
     @attributes_dict["sw.w3c.tracestate"] = "abc"
-    attributes_dict = @sampler.send(:add_tracestate_capture_to_attributes_dict, @attributes_dict, @decision, @tracestate, @parent_context)
+    attributes_dict = @sampler.send(:add_tracestate_capture_to_new_attributes, @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes_dict["a"]).must_equal "b"
 
   end
 
-  it 'test_add_tracestate_capture_to_attributes_dict' do 
-    attributes_dict = @sampler.send(:add_tracestate_capture_to_attributes_dict, @attributes_dict, @decision, @tracestate, @parent_context)
+  it 'test_add_tracestate_capture_to_new_attributes' do 
+    attributes_dict = @sampler.send(:add_tracestate_capture_to_new_attributes, @attributes_dict, @decision, @tracestate, @parent_context)
     _(attributes_dict["a"]).must_equal "b"
   end
 
