@@ -181,7 +181,7 @@ module SolarWindsAPM
           attributes.delete('exception.type') if event.addInfo('ErrorClass', attributes['exception.type'])
           attributes.delete('exception.message') if event.addInfo('ErrorMsg', attributes['exception.message'])
           attributes.delete('exception.stacktrace') if event.addInfo('Backtrace', attributes['exception.stacktrace'])
-          attributes.map { |key, value| event.addInfo(key, value) }
+          attributes.each { |key, value| event.addInfo(key, value) }
         end
 
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] exception event #{event.metadataString}"}
@@ -193,7 +193,7 @@ module SolarWindsAPM
       def report_info_event(span_event)
         event = @context.createEvent((span_event.timestamp.to_i / 1000).to_i)
         event.addInfo('Label', 'info')
-        span_event.attributes.map { |key, value| event.addInfo(key, value) }if span_event.attributes
+        span_event.attributes&.each { |key, value| event.addInfo(key, value) }
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] info event #{event.metadataString}"}
         @reporter.send_report(event, with_system_timestamp: false)
       end
