@@ -4,6 +4,7 @@ module SolarWindsAPM
     class TxnNameManager
       def initialize
         @cache = {}
+        @root_context = nil
       end
 
       def get(key)
@@ -20,6 +21,14 @@ module SolarWindsAPM
       end
 
       alias []= set
+
+      def set_root_context(value)
+        @root_context = value
+      end
+
+      def get_root_context
+        @root_context
+      end
     end
   end
 end
