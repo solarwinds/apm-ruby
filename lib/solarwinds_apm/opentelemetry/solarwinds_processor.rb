@@ -57,12 +57,10 @@ module SolarWindsAPM
         domain     = nil
         has_error  = error?(span)
         trans_name = calculate_transaction_names(span)
-        url_tran   = span.attributes[HTTP_URL]
-
-        liboboe_txn_name = nil
         if span_http?(span)
-          status_code = get_http_status_code(span)
+          status_code    = get_http_status_code(span)
           request_method = span.attributes[HTTP_METHOD]
+          url_tran       = span.attributes[HTTP_URL]
 
           SolarWindsAPM.logger.debug do 
             "[#{self.class}/#{__method__}] createHttpSpan with\n

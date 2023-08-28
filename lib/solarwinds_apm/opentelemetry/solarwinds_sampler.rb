@@ -139,7 +139,7 @@ module SolarWindsAPM
         elsif liboboe_decision["do_metrics"]
           decision = ::OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_ONLY
         end
-        SolarWindsAPM.logger.debug {"OTel decision: #{decision} created from liboboe_decision: #{liboboe_decision}"}
+        SolarWindsAPM.logger.debug {"otel decision: #{decision} created from liboboe_decision: #{liboboe_decision}"}
         decision
       end
 
@@ -149,19 +149,19 @@ module SolarWindsAPM
       def calculate_trace_state(liboboe_decision, parent_span_context, xtraceoptions)
         if !parent_span_context.valid?
           trace_state = create_new_trace_state(parent_span_context, liboboe_decision)
+        elsif parent_span_context.tracestate.nil?
+          trace_state = create_new_trace_state(parent_span_context, liboboe_decision)
         else
-          if parent_span_context.tracestate.nil?
-            trace_state = create_new_trace_state(parent_span_context, liboboe_decision)
-          else
-            trace_state = parent_span_context.tracestate.set_value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY, 
-                                                          sw_from_span_and_decision(parent_span_context, liboboe_decision))
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Updated trace_state:  #{trace_state.inspect}"}
-          end
+          trace_state = parent_span_context.tracestate.set_value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY, 
+                                                                 sw_from_span_and_decision(parent_span_context, liboboe_decision))
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] updated trace_state:  #{trace_state.inspect}"}
         end
 
         # for setting up the xtrace_options_response
-        trace_state = trace_state.set_value(XTraceOptions.sw_xtraceoptions_response_key.to_s, 
-                                create_xtraceoptions_response_value(liboboe_decision, parent_span_context, xtraceoptions)) if xtraceoptions&.options
+        if xtraceoptions&.options
+          trace_state = trace_state.set_value(XTraceOptions.sw_xtraceoptions_response_key.to_s, 
+                                              create_xtraceoptions_response_value(liboboe_decision, parent_span_context, xtraceoptions)) 
+        end
         trace_state
       end
 
@@ -170,7 +170,7 @@ module SolarWindsAPM
       def create_new_trace_state(parent_span_context, liboboe_decision)
         decision = sw_from_span_and_decision(parent_span_context, liboboe_decision)
         trace_state = ::OpenTelemetry::Trace::Tracestate.from_hash({SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY => decision}) # e.g. sw=3e222c863a04123a-01
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Created new trace_state: #{trace_state.inspect}"}
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] created new trace_state: #{trace_state.inspect}"}
         trace_state
       end
 
@@ -250,8 +250,9 @@ module SolarWindsAPM
 
         if tracestate_capture.nil?
           trace_state_no_response = trace_state.delete(XTraceOptions.sw_xtraceoptions_response_key)
-        else # retain all potential tracestate pairs for attributes and generate new sw=key for tracestate based on root parent_span_id
-          attr_trace_state.       = ::OpenTelemetry::Trace::Tracestate.from_string(tracestate_capture)
+        else 
+          # retain all potential tracestate pairs for attributes and generate new sw=key for tracestate based on root parent_span_id
+          attr_trace_state        = ::OpenTelemetry::Trace::Tracestate.from_string(tracestate_capture)
           new_attr_trace_state    = attr_trace_state.set_value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_from_span_and_decision(parent_span_context,liboboe_decision))
           trace_state_no_response = new_attr_trace_state.delete(XTraceOptions.sw_xtraceoptions_response_key)
         end

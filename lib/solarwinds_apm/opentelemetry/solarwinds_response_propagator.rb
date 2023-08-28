@@ -25,26 +25,20 @@ module SolarWindsAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
 
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] response propagator context: #{context.inspect}"}
           span_context = ::OpenTelemetry::Trace.current_span(context).context
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] response propagator span_context: #{span_context.inspect}"}
-          return unless span_context.valid?
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] context: #{context.inspect}; span_context: #{span_context.inspect}"}
+          return unless span_context&.valid?
           
-          x_trace = Transformer.traceparent_from_context(span_context)
-          setter.set(carrier, XTRACE_HEADER_NAME, x_trace)
-          exposed_headers = [XTRACE_HEADER_NAME]
-
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] response propagator span_context.tracestate: #{span_context.tracestate.inspect}"}
+          x_trace                = Transformer.traceparent_from_context(span_context)
+          exposed_headers        = [XTRACE_HEADER_NAME]
           xtraceoptions_response = recover_response_from_tracestate(span_context.tracestate)
 
-          unless xtraceoptions_response.empty?
-            exposed_headers << XTRACEOPTIONS_RESPONSE_HEADER_NAME
-            setter.set(carrier, XTRACEOPTIONS_RESPONSE_HEADER_NAME, xtraceoptions_response)
-          end
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] x-trace: #{x_trace}; exposed headers: #{exposed_headers.inspect}; x-trace-options-response: #{xtraceoptions_response}"}
+          exposed_headers.append(XTRACEOPTIONS_RESPONSE_HEADER_NAME) unless xtraceoptions_response.empty?
 
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] response propagator exposed_headers: #{exposed_headers.inspect}"}
+          setter.set(carrier, XTRACE_HEADER_NAME, x_trace)
+          setter.set(carrier, XTRACEOPTIONS_RESPONSE_HEADER_NAME, xtraceoptions_response) unless xtraceoptions_response.empty?
           setter.set(carrier, HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, exposed_headers.join(","))
-
         end
 
         # Returns the predefined propagation fields. If your carrier is reused, you

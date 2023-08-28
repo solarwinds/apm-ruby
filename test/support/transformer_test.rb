@@ -15,11 +15,6 @@ describe 'TransformerTest' do
                                                 
   end
 
-  it 'test sw_from_context' do
-    sw = @transformer.sw_from_context(@span_context)
-    _(sw).must_equal "8db5dc3f246c8457-00"
-  end
-
   it 'test trace_state_header' do
     result = @transformer.trace_state_header(@tracestate)
     _(result).must_equal "sw=0000000000000000-01"

@@ -57,7 +57,6 @@ Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 # Bundler.require(:default, :test) # this load the solarwinds_apm library
 SolarWindsAPM.logger.level = 1
 
-
 # Dummy Propagator for testing
 module Dummy
   class TextMapPropagator

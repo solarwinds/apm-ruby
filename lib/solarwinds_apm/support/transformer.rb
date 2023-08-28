@@ -4,16 +4,11 @@ module SolarWindsAPM
     class Transformer
       VERSION = '00'.freeze
 
-      def self.sw_from_context(span_context)
-        flag = span_context.trace_flags.sampled?? 1 : 0
-        "#{span_context.hex_span_id}-0#{flag}"
-      end
-
       def self.trace_state_header(trace_state)
+        return nil if trace_state.nil?
+
         arr = []
-        trace_state.to_h.each do |key, value|
-          arr << "#{key}=#{value}"
-        end
+        trace_state.to_h.each { |key, value| arr << "#{key}=#{value}" }
         arr.join(",")
       end
 

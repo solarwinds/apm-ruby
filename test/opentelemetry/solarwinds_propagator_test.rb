@@ -68,23 +68,6 @@ describe 'SolarWindsPropagatorTest' do
 
     _(@mock.verify).must_equal true
   end
-  
-  it 'test inject for sw_from_context' do
-
-    @mock.expect(:call, nil, [OpenTelemetry::Trace::SpanContext])
-
-    SolarWindsAPM::OpenTelemetry::Transformer.stub(:sw_from_context, @mock) do
-      otel_context = create_context(
-        trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
-        span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
-
-      carrier = {}
-      @text_map_propagator.inject(carrier, context: otel_context)
-    end
-
-    _(@mock.verify).must_equal true
-  end
 
   it 'test inject for trace_state_header is nil (create new trace state)' do
 
