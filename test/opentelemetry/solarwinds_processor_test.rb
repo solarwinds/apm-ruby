@@ -60,6 +60,6 @@ describe 'SolarWindsProcessor' do
     span = create_span
     processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)
     processor.on_start(span, ::OpenTelemetry::Context.current)
-    _(processor.txn_manager.root_context).must_equal "77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018-00"
+    _(processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal "31e175128efc4018-00"
   end
 end

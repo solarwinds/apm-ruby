@@ -31,7 +31,7 @@ describe 'SolarWindsTXNNameManangerTest.rb' do
   end
 
   it 'test_set_get_root_context' do
-    @txn_manager.root_context = 'abcd'
-    _(@txn_manager.root_context).must_equal 'abcd'
+    @txn_manager.set_root_context_h('key1', 'abcd')
+    _(@txn_manager.get_root_context_h('key1')).must_equal 'abcd'
   end
 end
