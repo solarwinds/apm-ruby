@@ -47,7 +47,9 @@ module SolarWindsAPM
       # Only calculate inbound metrics for service root spans
       #
       # @param [Span] span the {Span} that just ended.
-      def on_finish(span) 
+      def on_finish(span)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
+
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
           @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
           return
@@ -122,7 +124,6 @@ module SolarWindsAPM
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def span_http?(span)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span.kind #{span.kind}  span.attributes: #{span.attributes[HTTP_METHOD]}"}
         (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
       end
 
@@ -141,10 +142,10 @@ module SolarWindsAPM
 
       # Get trans_name and url_tran of this span instance.
       def calculate_transaction_names(span)
-
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
-        if @txn_manager.get(trace_span_id)
-          trans_name = @txn_manager.get(trace_span_id)
+        trans_name = @txn_manager.get(trace_span_id)
+        if trans_name
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"}
           @txn_manager.del(trace_span_id)
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil

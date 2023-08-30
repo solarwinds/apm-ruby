@@ -108,7 +108,6 @@ module SolarWindsAPM
           span_id  = span.context.hex_span_id
           trace_flags = span.context.trace_flags.sampled?? '01' : '00'
           tracestring = "00-#{trace_id}-#{span_id}-#{trace_flags}"
-          
           [trace_id, span_id, trace_flags, tracestring]
         end
 

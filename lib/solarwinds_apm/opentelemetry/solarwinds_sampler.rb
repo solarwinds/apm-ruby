@@ -73,7 +73,7 @@ module SolarWindsAPM
       # name, kind and attributes are used for transaction filter caching (to avoid continous calculate_trace_mode calculation)
       # return decision Hash
       def calculate_liboboe_decision(parent_span_context, xtraceoptions, name, kind, attributes)
-        tracestring = Transformer.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?
+        tracestring = Utils.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] tracestring: #{tracestring}"}
 
         # otel-ruby contrib use different key to store url info, currently it's using http.target for path
@@ -186,7 +186,7 @@ module SolarWindsAPM
         if !liboboe_decision["auth"] || liboboe_decision["auth"] < 1
           if xtraceoptions.trigger_trace
             # If a traceparent header was provided then oboe does not generate the message
-            tracestring = Transformer.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?  
+            tracestring = Utils.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?  
             trigger_msg = tracestring && liboboe_decision['decision_type'] == 0 ? XTRACEOPTIONS_RESP_TRIGGER_IGNORED : liboboe_decision['status_msg']
             SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] tracestring: #{tracestring}; trigger_msg: #{trigger_msg}"}
           else
@@ -226,7 +226,7 @@ module SolarWindsAPM
 
         # set sw.tracestate_parent_id if its tracestate contains "sw"
         sw_value = parent_span_context.tracestate.value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY)
-        new_attributes[SW_TRACESTATE_ROOT_KEY] = Transformer.span_id_from_sw(sw_value) if sw_value && parent_span_context.remote?
+        new_attributes[SW_TRACESTATE_ROOT_KEY] =  sw_value.split("-")[0] if sw_value && parent_span_context.remote?
 
         # If unsigned or signed TT (root or is_remote), set TriggeredTrace
         new_attributes[SolarWindsAPM::Constants::INTERNAL_TRIGGERED_TRACE] = true if xtraceoptions.trigger_trace
@@ -260,15 +260,16 @@ module SolarWindsAPM
 
         trace_state_no_response = parent_span_context.tracestate.delete(XTraceOptions.sw_xtraceoptions_response_key)
         no_sw_count             = trace_state_no_response.to_h.reject { |k, _v| k == "sw" }.count
-        new_attributes[SW_TRACESTATE_CAPTURE_KEY] = Transformer.trace_state_header(trace_state_no_response) if no_sw_count > 0 
+        new_attributes[SW_TRACESTATE_CAPTURE_KEY] = Utils.trace_state_header(trace_state_no_response) if no_sw_count > 0 
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] new_attributes after add_tracestate_capture_to_new_attributes: #{new_attributes.inspect}"}
         
         new_attributes
       end
 
+      # formats tracestate sw value from span_id and liboboe decision as 16-byte span_id with 8-bit trace_flags e.g. 1a2b3c4d5e6f7g8h-01
       def sw_from_span_and_decision(parent_span_context, liboboe_decision)
-        trace_flag = Transformer.trace_flags_from_boolean(liboboe_decision["do_sample"])
-        Transformer.sw_from_span_and_decision(parent_span_context.hex_span_id, trace_flag)
+        trace_flag = (liboboe_decision["do_sample"] == true) ? "01" : "00"
+        [parent_span_context.hex_span_id, trace_flag].join("-")
       end
 
       def otel_sampled?(otel_decision)

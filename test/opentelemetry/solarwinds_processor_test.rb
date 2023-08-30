@@ -10,7 +10,7 @@ require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsProcessor' do
   before do
-    @txn_name_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
+    @txn_name_manager = SolarWindsAPM::TxnNameManager.new
     @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)                                    
     @processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)                                             
   end

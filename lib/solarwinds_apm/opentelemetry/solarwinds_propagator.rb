@@ -59,13 +59,13 @@ module SolarWindsAPM
             unless span_context.span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
               trace_state = ::OpenTelemetry::Trace::Tracestate.create({SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY => sw_value})
               SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] creating new trace state: #{trace_state.inspect}"}
-              setter.set(carrier, TRACESTATE_HEADER_NAME, Transformer.trace_state_header(trace_state))
+              setter.set(carrier, TRACESTATE_HEADER_NAME, Utils.trace_state_header(trace_state))
             end
           else
             trace_state_from_string = ::OpenTelemetry::Trace::Tracestate.from_string(trace_state_header)
             trace_state = trace_state_from_string.set_value(SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY, sw_value)
             SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] updating/adding trace state for injection #{trace_state.inspect}"}
-            setter.set(carrier, TRACESTATE_HEADER_NAME, Transformer.trace_state_header(trace_state))
+            setter.set(carrier, TRACESTATE_HEADER_NAME, Utils.trace_state_header(trace_state))
           end
         end
 
