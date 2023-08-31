@@ -54,7 +54,7 @@ module SolarWindsAPM
             SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
           end
           
-          event.addInfo('Layer', span_data.name)
+          event.addInfo('Layer', "#{span_data.kind.name}:#{span_data.name}")
           event.addInfo('sw.span_kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
           
