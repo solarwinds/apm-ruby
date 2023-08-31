@@ -22,6 +22,8 @@ if [ -n "$RUN_TESTS" ]; then {
   export SW_APM_REPORTER=file
   mkdir -p log
   test/run_tests.sh
+  status=$?
   echo "Finished Unit Test"
+  exit $status
 }
 fi
