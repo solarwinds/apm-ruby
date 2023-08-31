@@ -51,7 +51,7 @@ begin
     require 'solarwinds_apm/support'
     require 'solarwinds_apm/opentelemetry'
     require 'solarwinds_apm/otel_config'
-    if ENV['SW_APM_AUTO_CONFIGURE'] == 'false' || ENV['SW_APM_AUTO_CONFIGURE'] == false
+    if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsAPM.logger.warn "SolarWindsAPM warning: Ruby library is not initilaized.
                                   You may need to initialize Ruby library in application like the following: 
                                   SolarWindsAPM::OTelConfig.initialize_with_config do |config|

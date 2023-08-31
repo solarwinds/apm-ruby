@@ -76,17 +76,17 @@ describe 'SolarWindsExporterTest' do
     _(result).must_equal 'solarwinds'
   end
 
-  it 'test_add_info_instrumented_framework' do
+  it 'test_add_instrumented_framework' do
     span_data = create_span_data
     context   = SolarWindsAPM::Context.createEvent(10_000)
-    result = @exporter.send(:add_info_instrumented_framework, context, span_data)
+    result = @exporter.send(:add_instrumented_framework, context, span_data)
     assert_nil(result)   
   end
 
-  it 'test_add_info_instrumentation_scope' do
+  it 'test_add_instrumentation_scope' do
     span_data = create_span_data
     context   = SolarWindsAPM::Context.createEvent(10_000)
-    result = @exporter.send(:add_info_instrumentation_scope, context, span_data)
+    result = @exporter.send(:add_instrumentation_scope, context, span_data)
     assert_nil(result)
   end
 

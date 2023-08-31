@@ -22,6 +22,8 @@ module SolarWindsAPM
     INTL_SWO_SUPPORT_EMAIL           = "SWO-support@solarwinds.com".freeze
     INTL_SWO_OTEL_SCOPE_NAME         = "otel.scope.name".freeze
     INTL_SWO_OTEL_SCOPE_VERSION      = "otel.scope.version".freeze
+    INTL_SWO_OTEL_STATUS             = "otel.status".freeze
+    INTL_SWO_OTEL_STATUS_DESCRIPTION = "otel.status_description".freeze
 
     INTERNAL_TRIGGERED_TRACE         = "TriggeredTrace".freeze
   end
