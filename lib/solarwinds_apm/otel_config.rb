@@ -6,12 +6,12 @@ module SolarWindsAPM
   module OTelConfig
     @@config           = {}
     @@config_map       = {}
-    
+
     @@agent_enabled    = true
 
     def self.disable_agent
       return unless @@agent_enabled  # only show the msg once
-      
+
       @@agent_enabled = false
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
     end
@@ -25,34 +25,52 @@ module SolarWindsAPM
     def self.resolve_sampler
 
       resolve_sampler_config
-      @@config[:sampler] = 
+      @@config[:sampler] =
         ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
           root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
           remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
           remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
     end
 
-    def self.resolve_sampler_config      
+    def self.resolve_sampler_config
       sampler_config = {}
-      sampler_config["trigger_trace"] = "enabled" 
+      sampler_config["trigger_trace"] = "enabled"
       sampler_config["trigger_trace"] = nil if ENV["SW_APM_TRIGGER_TRACING_MODE"] == 'disabled'
       @@config[:sampler_config] = sampler_config
     end
 
     #
     # append/add solarwinds_response_propagator into rack instrumentation
-    # 
-    def self.resolve_for_response_propagator
-      response_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-      if @@config_map["OpenTelemetry::Instrumentation::Rack"]
-        if @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators].instance_of?(Array)
-          @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators].append(response_propagator)
+    #
+    def self.resolve_response_propagator
+      response_propagator  = SolarWindsAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
+      rack_setting         = @@config_map["OpenTelemetry::Instrumentation::Rack"]
+      
+      if rack_setting
+        if rack_setting[:response_propagators].instance_of?(Array)
+          rack_setting[:response_propagators].append(response_propagator)
+        elsif rack_setting[:response_propagators].nil?
+          rack_setting[:response_propagators] = [response_propagator]
         else
-          @@config_map["OpenTelemetry::Instrumentation::Rack"][:response_propagators] = [response_propagator]
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, please provide Array e.g. [#{rack_setting[:response_propagators]}]"}
         end
       else
         @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: [response_propagator]}
       end
+    end
+
+    def self.obfuscate_helper(instrumentation)
+      if @@config_map[instrumentation] # user provided the option
+        @@config_map[instrumentation][:db_statement] = :obfuscate unless @@config_map[instrumentation][:db_statement] # user provided the db_statement, ignore our default setting 
+      else
+        @@config_map[instrumentation] = {db_statement: :obfuscate}
+      end
+    end
+
+    def self.obfuscate_query
+      obfuscate_helper("OpenTelemetry::Instrumentation::Dalli")
+      obfuscate_helper("OpenTelemetry::Instrumentation::Mysql2")
+      obfuscate_helper("OpenTelemetry::Instrumentation::PG")
     end
 
     def self.[](key)
@@ -103,39 +121,40 @@ module SolarWindsAPM
       return unless @@agent_enabled
 
       resolve_sampler
-      
+
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
-      resolve_for_response_propagator
+      resolve_response_propagator
+
+      obfuscate_query
 
       print_config if SolarWindsAPM.logger.level.zero?
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].nil?
-      ::OpenTelemetry::SDK.configure do |c|
-        c.use_all(@@config_map)
-      end
-      
+
+      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 
       return unless @@agent_enabled
 
       # append our propagators
-      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators]) 
-      
-      # append our processors (with our exporter)      
+      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
+
+      # append our processors (with our exporter)
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
-      
+
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
       nil
     end
 
-    # 
+    #
     # Allow initialize after set new value to SolarWindsAPM::Config[:key]=value
-    # 
+    #
     # Usage:
-    # 
-    # Default using the use_all to load all instrumentation 
+    #
+    # Default using the use_all to load all instrumentation
     # But with specific instrumentation disabled, use {:enabled: false} in config
     # SolarWindsAPM::OTelConfig.initialize_with_config do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
