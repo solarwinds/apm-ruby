@@ -20,12 +20,10 @@ module SolarWindsAPM
     INTL_SWO_PROPAGATOR              = "solarwinds_propagator".freeze
     INTL_SWO_DEFAULT_PROPAGATORS     = [INTL_SWO_TRACECONTEXT_PROPAGATOR, "baggage",INTL_SWO_PROPAGATOR].freeze
     INTL_SWO_SUPPORT_EMAIL           = "SWO-support@solarwinds.com".freeze
-    INTL_SWO_CURRENT_SPAN_ID         = "sw-current-entry-span-id".freeze
-    INTL_SWO_CURRENT_TRACE_ID        = "sw-current-trace-id".freeze
-    INTL_SWO_CURRENT_TRACE_FLAG      = "sw-current-trace-flag".freeze
-
     INTL_SWO_OTEL_SCOPE_NAME         = "otel.scope.name".freeze
     INTL_SWO_OTEL_SCOPE_VERSION      = "otel.scope.version".freeze
+    INTL_SWO_OTEL_STATUS             = "otel.status".freeze
+    INTL_SWO_OTEL_STATUS_DESCRIPTION = "otel.status_description".freeze
 
     INTERNAL_TRIGGERED_TRACE         = "TriggeredTrace".freeze
   end
