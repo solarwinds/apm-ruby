@@ -16,11 +16,12 @@ describe 'SolarWinds Set Transaction Name Test' do
     SolarWindsAPM::OTelConfig.initialize
     @processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
     @solarwinds_processor = @processors.last
-    @solarwinds_processor.txn_manager.del("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")
   end
 
   after do
     @span.context.trace_flags.instance_variable_set(:@flags, 0)
+    @solarwinds_processor.txn_manager.del("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")
+    sleep 2
   end
 
   it 'calculate_transaction_names_with_unsampled_span' do
