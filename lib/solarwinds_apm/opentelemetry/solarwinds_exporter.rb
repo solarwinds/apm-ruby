@@ -54,7 +54,7 @@ module SolarWindsAPM
             SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
           end
           
-          event.addInfo('Layer', "#{span_data.kind.name}:#{span_data.name}")
+          event.addInfo('Layer', "#{span_data.kind.to_s}:#{span_data.name}")
           event.addInfo('sw.span_kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
           
@@ -77,8 +77,7 @@ module SolarWindsAPM
           @reporter.send_report(event, with_system_timestamp: false)
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
         rescue StandardError => e
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] \n #{e.message} #{e.backtrace}\n"}
-          raise
+          SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] exporter error: \n #{e.message} #{e.backtrace}\n"}
         end
       end
 

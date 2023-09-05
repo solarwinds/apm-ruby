@@ -29,7 +29,7 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] context: #{context.inspect}; span_context: #{span_context.inspect}"}
           return unless span_context&.valid?
           
-          x_trace                = Transformer.traceparent_from_context(span_context)
+          x_trace                = Utils.traceparent_from_context(span_context)
           exposed_headers        = [XTRACE_HEADER_NAME]
           xtraceoptions_response = recover_response_from_tracestate(span_context.tracestate)
 

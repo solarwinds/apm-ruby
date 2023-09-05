@@ -1,5 +1,5 @@
 module SolarWindsAPM
-  # Transformer
+  # Utils
   class Utils
     VERSION = '00'.freeze
 

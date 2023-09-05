@@ -33,8 +33,6 @@ module SolarWindsAPM
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id,"#{span.context.hex_span_id}-#{trace_flags}")
-
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current baggage values: #{::OpenTelemetry::Baggage.values}"}
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}

@@ -16,8 +16,8 @@ module SolarWindsAPM
     end
 
     def set(key, value)
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current cache #{@cache.inspect}"}
       @cache[key] = value
+      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txn manager current cache #{@cache.inspect}"}
     end
 
     alias []= set
@@ -26,6 +26,7 @@ module SolarWindsAPM
       @mutex.synchronize do
         @root_context_h[key] = value
       end
+      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txn manager current root_context_h #{@root_context_h.inspect}"}
     end
 
     def get_root_context_h(key)
