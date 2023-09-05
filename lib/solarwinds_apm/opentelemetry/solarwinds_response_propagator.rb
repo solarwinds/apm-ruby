@@ -2,6 +2,7 @@ module SolarWindsAPM
   module OpenTelemetry
     module SolarWindsResponsePropagator
       # ResponsePropagator
+      # response propagator error will be rescued by OpenTelemetry::Instrumentation::Rack::Middlewares::EventHandler
       class TextMapPropagator
         HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers".freeze
         XTRACE_HEADER_NAME                        = "x-trace".freeze

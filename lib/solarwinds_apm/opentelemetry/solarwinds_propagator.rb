@@ -2,6 +2,7 @@ module SolarWindsAPM
   module OpenTelemetry
     module SolarWindsPropagator
       # TextMapPropagator
+      # propagator error will be rescued by OpenTelemetry::Context::Propagation::TextMapPropagator
       class TextMapPropagator
         TRACESTATE_HEADER_NAME    = "tracestate".freeze
         XTRACEOPTIONS_HEADER_NAME = "x-trace-options".freeze

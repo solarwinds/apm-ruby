@@ -56,10 +56,17 @@ module SolarWindsAPM
         otel_decision       = otel_decision_from_liboboe(liboboe_decision)
         new_trace_state     = calculate_trace_state(liboboe_decision, parent_span_context, xtraceoptions)
         new_attributes      = otel_sampled?(otel_decision)? calculate_attributes(attributes, liboboe_decision, new_trace_state, parent_span_context, xtraceoptions) : nil
-        sampling_result     = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, attributes: new_attributes, tracestate: new_trace_state)
+        sampling_result     = ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision, 
+                                                                                attributes: new_attributes, 
+                                                                                tracestate: new_trace_state)
         
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] should_sample? end with sampling_result: #{sampling_result.inspect} from otel_decision: #{otel_decision.inspect} and new_attributes: #{new_attributes.inspect}"}
         sampling_result
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] sampler error: #{e.message}"}
+        ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: ::OpenTelemetry::SDK::Trace::Samplers::Decision::DROP, 
+                                                          attributes: attributes, 
+                                                          tracestate: ::OpenTelemetry::Trace::Tracestate::DEFAULT)
       end
 
       protected

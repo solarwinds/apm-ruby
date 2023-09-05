@@ -91,10 +91,9 @@ describe 'SolarWindsExporterTest' do
   end
 
   it 'test_log_span_data' do
-    skip if RUBY_VERSION < '3.0'
     span_data = create_span_data
     result = @exporter.send(:log_span_data, span_data)
-    _(result).must_equal true
+    _(result).must_equal 0
   end
 
 end

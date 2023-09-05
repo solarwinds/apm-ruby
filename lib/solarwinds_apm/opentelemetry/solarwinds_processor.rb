@@ -33,6 +33,8 @@ module SolarWindsAPM
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id,"#{span.context.hex_span_id}-#{trace_flags}")
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] processor on_start error: #{e.message}"}
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}
@@ -90,6 +92,9 @@ module SolarWindsAPM
         @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
+        ::OpenTelemetry::SDK::Metrics::Export::FAILURE
       end
 
       # Export all ended spans to the configured `Exporter` that have not yet
