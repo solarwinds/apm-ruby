@@ -94,7 +94,7 @@ module SolarWindsAPM
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
       rescue StandardError => e
         SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
-        ::OpenTelemetry::SDK::Metrics::Export::FAILURE
+        ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
       # Export all ended spans to the configured `Exporter` that have not yet
@@ -109,7 +109,7 @@ module SolarWindsAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def force_flush(timeout: nil)
-        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
+        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       # Called when {TracerProvider#shutdown} is called.
@@ -118,7 +118,7 @@ module SolarWindsAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def shutdown(timeout: nil)
-        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
+        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private

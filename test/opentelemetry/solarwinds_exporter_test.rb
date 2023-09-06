@@ -93,7 +93,7 @@ describe 'SolarWindsExporterTest' do
   it 'test_log_span_data' do
     span_data = create_span_data
     result = @exporter.send(:log_span_data, span_data)
-    _(result).must_equal 0
+    _(result).must_equal ::OpenTelemetry::SDK::Trace::Export::SUCCESS
   end
 
 end
