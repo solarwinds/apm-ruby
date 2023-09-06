@@ -54,7 +54,8 @@ module SolarWindsAPM
             SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
           end
           
-          event.addInfo('Layer', "#{span_data.kind.name}:#{span_data.name}")
+          layer_name = "#{span_data.kind.to_s}:#{span_data.name}"
+          event.addInfo('Layer', layer_name)
           event.addInfo('sw.span_kind', span_data.kind.to_s)
           event.addInfo('Language', 'Ruby')
           
@@ -73,7 +74,7 @@ module SolarWindsAPM
           end
 
           event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
-          event.addInfo('Layer', span_data.name)
+          event.addInfo('Layer', layer_name)
           @reporter.send_report(event, with_system_timestamp: false)
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
         rescue StandardError => e
