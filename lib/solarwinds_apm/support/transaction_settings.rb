@@ -28,9 +28,9 @@ module SolarWindsAPM
     end
 
     def tracing_enabled?
-      span_layer = "#{@name}:#{@kind}"
+      span_layer = "#{@kind}:#{@name}"
 
-      enabled_regexps = SolarWindsAPM::Config[:enabled_regexps]
+      enabled_regexps  = SolarWindsAPM::Config[:enabled_regexps]
       disabled_regexps = SolarWindsAPM::Config[:disabled_regexps]
 
       SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] enabled_regexps: #{enabled_regexps&.inspect}"}

@@ -107,11 +107,7 @@ if defined?(SolarWindsAPM::Config)
   #
   # Currently allowed array of hash
   #
-  # and the hashes within the :url list either:
-  #   :extensions  takes an array of strings for filtering (not regular expressions!)
-  #   :tracing     defaults to :disabled, can be set to :enabled to override
-  #              the global :disabled setting
-  # or:
+  # and the hashes within the :transaction_settings list:
   #   :regexp      is a regular expression that is applied to the incoming path
   #   :opts        (optional) nil(default) or Regexp::IGNORECASE (options for regexp)
   #   :tracing     defaults to :disabled, can be set to :enabled to override
@@ -121,10 +117,6 @@ if defined?(SolarWindsAPM::Config)
   # down execution.
   #
   SolarWindsAPM::Config[:transaction_settings] = [
-    #   {
-    #     extensions: %w[long_job],
-    #     tracing: :disabled
-    #   },
     #   {
     #     regexp: '^.*\/long_job\/.*$',
     #     opts: Regexp::IGNORECASE,
