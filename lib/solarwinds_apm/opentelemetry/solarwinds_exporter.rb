@@ -41,7 +41,7 @@ module SolarWindsAPM
 
       def log_span_data(span_data)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data: #{span_data.inspect}\n"}
-        
+
         md = build_meta_data(span_data)
         event = nil
         if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
@@ -54,7 +54,8 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
         end
         
-        event.addInfo('Layer', span_data.name)
+        layer_name = "#{span_data.kind}:#{span_data.name}"
+        event.addInfo('Layer', layer_name)
         event.addInfo('sw.span_kind', span_data.kind.to_s)
         event.addInfo('Language', 'Ruby')
         
@@ -73,7 +74,7 @@ module SolarWindsAPM
         end
 
         event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
-        event.addInfo('Layer', span_data.name)
+        event.addInfo('Layer', layer_name)
         @reporter.send_report(event, with_system_timestamp: false)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
         SUCCESS

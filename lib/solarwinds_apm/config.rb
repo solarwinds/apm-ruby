@@ -176,7 +176,7 @@ module SolarWindsAPM
 
       # `tracing: disabled` is the default
       disabled = settings.select { |v| !v.has_key?(:tracing) || v[:tracing] == :disabled }
-      enabled = settings.select { |v| v[:tracing] == :enabled }
+      enabled  = settings.select { |v| v[:tracing] == :enabled }
 
       SolarWindsAPM::Config[:enabled_regexps] = compile_regexp(enabled)
       SolarWindsAPM::Config[:disabled_regexps] = compile_regexp(disabled)
@@ -184,11 +184,8 @@ module SolarWindsAPM
     private_class_method :compile_settings
 
     def self.compile_regexp(settings)
-      regexp_regexp     = compile_settings_regexp(settings)
-      extensions_regexp = compile_settings_extensions(settings)
-
-      regexps = [regexp_regexp, extensions_regexp].flatten.compact
-
+      regexp_regexp = compile_settings_regexp(settings)
+      regexps       = [regexp_regexp].flatten.compact
       regexps.empty? ? nil : regexps
     end
     private_class_method :compile_regexp
@@ -212,19 +209,6 @@ module SolarWindsAPM
       regexps.empty? ? nil : regexps
     end
     private_class_method :compile_settings_regexp
-
-    def self.compile_settings_extensions(value)
-      extensions = value.select do |v|
-        v.has_key?(:extensions) &&
-          v[:extensions].is_a?(Array) &&
-          !v[:extensions].empty?
-      end
-      extensions = extensions.map { |v| v[:extensions] }.flatten
-      extensions.keep_if { |v| v.is_a?(String) }
-
-      extensions.empty? ? nil : Regexp.new("(#{Regexp.union(extensions).source})(\\?.+){0,1}$")
-    end
-    private_class_method :compile_settings_extensions
 
     def self.reset_regexps
       SolarWindsAPM::Config[:enabled_regexps] = nil

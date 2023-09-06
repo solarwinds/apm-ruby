@@ -9,7 +9,7 @@ describe 'SolarWinds Transaction Setting Test' do
 
   it 'test non transaction_settings' do
     SolarWindsAPM::Config[:transaction_settings] = []
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: 'google.ca', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: 'google.ca', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 
@@ -21,19 +21,7 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
-    _(trans_settings.calculate_trace_mode).must_equal 0
-  end
-
-  it 'test url_path transaction_settings with extension disabled' do
-    SolarWindsAPM::Config[:transaction_settings] = [
-      {
-        extensions: %w[search],
-        tracing: :disabled
-      }
-    ]
-
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search?q=ruby', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
@@ -43,52 +31,32 @@ describe 'SolarWinds Transaction Setting Test' do
         regexp: '^.*\/google\/.*$'
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
   it 'test spankind transaction_settings with enable' do
     SolarWindsAPM::Config[:transaction_settings] = [
       {
-        regexp: '.*HTTP GET:connect.*',
+        regexp: '.*connect:HTTP GET.*',
         opts: Regexp::IGNORECASE,
         tracing: :disabled
       }
     ]
 
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
-  it 'test url_path transaction_settings with both regexp and extensions' do
-    SolarWindsAPM::Config[:transaction_settings] = [
-      {
-        regexp: '^.*\/google\/.*$',
-        opts: Regexp::IGNORECASE,
-        tracing: :disabled
-      },
-      {
-        extensions: %w[google],
-        tracing: :disabled
-      }
-    ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
-    _(trans_settings.calculate_trace_mode).must_equal 0
-  end
-
-  it 'test url_path transaction_settings with both regexp enable and extensions disable' do
+  it 'test url_path transaction_settings with both regexp enable and disable' do
     SolarWindsAPM::Config[:transaction_settings] = [
       {
         regexp: '^.*\/google\/.*$',
         opts: Regexp::IGNORECASE,
         tracing: :enabled
-      },
-      {
-        extensions: %w[google],
-        tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 
@@ -100,12 +68,30 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :enabled
       },
       {
-        regexp: '.*HTTP GET:connect.*',
+        regexp: '.*connect:HTTP GET.*',
         opts: Regexp::IGNORECASE,
         tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: 'connect')
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    _(trans_settings.calculate_trace_mode).must_equal 1
+  end
+
+  it 'test url_path with asset like extensions' do
+    SolarWindsAPM::Config[:transaction_settings] = [
+      {
+        regexp: '\.(css|js|png)$',
+        opts: Regexp::IGNORECASE,
+        tracing: :disabled
+      }
+    ]
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/cool_image.png', name: 'HTTP GET', kind: :connect)
+    _(trans_settings.calculate_trace_mode).must_equal 0
+
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/image.js', name: 'HTTP GET', kind: :connect)
+    _(trans_settings.calculate_trace_mode).must_equal 0
+
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/imagesjs/', name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 end
