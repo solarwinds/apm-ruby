@@ -48,7 +48,7 @@ describe 'SolarWinds Transaction Setting Test' do
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
-  it 'test url_path transaction_settings with both regexp enable and extensions disable' do
+  it 'test url_path transaction_settings with both regexp enable and disable' do
     SolarWindsAPM::Config[:transaction_settings] = [
       {
         regexp: '^.*\/google\/.*$',
