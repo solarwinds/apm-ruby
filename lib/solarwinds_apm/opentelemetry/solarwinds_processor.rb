@@ -33,8 +33,8 @@ module SolarWindsAPM
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id,"#{span.context.hex_span_id}-#{trace_flags}")
-
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current baggage values: #{::OpenTelemetry::Baggage.values}"}
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] processor on_start error: #{e.message}"}
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}
@@ -45,7 +45,9 @@ module SolarWindsAPM
       # Only calculate inbound metrics for service root spans
       #
       # @param [Span] span the {Span} that just ended.
-      def on_finish(span) 
+      def on_finish(span)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
+
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
           @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
           return
@@ -55,12 +57,10 @@ module SolarWindsAPM
         domain     = nil
         has_error  = error?(span)
         trans_name = calculate_transaction_names(span)
-        url_tran   = span.attributes[HTTP_URL]
-
-        liboboe_txn_name = nil
         if span_http?(span)
-          status_code = get_http_status_code(span)
+          status_code    = get_http_status_code(span)
           request_method = span.attributes[HTTP_METHOD]
+          url_tran       = span.attributes[HTTP_URL]
 
           SolarWindsAPM.logger.debug do 
             "[#{self.class}/#{__method__}] createHttpSpan with\n
@@ -92,6 +92,9 @@ module SolarWindsAPM
         @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
+        ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
       # Export all ended spans to the configured `Exporter` that have not yet
@@ -106,7 +109,7 @@ module SolarWindsAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def force_flush(timeout: nil)
-        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
+        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       # Called when {TracerProvider#shutdown} is called.
@@ -115,14 +118,13 @@ module SolarWindsAPM
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
       def shutdown(timeout: nil)
-        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Metrics::Export::SUCCESS
+        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def span_http?(span)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span.kind #{span.kind}  span.attributes: #{span.attributes[HTTP_METHOD]}"}
         (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
       end
 
@@ -141,10 +143,10 @@ module SolarWindsAPM
 
       # Get trans_name and url_tran of this span instance.
       def calculate_transaction_names(span)
-
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
-        if @txn_manager.get(trace_span_id)
-          trans_name = @txn_manager.get(trace_span_id)
+        trans_name = @txn_manager.get(trace_span_id)
+        if trans_name
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"}
           @txn_manager.del(trace_span_id)
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil

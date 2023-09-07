@@ -7,7 +7,7 @@ require './lib/solarwinds_apm/support/txn_name_manager'
 describe 'SolarWindsTXNNameManangerTest.rb' do
   before do
 
-    @txn_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
+    @txn_manager = SolarWindsAPM::TxnNameManager.new
     @txn_manager.set("c","d")
   end
 

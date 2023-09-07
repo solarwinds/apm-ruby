@@ -20,11 +20,12 @@ module SolarWindsAPM
       def export(span_data, _timeout: nil)
         return FAILURE if @shutdown
 
+        status = SUCCESS
         span_data.each do |data|
-          log_span_data(data)
+          status = log_span_data(data)
         end
 
-        SUCCESS
+        status
       end
 
       def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
@@ -39,48 +40,47 @@ module SolarWindsAPM
       private
 
       def log_span_data(span_data)
-
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data: #{span_data.inspect}\n"}
-        begin
-          md = build_meta_data(span_data)
-          event = nil
-          if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
-            parent_md = build_meta_data(span_data, parent: true)
-            event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."}
-          else
-            event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
-            add_info_transaction_name(span_data, event)
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
-          end
-          
-          layer_name = "#{span_data.kind}:#{span_data.name}"
-          event.addInfo('Layer', layer_name)
-          event.addInfo('sw.span_kind', span_data.kind.to_s)
-          event.addInfo('Language', 'Ruby')
-          
-          add_instrumentation_scope(event, span_data)
-          add_instrumented_framework(event, span_data)
-          add_span_data_attributes(event, span_data.attributes) if span_data.attributes
 
-          event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS, span_data.status.ok?? 'OK' : 'ERROR')
-          event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS_DESCRIPTION, span_data.status.description) unless span_data.status.description.empty?
-
-          @reporter.send_report(event, with_system_timestamp: false)
-
-          # info / exception event
-          span_data.events&.each do |span_data_event|
-            span_data_event.name == 'exception' ? report_exception_event(span_data_event) : report_info_event(span_data_event)
-          end
-
-          event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
-          event.addInfo('Layer', layer_name)
-          @reporter.send_report(event, with_system_timestamp: false)
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
-        rescue StandardError => e
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] \n #{e.message} #{e.backtrace}\n"}
-          raise
+        md = build_meta_data(span_data)
+        event = nil
+        if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+          parent_md = build_meta_data(span_data, parent: true)
+          event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."}
+        else
+          event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
+          add_info_transaction_name(span_data, event)
+          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
         end
+        
+        layer_name = "#{span_data.kind}:#{span_data.name}"
+        event.addInfo('Layer', layer_name)
+        event.addInfo('sw.span_kind', span_data.kind.to_s)
+        event.addInfo('Language', 'Ruby')
+        
+        add_instrumentation_scope(event, span_data)
+        add_instrumented_framework(event, span_data)
+        add_span_data_attributes(event, span_data.attributes) if span_data.attributes
+
+        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS, span_data.status.ok?? 'OK' : 'ERROR')
+        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS_DESCRIPTION, span_data.status.description) unless span_data.status.description.empty?
+
+        @reporter.send_report(event, with_system_timestamp: false)
+
+        # info / exception event
+        span_data.events&.each do |span_data_event|
+          span_data_event.name == 'exception' ? report_exception_event(span_data_event) : report_info_event(span_data_event)
+        end
+
+        event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
+        event.addInfo('Layer', layer_name)
+        @reporter.send_report(event, with_system_timestamp: false)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
+        SUCCESS
+      rescue StandardError => e
+        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] exporter error: \n #{e.message} #{e.backtrace}\n"}
+        FAILURE
       end
 
       ##

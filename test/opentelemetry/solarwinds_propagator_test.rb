@@ -6,7 +6,7 @@ require 'minitest/mock'
 require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/support/x_trace_options'
 require './lib/solarwinds_apm/constants'
-require './lib/solarwinds_apm/support/transformer'
+require './lib/solarwinds_apm/support/utils'
 require './lib/solarwinds_apm/support/transaction_cache'
 require './lib/solarwinds_apm/support/transaction_settings'
 require './lib/solarwinds_apm/support/oboe_tracing_mode'
@@ -64,23 +64,6 @@ describe 'SolarWindsPropagatorTest' do
 
       carrier = {}
       @text_map_propagator.inject(carrier, context: context)
-    end
-
-    _(@mock.verify).must_equal true
-  end
-  
-  it 'test inject for sw_from_context' do
-
-    @mock.expect(:call, nil, [OpenTelemetry::Trace::SpanContext])
-
-    SolarWindsAPM::OpenTelemetry::Transformer.stub(:sw_from_context, @mock) do
-      otel_context = create_context(
-        trace_id: '80f198ee56343ba864fe8b2a57d3eff7',
-        span_id: 'e457b5a2e4d86bd1',
-        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED)
-
-      carrier = {}
-      @text_map_propagator.inject(carrier, context: otel_context)
     end
 
     _(@mock.verify).must_equal true

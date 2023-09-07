@@ -12,7 +12,7 @@ require './lib/solarwinds_apm/constants'
 
 describe 'SolarWindsExporterTest' do
   before do
-    txn_name_manager = SolarWindsAPM::OpenTelemetry::TxnNameManager.new
+    txn_name_manager = SolarWindsAPM::TxnNameManager.new
     @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
     SolarWindsAPM::Config[:log_args] = true                                     
   end
@@ -93,7 +93,7 @@ describe 'SolarWindsExporterTest' do
   it 'test_log_span_data' do
     span_data = create_span_data
     result = @exporter.send(:log_span_data, span_data)
-    _(result).must_equal true
+    _(result).must_equal ::OpenTelemetry::SDK::Trace::Export::SUCCESS
   end
 
 end

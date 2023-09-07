@@ -41,6 +41,7 @@ RUN apt-get update \
        vim \
        zlib1g-dev \
        shared-mime-info \
+       libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # rbenv setup

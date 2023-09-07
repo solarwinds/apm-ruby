@@ -15,7 +15,7 @@ module SolarWindsAPM
       #
       # === Example:
       #
-      #   unless SolarWindsAPM::API.in_span('custom_span')
+      #   SolarWindsAPM::API.in_span('custom_span') do |span|
       #     url = URI.parse("http://www.google.ca/")
       #     req = Net::HTTP::Get.new(url.to_s)
       #     res = Net::HTTP.start(url.host, url.port) {|http| http.request(req)}
@@ -30,6 +30,7 @@ module SolarWindsAPM
           return
         end
 
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] solarwinds_apm in_span with OTEL_SERVICE_NAME #{ENV['OTEL_SERVICE_NAME']}"}
         current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
         current_tracer.in_span(name, attributes: attributes, links: links, start_timestamp: start_timestamp, kind: kind) do |_span|
           block.call
