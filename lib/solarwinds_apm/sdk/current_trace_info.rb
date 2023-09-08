@@ -11,11 +11,11 @@ module SolarWindsAPM
       class TraceInfo
         attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
-        SQL_REGEX=/\/\*\s*traceparent=.*\*\/\s*/.freeze
+        SQL_REGEX=/\/\*\s*traceparent=.*\*\/\s*/
 
         def initialize
           SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.current_trace_info will be depreciated soon. Please use SolarWindsAPM::API::CurrentTraceInfo"}
-          @current_trace_info = SolarWindsAPM::API::CurrentTraceInfo.new
+          @current_trace_info = SolarWindsAPM::API.current_trace_info
           
           @tracestring = @current_trace_info.tracestring
           @trace_id    = @current_trace_info.trace_id
@@ -41,22 +41,18 @@ module SolarWindsAPM
           @for_sql ||= @do_sql ? "/*traceparent='#{@tracestring}'*/" : ''
         end
 
-        def add_traceparent_to_sql(sql, kvs)
+        def add_traceparent_to_sql(sql, _kvs)
           SolarWindsAPM.logger.warn {"add_traceparent_to_sql in SolarWindsAPM::SDK.current_trace_info will be depreciated soon. Please use SolarWindsAPM::API::CurrentTraceInfo"}
           SolarWindsAPM.logger.warn {"kvs are not used anymore."}
           sql = sql.gsub(SQL_REGEX, '') # remove if it was added before
 
-          unless for_sql.empty?
-            "#{for_sql}#{sql}"
-          else
+          if for_sql.empty?
             sql
+          else
+            "#{for_sql}#{sql}"
           end
-
         end
-
       end
     end
-
-    extend CurrentTraceInfo
   end
 end

@@ -8,8 +8,7 @@ module SolarWindsAPM
     # Module to be included in classes with outbound calls
     #
     module TraceContextHeaders
-
-      REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/.freeze
+      REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/
 
       ##
       # Add w3c tracecontext to headers arg
@@ -44,41 +43,12 @@ module SolarWindsAPM
       # === Returns:
       # * The headers with w3c tracecontext added, also modifies the headers arg if given
       #
-      def add_tracecontext_headers(headers = {})
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK::TraceContextHeaders is depreciated. Please refer to TraceContext propagator from opentelemetry ruby"}
-
-        if SolarWindsAPM::Context.isValid
-
-          headers['traceparent'] = SolarWindsAPM::Context.toString
-          
-          matches = REGEXP.match(tracestring)
-          parent_id_flags = matches && "#{matches[:span_id]}-#{matches[:flags]}"
-
-          tracestate = SolarWindsAPM.trace_context&.tracestate
-
-          value = tracestate if tracestate =~ /^[a-f0-9]{16}-0[01]$/.freeze
-
-          result = "sw=#{value}#{remove_sw(tracestate)}"
-
-
-          headers['tracestate'] = SolarWindsAPM::TraceState.add_sw_member(tracestate, parent_id_flags)
-
-
-        else
-          # make sure we propagate an incoming trace_context even if we don't trace
-          if SolarWindsAPM.trace_context
-            headers['traceparent'] = SolarWindsAPM.trace_context.traceparent
-            headers['tracestate'] = SolarWindsAPM.trace_context.tracestate
-          end
+      def add_tracecontext_headers(_headers={})
+        SolarWindsAPM.logger.warn do
+          "SolarWindsAPM::SDK::TraceContextHeaders is depreciated.
+                                    You don't need to add_tracecontext_headers to add traceparent and tracestate to headers.
+                                    Please refer to TraceContext propagator from opentelemetry ruby"
         end
-      rescue => e
-        # we don't know what the class of headers is and the obj may not
-        # be able to accept a key/value assignment
-        # unfortunately I could not find a method to check for that
-        # therefore we're catching the error and don't change the headers
-
-      ensure
-        headers
       end
     end
   end

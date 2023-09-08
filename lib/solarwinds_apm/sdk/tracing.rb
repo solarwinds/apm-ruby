@@ -5,7 +5,6 @@
 
 module SolarWindsAPM
   module SDK
-
     ##
     # Traces are best created with an <tt>SolarWindsAPM::SDK.start_trace</tt> block and
     # <tt>SolarWindsAPM::SDK.trace</tt> blocks around calls to be traced.
@@ -64,7 +63,6 @@ module SolarWindsAPM
     #   end
     #
     module Tracing
-
       # Trace a given block of code.
       #
       # Also detects any exceptions thrown by the block and report errors.
@@ -89,29 +87,31 @@ module SolarWindsAPM
       # === Returns:
       # * The result of the block.
       #
-      def trace(name, kvs: {}, protect_op: nil)
+      def trace(name, kvs: {}, protect_op: nil, &block) # rubocop:disable Lint/UnusedMethodArgument
 
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.trace will be depreciated soon."}
+        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.trace will be depreciated soon. Please either use otel ruby in_span or SolarWindsAPM::API.in_span"}
 
-        return yield if !SolarWindsAPM.loaded || !SolarWindsAPM.tracing? || SolarWindsAPM.tracing_layer_op?(protect_op)
-
-        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
+        return yield unless SolarWindsAPM.loaded
         
-        txname = kvs.delete(:TransactionName) && kvs.delete('TransactionName')
+        kvs.delete(:TransactionName) && kvs.delete('TransactionName')
         links  = kvs.delete(:links) && kvs.delete('links')
         kind   = kvs.delete(:kinds) && kvs.delete('kinds')
 
+        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
+        current_tracer.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
+
         # if current_span is root span, then start root_span, else, do in_span
         # span = current_tracer.in_span
-        span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
-        begin
-          yield
-        rescue Exception => e
-          span.record_exception(e, attributes: kvs)
-          raise
-        ensure
-          span.finish
-        end
+        # span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
+        # begin
+        #   yield
+        # rescue Exception => e
+        #   span.record_exception(e, attributes: kvs)
+        #   raise
+        # ensure
+        #   span.finish
+        # end
+
       end
 
       # Collect metrics and start tracing a given block of code.
@@ -149,9 +149,9 @@ module SolarWindsAPM
       # === Returns:
       # * The result of the block.
       #
-      def start_trace(name, kvs: {}, headers: {})
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.start_trace will be depreciated soon."}
-        start_trace_with_target(name, target: {}, kvs: kvs, headers: headers) { yield }
+      def start_trace(name, kvs: {}, headers: {}, &block)
+        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.start_trace will be depreciated soon. Please either use otel ruby in_span or SolarWindsAPM::API.in_span"}
+        start_trace_with_target(name, target: {}, kvs: kvs, headers: headers, &block)
       end
 
       # Collect metrics, trace a given block of code, and assign trace info to target.
@@ -186,26 +186,31 @@ module SolarWindsAPM
       # === Returns:
       # * The result of the block.
       #
-      def start_trace_with_target(name, target: {}, kvs: {}, headers: {})
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.start_trace_with_target will be depreciated soon."}
-
+      def start_trace_with_target(name, target: {}, kvs: {}, headers: {}, &block) # rubocop:disable Lint/UnusedMethodArgument
         return yield unless SolarWindsAPM.loaded
 
-        txname = kvs.delete(:TransactionName) && kvs.delete('TransactionName')
+        kvs.delete(:TransactionName) && kvs.delete('TransactionName')
+        kvs.delete(:links) && kvs.delete('links')
+        kvs.delete(:kinds) && kvs.delete('kinds')
+
+        # current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
+        # span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
+
+        # begin
+        #   yield
+        # rescue Exception => e
+        #   span.record_exception(e, attributes: kvs)
+        #   raise
+        # ensure
+        #   span.finish
+        # end
+
+        kvs.delete(:TransactionName) && kvs.delete('TransactionName')
         links  = kvs.delete(:links) && kvs.delete('links')
         kind   = kvs.delete(:kinds) && kvs.delete('kinds')
 
         current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-        span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
-
-        begin
-          yield
-        rescue Exception => e
-          span.record_exception(e, attributes: kvs)
-          raise
-        ensure
-          span.finish
-        end
+        current_tracer.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
       end
 
       ##
@@ -251,7 +256,7 @@ module SolarWindsAPM
         # like we did something to nicely play the no-op part.
         return true unless SolarWindsAPM.loaded
 
-        if !klass.is_a?(Module)
+        unless klass.is_a?(Module)
           SolarWindsAPM.logger.warn "[solarwinds_apm/error] trace_method: Not sure what to do with #{klass}.  Send a class or module."
           return false
         end
@@ -282,7 +287,7 @@ module SolarWindsAPM
 
         # Check if already profiled
         if instance_method && klass.instance_methods.include?(with_sw_apm.to_sym) ||
-          class_method && klass.singleton_methods.include?(with_sw_apm.to_sym)
+           class_method && klass.singleton_methods.include?(with_sw_apm.to_sym)
           SolarWindsAPM.logger.warn "[solarwinds_apm/error] trace_method: #{klass}::#{method} already instrumented.\n#{__FILE__}:#{__LINE__}"
           return false
         end
@@ -296,6 +301,8 @@ module SolarWindsAPM
           report_kvs[:MethodName] = safe_method_name
         end
 
+        from = 0
+        to   = -1
         name = config[:name] || method
         if instance_method
           klass.class_eval do
@@ -309,7 +316,12 @@ module SolarWindsAPM
               SolarWindsAPM::SDK.trace(name, kvs: report_kvs) do
                 if config[:backtrace]
                   bt = Kernel.caller
-                  report_kvs[:Backtrace] = trim_backtrace(bt[from..to]).join("\r\n")
+                  if bt.is_a?(Array) && bt.size > 200
+                    trim_backtrace = bt[0, 180] + ['...[snip]...'] + bt[bt.size - 20, 20]
+                  else
+                    trim_backtrace = bt
+                  end
+                  report_kvs[:Backtrace] = trim_backtrace[from..to].join("\r\n")
                 end
                 send(without_sw_apm, *args, &block)
               end
@@ -323,7 +335,12 @@ module SolarWindsAPM
             SolarWindsAPM::SDK.trace(name, kvs: report_kvs) do
               if config[:backtrace]
                 bt = Kernel.caller
-                report_kvs[:Backtrace] = trim_backtrace(bt[from..to]).join("\r\n")
+                if bt.is_a?(Array) && bt.size > 200
+                  trim_backtrace = bt[0, 180] + ['...[snip]...'] + bt[bt.size - 20, 20]
+                else
+                  trim_backtrace = bt
+                end
+                report_kvs[:Backtrace] = trim_backtrace[from..to].join("\r\n")
               end
               send(without_sw_apm, *args, &block)
             end
@@ -374,7 +391,7 @@ module SolarWindsAPM
       # === Returns:
       # * (String or nil) the current transaction name
       #
-      def set_transaction_name(name)
+      def set_transaction_name(name) # rubocop:disable Naming/AccessorMethodName
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.get_transaction_name will be depreciated soon. Please use SolarWindsAPM::API.set_transaction_name."}
         SolarWindsAPM::API.set_transaction_name(name)
       end
@@ -386,13 +403,13 @@ module SolarWindsAPM
       # === Returns:
       # * (String or nil) the current transaction name (without domain prepended)
       #
-      def get_transaction_name
+      def get_transaction_name # rubocop:disable Naming/AccessorMethodName
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.get_transaction_name will be depreciated soon."}
 
         solarwinds_processor       = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
         current_span               = ::OpenTelemetry::Trace.current_span
         entry_trace_id             = current_span.context.hex_trace_id
-        entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context_h(entry_trace_id)&.split('-')
+        entry_span_id, = solarwinds_processor.txn_manager.get_root_context_h(entry_trace_id)&.split('-')
         
         solarwinds_processor.txn_manager.get("#{entry_trace_id}-#{entry_span_id}")
       end
@@ -411,7 +428,8 @@ module SolarWindsAPM
       #
       def tracing?
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.tracing? will be depreciated soon."}
-        return false if !SolarWindsAPM.loaded
+        return false unless SolarWindsAPM.loaded
+
         SolarWindsAPM::Context.isSampled
       end
 
@@ -431,13 +449,10 @@ module SolarWindsAPM
       #     Logger.info "SolarWindsAPM not ready after 10 seconds, no metrics will be sent"
       #   end
       #
-      def solarwinds_ready?(wait_milliseconds = 3000)
+      def solarwinds_ready?(_wait_milliseconds=3000)
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.solarwinds_ready? will be depreciated soon. Please use SolarWindsAPM::API.solarwinds_ready?"}
         SolarWindsAPM::API.solarwinds_ready?
       end
     end
-
-    extend Tracing
-
   end
 end

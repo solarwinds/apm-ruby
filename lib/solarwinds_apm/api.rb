@@ -1,4 +1,4 @@
-# Copyright (c) 2016 SolarWinds, LLC.
+# Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
 require_relative './api/transaction_name'

@@ -1,8 +1,6 @@
 module SolarWindsAPM
   module SDK
-
     module CustomMetrics
-
       # Send counts
       #
       # Use this method to report the number of times an action occurs. The metric counts reported are summed and flushed every 60 seconds.
@@ -26,10 +24,11 @@ module SolarWindsAPM
       # === Returns:
       # * 0 on success, error code on failure
       #
-      def increment_metric(name, count = 1, with_hostname = false, tags_kvs = {})
+      def increment_metric(name, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.increment_metric will be depreciated soon."}
         
         return true unless SolarWindsAPM.loaded
+
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
         SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count) == 1
@@ -61,10 +60,11 @@ module SolarWindsAPM
       # === Returns:
       # * 0 on success, error code on failure
       #
-      def summary_metric(name, value, count = 1, with_hostname = false, tags_kvs = {})
+      def summary_metric(name, value, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
         SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.increment_metric will be depreciated soon."}
         
         return true unless SolarWindsAPM.loaded
+
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
         SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count) == 1
@@ -87,7 +87,5 @@ module SolarWindsAPM
         [tags, count]
       end
     end
-
-    extend CustomMetrics
   end
 end
