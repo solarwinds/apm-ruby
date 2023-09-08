@@ -32,8 +32,8 @@ module SolarWindsAPM
 
         SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] solarwinds_apm in_span with OTEL_SERVICE_NAME #{ENV['OTEL_SERVICE_NAME']}"}
         current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-        current_tracer.in_span(name, attributes: attributes, links: links, start_timestamp: start_timestamp, kind: kind) do |_span|
-          block.call
+        current_tracer.in_span(name, attributes: attributes, links: links, start_timestamp: start_timestamp, kind: kind) do |span|
+          yield span
         end
       end
     end
