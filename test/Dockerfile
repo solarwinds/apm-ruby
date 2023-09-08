@@ -32,6 +32,7 @@ RUN apt-get update \
        libsasl2-dev \
        libsqlite3-dev \
        libssl-dev \
+       libyaml-dev \
        pkg-config \
        psmisc \
        ruby \
@@ -41,7 +42,6 @@ RUN apt-get update \
        vim \
        zlib1g-dev \
        shared-mime-info \
-       libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # rbenv setup
