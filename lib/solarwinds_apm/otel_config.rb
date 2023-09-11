@@ -130,7 +130,7 @@ module SolarWindsAPM
 
       print_config if SolarWindsAPM.logger.level.zero?
 
-      ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].nil?
+      ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
