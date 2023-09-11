@@ -9,7 +9,7 @@ module SolarWindsAPM
     #
     module TraceContextHeaders
       REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/
-
+      private_constant :REGEXP
       ##
       # Add w3c tracecontext to headers arg
       #

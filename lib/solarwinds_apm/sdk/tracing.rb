@@ -96,22 +96,7 @@ module SolarWindsAPM
         kvs.delete(:TransactionName) && kvs.delete('TransactionName')
         links  = kvs.delete(:links) && kvs.delete('links')
         kind   = kvs.delete(:kinds) && kvs.delete('kinds')
-
-        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-        current_tracer.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
-
-        # if current_span is root span, then start root_span, else, do in_span
-        # span = current_tracer.in_span
-        # span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
-        # begin
-        #   yield
-        # rescue Exception => e
-        #   span.record_exception(e, attributes: kvs)
-        #   raise
-        # ensure
-        #   span.finish
-        # end
-
+        SolarWindsAPM::API.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
       end
 
       # Collect metrics and start tracing a given block of code.
@@ -190,27 +175,10 @@ module SolarWindsAPM
         return yield unless SolarWindsAPM.loaded
 
         kvs.delete(:TransactionName) && kvs.delete('TransactionName')
-        kvs.delete(:links) && kvs.delete('links')
-        kvs.delete(:kinds) && kvs.delete('kinds')
-
-        # current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-        # span = current_tracer.start_root_span(name, attributes: kvs, links: links , start_timestamp: nil, kind: kind)
-
-        # begin
-        #   yield
-        # rescue Exception => e
-        #   span.record_exception(e, attributes: kvs)
-        #   raise
-        # ensure
-        #   span.finish
-        # end
-
-        kvs.delete(:TransactionName) && kvs.delete('TransactionName')
         links  = kvs.delete(:links) && kvs.delete('links')
         kind   = kvs.delete(:kinds) && kvs.delete('kinds')
 
-        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-        current_tracer.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
+        SolarWindsAPM::API.in_span(name, attributes: kvs, links: links, start_timestamp: nil, kind: kind, &block)
       end
 
       ##

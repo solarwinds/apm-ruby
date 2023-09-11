@@ -11,7 +11,7 @@ module SolarWindsAPM
       class TraceInfo
         attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
-        SQL_REGEX=/\/\*\s*traceparent=.*\*\/\s*/
+        SQL_REGEX=/\/\*\s*traceparent=.*\*\/\s*/.freeze
 
         def initialize
           SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.current_trace_info will be depreciated soon. Please use SolarWindsAPM::API::CurrentTraceInfo"}
@@ -42,9 +42,9 @@ module SolarWindsAPM
         end
 
         def add_traceparent_to_sql(sql, _kvs)
-          SolarWindsAPM.logger.warn {"add_traceparent_to_sql in SolarWindsAPM::SDK.current_trace_info will be depreciated soon. Please use SolarWindsAPM::API::CurrentTraceInfo"}
+          SolarWindsAPM.logger.warn {"add_traceparent_to_sql in SolarWindsAPM::SDK.current_trace_info will be depreciated soon. Please refer to marginalia at: https://github.com/solarwindscloud/swotel-ruby/tree/main/lib/solarwinds_apm/support/swomarginalia"}
           SolarWindsAPM.logger.warn {"kvs are not used anymore."}
-          sql = sql.gsub(SQL_REGEX, '') # remove if it was added before
+          # to avoid DoS on regex, stop replacing any old traceparent.
 
           if for_sql.empty?
             sql
