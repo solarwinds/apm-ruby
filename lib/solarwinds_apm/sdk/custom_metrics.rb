@@ -25,8 +25,6 @@ module SolarWindsAPM
       # * 0 on success, error code on failure
       #
       def increment_metric(name, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.increment_metric will be depreciated soon."}
-        
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
@@ -61,8 +59,6 @@ module SolarWindsAPM
       # * 0 on success, error code on failure
       #
       def summary_metric(name, value, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
-        SolarWindsAPM.logger.warn {"SolarWindsAPM::SDK.increment_metric will be depreciated soon."}
-        
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
