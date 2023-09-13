@@ -29,4 +29,24 @@ describe 'SolarWinds Set Transaction Name Test' do
     finished_spans = @in_memory_exporter.finished_spans
     _(finished_spans.first.name).must_equal 'custom_span'
   end
+
+  it 'test_in_span_wrapper_from_solarwinds_apm_with_span' do
+    SolarWindsAPM::API.in_span('custom_span') do |span|
+      span.add_attributes({"test_attribute" => "attribute_1"})
+      @op.call
+    end
+
+    sleep 5 # give it some time to fetch from memory
+    
+    finished_spans = @in_memory_exporter.finished_spans
+    _(finished_spans.first.name).must_equal 'custom_span'
+    _(finished_spans.first.attributes['test_attribute']).must_equal 'attribute_1'
+  end
+
+  it 'test_in_span_wrapper_from_solarwinds_apm_without_block' do
+    SolarWindsAPM::API.in_span('custom_span')
+
+    finished_spans = @in_memory_exporter.finished_spans
+    _(finished_spans.size).must_equal 0
+  end
 end

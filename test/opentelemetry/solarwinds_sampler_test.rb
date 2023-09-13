@@ -68,7 +68,7 @@ describe 'SolarWindsSamplerTest' do
     tracestate = ::OpenTelemetry::Trace::Tracestate.from_hash(content)
     parent_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "k1\xBF6\xB7k\xA7\x8B", trace_id: "H\x86\xC9\xC2\x16\xB2\xAA \xCE0@g\x81\xA1=P", tracestate: tracestate)
     trace_state = @sampler.send(:calculate_trace_state, @decision, parent_context, @xtraceoptions)
-    puts "trace_state #{trace_state.inspect}"
+
     _(trace_state.to_h.keys.size).must_equal 3
     _(trace_state.value("sw")).must_equal "6b31bf36b76ba78b-00"
     _(trace_state.value("abc")).must_equal "cba"
