@@ -34,7 +34,7 @@ jobs:
 
       - name: Install swig 4.0.2
         run: |
-          apt update && apt install -y --no-install-recommends bison swig
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends bison swig
 
       - name: Download files from cloud.solarwinds.com and create swig wrapper
         env:
