@@ -109,6 +109,10 @@ module SolarWindsAPM
     def self.createExit(_args)
       self
     end
+
+    def self.isReady(_args)
+      self
+    end
   end
 end
 
