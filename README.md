@@ -8,11 +8,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
 ## Installation and Setup
 `solarwinds_apm` is [available on Rubygems](https://rubygems.org/gems/solarwinds_apm). Install with:
+
 ```bash
 gem install solarwinds_apm -v '>=6.0.0'
 ```
 
 Or add to **the end** of your application Gemfile and run `bundle install` if managing gems with Bundler:
+
 ```ruby
 # application dependencies, eg
 # gem "rails", "~> 7.0.5", ">= 7.0.5.1"
@@ -27,32 +29,55 @@ The only required configuration is the service key, which can be set in the `SW_
 
 ## Custom Instrumentation
 
-### Create a custom span manually through our helper API
+`solarwinds_apm` supports the standard OpenTelemetry API for tracing and includes a helper to ease its use in manual instrumentation.  Additionally, a set of SolarWindsAPM APIs are provided for features specific to SolarWinds Observability.
 
-To create a custom span manually as child span (i.e. sub-span) of other parent span or trace.
+### Using the OpenTelemetry API
 
-Here is a simple example with rails controller:
+This gem installs the dependencies needed to use the OTel API and initializes the globally-registered `TracerProvider`. So the "Setup" and "Acquiring a Tracer" sections of the [OTel Ruby Manual Instrumentation](https://opentelemetry.io/docs/instrumentation/ruby/manual/) should be skipped. Instead, your application code should acquire a `Tracer` from the global `TracerProvider` as follows.
+
+The `Tracer` object is determined by the service name, which is the portion after the colon (`:`) set in the `SW_APM_SERVICE_KEY` or `:service_key` configuration. The service name is also automatically set into the `OTEL_SERVICE_NAME` environment variable which can be referenced as shown below. The `Tracer` object can then be used as described in the OTel Ruby documentation.
+
+The example below shows how the standard OTel API to [create a span](https://opentelemetry.io/docs/instrumentation/ruby/manual/#creating-new-spans) and [get the current span](https://opentelemetry.io/docs/instrumentation/ruby/manual/#get-the-current-span) can be used in an application where `solarwinds_apm` has been loaded.  See also the convenience [wrapper for in_span provided by the SolarWindsAPM API](#convenience-method-for-in_span):
 
 ```ruby
-require 'solarwinds_apm'
+# acquire the tracer
+MyAppTracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
 
+# create a new span
+MyAppTracer.in_span('new.span', attributes: {'key1' => 'value1', 'key2' => 'value2'}) do |span|
+  # do things
+end
+
+# work with the current span
+current_span = ::OpenTelemetry::Trace.current_span
+# current_span.add_attributes
+# current_span.add_event
+# current_span.record_exception
+```
+
+Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`, it will not be configured with our distribution's customizations and manual instrumentation made with its `Tracer` object will not be reported to SolarWinds Observability.
+
+### Using the SolarWindsAPM API
+
+Several convenience and vendor-specific APIs are availabe to an application where `solarwinds_apm` has been loaded, below is a quick overview of the features provided. The full reference can be found at the [RubyDoc page for this gem](https://www.rubydoc.info/gems/solarwinds_apm).
+
+#### Convenience Method for in_span
+
+This method acquires the correct `Tracer` so a new span can be created in a single call, below is a simple Rails controller example:
+
+```ruby
 class StaticController < ApplicationController
   def home
     SolarWindsAPM::API.in_span('custom_span') do |span|
       # do things
-      object.cool_work()
     end
   end
 end
 ```
 
-This example will start new span called `custom_span` that will be set as the current span in the Tracer‘s context at execution.
+#### Get Curent Trace Context Information
 
-SolarWinds Observability APM OpenTelemetry extensions seamlessly integrate with the auto-configured global trace object, eliminating the need to craft your own trace object. However, if you generate and employ a distinct trace object, the manual instrumentation spans won't be identified by the SolarWinds Observability APM extensions nor captured by the SolarWinds APM collector.
-
-### Get current trace and span information
-
-If you want to check current tracestring, trace_id, span_id or trace_flags, you can simply use `current_trace_info` to retrieve the infomation as example shown. The current trace and span information is retreived based on OpenTelemetry Ruby api `::OpenTelemetry::Trace.current_span`
+The `current_trace_info` method returns a `TraceInfo` object containing string representations of the current trace context that can be used in logging or manual propagation of context. This is a convenience method that wraps the OTel API `::OpenTelemetry::Trace.current_span`.
 
 ```ruby
 trace = SolarWindsAPM::API.current_trace_info
@@ -63,56 +88,20 @@ trace.span_id        # 49e60702469db05f
 trace.trace_flags    # 01
 ```
 
-### Check if the solarwinds_apm is ready
+#### Check if solarwinds_apm Is Ready
 
-The Ruby Library establishes and sustains a link to a SolarWinds Observability collector, retrieving settings essential for tracing decisions. The duration of this initialization can span a few seconds based on the connection quality. If requests come into the application before this setup concludes, they won't be traced. This isn't a significant concern for extended server operations but could pose issues for short-lived applications like cron jobs or CLI apps.
+On startup, this library initializes and maintains a connection to a SolarWinds Observability collector, and receives settings used for making tracing decisions. This process can take up to a few seconds depending on the connection. If the application receives requests before initialization has completed, these requests will not be traced. While this is not critical for long-running server processes, it might be a problem for short-running apps such as cron jobs or CLI apps.
 
-Invoking this method lets the application pause until the library is fully initialized and primed for tracing. An optional timeout parameter, measured in milliseconds, can be provided to specify the maximum wait time for initialization. By default, this is set to 3000 milliseconds. A timeout value of 0 ensures the application doesn't pause at all.
+A call to the `solarwinds_ready` method allows the application to block until initialization has completed and the library is ready for tracing. The method accepts an optional timeout parameter in milliseconds.
 
 ```ruby
-require 'solarwinds_apm'
-
 SolarWindsAPM::API.solarwinds_ready(wait_milliseconds=3000)
 ```
 
-By default, it returns a boolean value of True (ready) or False (not ready).
+#### Set a Custom Transaction Name
 
-### Set custom transaction name
-
-The Ruby Library's default instrumentation designates a transaction name derived from detected URL values. If this assigned name doesn't adequately describe your instrumented process, you have the option to replace it with a custom transaction name. For traces with several transaction names, the final name specified is chosen.
+By default, transaction names are constructed based on attributes such as the requested route in the server framework, or the span name. If this name is not descriptive enough, you can override it with a custom one. If multiple transaction names are set on the same trace, the last transaction name is used.
 
 ```ruby
-require 'solarwinds_apm'
-
 result = SolarWindsAPM::API.set_transaction_name('my-custom-trace-name')
 ```
-
-The function `set_transaction_name` takes a string representing the transaction name for the ongoing request. Both empty strings and null values are not accepted as valid transaction names and will be disregarded. This function yields a boolean result: `True` for successful naming and `False` otherwise.
-
-If a call to `set_transaction_name` is made from an asynchronous execution unit after the service entry span has been processed and sent out, the call will not produce any effect.
-
-### Create a custom span manually using OpenTelemetry Ruby API
-
-To create a custom span without our api function, you need to find the current tracer object from tracer_provider. Tracer object is determined by the service_name. If the SW_APM_SERVICE_KEY is set correctly, then the service name will be the `SW_APM_SERVICE_KEY` after semi-colon (e.g. `<key>:<your_service_name>`). Or you can simply use ENV['OTEL_SERVICE_NAME'] as the example showing
-
-```ruby
-current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
-current_tracer.in_span(name, attributes: attributes, links: links, start_timestamp: start_timestamp, kind: kind) do |span|
-  # do things
-  object.cool_work()
-end
-```
-
-### Get current span with OpenTelemetry Ruby API
-
-If you wish to add event or exception to current span (e.g. while executing your rails controller), you can find the current span using OpenTelemetry api `::OpenTelemetry::Trace.current_span`, and add information as example shown
-
-```ruby
-span = ::OpenTelemetry::Trace.current_span
-
-span.add_event('event', attributes: {'eager' => true})    # add simple 'event' event
-
-span.record_exception(exception, attributes: {})          # exception has to be Ruby Exception/Error object
-```
-
-For more OpenTelemetry Ruby API, please view [opentelemetry](https://opentelemetry.io/docs/instrumentation/ruby/manual/)

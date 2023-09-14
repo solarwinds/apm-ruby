@@ -35,11 +35,26 @@ Settings specific to `solarwinds_apm` are prefixed by `SW_APM_` and described in
 
 ### Exporter
 
-The default exporter is `solarwinds` which communicates with the SolarWinds Observability backend. The standard OTLP exporter can also be configured in via `OTEL_TRACES_EXPORTER`, please ensure `solarwinds` is included.
+The default `solarwinds` exporter which communicates with the SolarWinds Observability backend is always configured. Additional exporters can be configured via the `OTEL_TRACES_EXPORTER` environment variable. For example, console exporter is part of standard installation and can be enabled via:
 
-Example:
 ```bash
-export OTEL_TRACES_EXPORTER="solarwinds,otlp"
+export OTEL_TRACES_EXPORTER=console
+```
+
+Other exporters must first be installed and required before loading `solarwinds_apm`. For example, if dependencies are loaded by `Bundler.require`, add the OTLP exporter to the Gemfile:
+```ruby
+# application dependencies, eg
+# gem "rails", "~> 7.0.5", ">= 7.0.5.1"
+
+gem "opentelemetry-exporter-otlp"
+
+# end of Gemfile
+gem 'solarwinds_apm', '>=6.0.0'
+```
+
+And set the environment variable:
+```bash
+export OTEL_TRACES_EXPORTER=otlp
 ```
 
 ### Service Name
