@@ -3,6 +3,11 @@ https://github.com/solarwindscloud/solarwinds-apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
+# solarwinds_apm 6.0.0.preV3 (08/08/2023)
+
+This release includes the following features:
+
+* Relaxed the opentelemetry-sdk version requirement to 1.2.0 for common version 0.19.6
 
 # solarwinds_apm 6.0.0.preV3 (08/08/2023)
 
