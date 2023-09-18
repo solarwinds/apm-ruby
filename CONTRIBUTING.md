@@ -90,7 +90,7 @@ bundle install
 
 ### Building the Gem
 
-The gem can be built, installed, and ran inside the development container:
+The gem can be built, installed, and run inside the development container:
 ```bash
 # build the gem
 bundle exec rake build_gem
@@ -101,6 +101,24 @@ gem install builds/solarwinds_apm-<version>.gem
 # load the gem
 SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 ```
+
+#### Compiling the C Extension
+
+During install, the gem compiles a C extension called oboe which provides core functionality such as sampling and data transmission.  When loading the gem from local source for development, the extension needs to be explicitly compiled:
+```bash
+bundle exec rake clean
+bundle exec rake fetch
+bundle exec rake compile
+
+# or use the short version that does it all
+bundle exec rake cfc
+```
+
+Now loading the gem from local source should work:
+```bash
+SW_APM_SERVICE_KEY=<api-token:service-name> bundle exec irb -r solarwinds_apm
+```
+
 
 ### Linting
 

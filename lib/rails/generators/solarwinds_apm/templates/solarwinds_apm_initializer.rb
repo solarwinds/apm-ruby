@@ -33,7 +33,8 @@ if defined?(SolarWindsAPM::Config)
   # SolarWindsAPM::Config[:hostname_alias] = 'alias_name'
 
   #
-  # Set Proxy for SolarWinds   # This setting will be overridden if SW_APM_PROXY is set as an environment variable.
+  # Set Proxy for SolarWinds
+  # This setting will be overridden if SW_APM_PROXY is set as an environment variable.
   #
   # Please configure http_proxy if a proxy needs to be used to communicate with
   # the SolarWinds APM collector.

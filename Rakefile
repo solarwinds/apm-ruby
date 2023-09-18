@@ -155,12 +155,15 @@ task :fetch_oboe_file, [:env] do |_t, args|
   end
 
   # remove all oboe* files, they may hang around because of name changes
-  Dir.glob(File.join(ext_src_dir, 'oboe*')).each { |file| File.delete(file) }
+  Dir.glob(File.join(ext_src_dir, 'oboe*')).each do |file|
+    puts "deleting #{file}"
+    File.delete(file)
+  end
 
   # oboe and bson header files
   FileUtils.mkdir_p(File.join(ext_src_dir, 'bson'))
-  files = %w[bson/bson.h bson/platform_hacks.h]
-  files += ['oboe.h', 'oboe_api.h', 'oboe_api.cpp', 'oboe_debug.h', 'oboe.i']
+  files = %w[bson/bson.h bson/platform_hacks.h
+             oboe.h oboe_api.h oboe_api.cpp oboe_debug.h oboe.i]
 
   files.each do |filename|
     remote_file = File.join(oboe_dir, 'include', filename)
@@ -198,7 +201,7 @@ task :fetch_oboe_file, [:env] do |_t, args|
   end
 
   FileUtils.cd(ext_src_dir) do
-    system('swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i')
+    sh 'swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i'
     FileUtils.rm('oboe.i') if args["env"] != "prod"
   end
 
@@ -247,12 +250,7 @@ task :compile do
   so_file  = File.expand_path('ext/oboe_metal/libsolarwinds_apm.so')
 
   Dir.chdir ext_dir
-  if ENV['OBOE_LOCAL']
-    cmd = [Gem.ruby, 'extconf_local.rb']
-  else
-    cmd = [Gem.ruby, 'extconf.rb']
-  end
-  sh cmd.join(' ')
+  sh "#{Gem.ruby} extconf.rb"
   sh '/usr/bin/env make'
 
   File.delete(final_so) if File.exist?(final_so)
