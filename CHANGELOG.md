@@ -3,6 +3,28 @@ https://github.com/solarwindscloud/solarwinds-apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
+# solarwinds_apm 6.0.0.preV3 (08/08/2023)
+
+This release includes the following features:
+
+* Relaxed the opentelemetry-sdk version requirement to 1.2.0 for common version 0.19.6
+
+# solarwinds_apm 6.0.0.preV3 (08/08/2023)
+
+This release includes the following features:
+
+* Updgraded liboboe version to 13.0.0
+* Rescue the sampler, processor and exporter without re-raise the error
+* Marginlia for tracecontext in sql will work for activerecord > 7 with non-rails app (e.g. sinatra)
+* Environmental variable name change: SOLARWINDS_APM_ENABLED -> SW_APM_ENABLED
+* Updated lumberjack for tracecontext in logs
+* Refactored test file structure based on folder `lib/`
+* DB statement obfuscate for mysql2, pg and dalli will be default for opentelemetry-instrumentation
+* Added otel.status and otel.description in span attributes
+* Abandoned baggage to store root span; instea, using txn_manager
+* Changed layer to span.kind:span.name
+* Removed extensions from transaction_settings
+
 # solarwinds_apm 6.0.0.preV2 (08/08/2023)
 
 This release includes the following features:

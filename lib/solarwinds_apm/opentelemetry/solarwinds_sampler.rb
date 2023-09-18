@@ -217,7 +217,7 @@ module SolarWindsAPM
       # the sw.w3c.tracestate should perserve the old tracestate value for debugging purpose
       def calculate_attributes(attributes, liboboe_decision, trace_state, parent_span_context, xtraceoptions)
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] new_trace_state: #{trace_state.inspect}"}
-        new_attributes = attributes.dup
+        new_attributes = attributes.dup || {}
 
         # Always (root or is_remote) set _INTERNAL_SW_KEYS if injected
         new_attributes[INTERNAL_SW_KEYS] = xtraceoptions.sw_keys if xtraceoptions.sw_keys

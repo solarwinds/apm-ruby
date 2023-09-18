@@ -40,8 +40,8 @@ Gem::Specification.new do |s|
   s.extensions = ['ext/oboe_metal/extconf.rb']
 
   # OTEL dependencies
-  s.add_dependency('opentelemetry-sdk', '>= 1.2.1')
-  s.add_dependency('opentelemetry-instrumentation-all', '>= 0.33.0')
+  s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
+  s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
 
   # this still gives a warning, would have to be pinned to a minor version
   # but that is not necessary and may restrict other gems
