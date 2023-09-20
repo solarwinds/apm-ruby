@@ -54,7 +54,7 @@ describe 'SolarWinds Custom Metrics Test' do
   it 'test_summary_metric_with_single_variable_with_failure' do
     SolarWindsAPM::CustomMetrics.stub(:summary, 0) do
       SolarWindsAPM::MetricTags.stub(:new, {}) do
-        result = SolarWindsAPM::API.summary_metric('abc', 7.7, 1, true, {} )
+        result = SolarWindsAPM::API.summary_metric('abc', 7.7, 1, true, {})
         _(result).must_equal true
       end
     end
