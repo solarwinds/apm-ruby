@@ -1,5 +1,5 @@
 module SolarWindsAPM
-  module SDK
+  module API
     module CustomMetrics
       # Send counts
       #
@@ -17,19 +17,19 @@ module SolarWindsAPM
       #   class WorkTracker
       #     def counting(name, tags = {})
       #       yield # yield to where work is done
-      #       SolarWindsAPM::SDK.increment_metric(name, 1, false, tags)
+      #       SolarWindsAPM::API.increment_metric(name, 1, false, tags)
       #     end
       #   end
       #
       # === Returns:
-      # * 0 on success, error code on failure
+      # * Boolean
       #
       def increment_metric(name, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count) == 1
+        SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count) == 0
       end
 
       # Send values with counts
@@ -51,19 +51,19 @@ module SolarWindsAPM
       #       start = Time.now
       #       yield # yield to where work is done
       #       duration = Time.now - start
-      #       SolarWindsAPM::SDK.summary_metric(name, duration, 1, false, tags)
+      #       SolarWindsAPM::API.summary_metric(name, duration, 1, false, tags)
       #     end
       #   end
       #
       # === Returns:
-      # * 0 on success, error code on failure
+      # * Boolean
       #
       def summary_metric(name, value, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count) == 1
+        SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count) == 0
       end
 
       private

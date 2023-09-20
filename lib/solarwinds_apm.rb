@@ -12,7 +12,6 @@ begin
   require 'solarwinds_apm/support_report'
   require 'solarwinds_apm/constants'
   require 'solarwinds_apm/api'
-  require 'solarwinds_apm/sdk'
   require 'solarwinds_apm/base'
   require 'solarwinds_apm/logger'
   require 'solarwinds_apm/config'
