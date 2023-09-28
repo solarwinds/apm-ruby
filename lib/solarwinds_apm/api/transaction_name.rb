@@ -33,8 +33,10 @@ module SolarWindsAPM
         
         status = true
         if custom_name.nil? || custom_name.empty? 
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] custom_name is either nil or empty string."}
           status = false
         elsif SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00' # noop
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] SolarWindsAPM::Context is in noop mode."}
           status = true
         elsif SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor].nil?
           SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
