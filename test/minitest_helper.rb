@@ -157,6 +157,23 @@ module SolarWindsAPM
   end
 end
 
+# for custom_metrics_test.rb
+module SolarWindsAPM
+  module CustomMetrics
+    def self.increment; end
+
+    def self.summary; end
+  end
+end
+
+module SolarWindsAPM
+  module MetricTags
+    def self.new; end
+
+    def self.add; end
+  end
+end
+
 ##
 # create_span_data
 #
