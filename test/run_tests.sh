@@ -49,16 +49,15 @@ echo "*** ruby version $ruby_version ***"
 ##
 # loop through gemfiles to set up and run tests
 for gemfile in "${gemfiles[@]}" ; do
-  export BUNDLE_GEMFILE=$gemfile
 
   echo "*** installing gems from $BUNDLE_GEMFILE ***"
-  if ! bundle update; then
+  if ! BUNDLE_GEMFILE=$gemfile bundle update; then
     echo "Problem during gem install. Skipping tests for $gemfile"
     exit_status=1
     continue
   fi
   # and here we are finally running the tests!!!
-  bundle exec rake test
+  BUNDLE_GEMFILE=$gemfile bundle exec rake test
   status=$?
   [[ $status -gt $exit_status ]] && exit_status=$status
   [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby_version !!!"

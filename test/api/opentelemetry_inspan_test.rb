@@ -23,10 +23,10 @@ describe 'SolarWinds Set Transaction Name Test' do
     SolarWindsAPM::API.in_span('custom_span') do
       @op.call
     end
-    
-    sleep 5 # give it some time to fetch from memory
 
     finished_spans = @in_memory_exporter.finished_spans
+    puts "@in_memory_exporter: #{@in_memory_exporter.inspect}"
+
     _(finished_spans.first.name).must_equal 'custom_span'
   end
 
@@ -36,9 +36,9 @@ describe 'SolarWinds Set Transaction Name Test' do
       @op.call
     end
 
-    sleep 5 # give it some time to fetch from memory
-    
     finished_spans = @in_memory_exporter.finished_spans
+    puts "@in_memory_exporter: #{@in_memory_exporter.inspect}"
+
     _(finished_spans.first.name).must_equal 'custom_span'
     _(finished_spans.first.attributes['test_attribute']).must_equal 'attribute_1'
   end

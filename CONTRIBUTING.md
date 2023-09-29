@@ -168,24 +168,19 @@ test/run_tests.sh
 To run a single test file:
 ```bash
 # most tests require just the unit.gemfile dependencies
-export BUNDLE_GEMFILE=gemfiles/unit.gemfile
-bundle update
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
 
-bundle exec ruby -I test test/opentelemetry/solarwinds_exporter_test.rb
-bundle exec ruby -I test test/opentelemetry/otel_config_propagator_test.rb
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_exporter_test.rb
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/otel_config_propagator_test.rb
 
 # marginalia tests require the rails_6x.gemfile dependencies
-export BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile
-bundle update
-
-bundle exec ruby -I test test/support/swomarginalia/swomarginalia_test.rb
+BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile bundle exec ruby -I test test/support/swomarginalia/swomarginalia_test.rb
 ```
 
-To run a specific test:
+To run a specific test (that require unit.gemfile):
 ```bash
-export BUNDLE_GEMFILE=gemfiles/unit.gemfile
-bundle update
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
 
-bundle exec ruby -I test test/opentelemetry/solarwinds_exporter_test.rb -n /test_build_meta_data/
-bundle exec ruby -I test test/solarwinds_apm/otel_config_test.rb -n /test_resolve_propagators_with_defaults/
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_exporter_test.rb -n /test_build_meta_data/
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/solarwinds_apm/otel_config_test.rb -n /test_resolve_propagators_with_defaults/
 ```
