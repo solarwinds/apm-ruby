@@ -13,13 +13,21 @@ describe 'SolarWinds Set Transaction Name Test' do
     @span = create_span
     @dummy_span = create_span
     @dummy_span.context.instance_variable_set(:@span_id, 'fake_span_id') # with fake span_id, should still find the right root span
+    
+    txn_manager = SolarWindsAPM::TxnNameManager.new
+    exporter    = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+    @temp_solarwinds_processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+
     SolarWindsAPM::OTelConfig.initialize
+
     @processors = ::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    puts "@processors: #{@processors.inspect}"
+    ::OpenTelemetry.tracer_provider.instance_variable_set(:@span_processors, @temp_solarwinds_processor) if @processors.nil?
+
     @solar_processor = nil
     @processors.each do |processor|
       @solar_processor = processor if processor.instance_of?(SolarWindsAPM::OpenTelemetry::SolarWindsProcessor)
     end
+
     @solarwinds_processor = @solar_processor || @processors.last
     @solarwinds_processor.txn_manager.del("77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018")
   end
