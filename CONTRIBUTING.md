@@ -178,7 +178,7 @@ BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile bundle install
 BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile bundle exec ruby -I test test/support/swomarginalia/swomarginalia_test.rb
 ```
 
-To run a specific test (that require unit.gemfile):
+To run a specific test (that requires unit.gemfile):
 ```bash
 BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
 
