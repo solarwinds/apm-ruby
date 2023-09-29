@@ -171,7 +171,7 @@ To run a single test file:
 BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
 
 BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_exporter_test.rb
-BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/otel_config_propagator_test.rb
+BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
 
 # marginalia tests require the rails_6x.gemfile dependencies
 BUNDLE_GEMFILE=gemfiles/rails_6x.gemfile bundle exec ruby -I test test/support/swomarginalia/swomarginalia_test.rb
