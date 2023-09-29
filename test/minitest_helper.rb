@@ -174,6 +174,13 @@ module SolarWindsAPM
   end
 end
 
+class CustomInMemorySpanExporter < ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter
+  def export(span_datas, timeout: nil)
+    @finished_spans.concat(span_datas.to_a)
+    ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+  end
+end
+
 ##
 # create_span_data
 #

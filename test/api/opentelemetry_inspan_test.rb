@@ -8,7 +8,8 @@ describe 'SolarWinds Set Transaction Name Test' do
   before do
     ENV['OTEL_SERVICE_NAME'] = 'my_service'
     @op = -> { 10.times {[9, 6, 12, 2, 7, 1, 9, 3, 4, 14, 5, 8].sort} }
-    @in_memory_exporter = ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new(recording: false)
+    @in_memory_exporter = CustomInMemorySpanExporter.new(recording: false)
+
     OpenTelemetry::SDK.configure do |c|
       c.service_name = 'my_service'
       c.add_span_processor(::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@in_memory_exporter))
@@ -26,7 +27,6 @@ describe 'SolarWinds Set Transaction Name Test' do
     end
 
     finished_spans = @in_memory_exporter.finished_spans
-    puts "@in_memory_exporter: #{@in_memory_exporter.inspect}"
 
     _(finished_spans.first.name).must_equal 'custom_span'
   end
@@ -39,7 +39,6 @@ describe 'SolarWinds Set Transaction Name Test' do
     end
 
     finished_spans = @in_memory_exporter.finished_spans
-    puts "@in_memory_exporter: #{@in_memory_exporter.inspect}"
 
     _(finished_spans.first.name).must_equal 'custom_span'
     _(finished_spans.first.attributes['test_attribute']).must_equal 'attribute_1'
