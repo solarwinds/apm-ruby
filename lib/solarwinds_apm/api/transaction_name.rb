@@ -30,28 +30,36 @@ module SolarWindsAPM
       # * Boolean
       #
       def set_transaction_name(custom_name=nil)
-        
         status = true
-        if custom_name.nil? || custom_name.empty? 
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] custom_name is either nil or empty string."}
+        if ENV.fetch('SW_APM_ENABLED', 'true') == 'false' ||
+           SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00'
+          # library disabled or noop, just log and skip work.
+          # TODO: can we have a single indicator that the API is in noop mode?
+          SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode."}
+        elsif custom_name.nil? || custom_name.empty?
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."}
           status = false
-        elsif SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00' # noop
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] SolarWindsAPM::Context is in noop mode."}
-          status = true
         elsif SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor].nil?
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Solarwinds processor is missing. Set transaction name failed."}
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."}
           status = false
         else
-          solarwinds_processor       = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
-          current_span               = ::OpenTelemetry::Trace.current_span
-          entry_trace_id             = current_span.context.hex_trace_id
-          entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context_h(entry_trace_id)&.split('-')
+          solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
+          current_span         = ::OpenTelemetry::Trace.current_span
 
-          status = false if entry_trace_id.nil? || entry_span_id.nil? || trace_flags.nil?
-          status = false if entry_trace_id == '0'*32 || entry_span_id == '0'*16 || trace_flags == '00' # not sampled
-
-          solarwinds_processor.txn_manager.set("#{entry_trace_id}-#{entry_span_id}",custom_name) 
-          SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{entry_trace_id}-#{entry_span_id} as #{custom_name}"}
+          if current_span.context.valid?
+            current_trace_id = current_span.context.hex_trace_id
+            entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context_h(current_trace_id)&.split('-')
+            if entry_span_id.to_s.empty? || trace_flags.to_s.empty?
+              SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: record not found in the transaction manager."}
+              status = false
+            else
+              solarwinds_processor.txn_manager.set("#{current_trace_id}-#{entry_span_id}",custom_name)
+              SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{entry_trace_id}-#{entry_span_id} as #{custom_name}"}
+            end
+          else
+            SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: invalid span context."}
+            status = false
+          end
         end
         status
       end
