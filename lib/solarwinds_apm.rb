@@ -2,7 +2,7 @@
 # All rights reserved.
 
 begin
-  if ENV.has_key?('SW_APM_ENABLED') && (ENV['SW_APM_ENABLED'] == 'false' || ENV['SW_APM_ENABLED'] == false)
+  if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.warn 'SW_APM_ENABLED environment variable detected and was set to false; SolarWindsAPM disabled'
     return
   end
@@ -53,7 +53,7 @@ begin
     require 'solarwinds_apm/otel_config'
     if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsAPM.logger.warn "SolarWindsAPM warning: Ruby library is not initilaized.
-                                  You may need to initialize Ruby library in application like the following: 
+                                  You may need to initialize Ruby library in application like the following:
                                   SolarWindsAPM::OTelConfig.initialize_with_config do |config|
                                     ...
                                   end"

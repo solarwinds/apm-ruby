@@ -31,15 +31,17 @@ module SolarWindsAPM
       #
       def set_transaction_name(custom_name=nil)
         status = true
-        if custom_name.nil? || custom_name.empty?
+        if ENV.fetch('SW_APM_ENABLED', 'true') == 'false' ||
+           SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00'
+          # library disabled or noop, just log and skip work.
+          # TODO: can we have a single indicator that the API is in noop mode?
+          SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode."}
+        elsif custom_name.nil? || custom_name.empty?
           SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."}
           status = false
         elsif SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor].nil?
           SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."}
           status = false
-        elsif SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00'
-          # noop mode, just log and skip work
-          SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] SolarWindsAPM is in noop mode."}
         else
           solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
           current_span         = ::OpenTelemetry::Trace.current_span
