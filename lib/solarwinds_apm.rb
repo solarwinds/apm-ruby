@@ -5,7 +5,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 begin
-  if ENV.has_key?('SW_APM_ENABLED') && (ENV['SW_APM_ENABLED'] == 'false' || ENV['SW_APM_ENABLED'] == false)
+  if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.warn 'SW_APM_ENABLED environment variable detected and was set to false; SolarWindsAPM disabled'
     return
   end
@@ -56,7 +56,7 @@ begin
     require 'solarwinds_apm/otel_config'
     if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsAPM.logger.warn "SolarWindsAPM warning: Ruby library is not initilaized.
-                                  You may need to initialize Ruby library in application like the following: 
+                                  You may need to initialize Ruby library in application like the following:
                                   SolarWindsAPM::OTelConfig.initialize_with_config do |config|
                                     ...
                                   end"
