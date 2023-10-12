@@ -71,17 +71,10 @@ jobs:
           echo "local and rubygems checksum not matching, gem needs to be yanked from rubygems.org"
           exit 1
 
-      - name: Obtain github token
-        uses: getsentry/action-github-app-token@v2
-        id: github-token
-        with:
-          app_id: ${{ vars.APPLICATION_ID }}
-          private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
-
       - name: Create release draft that includes the checksum
         uses: actions/github-script@v3
         with:
-          github-token: ${{ steps.github-token.outputs.token }}
+          github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             github.repos.createRelease({
               owner: "solarwindscloud",
