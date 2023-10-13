@@ -6,7 +6,6 @@ name: Ruby Gem to RubyGems
 # - TRACE_BUILD_RUBY_ACTIONS_API_TOKEN (from the trace-build user in github)
 # - RUBYGEMS_TOKEN (from the solarwinds-apm user on rubygems.org)
 # - APM_RUBY_INSTALL_TESTING_SWO_KEY
-# - CI_GITHUB_TOKEN
 #
 # The correct oboe version has to be in the file ext/oboe_metal/src/VERSION
 
@@ -75,7 +74,7 @@ jobs:
       - name: Create release draft that includes the checksum
         uses: actions/github-script@v3
         with:
-          github-token: ${{secrets.CI_GITHUB_TOKEN}}
+          github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             github.repos.createRelease({
               owner: "solarwindscloud",
