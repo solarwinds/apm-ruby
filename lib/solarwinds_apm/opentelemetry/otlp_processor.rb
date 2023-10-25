@@ -4,25 +4,6 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# require 'opentelemetry/sdk'
-# require 'opentelemetry-metrics-sdk'
-# require 'opentelemetry/exporter/otlp'
-
-# OpenTelemetry::SDK.configure do |c|
-#  c.service_name = 'sinatra-sample-2'
-# end
-
-# otlp_metric_exporter = OpenTelemetry::SDK::Metrics::Export::OTLPMetricExporter.new # this is experimental exporter that sends metrics to otlp collector through http
-# OpenTelemetry.meter_provider.add_metric_reader(otlp_metric_exporter)
-
-# meter = OpenTelemetry.meter_provider.meter('test')
-
-# histogram = meter.create_histogram('histogram', unit: 'smidgen', description: 'a small amount of something')
-# histogram.record(5, attributes: { 'foo' => 'bar' })
-
-# otlp_metric_exporter.pull
-
-
 module SolarWindsAPM
   module OpenTelemetry
     # reference: OpenTelemetry::SDK::Trace::SpanProcessor
@@ -89,7 +70,6 @@ module SolarWindsAPM
         meter_attrs = {'sw.service_name' => ENV['OTEL_SERVICE_NAME'], 'sw.nonce' => rand(2**64) >> 1}
 
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
-        domain     = nil
         has_error  = error?(span)
         meter_attrs['sw.is_error'] = has_error ? 'true' : 'false'
         
@@ -98,7 +78,6 @@ module SolarWindsAPM
         if span_http?(span)
           status_code    = get_http_status_code(span)
           request_method = span.attributes[HTTP_METHOD]
-          url_tran       = span.attributes[HTTP_URL]
 
           meter_attrs.merge!({'http.status_code' => status_code, 'http.method' => request_method, 'sw.transaction' => trans_name})
         else
@@ -112,9 +91,7 @@ module SolarWindsAPM
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
 
-        ::OpenTelemetry.meter_provider.metric_readers.each do |metric_reader|
-          metric_reader.pull # same as export
-        end
+        ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
       rescue StandardError => e
         SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
