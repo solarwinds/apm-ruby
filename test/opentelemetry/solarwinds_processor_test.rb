@@ -34,6 +34,23 @@ describe 'SolarWindsProcessor' do
     _(result).must_equal "name"
   end
 
+  it 'test_calculate_transaction_names_with_SW_APM_TRANSACTION_NAME' do
+    ENV['SW_APM_TRANSACTION_NAME'] = 'another_name'
+
+    span = create_span
+    result = @processor.send(:calculate_transaction_names, span)
+    _(result).must_equal "another_name"
+    ENV.delete('SW_APM_TRANSACTION_NAME')
+  end
+
+  it 'test_calculate_transaction_names_with_SW_APM_TRANSACTION_NAME_nil' do
+    ENV['SW_APM_TRANSACTION_NAME'] = nil
+
+    span = create_span
+    result = @processor.send(:calculate_transaction_names, span)
+    _(result).must_equal "name"
+  end
+
   it 'test_get_http_status_code' do 
     span_data = create_span_data
     result = @processor.send(:get_http_status_code, span_data)
