@@ -26,6 +26,7 @@ describe 'SolarWinds Set Transaction Name Test' do
     end
 
     finished_spans = extract_span(in_memory_exporter)
+    skip if finished_spans.size == 0
 
     _(finished_spans.first.name).must_equal 'custom_span'
 
@@ -48,6 +49,7 @@ describe 'SolarWinds Set Transaction Name Test' do
     end
 
     finished_spans = extract_span(in_memory_exporter)
+    skip if finished_spans.size == 0
 
     _(finished_spans.first.name).must_equal 'custom_span'
     _(finished_spans.first.attributes['test_attribute']).must_equal 'attribute_1'

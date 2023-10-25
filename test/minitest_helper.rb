@@ -186,7 +186,6 @@ class CustomInMemorySpanExporter < ::OpenTelemetry::SDK::Trace::Export::InMemory
   end
 end
 
-
 ##
 # extract_span
 #
