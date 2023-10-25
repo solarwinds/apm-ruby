@@ -15,11 +15,11 @@ module SolarWindsAPM
 
     @@agent_enabled    = true
 
-    def self.disable_agent
+    def self.disable_agent(reason: nil)
       return unless @@agent_enabled  # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
+      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported. Reason #{reason}"}
     end
 
     def self.validate_service_key
@@ -95,7 +95,20 @@ module SolarWindsAPM
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
       exporter    = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
-      @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+
+      if ENV['OTLP_METRICS'] # or SERVERLESS
+        disable_agent unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
+
+        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new
+        @@config[:metrics_exporter] = otlp_metric_exporter
+        
+        meter_name = ENV['SW_APM_METER_NAME'] || SolarWindsAPM::Config[:meter_name]
+        meter      = ::OpenTelemetry.meter_provider.meter(meter_name)
+        @@config[:otlp_meter]     = meter
+        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meter, txn_manager, exporter)
+      else
+        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+      end
     end
 
     def self.resolve_solarwinds_propagator
@@ -146,6 +159,9 @@ module SolarWindsAPM
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
+
+      # add metrics_exporter 
+      ::OpenTelemetry.meter_provider.add_metric_reader(@@config[:metrics_exporter]) if ENV['OTLP_METRICS']
 
       # append our processors (with our exporter)
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
