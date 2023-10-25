@@ -9,7 +9,7 @@ module SolarWindsAPM
       mattr_accessor :components, :lines_to_ignore, :prepend_comment
       SWOMarginalia::Comment.components ||= [:traceparent]
       # To add new components: 
-      # Create file and load after swotel-ruby, and add following:
+      # Create file and load after loading apm-ruby, and add following:
       # SolarWindsAPM::SWOMarginalia::Comment.component = [:user_defined]
 
       def self.update!(controller=nil)

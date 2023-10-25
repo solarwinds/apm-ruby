@@ -14,10 +14,10 @@ Gem::Specification.new do |s|
   s.summary  = 'SolarWindsAPM performance instrumentation gem for Ruby'
   s.description = 'Automatic tracing and metrics for Ruby applications. Get started at cloud.solarwinds.com'
 
-  s.metadata = {'changelog_uri'     => 'https://github.com/solarwindscloud/solarwinds-apm-ruby/releases',
+  s.metadata = {'changelog_uri'     => 'https://github.com/solarwinds/apm-ruby/releases',
                 'documentation_uri' => 'https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent',
                 'homepage_uri'      => 'https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html',
-                'source_code_uri'   => 'https://github.com/solarwindscloud/solarwinds-apm-ruby'}
+                'source_code_uri'   => 'https://github.com/solarwinds/apm-ruby'}
 
   s.extra_rdoc_files = ['LICENSE']
   # s.files = `git ls-files`.split("\n").reject { |f| f.match(%r{^(test|gemfiles)/}) }
