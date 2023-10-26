@@ -38,4 +38,4 @@ Post Load (1.1ms)  SELECT `posts`.* FROM `posts` /*application=SqlcommenterRails
 ```
 
 ## License
-This project is licensed under the [MIT License](https://github.com/solarwindscloud/swotel-ruby/tree/main/lib/solarwinds_apm/support/swomarginalia/LICENSE).
+This project is licensed under the [MIT License](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/support/swomarginalia/LICENSE).

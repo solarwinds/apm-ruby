@@ -85,7 +85,7 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* END SolarWindsAPM Support Report'
     SolarWindsAPM.logger.warn '*   Support Email: technicalsupport@solarwinds.com'
-    SolarWindsAPM.logger.warn '*   Github: https://github.com/solarwindscloud/swotel-ruby'
+    SolarWindsAPM.logger.warn '*   Github: https://github.com/solarwinds/apm-ruby'
     SolarWindsAPM.logger.warn '********************************************************'
 
     SolarWindsAPM.logger.level = @logger_level
