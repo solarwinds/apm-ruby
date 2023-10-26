@@ -4,51 +4,48 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/api'
 
-describe 'SolarWinds Set Transaction Name Test' do
-  before do
-    ENV['OTEL_SERVICE_NAME'] = 'my_service'
-    @op = -> { 10.times {[9, 6, 12, 2, 7, 1, 9, 3, 4, 14, 5, 8].sort} }
-    @in_memory_exporter = CustomInMemorySpanExporter.new(recording: false)
+describe 'SolarWinds API in_span Test' do
 
-    OpenTelemetry::SDK.configure do |c|
-      c.service_name = 'my_service'
-      c.add_span_processor(::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@in_memory_exporter))
+  let(:sdk) { OpenTelemetry::SDK }
+  let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
+  let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
+  let(:provider) do
+    OpenTelemetry.tracer_provider = sdk::Trace::TracerProvider.new.tap do |provider|
+      provider.add_span_processor(span_processor)
+    end
+  end
+  let(:tracer) { provider.tracer(__FILE__, sdk::VERSION) }
+  let(:parent_context) { OpenTelemetry::Context.empty }
+  let(:finished_spans) { exporter.finished_spans }
+
+  before do
+    ENV['OTEL_SERVICE_NAME'] = __FILE__
+
+    OpenTelemetry::Context.with_current(parent_context) do
+      tracer.in_span('root') do
+        SolarWindsAPM::API.in_span('child1') {}
+        SolarWindsAPM::API.in_span('child2') {}
+        SolarWindsAPM::API.in_span('child3') do |span|
+          span.add_attributes({"test_attribute" => "attribute_1"})
+        end
+        SolarWindsAPM::API.in_span('child4') # no block given, should ignore
+      end
     end
   end
 
   after do
-    ENV['OTEL_SERVICE_NAME'] = nil
+    ENV.delete('OTEL_SERVICE_NAME')
   end
 
-  it 'test_in_span_wrapper_from_solarwinds_apm' do
-    @in_memory_exporter.recording = true
-    SolarWindsAPM::API.in_span('custom_span') do
-      @op.call
+  describe 'test_in_span_wrapper_from_solarwinds_apm' do
+    it 'test_in_span' do
+      skip if finished_spans.size == 0
+
+      _(finished_spans.size).must_equal(4)
+      _(finished_spans[0].name).must_equal('child1')
+      _(finished_spans[1].name).must_equal('child2')
+      _(finished_spans[2].attributes['test_attribute']).must_equal('attribute_1')
+      _(finished_spans.collect(&:class).uniq).must_equal([sdk::Trace::SpanData])
     end
-
-    finished_spans = @in_memory_exporter.finished_spans
-
-    _(finished_spans.first.name).must_equal 'custom_span'
-  end
-
-  it 'test_in_span_wrapper_from_solarwinds_apm_with_span' do
-    @in_memory_exporter.recording = true
-    SolarWindsAPM::API.in_span('custom_span') do |span|
-      span.add_attributes({"test_attribute" => "attribute_1"})
-      @op.call
-    end
-
-    finished_spans = @in_memory_exporter.finished_spans
-
-    _(finished_spans.first.name).must_equal 'custom_span'
-    _(finished_spans.first.attributes['test_attribute']).must_equal 'attribute_1'
-  end
-
-  it 'test_in_span_wrapper_from_solarwinds_apm_without_block' do
-    @in_memory_exporter.recording = true
-    SolarWindsAPM::API.in_span('custom_span')
-
-    finished_spans = @in_memory_exporter.finished_spans
-    _(finished_spans.size).must_equal 0
   end
 end
