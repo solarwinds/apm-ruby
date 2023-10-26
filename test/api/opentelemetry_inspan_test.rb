@@ -4,7 +4,7 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/api'
 
-describe 'SolarWinds Set Transaction Name Test' do
+describe 'SolarWinds API in_span Test' do
 
   let(:sdk) { OpenTelemetry::SDK }
   let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
