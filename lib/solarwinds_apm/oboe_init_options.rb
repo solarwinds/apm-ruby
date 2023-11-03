@@ -147,7 +147,10 @@ module SolarWindsAPM
       otel_resource_service_name = nil
       ENV['OTEL_RESOURCE_ATTRIBUTES']&.split(',')&.each do |pair|
         key, value = pair.split('=')
-        otel_resource_service_name = value; break if key == 'service.name'
+        if key == 'service.name'
+          otel_resource_service_name = value
+          break
+        end
       end
 
       SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] provided otel_resource_service_name #{otel_resource_service_name}"} if otel_resource_service_name
