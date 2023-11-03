@@ -148,12 +148,15 @@ module SolarWindsAPM
       end
 
       # Get trans_name and url_tran of this span instance.
+      # Predecessor order: custom SDK > env var SW_APM_TRANSACTION_NAME > automatic naming
       def calculate_transaction_names(span)
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
         trans_name = @txn_manager.get(trace_span_id)
         if trans_name
           SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"}
           @txn_manager.del(trace_span_id)
+        elsif ENV.has_key?('SW_APM_TRANSACTION_NAME') && ENV['SW_APM_TRANSACTION_NAME'] != ''
+          trans_name =  ENV['SW_APM_TRANSACTION_NAME']
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
