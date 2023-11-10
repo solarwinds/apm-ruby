@@ -4,3 +4,4 @@ lib/solarwinds_apm/api/tracing.rb
 lib/solarwinds_apm/api/current_trace_info.rb
 lib/solarwinds_apm/api/transaction_name.rb
 lib/solarwinds_apm/api/opentelemetry.rb
+lib/solarwinds_apm/api/custom_metrics.rb
