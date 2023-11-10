@@ -187,6 +187,26 @@ class CustomInMemorySpanExporter < ::OpenTelemetry::SDK::Trace::Export::InMemory
 end
 
 ##
+# extract_span
+#
+# get finished_span from exporter that overcome time issue
+#
+def extract_span(exporter)
+  finished_spans = []
+  retry_count    = 5
+  while finished_spans.size == 0
+
+    break if retry_count > 5
+    
+    finished_spans = exporter.finished_spans
+    retry_count   += 1
+    sleep retry_count
+  end
+
+  finished_spans
+end
+
+##
 # create_span_data
 #
 # create sample otel span_data object

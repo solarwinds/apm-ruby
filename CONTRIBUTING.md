@@ -2,7 +2,7 @@
 
 ## Requirements
 
-The descriptions below assume you are in the locally cloned project root directory, i.e. `swotel-ruby`.
+The descriptions below assume you are in the locally cloned project root directory, i.e. `apm-ruby`.
 
 Prerequisites
 * Docker

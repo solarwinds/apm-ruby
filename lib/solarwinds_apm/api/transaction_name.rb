@@ -60,7 +60,7 @@ module SolarWindsAPM
               status = false
             else
               solarwinds_processor.txn_manager.set("#{current_trace_id}-#{entry_span_id}",custom_name)
-              SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{entry_trace_id}-#{entry_span_id} as #{custom_name}"}
+              SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{current_trace_id}-#{entry_span_id} as #{custom_name}"}
             end
           else
             SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: invalid span context."}
