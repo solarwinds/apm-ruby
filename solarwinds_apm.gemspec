@@ -34,7 +34,10 @@ Gem::Specification.new do |s|
               'ext/oboe_metal/lib/liboboe-1.0-alpine-x86_64.so.sha256',
               'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.sha256',
               'ext/oboe_metal/lib/liboboe-1.0-aarch64.so.sha256',
-              'ext/oboe_metal/lib/liboboe-1.0-alpine-aarch64.so.sha256']
+              'ext/oboe_metal/lib/liboboe-1.0-alpine-aarch64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-lambda-x86_64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-lambda-aarch64.so.sha256']
+
   s.files -= ['Rakefile']
 
   s.extensions = ['ext/oboe_metal/extconf.rb']

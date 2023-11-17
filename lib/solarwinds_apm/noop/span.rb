@@ -5,22 +5,19 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 ####
-# noop version of SolarWindsAPM::Metadata
+# noop version of SolarWindsAPM::Span
 #
 module SolarWindsAPM
-  # Metadata
-  class Metadata
+  # Span
+  class Span
     ##
-    # noop version of :makeRandom
+    # noop version of :createHttpSpan
     #
-    # needs to return an object that responds to :isValid
-    #
-    def self.makeRandom
-      Metadata.new
-    end
+    def self.createHttpSpan(*); end
 
-    def isValid
-      false
-    end
+    ##
+    # noop version of :createSpan
+    #
+    def self.createSpan(*); end
   end
 end

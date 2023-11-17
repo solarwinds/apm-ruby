@@ -103,18 +103,12 @@ module SolarWindsAPM
 
       reporter = ENV['SW_APM_REPORTER'] || 'ssl'
 
-      host = ''
       case reporter
       when 'ssl', 'file'
         host = ENV['SW_APM_COLLECTOR'] || ''
-      when 'udp'
-        host = ENV['SW_APM_COLLECTOR'] || "#{SolarWindsAPM::Config[:reporter_host]}:#{SolarWindsAPM::Config[:reporter_port]}"
-        # TODO: decide what to do
-        # ____ SolarWindsAPM::Config[:reporter_host] and
-        # ____ SolarWindsAPM::Config[:reporter_port] were moved here from
-        # ____ oboe_metal.rb and are not documented anywhere
-        # ____ udp is for internal use only
       when 'null'
+        host = ''
+      else
         host = ''
       end
 
