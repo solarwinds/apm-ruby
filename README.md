@@ -59,7 +59,7 @@ Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`
 
 ### Using the SolarWindsAPM API
 
-Several convenience and vendor-specific APIs are availabe to an application where `solarwinds_apm` has been loaded, below is a quick overview of the features provided. The full reference can be found at the [RubyDoc page for this gem](https://www.rubydoc.info/gems/solarwinds_apm).
+Several convenience and vendor-specific APIs are availabe to an application where `solarwinds_apm` has been loaded, below is a quick overview of the features provided. The full reference can be found at the [RubyDoc page for this gem](https://rubydoc.info/github/solarwinds/apm-ruby/main).
 
 #### Convenience Method for in_span
 
