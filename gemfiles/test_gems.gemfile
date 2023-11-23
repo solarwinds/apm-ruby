@@ -27,8 +27,19 @@ group :development, :test do
   gem 'logging'
 
   gem 'opentelemetry-sdk'
-  gem 'opentelemetry-exporter-otlp', '~> 0.24.0'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
+
+  source "https://packagecloud.io/solarwinds/opentelemetry-ruby-metrics-sdk/" do
+    gem "opentelemetry-metrics-sdk", '~> 0.0.1'
+  end
+
+  source "https://packagecloud.io/solarwinds/opentelemetry-ruby-metrics-api/" do
+    gem "opentelemetry-metrics-api", '~> 0.0.1'
+  end
+
+  source 'https://packagecloud.io/solarwinds/opentelemetry-exporter-otlp/' do
+    gem 'opentelemetry-exporter-otlp', '0.26.2'
+  end
   
 end

@@ -16,10 +16,6 @@ describe 'Loading Opentelemetry Test' do
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, {})
   end
 
-  after do
-    clean_old_setting
-  end
-
   # propagation in_code testing
   it 'test_propagators_with_default' do
     SolarWindsAPM::OTelConfig.initialize

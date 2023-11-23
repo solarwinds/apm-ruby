@@ -92,15 +92,20 @@ module SolarWindsAPM
       end
     end
 
+    #
     # if the agent is built with lambda oboe, then use otlp trace and metrics exporter
+    # ensure the layer is installed with metrics_sdk and otlp-metrics-exporter
+    # and if one of the requirements is not met, then disable the agent
+    #
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
 
       if SolarWindsAPM.is_lambda
         disable_agent(reason: "no metrics_exporter with lambda environment.") unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
+        disable_agent(reason: "no opentelemetry metrics sdk install. please install metrics_sdk.") unless defined?(::OpenTelemetry::SDK::Metrics)
 
         exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
-        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new
+        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
         @@config[:metrics_exporter] = otlp_metric_exporter
           
         # meter_name is static for swo services

@@ -6,15 +6,8 @@
 
 module SolarWindsAPM
   module OpenTelemetry
-    # reference: OpenTelemetry::SDK::Trace::SpanProcessor
-    class OTLPProcessor
-      HTTP_METHOD      = "http.method".freeze
-      HTTP_ROUTE       = "http.route".freeze
-      HTTP_STATUS_CODE = "http.status_code".freeze
-      HTTP_URL         = "http.url".freeze
-      LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE = 0
-
-      attr_reader :txn_manager
+    # reference: OpenTelemetry::SDK::Trace::SpanProcessor; inheritance: SolarWindsProcessor
+    class OTLPProcessor < SolarWindsProcessor
       attr_accessor :description
 
       # @param [Hash] meters the hash of meter created by ::OpenTelemetry.meter_provider.meter('meter_name')
@@ -24,7 +17,6 @@ module SolarWindsAPM
         @meters      = meters
         @txn_manager = txn_manager
         @exporter    = exporter
-        @histogram   = nil
         @metrics     = {}
         @description = {}
       end
@@ -123,72 +115,7 @@ module SolarWindsAPM
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
-      # Export all ended spans to the configured `Exporter` that have not yet
-      # been exported.
-      #
-      # This method should only be called in cases where it is absolutely
-      # necessary, such as when using some FaaS providers that may suspend
-      # the process after an invocation, but before the `Processor` exports
-      # the completed spans.
-      #
-      # @param [optional Numeric] timeout An optional timeout in seconds.
-      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
-      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def force_flush(timeout: nil)
-        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
-      end
-
-      # Called when {TracerProvider#shutdown} is called.
-      #
-      # @param [optional Numeric] timeout An optional timeout in seconds.
-      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
-      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def shutdown(timeout: nil)
-        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
-      end
-
       private
-
-      # This span from inbound HTTP request if from a SERVER by some http.method
-      def span_http?(span)
-        (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
-      end
-
-      # Calculate if this span instance has_error
-      # return [Integer]
-      def error?(span)
-        span.status.code == ::OpenTelemetry::Trace::Status::ERROR ? 1 : 0
-      end
-
-      # Calculate HTTP status_code from span or default to UNAVAILABLE
-      # Something went wrong in OTel or instrumented service crashed early
-      # if no status_code in attributes of HTTP span
-      def get_http_status_code(span)
-        span.attributes[HTTP_STATUS_CODE] || LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE
-      end
-
-      # Get trans_name and url_tran of this span instance.
-      def calculate_transaction_names(span)
-        trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
-        trans_name = @txn_manager.get(trace_span_id)
-        if trans_name
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"}
-          @txn_manager.del(trace_span_id)
-        else
-          trans_name = span.attributes[HTTP_ROUTE] || nil
-          trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)
-        end
-        trans_name
-      end
-
-      # Calculate span time in microseconds (us) using start and end time
-      # in nanoseconds (ns). OTel span start/end_time are optional.
-      def calculate_span_time(start_time: nil, end_time: nil)
-        return 0 if start_time.nil? || end_time.nil?
-
-        ((end_time.to_i - start_time.to_i) / 1e3).round
-      end
-
       # oboe_api will return 0 in case of failed operation, and report 0 value
       def record_sampling_metrics
         _, trace_count   = SolarWindsAPM.oboe_api.consumeTraceCount
