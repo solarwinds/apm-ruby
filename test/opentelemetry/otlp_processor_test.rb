@@ -16,10 +16,9 @@ describe 'otlp processor test' do
     @txn_manager = SolarWindsAPM::TxnNameManager.new
     
     @meters = {'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-              'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
-    }
+              'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')}
 
-    @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@meters, @txn_manager, @exporter)
+    @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@meters, @exporter, @txn_manager)
   end
 
   after do
@@ -57,7 +56,5 @@ describe 'otlp processor test' do
     refute_nil(sampling_metrics_registry['trace.service.sample_rate'])
     refute_nil(sampling_metrics_registry['trace.service.sample_source'])
   end
-
-
 
 end

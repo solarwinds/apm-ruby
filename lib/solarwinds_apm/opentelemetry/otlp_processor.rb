@@ -13,10 +13,9 @@ module SolarWindsAPM
       # @param [Hash] meters the hash of meter created by ::OpenTelemetry.meter_provider.meter('meter_name')
       # @param [TxnNameManager] txn_manager storage for transaction name
       # @exporter [Exporter] exporter reporter that send trace data
-      def initialize(meters, txn_manager, exporter)
+      def initialize(meters, exporter, txn_manager)
+        super(exporter, txn_manager)
         @meters      = meters
-        @txn_manager = txn_manager
-        @exporter    = exporter
         @metrics     = {}
         @description = {}
       end
@@ -116,6 +115,7 @@ module SolarWindsAPM
       end
 
       private
+
       # oboe_api will return 0 in case of failed operation, and report 0 value
       def record_sampling_metrics
         _, trace_count   = SolarWindsAPM.oboe_api.consumeTraceCount

@@ -114,7 +114,7 @@ module SolarWindsAPM
           'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
         }
 
-        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, txn_manager, exporter)
+        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, exporter, txn_manager)
       else
         exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
         @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
