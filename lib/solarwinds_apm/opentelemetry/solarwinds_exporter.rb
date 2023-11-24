@@ -133,7 +133,7 @@ module SolarWindsAPM
       # helper function that extract gem library version for func add_instrumented_framework
       def check_framework_version(framework)
         framework_version = nil
-        if @version_cache.keys.include? framework
+        if @version_cache.has_key?(framework)
 
           framework_version = @version_cache[framework]
         else

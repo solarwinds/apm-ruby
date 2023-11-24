@@ -98,8 +98,7 @@ module SolarWindsAPM
         # * Hash
         #
         def hash_for_log
-          @hash_for_log = {}
-          @hash_for_log = {trace_id: @trace_id, span_id: @span_id, trace_flags: @trace_flags, service_name: @service_name} if @do_log
+          @hash_for_log = @do_log ? {'trace_id' => @trace_id, 'span_id' => @span_id, 'trace_flags' => @trace_flags, 'resource.service.name' => @service_name} : {}
         end
 
         private

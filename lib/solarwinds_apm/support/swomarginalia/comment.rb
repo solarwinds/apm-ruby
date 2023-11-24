@@ -25,7 +25,7 @@ module SolarWindsAPM
       end
 
       def self.construct_comment
-        ret = String.new
+        ret = +''
         components.each do |c|
           component_value = send(c)
           ret << "#{c}='#{component_value}'," if component_value.present?
