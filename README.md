@@ -105,3 +105,17 @@ By default, transaction names are constructed based on attributes such as the re
 ```ruby
 result = SolarWindsAPM::API.set_transaction_name('my-custom-trace-name')
 ```
+
+#### Send Custom Metrics
+
+Service metrics are automatically collected by this library.  In addition, the following methods support sending two types of custom metrics:
+
+* `increment_metric` - counts the number of times something has occurred
+* `summary_metric` - a specific value for the default count of 1, or the sum of values if count > 1
+
+The metrics submitted are aggregated by metric name and tag(s), then sent every 60 seconds.
+
+```ruby
+SolarWindsAPM::API.increment_metric('loop.iteration')
+SolarWindsAPM::API.summary_metric('sleep.time', 5000)
+```
