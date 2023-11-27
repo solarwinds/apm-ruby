@@ -3,13 +3,25 @@ https://github.com/solarwinds/apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
-# solarwinds_apm 6.0.0.preV3 (08/08/2023)
+# solarwinds_apm 6.0.0.preV5 (11/06/2023)
+
+This release includes the following features:
+
+* Update README, CONFIGURATION and CODEOWNERS
+* Add license header for src file
+* Enable returning digit from `solarwinds_ready?`
+* Repo name update and archive the old repo
+* Enable `SW_APM_TRANSACTION_NAME` env variable for setting transaction name
+* Bug fix on determining the service_name from oboe_init
+* Backward compatibility of custom metrics in [#74](https://github.com/solarwinds/apm-ruby/pull/74)
+
+# solarwinds_apm 6.0.0.preV4 (09/14/2023)
 
 This release includes the following features:
 
 * Relaxed the opentelemetry-sdk version requirement to 1.2.0 for common version 0.19.6
 
-# solarwinds_apm 6.0.0.preV3 (08/08/2023)
+# solarwinds_apm 6.0.0.preV3 (09/13/2023)
 
 This release includes the following features:
 

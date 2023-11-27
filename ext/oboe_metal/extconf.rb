@@ -26,10 +26,10 @@ swo_include = File.join(ext_dir, 'src')
 
 # Download the appropriate liboboe from Staging or Production
 version = File.read(File.join(swo_include, 'VERSION')).strip
-if ENV['OBOE_DEV'].to_s.downcase == 'true'
+if ENV['OBOE_DEV'].to_s.casecmp('true').zero?
   swo_path = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly"
   puts 'Fetching c-lib from DEVELOPMENT Build'
-elsif ENV['OBOE_STAGING'].to_s.downcase == 'true'
+elsif ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
   swo_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
   puts 'Fetching c-lib from STAGING'
 else
@@ -38,7 +38,8 @@ end
 
 swo_arch = 'x86_64'
 system_arch = `uname -m` # for mac, the command is `uname` # "Darwin\n"; try `uname -a`
-case system_arch.gsub("\n","")
+system_arch.delete!("\n")
+case system_arch
 when 'x86_64'
   swo_arch = 'x86_64'
 when 'aarch64'

@@ -25,7 +25,7 @@ module SolarWindsAPM
       end
 
       def self.construct_comment
-        ret = String.new
+        ret = +''
         components.each do |c|
           component_value = send(c)
           ret << "#{c}='#{component_value}'," if component_value.present?
@@ -107,7 +107,7 @@ module SolarWindsAPM
         marginalia_job["class"] if marginalia_job.respond_to?(:[])
       end
 
-      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}
+      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}.freeze
 
       def self.line
         SWOMarginalia::Comment.lines_to_ignore ||= DEFAULT_LINES_TO_IGNORE_REGEX

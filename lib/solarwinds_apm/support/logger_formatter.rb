@@ -19,7 +19,7 @@ module SolarWindsAPM
       private
 
       def insert_trace_id(msg)
-        return msg if msg =~ /trace_id=/
+        return msg if /trace_id=/.match?(msg)
 
         current_trace = SolarWindsAPM::API.current_trace_info
         if current_trace.do_log

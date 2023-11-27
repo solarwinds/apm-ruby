@@ -279,7 +279,8 @@ module SolarWindsAPM
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] trace_state_no_response #{trace_state_no_response.inspect}"}
 
         trace_state_no_response = parent_span_context.tracestate.delete(XTraceOptions.sw_xtraceoptions_response_key)
-        no_sw_count             = trace_state_no_response.to_h.reject { |k, _v| k == "sw" }.count
+        no_sw_count             = trace_state_no_response.to_h.count { |k, _v| k != 'sw' }
+
         new_attributes[SW_TRACESTATE_CAPTURE_KEY] = Utils.trace_state_header(trace_state_no_response) if no_sw_count > 0 
         SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] new_attributes after add_tracestate_capture_to_new_attributes: #{new_attributes.inspect}"}
         

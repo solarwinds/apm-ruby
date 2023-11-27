@@ -12,5 +12,6 @@ group :development, :test do
   gem 'package_cloud'
   gem 'rubocop'
   gem 'rubocop-rake', require: false
+  gem 'rubocop-performance', require: false
   gemspec
 end

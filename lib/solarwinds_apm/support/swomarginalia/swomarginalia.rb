@@ -79,7 +79,7 @@ module SolarWindsAPM
 
     def self.with_annotation(comment, &block)
       SWOMarginalia::Comment.inline_annotations.push(comment)
-      block.call if block.present?
+      yield if block.present?
     ensure
       SWOMarginalia::Comment.inline_annotations.pop
     end
