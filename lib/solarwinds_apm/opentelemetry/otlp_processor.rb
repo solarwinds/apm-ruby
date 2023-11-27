@@ -82,17 +82,13 @@ module SolarWindsAPM
         meter_attrs = {'sw.service_name' => ENV['OTEL_SERVICE_NAME'], 'sw.nonce' => rand(2**64) >> 1}
 
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
-        has_error  = error?(span)
-        meter_attrs['sw.is_error'] = has_error ? 'true' : 'false'
+        meter_attrs['sw.is_error'] = error?(span) ? 'true' : 'false'
         
-        trans_name = calculate_transaction_names(span)
-
+        meter_attrs['sw.transaction'] = calculate_transaction_names(span)
+        
         if span_http?(span)
-          status_code    = get_http_status_code(span)
-          request_method = span.attributes[HTTP_METHOD]
-          meter_attrs.merge!({'http.status_code' => status_code, 'http.method' => request_method, 'sw.transaction' => trans_name})
-        else
-          meter_attrs.merge!({'sw.transaction' => trans_name})
+          meter_attrs['http.status_code'] = get_http_status_code(span)
+          meter_attrs['http.method']      = span.attributes[HTTP_METHOD]
         end
 
         @metrics[:response_time].record(span_time, attributes: meter_attrs)
