@@ -22,7 +22,7 @@ begin
   SolarWindsAPM::Config.load_config_file
   SolarWindsAPM.loaded = false
   begin
-    if RUBY_PLATFORM =~ /linux/
+    if /linux/.match?(RUBY_PLATFORM)
       require_relative './libsolarwinds_apm.so'
       require 'solarwinds_apm/oboe_init_options'
       require_relative './oboe_metal'  # initialize Reporter; sets SolarWindsAPM.loaded = true if successful

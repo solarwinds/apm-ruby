@@ -68,7 +68,7 @@ module SolarWindsAPM
     end
 
     def self.set_log_level
-      SolarWindsAPM::Config[:debug_level] = 3 unless (-1..6).include?(SolarWindsAPM::Config[:debug_level])
+      SolarWindsAPM::Config[:debug_level] = 3 unless (-1..6).cover?(SolarWindsAPM::Config[:debug_level])
 
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i

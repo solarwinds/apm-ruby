@@ -50,7 +50,7 @@ module SolarWindsAPM
       # custom token bucket rate
       @token_bucket_rate = (ENV['SW_APM_TOKEN_BUCKET_RATE'] || -1).to_i
       # use single files in file reporter for each event
-      @file_single = ENV['SW_APM_REPORTER_FILE_SINGLE'].to_s.downcase == 'true' ? 1 : 0
+      @file_single = ENV['SW_APM_REPORTER_FILE_SINGLE'].to_s.casecmp('true').zero? ? 1 : 0
       # timeout for ec2 metadata
       @ec2_md_timeout = read_and_validate_ec2_md_timeout
       @grpc_proxy = read_and_validate_proxy
@@ -135,6 +135,7 @@ module SolarWindsAPM
       token = match[1]
       service_name = match[3]
 
+      puts "validate_token(token): #{validate_token(token)}"
       return '' unless validate_token(token)   # return if token is not even valid
 
       if service_name.empty?
@@ -170,8 +171,9 @@ module SolarWindsAPM
       "#{token}:#{service_name}"
     end
 
+    # In case of java-collector, please provide a dummy service key
     def validate_token(token)
-      if (token !~ /^[0-9a-zA-Z_-]{71}$/) && ENV['SW_APM_COLLECTOR'] !~ /java-collector:1222/
+      unless /^[0-9a-zA-Z_-]{71}$/.match?(token)
         masked = "#{token[0..3]}...#{token[-4..]}"
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"}
         return false
@@ -181,20 +183,19 @@ module SolarWindsAPM
     end
 
     def validate_transform_service_name(service_name)
-      service_name = 'test_ssl_collector' if ENV['SW_APM_COLLECTOR'] =~ /java-collector:1222/
       if service_name.empty?
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name is missing"}
         return false
       end
 
-      name = service_name.dup
-      name.downcase!
-      name.gsub!(/[^a-z0-9.:_-]/, '')
-      name = name[0..254]
+      name_ = service_name.dup
+      name_.downcase!
+      name_.gsub!(/[^a-z0-9.:_-]/, '')
+      name_ = name_[0..254]
 
-      if name != service_name
-        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name}"}
-        service_name = name
+      if name_ != service_name
+        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name_}"}
+        service_name = name_
       end
       @service_name = service_name # instance variable used in testing
       true
@@ -212,7 +213,7 @@ module SolarWindsAPM
       proxy = ENV['SW_APM_PROXY'] || SolarWindsAPM::Config[:http_proxy] || ''
       return proxy if proxy == ''
 
-      unless proxy =~ /http:\/\/.*:\d+$/
+      unless /http:\/\/.*:\d+$/.match?(proxy)
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_PROXY/http_proxy doesn't start with 'http://', #{proxy}"}
         return '' # try without proxy, it may work, shouldn't crash but may not report
       end
@@ -221,14 +222,15 @@ module SolarWindsAPM
     end
 
     def read_certificates
+      certificate = ''
+
       file = appoptics_collector?? "#{__dir__}/cert/star.appoptics.com.issuer.crt" : ENV['SW_APM_TRUSTEDPATH']
-      return String.new if file.nil? || file&.empty?
+      return certificate if file.nil? || file&.empty?
 
       begin
         certificate = File.open(file,"r").read
       rescue StandardError => e
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] certificates: #{file} doesn't exist or caused by #{e.message}."}
-        certificate = String.new
       end
 
       certificate
