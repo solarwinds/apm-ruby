@@ -135,6 +135,7 @@ module SolarWindsAPM
       token = match[1]
       service_name = match[3]
 
+      puts "validate_token(token): #{validate_token(token)}"
       return '' unless validate_token(token)   # return if token is not even valid
 
       if service_name.empty?
@@ -170,8 +171,9 @@ module SolarWindsAPM
       "#{token}:#{service_name}"
     end
 
+    # In case of java-collector, please provide a dummy service key
     def validate_token(token)
-      if (token !~ /^[0-9a-zA-Z_-]{71}$/) && ENV['SW_APM_COLLECTOR'] !~ /java-collector:1222/
+      unless /^[0-9a-zA-Z_-]{71}$/.match?(token)
         masked = "#{token[0..3]}...#{token[-4..]}"
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"}
         return false
@@ -181,20 +183,19 @@ module SolarWindsAPM
     end
 
     def validate_transform_service_name(service_name)
-      service_name = 'test_ssl_collector' if /java-collector:1222/.match?(ENV['SW_APM_COLLECTOR'])
       if service_name.empty?
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name is missing"}
         return false
       end
 
-      name = service_name.dup
-      name.downcase!
-      name.gsub!(/[^a-z0-9.:_-]/, '')
-      name = name[0..254]
+      name_ = service_name.dup
+      name_.downcase!
+      name_.gsub!(/[^a-z0-9.:_-]/, '')
+      name_ = name_[0..254]
 
-      if name != service_name
-        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name}"}
-        service_name = name
+      if name_ != service_name
+        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name_}"}
+        service_name = name_
       end
       @service_name = service_name # instance variable used in testing
       true

@@ -51,7 +51,7 @@ module SolarWindsAPM
       class TraceInfo
         attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
-        REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/
+        REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/.freeze
         private_constant :REGEXP
 
         def initialize
