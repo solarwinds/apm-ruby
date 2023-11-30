@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
                 'documentation_uri' => 'https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent',
                 'homepage_uri'      => 'https://documentation.solarwinds.com/en/success_center/observability/content/intro/landing-page.html',
                 'source_code_uri'   => 'https://github.com/solarwinds/apm-ruby',
-                'github_repo'       => 'https://github.com/solarwinds/apm-ruby.git' }
+                'github_repo'       => 'https://github.com/solarwinds/apm-ruby.git'}
 
   s.extra_rdoc_files = ['LICENSE']
   # s.files = `git ls-files`.split("\n").reject { |f| f.match(%r{^(test|gemfiles)/}) }
