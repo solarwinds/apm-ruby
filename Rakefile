@@ -393,7 +393,7 @@ end
 
 desc 'Build gem for github package'
 task :build_gem_for_github_package, [:version] do |_, args|
-  gem_to_push = find_or_build_gem(args[:version])
+  find_or_build_gem(args[:version])
 end
 
 desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
