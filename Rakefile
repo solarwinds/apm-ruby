@@ -387,7 +387,7 @@ end
 # but there are other auth methods. see more on https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-rubygems-registry
 desc 'Push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
 task :push_gem_to_github_package, [:version] do |_, args|
-  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', "builds/#{args[:version]}.gem")
+  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', "builds/solarwinds_apm-#{args[:version]}.gem")
   puts "\n=== Finished ===\n"
 end
 
