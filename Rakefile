@@ -385,12 +385,15 @@ end
 # need set the credentials under ~/.gem/credentials
 # for download, easiest way is to set BUNDLE_RUBYGEMS__PKG__GITHUB__COM
 # but there are other auth methods. see more on https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-rubygems-registry
-desc 'Build gem and push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
-task :build_gem_push_to_github_package, [:version] do |_, args|
-  gem_to_push = find_or_build_gem(args[:version])
-  gem_to_push.gsub!('builds/','')
-  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', gem_to_push)
+desc 'Push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
+task :push_gem_to_github_package, [:version] do |_, args|
+  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', "builds/#{args[:version]}.gem")
   puts "\n=== Finished ===\n"
+end
+
+desc 'Build gem for github package'
+task :build_gem_for_github_package, [:version] do |_, args|
+  gem_to_push = find_or_build_gem(args[:version])
 end
 
 desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
