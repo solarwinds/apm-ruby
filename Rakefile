@@ -388,7 +388,8 @@ end
 desc 'Build gem and push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
 task :build_gem_push_to_github_package, [:version] do |_, args|
   gem_to_push = find_or_build_gem(args[:version])
-  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', gem_to_push.to_s)
+  gem_to_push.delete!('builds/')
+  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', gem_to_push)
   puts "\n=== Finished ===\n"
 end
 
