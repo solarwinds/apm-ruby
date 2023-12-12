@@ -42,7 +42,7 @@ system_arch.delete!("\n")
 case system_arch
 when 'x86_64'
   swo_arch = 'x86_64'
-when 'aarch64'
+when 'aarch64' || 'arm64'
   swo_arch = 'aarch64'
 end
 
