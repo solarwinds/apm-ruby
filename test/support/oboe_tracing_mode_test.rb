@@ -13,10 +13,13 @@ describe 'OboeTracingModeTest.rb' do
     result = @oboe_tracing_mode.get_oboe_trace_mode("")
     _(result).must_equal(-1)
 
-    result = @oboe_tracing_mode.get_oboe_trace_mode("enabled")
+    result = @oboe_tracing_mode.get_oboe_trace_mode(nil)
+    _(result).must_equal(-1)
+
+    result = @oboe_tracing_mode.get_oboe_trace_mode(:enabled)
     _(result).must_equal 1
 
-    result = @oboe_tracing_mode.get_oboe_trace_mode("disabled")
+    result = @oboe_tracing_mode.get_oboe_trace_mode(:disabled)
     _(result).must_equal 0
   end
 
@@ -24,10 +27,13 @@ describe 'OboeTracingModeTest.rb' do
     result = @oboe_tracing_mode.get_oboe_trigger_trace_mode("")
     _(result).must_equal(-1)
 
-    result = @oboe_tracing_mode.get_oboe_trigger_trace_mode("enabled")
+    result = @oboe_tracing_mode.get_oboe_trigger_trace_mode(nil)
+    _(result).must_equal(-1)
+
+    result = @oboe_tracing_mode.get_oboe_trigger_trace_mode(:enabled)
     _(result).must_equal 1
 
-    result = @oboe_tracing_mode.get_oboe_trigger_trace_mode("disabled")
+    result = @oboe_tracing_mode.get_oboe_trigger_trace_mode(:disabled)
     _(result).must_equal 0
   end
 

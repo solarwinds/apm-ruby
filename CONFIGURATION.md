@@ -116,7 +116,7 @@ Environment Variable | Config File Key | Description | Default
 `SW_APM_PROXY` | `:http_proxy` | Configure an HTTP proxy through which the library connects to the collector. | None
 `SW_APM_SERVICE_KEY` | `:service_key` | API token + service name combination, **required**. |
 `SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. | false
-`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | | enable
+`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | | `:enable`
 `SW_APM_TRUSTEDPATH` | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
 N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to `false` to disable. | `true`
 N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
