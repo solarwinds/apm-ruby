@@ -153,7 +153,7 @@ module SolarWindsAPM
 
       when :trigger_tracing_mode
         if key.instance_of?(String)
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :trigger_trace must be in symbol e.g. :enabled or :disabled. Set to default :enabled"} 
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :trigger_trace must be a symbol e.g. :enabled or :disabled. Using default value."} 
           @@config[key.to_sym] = :enabled
         else
           @@config[key.to_sym] = value.to_sym
