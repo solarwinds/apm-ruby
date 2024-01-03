@@ -65,20 +65,6 @@ module SolarWindsAPM
       end
     end
 
-    def self.obfuscate_helper(instrumentation)
-      if @@config_map[instrumentation] # user provided the option
-        @@config_map[instrumentation][:db_statement] = :obfuscate unless @@config_map[instrumentation][:db_statement] # user provided the db_statement, ignore our default setting 
-      else
-        @@config_map[instrumentation] = {db_statement: :obfuscate}
-      end
-    end
-
-    def self.obfuscate_query
-      obfuscate_helper("OpenTelemetry::Instrumentation::Dalli")
-      obfuscate_helper("OpenTelemetry::Instrumentation::Mysql2")
-      obfuscate_helper("OpenTelemetry::Instrumentation::PG")
-    end
-
     def self.[](key)
       @@config[key.to_sym]
     end
@@ -131,8 +117,6 @@ module SolarWindsAPM
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_response_propagator
-
-      obfuscate_query
 
       print_config if SolarWindsAPM.logger.level.zero?
 
