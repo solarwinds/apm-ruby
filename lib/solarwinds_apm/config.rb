@@ -152,17 +152,17 @@ module SolarWindsAPM
         compile_settings(value)
 
       when :trigger_tracing_mode
-        if key.instance_of?(String)
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :trigger_trace must be a symbol e.g. :enabled or :disabled. Using default value."} 
+        if !key.instance_of?(Symbol)
+          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :trigger_tracing_mode must be a symbol e.g. :enabled or :disabled. Using default value."}
           @@config[key.to_sym] = :enabled
         else
-          @@config[key.to_sym] = value.to_sym
+          @@config[key.to_sym] = value
         end
 
       when :tracing_mode
         # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
         # Make sure that the mode is stored as a symbol
-        @@config[key.to_sym] = value.to_sym
+        @@config[key.to_sym] = value
 
       when :tag_sql
         if ENV.has_key?('SW_APM_TAG_SQL')

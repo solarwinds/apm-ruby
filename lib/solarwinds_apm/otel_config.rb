@@ -41,7 +41,7 @@ module SolarWindsAPM
     def self.resolve_sampler_config
       sampler_config = {}
       sampler_config["trigger_trace"] = SolarWindsAPM::Config[:trigger_tracing_mode]
-      sampler_config["trigger_trace"] = nil if ENV["SW_APM_TRIGGER_TRACING_MODE"] == 'disabled'
+      sampler_config["trigger_trace"] = :disabled if ENV["SW_APM_TRIGGER_TRACING_MODE"]&.casecmp('disabled')&.zero?
       @@config[:sampler_config] = sampler_config
     end
 
