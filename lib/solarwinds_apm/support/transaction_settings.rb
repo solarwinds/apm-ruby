@@ -21,14 +21,10 @@ module SolarWindsAPM
     # calculate trace mode to set either 1 or 0 based on url_path and name+kind
     # first check if url_path match, if not match, then match the name+kind
     def calculate_trace_mode
-      tracing_mode_enabled? && tracing_enabled? ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
+      SolarWindsAPM::Config[:tracing_mode] == :enabled && tracing_enabled? ? SWO_TRACING_ENABLED : SWO_TRACING_DISABLED
     end
 
     private
-
-    def tracing_mode_enabled?
-      SolarWindsAPM::Config[:tracing_mode] && ![:disabled, :never].include?(SolarWindsAPM::Config[:tracing_mode])
-    end
 
     def tracing_enabled?
       span_layer = "#{@kind}:#{@name}"

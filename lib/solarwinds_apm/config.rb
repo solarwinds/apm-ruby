@@ -44,19 +44,20 @@ module SolarWindsAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files << config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
+      config_files << config_file_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_apm_config.rb')
       config_files << config_file if File.exist?(config_file)
 
+      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Available config_files: #{config_files.join(', ')}" }
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}"} if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
       set_log_level        # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
     end
 
-    def self.config_from_env
+    def self.config_file_from_env
       if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
         config_file = ENV['SW_APM_CONFIG_RUBY']
       elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb'))
@@ -73,6 +74,28 @@ module SolarWindsAPM
       # let's find and use the equivalent debug level for ruby
       debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
       SolarWindsAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
+    end
+
+    def self.enable_disable_config(env_var, key, value)
+      default_value = :enabled # Set a default value
+
+      if !env_var.nil? && ['enabled', 'disabled'].include?(ENV[env_var].to_s.downcase)
+        value = ENV[env_var].downcase.to_sym
+      elsif !env_var.nil? && !ENV[env_var].to_s.empty?
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{env_var} must be :enabled/:disabled (current setting is #{ENV[env_var]}. Using default value.")
+        @@config[key.to_sym] = default_value
+        return
+      end
+
+      if !value.is_a?(Symbol)
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a symbol e.g. :enabled or :disabled. Using default value.")
+      elsif ![:enabled, :disabled].include?(value)
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be :enabled/:disabled (current setting is #{value}. Using default value.")
+      else
+        default_value = value # Update default value if conditions met
+      end
+
+      @@config[key.to_sym] = default_value
     end
 
     ##
@@ -93,8 +116,9 @@ module SolarWindsAPM
     #
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
+    # This will be called when require 'solarwinds_apm/config' happen
     #
-    def self.initialize(_data={})
+    def self.initialize
       # for config file backward compatibility
       @@instrumentation.each {|inst| @@config[inst] = {}}
       @@config[:transaction_name] = {}
@@ -123,6 +147,7 @@ module SolarWindsAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
+    # ENV always have higher precedence 
     #
     def self.[]=(key, value)
       key = key.to_sym
@@ -152,17 +177,10 @@ module SolarWindsAPM
         compile_settings(value)
 
       when :trigger_tracing_mode
-        if !key.instance_of?(Symbol)
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :trigger_tracing_mode must be a symbol e.g. :enabled or :disabled. Using default value."}
-          @@config[key.to_sym] = :enabled
-        else
-          @@config[key.to_sym] = value
-        end
+        enable_disable_config('SW_APM_TRIGGER_TRACING_MODE', key, value)
 
       when :tracing_mode
-        # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
-        # Make sure that the mode is stored as a symbol
-        @@config[key.to_sym] = value
+        enable_disable_config(nil, key, value)
 
       when :tag_sql
         if ENV.has_key?('SW_APM_TAG_SQL')
