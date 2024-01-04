@@ -29,13 +29,12 @@ module SolarWindsAPM
     end
 
     def self.resolve_sampler
-      sampler_config = { "trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode] }
+      sampler_config = {"trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode]}
       @@config[:sampler] =
         ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
           root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
           remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
-      )
+          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))
     end
 
     #

@@ -2,5 +2,3 @@
 
 # mocked solarwinds_apm_config.rb
 
-if defined?(SolarWindsAPM::Config)
-end
