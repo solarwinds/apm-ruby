@@ -70,3 +70,4 @@ act.secrets
 
 # lambda layer
 lambda/.aws-sam/*
+lambda/*.zip

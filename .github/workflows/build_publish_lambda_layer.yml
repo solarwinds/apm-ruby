@@ -6,6 +6,10 @@ name: Build and publish ruby lambda layer
 on:
   workflow_dispatch:
 
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+
 jobs:
   # create one arm64 ec2 instance on aws as our runner
   start_arm64_runner:
@@ -60,9 +64,13 @@ jobs:
       # Build inside Docker containers
       # There is only two ruby runtime for aws lambda ruby 3.2 and 2.7
       # Since the 2.7 is not supported by otel, then we don't use it
+      # BuildArchitecture: arch is for different architecture build
       - name: build lambda layer
         run: |
           cd lambda/
+          echo "" >> template.yml
+          echo "      BuildArchitecture: ${{ matrix.arch }}" >> template.yml
+          echo "" >> template.yml
           sam build -u -t template.yml -e BUNDLE_RUBYGEMS__PKG__GITHUB__COM=$GITHUB_RUBY_TOKEN
           ./zip_layer.sh -n ruby-layer-${{ matrix.arch }}
         env:
@@ -106,9 +114,10 @@ jobs:
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_LAMBDA_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_LAMBDA_ACCESS_KEY_KEY }}
-          aws-region: ${{ matrix.aws_region }}
+          role-to-assume: <arn:aws:iam::111122223333:role/GitHubAction-AssumeRoleWithAction>
+          role-duration-seconds: 1200
+          aws-region: ${{ env.aws_region }}
+          mask-aws-account-id: false
 
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v3
@@ -126,6 +135,19 @@ jobs:
             --compatible-runtimes ruby3.2 \
             --zip-file ruby-layer-${{ matrix.arch }}.zip \
             --query 'LayerVersionArn' \
+            --compatible-architectures ${{ matrix.arch }} \
+            --output text
+
+      - name: grant permissions to public for the published layer
+        run: |
+          layer_name="solarwinds-ruby-layer"
+          latest_version=$(aws lambda list-layer-versions --layer-name $layer_name | jq -r '.LayerVersions | max_by(.Version) | .Version')
+          aws lambda add-layer-version-permission \
+            --layer-name $layer_name \
+            --statement-id ............ \
+            --action lambda:GetLayerVersion \
+            --principal '*' \
+            --version-number $latest_version \
             --output text
 
   terminate_arm64_runner:

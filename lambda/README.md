@@ -4,7 +4,7 @@
 
 Build
 ```bash
-sam build -u -t template.yml
+sam build -u -t template.yml -e BUNDLE_RUBYGEMS__PKG__GITHUB__COM=<your_github_token>
 ```
 
 Make sure the layer structure like below with your zip
