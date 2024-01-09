@@ -44,10 +44,13 @@ begin
     end
   end
 
-  # Auto-start the Reporter unless we are running Unicorn on Heroku
-  # In that case, we start the reporters after fork
-  unless SolarWindsAPM.forking_webserver?
+  if SolarWindsAPM.lambda?
+    SolarWindsAPM.oboe_api = SolarWindsAPM::OboeAPI.new  # start oboe api for lambda env
+    SolarWindsAPM.is_lambda = true
+    require 'solarwinds_apm/noop'
+  elsif !SolarWindsAPM.forking_webserver? # if not true
     SolarWindsAPM::Reporter.start if SolarWindsAPM.loaded
+    SolarWindsAPM.is_lambda = false
   end
 
   if SolarWindsAPM.loaded
@@ -70,8 +73,7 @@ begin
     SolarWindsAPM.logger.warn 'There may be a problem with the service key or other settings.'
     SolarWindsAPM.logger.warn 'Please check previous log messages.'
     SolarWindsAPM.logger.warn '=============================================================='
-    require 'solarwinds_apm/noop/context'
-    require 'solarwinds_apm/noop/metadata'
+    require 'solarwinds_apm/noop'
   end
 rescue StandardError => e
   $stderr.puts "[solarwinds_apm/error] Problem loading: #{e.inspect}"

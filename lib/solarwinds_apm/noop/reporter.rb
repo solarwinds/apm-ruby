@@ -5,22 +5,14 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 ####
-# noop version of SolarWindsAPM::Metadata
+# noop version of SolarWindsAPM::Reporter
 #
 module SolarWindsAPM
-  # Metadata
-  class Metadata
+  # Reporter
+  class Reporter
     ##
-    # noop version of :makeRandom
+    # noop version of :send_report
     #
-    # needs to return an object that responds to :isValid
-    #
-    def self.makeRandom
-      Metadata.new
-    end
-
-    def isValid
-      false
-    end
+    def self.send_report(event, with_system_timestamp: false); end
   end
 end

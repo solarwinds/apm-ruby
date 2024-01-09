@@ -107,7 +107,7 @@ module SolarWindsAPM
         marginalia_job["class"] if marginalia_job.respond_to?(:[])
       end
 
-      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}.freeze
+      DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}
 
       def self.line
         SWOMarginalia::Comment.lines_to_ignore ||= DEFAULT_LINES_TO_IGNORE_REGEX

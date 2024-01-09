@@ -59,6 +59,7 @@ if File.exist?('/etc/alpine-release')
 end
 
 swo_clib = "liboboe-1.0-#{swo_arch}.so"
+swo_clib = "liboboe-1.0-lambda-#{swo_arch}.so" if ENV['LAMBDA_TASK_ROOT'] || ENV['AWS_LAMBDA_FUNCTION_NAME']
 swo_item = File.join(swo_path, swo_clib)
 swo_checksum_file = File.join(swo_lib_dir, "#{swo_clib}.sha256")
 clib = File.join(swo_lib_dir, swo_clib)

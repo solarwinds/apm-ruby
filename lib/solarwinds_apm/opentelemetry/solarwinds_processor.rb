@@ -131,7 +131,7 @@ module SolarWindsAPM
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def span_http?(span)
-        (span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?)
+        span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?
       end
 
       # Calculate if this span instance has_error

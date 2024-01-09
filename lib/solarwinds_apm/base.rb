@@ -10,7 +10,7 @@
 module SolarWindsAPMBase
   extend SolarWindsAPM::ThreadLocal
 
-  attr_accessor :reporter, :loaded
+  attr_accessor :reporter, :loaded, :oboe_api, :is_lambda
 
   ##
   # Determines if we are running under a forking webserver
@@ -18,6 +18,17 @@ module SolarWindsAPMBase
   def forking_webserver?
     if (defined?(::Unicorn) && ($PROGRAM_NAME =~ /unicorn/i)) ||
        (defined?(::Puma) && ($PROGRAM_NAME =~ /puma/i))
+      true
+    else
+      false
+    end
+  end
+
+  ##
+  # Determines if we are running under a lambda environment
+  #
+  def lambda?
+    if ENV['LAMBDA_TASK_ROOT'] || ENV['AWS_LAMBDA_FUNCTION_NAME']
       true
     else
       false

@@ -15,17 +15,17 @@ module SolarWindsAPM
 
     @@agent_enabled    = true
 
-    def self.disable_agent
+    def self.disable_agent(reason: nil)
       return unless @@agent_enabled  # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
+      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported. Reason #{reason}"}
     end
 
     def self.validate_service_key
       return unless (ENV['SW_APM_REPORTER'] || 'ssl') == 'ssl'
 
-      disable_agent unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
+      disable_agent(reason: "no valid SW_APM_SERVICE_KEY or service_key") unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
     end
 
     def self.resolve_sampler
@@ -78,10 +78,33 @@ module SolarWindsAPM
       end
     end
 
+    #
+    # if the agent is built with lambda oboe, then use otlp trace and metrics exporter
+    # ensure the layer is installed with metrics_sdk and otlp-metrics-exporter
+    # and if one of the requirements is not met, then disable the agent
+    #
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
-      exporter    = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
-      @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+
+      if SolarWindsAPM.is_lambda
+        disable_agent(reason: "no metrics_exporter with lambda environment.") unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
+        disable_agent(reason: "no opentelemetry metrics sdk install. please install metrics_sdk.") unless defined?(::OpenTelemetry::SDK::Metrics)
+
+        exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
+        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
+        @@config[:metrics_exporter] = otlp_metric_exporter
+
+        # meter_name is static for swo services
+        meters = {
+          'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
+          'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+        }
+
+        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, exporter, txn_manager)
+      else
+        exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+      end
     end
 
     def self.resolve_solarwinds_propagator
@@ -90,21 +113,17 @@ module SolarWindsAPM
 
     def self.validate_propagator(propagators)
       if propagators.nil?
-        disable_agent
+        disable_agent(reason: "propagators are invaliad.")
         return
       end
 
       SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] propagators: #{propagators.map(&:class)}"}
-      unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty? # rubocop:disable Style/GuardClause
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Missing tracecontext propagator."}
-        disable_agent
-      end
+      disable_agent(reason: "Missing tracecontext propagator.") unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."}
-        disable_agent
+        disable_agent(reason: "missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded.")
         return
       end
 
@@ -122,6 +141,7 @@ module SolarWindsAPM
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
+      # OpenTelemetry initialization
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
@@ -130,6 +150,9 @@ module SolarWindsAPM
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
+
+      # register metrics_exporter to meter_provider
+      ::OpenTelemetry.meter_provider.add_metric_reader(@@config[:metrics_exporter]) if @@config[:metrics_exporter]
 
       # append our processors (with our exporter)
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
