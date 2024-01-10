@@ -129,7 +129,7 @@ jobs:
         run: |
           cd lambda/
           aws lambda publish-layer-version \
-            --layer-name solarwinds-ruby-layer \
+            --layer-name solarwinds-ruby-layer-${{ matrix.arch }} \
             --license-info "Apache 2.0" \
             --compatible-architectures ${{ matrix.arch }} \
             --compatible-runtimes ruby3.2 \
@@ -140,7 +140,7 @@ jobs:
 
       - name: grant permissions to public for the published layer
         run: |
-          layer_name="solarwinds-ruby-layer"
+          layer_name=solarwinds-ruby-layer-${{ matrix.arch }}
           latest_version=$(aws lambda list-layer-versions --layer-name $layer_name | jq -r '.LayerVersions | max_by(.Version) | .Version')
           aws lambda add-layer-version-permission \
             --layer-name $layer_name \

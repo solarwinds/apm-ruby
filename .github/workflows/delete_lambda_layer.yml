@@ -37,9 +37,7 @@ jobs:
           - us-east-2
           - us-west-1
           - us-west-2
-        arch:
-          - x86_64
-          - arm64
+
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -51,6 +49,10 @@ jobs:
       - name: delete lambda layer
         run: |
           aws lambda delete-layer-version \
-            --layer-name solarwinds-ruby-layer \
+            --layer-name solarwinds-ruby-layer-x86_64 \
+            --version-number ${{ github.event.inputs.layer-version }} \
+            --region ${{ matrix.aws_region }}
+          aws lambda delete-layer-version \
+            --layer-name solarwinds-ruby-layer-arm64 \
             --version-number ${{ github.event.inputs.layer-version }} \
             --region ${{ matrix.aws_region }}
