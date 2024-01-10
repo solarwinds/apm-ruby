@@ -76,7 +76,7 @@ module SolarWindsAPM
       SolarWindsAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
     end
 
-    def self.enable_disable_config(env_var, key, value, default, bool=false)
+    def self.enable_disable_config(env_var, key, value, default, bool: false)
       env_value = ENV[env_var.to_s]&.downcase
       valid_env_values = bool ? %w[true false] : %w[enabled disabled]
 
@@ -190,7 +190,7 @@ module SolarWindsAPM
         enable_disable_config(nil, key, value, :enabled)
 
       when :tag_sql
-        enable_disable_config('SW_APM_TAG_SQL', key, value, false, true)
+        enable_disable_config('SW_APM_TAG_SQL', key, value, false, bool: true)
 
       else
         @@config[key.to_sym] = value

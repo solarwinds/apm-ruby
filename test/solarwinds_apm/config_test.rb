@@ -125,60 +125,60 @@ describe 'Config Test' do
     # enable_disable_config(env_var, key, value, default, bool=false)
     it 'with correct env true override config false ' do
       ENV['DUMMY_KEY'] = 'true'
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with correct env false override config false ' do
       ENV['DUMMY_KEY'] = 'false'
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
     it 'with wrong env, use default true ' do
       ENV['DUMMY_KEY'] = 'foo'
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, true, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with wrong env, use default true ' do
       ENV['DUMMY_KEY'] = 'foo'
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
     it 'with config env true' do
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, true, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with config env false' do
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, false, true, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, false, true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
     it 'with wrong config env, use default false' do
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, 'true', false, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, 'true', false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
     it 'with wrong config env, use default true' do
-      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, 'true', true, true)
+      SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, 'true', true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with nil env, config env true, use default false, should be true' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, true, false, true)
+      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with nil env, empty config env, use default false, should be false' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', false, true)
+      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
     it 'with nil env, empty config env, use default true, should be true' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', true, true)
+      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
   end
