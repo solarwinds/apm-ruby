@@ -82,7 +82,7 @@ module SolarWindsAPM
       if !env_var.nil? && %w[enabled disabled].include?(ENV[env_var].to_s.downcase)
         value = ENV[env_var].downcase.to_sym
       elsif !env_var.nil? && !ENV[env_var].to_s.empty?
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{env_var} must be :enabled/:disabled (current setting is #{ENV[env_var]}. Using default value.")
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be enabled/disabled (current setting is #{ENV[env_var]}. Using default value.")
         @@config[key.to_sym] = default_value
         return
       end
