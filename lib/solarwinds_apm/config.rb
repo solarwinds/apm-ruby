@@ -87,10 +87,8 @@ module SolarWindsAPM
         return @@config[key.to_sym] = default
       end
 
-      if bool && !boolean?(value)
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a boolean. Using default value: #{default}.")
-      elsif !bool && !symbol?(value)
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a :enabled/:disabled. Using default value: #{default}.")
+      if (bool && !boolean?(value)) || (!bool && !symbol?(value))
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a #{valid_env_values.join('/')}. Using default value: #{default}.")
       else
         return @@config[key.to_sym] = value
       end
