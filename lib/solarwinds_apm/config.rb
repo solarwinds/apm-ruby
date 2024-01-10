@@ -76,26 +76,38 @@ module SolarWindsAPM
       SolarWindsAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
     end
 
-    def self.enable_disable_config(env_var, key, value)
-      default_value = :enabled # Set a default value
+    def self.enable_disable_config(env_var, key, value, default, bool = false)
+      env_value = ENV[env_var.to_s]&.downcase
+      valid_env_values = bool ? %w[true false] : %w[enabled disabled]
 
-      if !env_var.nil? && %w[enabled disabled].include?(ENV[env_var].to_s.downcase)
-        value = ENV[env_var].downcase.to_sym
-      elsif !env_var.nil? && !ENV[env_var].to_s.empty?
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{env_var} must be :enabled/:disabled (current setting is #{ENV[env_var]}. Using default value.")
-        @@config[key.to_sym] = default_value
-        return
+      if env_var && valid_env_values.include?(env_value)
+        value = bool ? true?(env_value) : env_value.to_sym
+      elsif env_var && !env_value.to_s.empty?
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{ENV[env_var]}). Using default value: #{default}.")
+        return @@config[key.to_sym] = default
       end
 
-      if !value.is_a?(Symbol)
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a symbol e.g. :enabled or :disabled. Using default value.")
-      elsif ![:enabled, :disabled].include?(value)
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be :enabled/:disabled (current setting is #{value}. Using default value.")
+      if bool && !boolean?(value)
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a boolean. Using default value: #{default}.")
+      elsif !bool && !symbol?(value)
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a :enabled/:disabled. Using default value: #{default}.")
       else
-        default_value = value # Update default value if conditions met
+        return @@config[key.to_sym] = value
       end
 
-      @@config[key.to_sym] = default_value
+      @@config[key.to_sym] = default
+    end
+
+    def self.true?(obj)
+      obj.to_s.downcase == "true"
+    end
+
+    def self.boolean?(obj)
+      [true, false].include?(obj)
+    end
+
+    def self.symbol?(obj)
+      %i[enabled disabled].include?(obj)
     end
 
     ##
@@ -177,17 +189,13 @@ module SolarWindsAPM
         compile_settings(value)
 
       when :trigger_tracing_mode
-        enable_disable_config('SW_APM_TRIGGER_TRACING_MODE', key, value)
+        enable_disable_config('SW_APM_TRIGGER_TRACING_MODE', key, value, :enabled)
 
       when :tracing_mode
-        enable_disable_config(nil, key, value)
+        enable_disable_config(nil, key, value, :enabled)
 
       when :tag_sql
-        if ENV.has_key?('SW_APM_TAG_SQL')
-          @@config[key.to_sym] = (ENV['SW_APM_TAG_SQL'] == 'true')
-        else
-          @@config[key.to_sym] = value
-        end
+        enable_disable_config('SW_APM_TAG_SQL', key, value, false, true)
 
       else
         @@config[key.to_sym] = value
