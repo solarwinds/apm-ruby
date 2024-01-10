@@ -76,7 +76,7 @@ module SolarWindsAPM
       SolarWindsAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
     end
 
-    def self.enable_disable_config(env_var, key, value, default, bool = false)
+    def self.enable_disable_config(env_var, key, value, default, bool=false)
       env_value = ENV[env_var.to_s]&.downcase
       valid_env_values = bool ? %w[true false] : %w[enabled disabled]
 
@@ -87,17 +87,14 @@ module SolarWindsAPM
         return @@config[key.to_sym] = default
       end
 
-      if (bool && !boolean?(value)) || (!bool && !symbol?(value))
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a #{valid_env_values.join('/')}. Using default value: #{default}.")
-      else
-        return @@config[key.to_sym] = value
-      end
+      return @@config[key.to_sym] = value unless (bool && !boolean?(value)) || (!bool && !symbol?(value))
 
+      SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a #{valid_env_values.join('/')}. Using default value: #{default}.")
       @@config[key.to_sym] = default
     end
 
     def self.true?(obj)
-      obj.to_s.downcase == "true"
+      obj.to_s.casecmp("true").zero?
     end
 
     def self.boolean?(obj)
@@ -105,7 +102,7 @@ module SolarWindsAPM
     end
 
     def self.symbol?(obj)
-      %i[enabled disabled].include?(obj)
+      [:enabled, :disabled].include?(obj)
     end
 
     ##
