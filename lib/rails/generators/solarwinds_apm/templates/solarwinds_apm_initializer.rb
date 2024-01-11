@@ -147,7 +147,7 @@ if defined?(SolarWindsAPM::Config)
   # Trace options is a custom HTTP header X-Trace-Options that can be set on a request to carry additional information
   # to the agents, one such option being trigger-trace which we’ll call a trigger trace request.
   #
-  SolarWindsAPM::Config[:trigger_tracing_mode] = 'enabled'
+  SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
 
   #
   # Argument logging
