@@ -10,7 +10,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 `solarwinds_apm` is [available on Rubygems](https://rubygems.org/gems/solarwinds_apm). Install with:
 
 ```bash
-gem install solarwinds_apm -v '>=6.0.0'
+gem install solarwinds_apm -v '>=6.0.0.pre'
 ```
 
 Or add to **the end** of your application Gemfile and run `bundle install` if managing gems with Bundler:
@@ -20,7 +20,7 @@ Or add to **the end** of your application Gemfile and run `bundle install` if ma
 # gem "rails", "~> 7.0.5", ">= 7.0.5.1"
 
 # end of Gemfile
-gem 'solarwinds_apm', '>=6.0.0'
+gem 'solarwinds_apm', '>=6.0.0.pre'
 ```
 
 Ideally all application gems are required by `Bundler.require`, which guarantees loading in the order they appear in the Gemfile. If `Bundler.require` does not require all application gems, call `require 'solarwinds_apm'` after all gems that need instrumentation are loaded.
