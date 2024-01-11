@@ -135,7 +135,6 @@ module SolarWindsAPM
       token = match[1]
       service_name = match[3]
 
-      puts "validate_token(token): #{validate_token(token)}"
       return '' unless validate_token(token)   # return if token is not even valid
 
       if service_name.empty?

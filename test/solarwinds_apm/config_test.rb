@@ -168,11 +168,13 @@ describe 'Config Test' do
     end
 
     it 'with nil env, config env true, use default false, should be true' do
+      ENV['DUMMY_KEY'] = 'true'
       SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
     it 'with nil env, empty config env, use default false, should be false' do
+      ENV['DUMMY_KEY'] = ''
       SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
@@ -214,12 +216,35 @@ describe 'Config Test' do
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
 
-    # because of [4 - debug_level, 0].max, if SW_APM_DEBUG_LEVEL is out of range then, it will set to 0
+    it 'env var is in the range with 2' do
+      SolarWindsAPM::Config[:debug_level] = 2
+      SolarWindsAPM::Config.set_log_level
+      _(SolarWindsAPM.logger.level).must_equal 2
+    end
+
+    it 'env var is in the range with 3' do
+      SolarWindsAPM::Config[:debug_level] = 3
+      SolarWindsAPM::Config.set_log_level
+      _(SolarWindsAPM.logger.level).must_equal 1
+    end
+    
+    it 'env var is in the range with 0' do
+      SolarWindsAPM::Config[:debug_level] = 0
+      SolarWindsAPM::Config.set_log_level
+      _(SolarWindsAPM.logger.level).must_equal 4
+    end
+
+    it 'env var is in the range with 4' do
+      SolarWindsAPM::Config[:debug_level] = 4
+      SolarWindsAPM::Config.set_log_level
+      _(SolarWindsAPM.logger.level).must_equal 0
+    end
+
     it 'env var override config but out of range' do
       ENV['SW_APM_DEBUG_LEVEL'] = '7'
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal 0
+      _(SolarWindsAPM.logger.level).must_equal 1
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
 
@@ -227,7 +252,7 @@ describe 'Config Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '-10'
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal 6
+      _(SolarWindsAPM.logger.level).must_equal 1
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
   end
@@ -265,10 +290,5 @@ describe 'Config Test' do
       ENV.delete('SW_APM_TAG_SQL')
     end
   end
-
-  describe 'test transaction_settings' do
-    # test is in transaction_settings_test.rb
-  end
-
 end
 
