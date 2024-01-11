@@ -15,7 +15,7 @@ describe 'SolarWindsSamplerTest' do
   before do
 
     sampler_config = {}
-    sampler_config["trigger_trace"] =  "enabled"
+    sampler_config["trigger_trace"] =  :enabled
     @sampler = SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
     @decision = {}
     @attributes_dict = {}

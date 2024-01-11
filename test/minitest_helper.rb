@@ -120,6 +120,8 @@ module SolarWindsAPM
     def self.isReady(_args)
       self
     end
+
+    def self.metadataString; end
   end
 end
 
