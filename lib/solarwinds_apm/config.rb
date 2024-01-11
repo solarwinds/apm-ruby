@@ -12,10 +12,10 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
-
-    # Oboe Logger Level: 0 fatal, 1 error, 2 warning, 3 info (the default), 4 debug low, 5 debug medium, 6 debug high
-    # Ruby Logger Level: FATAL (Value: 4), ERROR (Value: 3), WARN (Value: 2), INFO (Value: 1), DEBUG (Value: 0)
-    LOGGER_LEVEL_MAPPING = {0 => 4, 1 => 3, 2 => 2, 3 => 1, 4 => 0, 5 => 0, 6 => 0}
+    LOGGER_LEVEL_MAPPING = {0 => ::Logger::FATAL, 1 => ::Logger::ERROR,
+                            2 => ::Logger::WARN, 3 => ::Logger::INFO,
+                            4 => ::Logger::DEBUG, 5 => ::Logger::DEBUG,
+                            6 => ::Logger::DEBUG}.freeze
 
     @@config = {}
     @@instrumentation = [:action_controller, :action_controller_api, :action_view,
@@ -75,7 +75,7 @@ module SolarWindsAPM
 
     def self.set_log_level
       log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
-      SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || 1 # default log level info
+      SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || ::Logger::INFO # default log level info
     end
 
     def self.enable_disable_config(env_var, key, value, default, bool: false)
