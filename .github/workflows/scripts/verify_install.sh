@@ -44,7 +44,7 @@ elif [ "$MODE" = "GitHub" ]; then
   VERSION_LOWER_CASE=$(echo "$SOLARWINDS_APM_VERSION" | tr '[:upper:]' '[:lower:]')
   echo "source 'https://rubygems.org'" >> Gemfile
   echo "source 'https://rubygems.pkg.github.com/solarwinds' do" >> Gemfile
-  echo "  gem 'solarwinds_apm', ${VERSION_LOWER_CASE}" >> Gemfile
+  echo "  gem 'solarwinds_apm', '${VERSION_LOWER_CASE}'" >> Gemfile
   echo "end" >> Gemfile
   gem install bundler
   bundle install
