@@ -1,0 +1,39 @@
+version: 2
+
+updates:
+- package-ecosystem: bundler
+  directory: "/"
+  schedule:
+    interval: weekly
+  groups:
+    otel-core:
+      patterns:
+        - "opentelemetry-api"
+        - "opentelemetry-sdk"
+      update-types:
+        - minor
+        - patch
+
+    otel-instrumentors:
+      patterns:
+        - "opentelemetry-instrumentation-*"
+      update-types:
+        - minor
+        - patch
+
+    otel-utils:
+      patterns:
+        - "opentelemetry-*"
+      update-types:
+        - minor
+        - patch
+
+    misc:
+      update-types:
+        - minor
+        - patch
+
+- package-ecosystem: github-actions
+  directory: "/"
+  schedule:
+    interval: weekly
