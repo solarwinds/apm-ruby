@@ -8,12 +8,12 @@ on:
     inputs:
       install-registry:
         required: true
-        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        description: 'Registry used for install tests, e.g. RubyGem, GitHub'
         type: choice
         default: 'RubyGem'
         options:
         - RubyGem
-        - packagecloud
+        - GitHub
 
       solarwinds-version:
         required: true
@@ -118,6 +118,8 @@ jobs:
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
         shell: sh
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
 
 
   terminate_arm64_runner:

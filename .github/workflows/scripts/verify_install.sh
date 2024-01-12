@@ -33,18 +33,23 @@ elif [ "$pretty_name" = "Amazon Linux 2023" ]; then
   rbenv local 3.1.0
 fi
 
-# install gem
+# install gem and verify
 if [ "$MODE" = "RubyGem" ]; then
   echo "RubyGem"
   gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION"
-elif [ "$MODE" = "packagecloud" ]; then
-  echo "packagecloud"
-  gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION" --source https://packagecloud.io/solarwinds/solarwinds-apm-otel-ruby/
+  echo "$PWD"
+  ruby test_install.rb
+elif [ "$MODE" = "GitHub" ]; then
+  echo "GitHub"
+  VERSION_LOWER_CASE=$(echo "$SOLARWINDS_APM_VERSION" | tr '[:upper:]' '[:lower:]')
+  echo "source 'https://rubygems.org'" >> Gemfile
+  echo "source 'https://rubygems.pkg.github.com/solarwinds' do" >> Gemfile
+  echo "  gem 'solarwinds_apm', '${VERSION_LOWER_CASE}'" >> Gemfile
+  echo "end" >> Gemfile
+  gem install bundler
+  bundle install
+  bundle exec ruby test_install.rb
 fi
-
-# verification
-echo "$PWD"
-ruby test_install.rb
 
 if [ $? -ne 0 ]; then
   echo "Problem encountered"
