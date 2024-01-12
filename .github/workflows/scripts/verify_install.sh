@@ -37,9 +37,10 @@ fi
 if [ "$MODE" = "RubyGem" ]; then
   echo "RubyGem"
   gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION"
-elif [ "$MODE" = "packagecloud" ]; then
-  echo "packagecloud"
-  gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION" --source https://packagecloud.io/solarwinds/solarwinds-apm-otel-ruby/
+elif [ "$MODE" = "GitHub" ]; then
+  echo "GitHub"
+  VERSION_LOWER_CASE=$(echo "$SOLARWINDS_APM_VERSION" | tr '[:upper:]' '[:lower:]')
+  gem install solarwinds_apm -v "$VERSION_LOWER_CASE" --source https://rubygems.pkg.github.com/solarwinds
 fi
 
 # verification
