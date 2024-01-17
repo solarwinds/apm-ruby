@@ -121,7 +121,6 @@ jobs:
         env:
           BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
 
-
   terminate_arm64_runner:
     if: ${{ always() }}
     needs:

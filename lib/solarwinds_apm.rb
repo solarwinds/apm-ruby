@@ -44,12 +44,6 @@ begin
     end
   end
 
-  # Auto-start the Reporter unless we are running Unicorn on Heroku
-  # In that case, we start the reporters after fork
-  unless SolarWindsAPM.forking_webserver?
-    SolarWindsAPM::Reporter.start if SolarWindsAPM.loaded
-  end
-
   if SolarWindsAPM.loaded
     require 'solarwinds_apm/support'
     require 'solarwinds_apm/opentelemetry'
@@ -64,6 +58,7 @@ begin
       SolarWindsAPM::OTelConfig.initialize
     end
 
+    SolarWindsAPM::Reporter.start
   else
     SolarWindsAPM.logger.warn '=============================================================='
     SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. Tracing disabled.'
