@@ -21,7 +21,7 @@ module SolarWindsAPM
       @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
       # file name including path for log file
       # TODO eventually find better way to combine ruby and oboe logs
-      @log_file_path = ENV['SW_APM_LOGFILE'] || ''
+      @log_file_path = ENV['SW_APM_LOG_FILEPATH'] || ''
       # maximum number of transaction names to track
       @max_transactions = (ENV['SW_APM_MAX_TRANSACTIONS'] || -1).to_i
       # maximum wait time for flushing data before terminating in milli seconds
@@ -262,8 +262,8 @@ module SolarWindsAPM
 
     def determine_oboe_log_type
       log_type = 0
+      log_type = 2 unless ENV['SW_APM_LOG_FILEPATH'].to_s.empty?
       log_type = 4 if @debug_level == -1
-      log_type = 2 unless ENV['SW_APM_LOG_NAME'].to_s.empty?
       log_type
     end
   end

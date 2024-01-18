@@ -34,7 +34,7 @@ describe 'OboeInitOptions' do
     ENV['SW_APM_TRUSTEDPATH'] = 'string_3'
     ENV['SW_APM_HOSTNAME_ALIAS'] = 'string_4'
     ENV['SW_APM_BUFSIZE'] = '11'
-    ENV['SW_APM_LOGFILE'] = 'string_5'
+    ENV['SW_APM_LOG_FILEPATH'] = 'string_5'
     ENV['SW_APM_DEBUG_LEVEL'] = '2'
     ENV['SW_APM_TRACE_METRICS'] = '3'
     ENV['SW_APM_HISTOGRAM_PRECISION'] = '4'
@@ -463,7 +463,7 @@ describe 'OboeInitOptions' do
 
   describe 'test_determine_oboe_log_type' do
     it 'expect_default_value_0' do
-      ENV.delete('SW_APM_LOG_NAME')
+      ENV.delete('SW_APM_LOG_FILEPATH')
       ENV.delete('SW_APM_DEBUG_LEVEL')
       SolarWindsAPM::OboeInitOptions.instance.re_init
       options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
@@ -471,7 +471,7 @@ describe 'OboeInitOptions' do
     end
 
     it 'expect_disabled_if_debug_level_is_neg_one' do
-      ENV.delete('SW_APM_LOG_NAME')
+      ENV.delete('SW_APM_LOG_FILEPATH')
       ENV['SW_APM_DEBUG_LEVEL'] = '-1'
       SolarWindsAPM::OboeInitOptions.instance.re_init
       options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
@@ -479,7 +479,7 @@ describe 'OboeInitOptions' do
     end
 
     it 'expect_to_file_if_SW_APM_LOG_NAME_present' do
-      ENV['SW_APM_LOG_NAME'] = '/custom/path'
+      ENV['SW_APM_LOG_FILEPATH'] = '/custom/path'
       SolarWindsAPM::OboeInitOptions.instance.re_init
       options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
       _(options[21]).must_equal 2
