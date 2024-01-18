@@ -47,7 +47,6 @@ describe 'OboeInitOptions' do
     ENV['SW_APM_REPORTER_FILE_SINGLE'] = 'True'
     ENV['SW_APM_EC2_METADATA_TIMEOUT'] = '1234'
     ENV['SW_APM_PROXY'] = 'http://the.proxy:1234'
-    ENV['SW_APM_LOG_NAME'] = '/custom/path'
 
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
@@ -478,8 +477,9 @@ describe 'OboeInitOptions' do
       _(options[21]).must_equal 4
     end
 
-    it 'expect_to_file_if_SW_APM_LOG_NAME_present' do
+    it 'expect_to_file_if_SW_APM_LOG_FILEPATH_present' do
       ENV['SW_APM_LOG_FILEPATH'] = '/custom/path'
+      ENV.delete('SW_APM_DEBUG_LEVEL')
       SolarWindsAPM::OboeInitOptions.instance.re_init
       options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
       _(options[21]).must_equal 2
