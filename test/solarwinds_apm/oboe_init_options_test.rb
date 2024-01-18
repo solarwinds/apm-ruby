@@ -47,11 +47,12 @@ describe 'OboeInitOptions' do
     ENV['SW_APM_REPORTER_FILE_SINGLE'] = 'True'
     ENV['SW_APM_EC2_METADATA_TIMEOUT'] = '1234'
     ENV['SW_APM_PROXY'] = 'http://the.proxy:1234'
+    ENV['SW_APM_LOG_NAME'] = '/custom/path'
 
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[0]).must_equal 'string_4'
     _(options[1]).must_equal 2
     _(options[2]).must_equal 'string_5'
@@ -72,6 +73,7 @@ describe 'OboeInitOptions' do
     _(options[17]).must_equal 1234
     _(options[18]).must_equal 'http://the.proxy:1234'
     _(options[20]).must_equal 2
+    _(options[21]).must_equal 2
   end
 
   it 'env vars override config vars' do
@@ -92,7 +94,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
 
     _(options[0]).must_equal 'string_0'
     _(options[1]).must_equal 1
@@ -108,7 +110,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[20]).must_equal 2
   end
 
@@ -119,7 +121,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[20]).must_equal 2
   end
 
@@ -130,7 +132,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[20]).must_equal 2
   end
 
@@ -140,7 +142,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[20]).must_equal 2
   end
 
@@ -152,7 +154,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[10]).must_equal "-----BEGIN CERTIFICATE-----\nMIID8TCCAtmgAwIBAgIJAMoDz7Npas2/MA0GCSqGSIb3DQEBCwUAMIGOMQswCQYD\nVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5j\naXNjbzEVMBMGA1UECgwMTGlicmF0byBJbmMuMRUwEwYDVQQDDAxBcHBPcHRpY3Mg\nQ0ExJDAiBgkqhkiG9w0BCQEWFXN1cHBvcnRAYXBwb3B0aWNzLmNvbTAeFw0xNzA5\nMTUyMjAxMzlaFw0yNzA5MTMyMjAxMzlaMIGOMQswCQYDVQQGEwJVUzETMBEGA1UE\nCAwKQ2FsaWZvcm5pYTEWMBQGA1UEBwwNU2FuIEZyYW5jaXNjbzEVMBMGA1UECgwM\nTGlicmF0byBJbmMuMRUwEwYDVQQDDAxBcHBPcHRpY3MgQ0ExJDAiBgkqhkiG9w0B\nCQEWFXN1cHBvcnRAYXBwb3B0aWNzLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEP\nADCCAQoCggEBAOxO0wsGba3iI4r3L5BMST0rAO/gGaUhpQre6nRwVTmPCnLw1bmn\nGdiFgYv/oRRwU+VieumHSQqoOmyFrg+ajGmvUDp2WqQ0It+XhcbaHFiAp2H7+mLf\ncUH6S43/em0WUxZHeRzRupRDyO1bX6Hh2jgxykivlFrn5HCIQD5Hx1/SaZoW9v2n\noATCbgFOiPW6kU/AVs4R0VBujon13HCehVelNKkazrAEBT1i6RvdOB6aQQ32seW+\ngLV5yVWSPEJvA9ZJqad/nQ8EQUMSSlVN191WOjp4bGpkJE1svs7NmM+Oja50W56l\nqOH5eWermr/8qWjdPlDJ+I0VkgN0UyHVuRECAwEAAaNQME4wHQYDVR0OBBYEFOuL\nKDTFhRQXwlBRxhPqhukrNYeRMB8GA1UdIwQYMBaAFOuLKDTFhRQXwlBRxhPqhukr\nNYeRMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAJQtH446NZhjusy6\niCyvmnD95ybfNPDpjHmNx5n9Y6w9n+9y1o3732HUJE+WjvbLS3h1o7wujGKMcRJn\n7I7eTDd26ZhLvnh5/AitYjdxrtUkQDgyxwLFJKhZu0ik2vXqj0fL961/quJL8Gyp\nhNj3Nf7WMohQMSohEmCCX2sHyZGVGYmQHs5omAtkH/NNySqmsWNcpgd3M0aPDRBZ\n5VFreOSGKBTJnoLNqods/S9RV0by84hm3j6aQ/tMDIVE9VCJtrE6evzC0MWyVFwR\nftgwcxyEq5SkiR+6BCwdzAMqADV37TzXDHLjwSrMIrgLV5xZM20Kk6chxI5QAr/f\n7tsqAxw=\n-----END CERTIFICATE-----"
   end
 
@@ -164,7 +166,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[10]).must_equal ""
   end
 
@@ -175,7 +177,7 @@ describe 'OboeInitOptions' do
     SolarWindsAPM::OboeInitOptions.instance.re_init
     options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
 
-    _(options.size).must_equal 21
+    _(options.size).must_equal 22
     _(options[10]).must_equal "-----BEGIN CERTIFICATE-----\nMIID8TCCAtmgAwIBAgIJAMoDz7Npas2/MA0GCSqGSIb3DQEBCwUAMIGOMQswCQYD\n-----END CERTIFICATE-----"
   end
 
@@ -457,5 +459,30 @@ describe 'OboeInitOptions' do
     ENV['OTEL_RESOURCE_ATTRIBUTES'] = nil
     SolarWindsAPM::OboeInitOptions.instance.re_init
     assert_nil(ENV['OTEL_SERVICE_NAME'])
+  end
+
+  describe 'test_determine_oboe_log_type' do
+    it 'expect_default_value_0' do
+      ENV.delete('SW_APM_LOG_NAME')
+      ENV.delete('SW_APM_DEBUG_LEVEL')
+      SolarWindsAPM::OboeInitOptions.instance.re_init
+      options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
+      _(options[21]).must_equal 0
+    end
+
+    it 'expect_disabled_if_debug_level_is_neg_one' do
+      ENV.delete('SW_APM_LOG_NAME')
+      ENV['SW_APM_DEBUG_LEVEL'] = '-1'
+      SolarWindsAPM::OboeInitOptions.instance.re_init
+      options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
+      _(options[21]).must_equal 4
+    end
+
+    it 'expect_to_file_if_SW_APM_LOG_NAME_present' do
+      ENV['SW_APM_LOG_NAME'] = '/custom/path'
+      SolarWindsAPM::OboeInitOptions.instance.re_init
+      options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
+      _(options[21]).must_equal 2
+    end
   end
 end
