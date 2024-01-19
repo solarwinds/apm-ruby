@@ -8,12 +8,12 @@ on:
     inputs:
       install-registry:
         required: true
-        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        description: 'Registry used for install tests, e.g. RubyGem, GitHub'
         type: choice
         default: 'RubyGem'
         options:
         - RubyGem
-        - packagecloud
+        - GitHub
 
       solarwinds-version:
         required: true
@@ -37,7 +37,7 @@ jobs:
           app_id: ${{ vars.APPLICATION_ID }}
           private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
 
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}
@@ -113,12 +113,13 @@ jobs:
     steps:
       - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
         run: yum install -y tar gzip
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
         shell: sh
-
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
 
   terminate_arm64_runner:
     if: ${{ always() }}
@@ -133,7 +134,7 @@ jobs:
           app_id: ${{ vars.APPLICATION_ID }}
           private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
 
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}

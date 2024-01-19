@@ -48,9 +48,6 @@ begin
     SolarWindsAPM.oboe_api = SolarWindsAPM::OboeAPI.new  # start oboe api for lambda env
     SolarWindsAPM.is_lambda = true
     require 'solarwinds_apm/noop'
-  elsif !SolarWindsAPM.forking_webserver? # if not true
-    SolarWindsAPM::Reporter.start if SolarWindsAPM.loaded
-    SolarWindsAPM.is_lambda = false
   end
 
   if SolarWindsAPM.loaded
@@ -67,6 +64,7 @@ begin
       SolarWindsAPM::OTelConfig.initialize
     end
 
+    SolarWindsAPM::Reporter.start
   else
     SolarWindsAPM.logger.warn '=============================================================='
     SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. Tracing disabled.'

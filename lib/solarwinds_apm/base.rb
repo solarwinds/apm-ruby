@@ -13,18 +13,6 @@ module SolarWindsAPMBase
   attr_accessor :reporter, :loaded, :oboe_api, :is_lambda
 
   ##
-  # Determines if we are running under a forking webserver
-  #
-  def forking_webserver?
-    if (defined?(::Unicorn) && ($PROGRAM_NAME =~ /unicorn/i)) ||
-       (defined?(::Puma) && ($PROGRAM_NAME =~ /puma/i))
-      true
-    else
-      false
-    end
-  end
-
-  ##
   # Determines if we are running under a lambda environment
   #
   def lambda?

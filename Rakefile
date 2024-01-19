@@ -365,20 +365,6 @@ def find_or_build_gem(version)
   gem_to_push
 end
 
-desc 'Build gem and push to packagecloud. Run as bundle exec rake build_gem_push_to_packagecloud[<version>]'
-task :build_gem_push_to_packagecloud, [:version] do |_, args|
-
-  require 'package_cloud'
-
-  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].to_s.empty?
-
-  gem_to_push = find_or_build_gem(args[:version])
-
-  cli = PackageCloud::CLI::Entry.new
-  cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
-  puts "\n=== Finished ===\n"
-end
-
 # need set the credentials under ~/.gem/credentials
 # for download, easiest way is to set BUNDLE_RUBYGEMS__PKG__GITHUB__COM
 # but there are other auth methods. see more on https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-rubygems-registry
