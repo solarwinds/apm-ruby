@@ -122,4 +122,4 @@ N/A | `:log_args` | Enable/disable the collection of URL query parameters, set t
 N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
 N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
 N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. | None
-`SW_APM_LOG_NAME` | N/A | Configure the log file path for liboboe log. e.g. `export SW_APM_LOG_NAME=/path/file_path.log` | None
+`SW_APM_LOG_NAME` | N/A | Configure the log file path for the C extension, e.g. `export SW_APM_LOG_NAME=/path/file_path.log`. If set, messages from the C extension are written to the specified file instead of stderr.  | None
