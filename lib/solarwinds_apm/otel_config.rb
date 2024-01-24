@@ -114,7 +114,14 @@ module SolarWindsAPM
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
-      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      if ENV['OTEL_LOG_LEVEL'].to_s.empty?
+        ::OpenTelemetry::SDK.configure do |c|
+          c.logger = ::Logger.new($stdout, level: ::SolarWindsAPM.logger.level) # sync solarwinds_apm logger to otel log
+          c.use_all(@@config_map)
+        end
+      else
+        ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      end
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 

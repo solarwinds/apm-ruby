@@ -30,6 +30,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - BUNDLE_RUBYGEMS__PKG__GITHUB__COM=${GITHUB_TOKEN}
     hostname: docker.swo.ubuntu.development
     << : *swo-shared
     volumes:
