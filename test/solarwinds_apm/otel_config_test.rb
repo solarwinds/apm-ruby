@@ -58,15 +58,13 @@ describe 'Loading Opentelemetry Test' do
     before do
       ENV.delete('OTEL_LOG_LEVEL')
       ENV.delete('SW_APM_DEBUG_LEVEL')
-      ::OpenTelemetry.logger = nil
+      ::OpenTelemetry.logger = ''
     end
 
     it 'no OTEL_LOG_LEVEL shows up, SW_APM_DEBUG_LEVEL 3 solarwinds_apm and otel have same logger level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      skip if ::OpenTelemetry.logger.instance_variable_get(:@logger).nil?
-
       _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
     end
 
@@ -74,8 +72,6 @@ describe 'Loading Opentelemetry Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '2'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      skip if ::OpenTelemetry.logger.instance_variable_get(:@logger).nil?
-
       _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
     end
 
@@ -83,8 +79,6 @@ describe 'Loading Opentelemetry Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '0'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      skip if ::OpenTelemetry.logger.instance_variable_get(:@logger).nil?
-
       _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
     end
 
@@ -92,6 +86,7 @@ describe 'Loading Opentelemetry Test' do
     it 'OTEL_LOG_LEVEL shows up, solarwinds_apm and otel have different logger level' do
       ENV['OTEL_LOG_LEVEL'] = 'fatal'
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
+      ::OpenTelemetry.logger = nil
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
       _(::SolarWindsAPM.logger.level).must_equal 1
