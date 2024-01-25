@@ -55,4 +55,3 @@ describe 'Loading Opentelemetry Test' do
   end
 
 end
-

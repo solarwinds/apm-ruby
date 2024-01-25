@@ -12,10 +12,14 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
-    LOGGER_LEVEL_MAPPING = {0 => ::Logger::FATAL, 1 => ::Logger::ERROR,
-                            2 => ::Logger::WARN, 3 => ::Logger::INFO,
-                            4 => ::Logger::DEBUG, 5 => ::Logger::DEBUG,
-                            6 => ::Logger::DEBUG}.freeze
+    LOGGER_LEVEL_MAPPING = {-1 => ::Logger::FATAL,
+                             0 => ::Logger::FATAL,
+                             1 => ::Logger::ERROR,
+                             2 => ::Logger::WARN,
+                             3 => ::Logger::INFO,
+                             4 => ::Logger::DEBUG,
+                             5 => ::Logger::DEBUG,
+                             6 => ::Logger::DEBUG}.freeze
 
     @@config = {}
     @@instrumentation = [:action_controller, :action_controller_api, :action_view,
@@ -75,6 +79,9 @@ module SolarWindsAPM
 
     def self.set_log_level
       log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
+
+      SolarWindsAPM.logger = ::Logger.new(nil) if log_level == -1
+
       SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || ::Logger::INFO # default log level info
     end
 
