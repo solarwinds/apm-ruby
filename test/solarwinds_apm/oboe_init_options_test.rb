@@ -482,6 +482,7 @@ describe 'OboeInitOptions' do
       ENV.delete('SW_APM_DEBUG_LEVEL')
       SolarWindsAPM::OboeInitOptions.instance.re_init
       options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe
+      _(options[2]).must_equal '/custom/path'
       _(options[21]).must_equal 2
     end
   end
