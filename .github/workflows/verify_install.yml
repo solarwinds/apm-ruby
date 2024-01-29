@@ -113,7 +113,15 @@ jobs:
     steps:
       - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
         run: yum install -y tar gzip
-      - uses: actions/checkout@v4
+
+      - name: Checkout ${{ github.ref }}
+        if: ${{ matrix.hostname == 'rb3.1.0-amazlinux2' }}
+        uses: actions/checkout@v3
+
+      - name: Checkout ${{ github.ref }}
+        if: ${{ matrix.hostname != 'rb3.1.0-amazlinux2' }}
+        uses: actions/checkout@v4
+
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
