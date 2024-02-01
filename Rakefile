@@ -96,7 +96,7 @@ end
 def oboe_github_fetch
   oboe_version = File.read('ext/oboe_metal/src/VERSION').strip
   oboe_token = ENV['TRACE_BUILD_TOKEN']
-  oboe_github = "https://raw.githubusercontent.com/librato/solarwinds-apm-liboboe/liboboe-#{oboe_version}/liboboe/"
+  oboe_github = "https://raw.githubusercontent.com/solarwinds-cloud/solarwinds-apm-liboboe/liboboe-#{oboe_version}/liboboe/"
 
   FileUtils.mkdir_p(File.join(@ext_verify_dir, 'bson'))
 
