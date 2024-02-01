@@ -3,7 +3,7 @@
 
 name: Ruby Gem to RubyGems
 # This workflow relies on the following secrets
-# - TRACE_BUILD_RUBY_ACTIONS_API_TOKEN (from the trace-build user in github)
+# - ENOPS_5087_SOLARWINDS_APM_LIBOBOE
 # - RUBYGEMS_TOKEN (from the solarwinds-apm user on rubygems.org)
 # - APM_RUBY_INSTALL_TESTING_SWO_KEY
 #
@@ -37,7 +37,7 @@ jobs:
 
       - name: Download files from cloud.solarwinds.com and create swig wrapper
         env:
-          TRACE_BUILD_TOKEN: ${{ secrets.TRACE_BUILD_RUBY_ACTIONS_API_TOKEN }}
+          TRACE_BUILD_TOKEN: ${{ secrets.ENOPS_5087_SOLARWINDS_APM_LIBOBOE }}
         run: |
           bundle exec rake fetch_oboe_file["prod"]
           bundle exec rake oboe_verify
@@ -76,7 +76,7 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            github.repos.createRelease({
+            github.rest.repos.createRelease({
               owner: "solarwinds",
               repo: "apm-ruby",
               body: "SHA256 checksum: ${{ steps.build.outputs.checksum }}",
