@@ -7,8 +7,14 @@
 # Disable docs and Camelcase warns since we're implementing
 # an interface here.  See OboeBase for details.
 module SolarWindsAPM
-  extend SolarWindsAPMBase
   include Oboe_metal
+
+  @reporter = nil
+  @loaded   = nil
+
+  class << self
+    attr_accessor :reporter, :loaded
+  end
 
   # Reporter that send span data to SWO
   class Reporter
@@ -51,52 +57,6 @@ module SolarWindsAPM
       #
       def send_status(evt, context=nil, with_system_timestamp: true)
         SolarWindsAPM.reporter.sendStatus(evt, context, with_system_timestamp)
-      end
-
-      ##
-      # clear_all_traces
-      #
-      # Truncates the trace output file to zero
-      #
-      def clear_all_traces
-        File.truncate(SolarWindsAPM::OboeInitOptions.instance.host, 0)
-      end
-
-      ##
-      # obtain_all_traces
-      #
-      # Retrieves all traces written to the trace file
-      #
-      def obtain_all_traces
-        io = File.open(SolarWindsAPM::OboeInitOptions.instance.host, 'r')
-        contents = io.readlines(nil)
-        io.close
-
-        return contents if contents.empty?
-
-        traces = []
-
-        # We use Gem.loaded_spec because older versions of the bson
-        # gem didn't even have a version embedded in the gem.  If the
-        # gem isn't in the bundle, it should rightfully error out
-        # anyways.
-        #
-        if Gem.loaded_specs['bson'] && Gem.loaded_specs['bson'].version.to_s < '4.0'
-          s = StringIO.new(contents[0])
-
-          until s.eof?
-            traces << if ::BSON.respond_to? :read_bson_document
-                        BSON.read_bson_document(s)
-                      else
-                        BSON::Document.from_bson(s)
-                      end
-          end
-        else
-          bbb = ::BSON::ByteBuffer.new(contents[0])
-          traces << Hash.from_bson(bbb) until bbb.length == 0
-        end
-
-        traces
       end
 
       private
@@ -218,3 +178,9 @@ end
 
 SolarWindsAPM.loaded = true
 # rubocop:enable Style/Documentation
+
+# Setup an alias
+SolarWindsApm = SolarWindsAPM
+SolarwindsApm = SolarWindsAPM
+SolarwindsAPM = SolarWindsAPM
+Solarwindsapm = SolarWindsAPM
