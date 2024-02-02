@@ -22,7 +22,7 @@ begin
       require_relative './oboe_metal'                 # initialize reporter: SolarWindsAPM.loaded = true
       
       SolarWindsAPM.logger.info '==================================================================='
-      SolarWindsAPM.logger.info "SolarWindsAPM info: Platform #{RUBY_PLATFORM}."
+      SolarWindsAPM.logger.info "Ruby Platform #{RUBY_PLATFORM}."
       SolarWindsAPM.logger.info "Current solarwinds_apm version: #{SolarWindsAPM::Version::STRING}"
       SolarWindsAPM.logger.info '==================================================================='
 
