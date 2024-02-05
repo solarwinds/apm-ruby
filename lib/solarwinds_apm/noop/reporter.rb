@@ -4,26 +4,25 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
+####
+# noop version of SolarWindsAPM::Reporter
+#
 module SolarWindsAPM
-  ##
-  # Provides thread local storage for SolarWindsAPM.
-  #
-  # Example usage:
-  # module SolarWindsAPMBase
-  #   extend SolarWindsAPM::ThreadLocal
-  #   thread_local :layer_op
-  # end
-  module ThreadLocal
-    def thread_local(name)
-      key = "__#{self}_#{name}__".intern
+  # Reporter
+  class Reporter
+    ##
+    # noop version of :send_report
+    #
+    def self.send_report(event, with_system_timestamp: false); end
 
-      define_method(name) do
-        Thread.current[key]
-      end
+    ##
+    # noop version of :send_status
+    #
+    def self.send_status(event, context=nil, with_system_timestamp: false); end
 
-      define_method("#{name}=") do |value|
-        Thread.current[key] = value
-      end
-    end
+    ##
+    # noop version of :start
+    #
+    def self.start; end
   end
 end

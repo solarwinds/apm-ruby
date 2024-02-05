@@ -4,21 +4,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-##
-# This module is the base module for SolarWindsAPM reporting.
-#
-module SolarWindsAPMBase
-  extend SolarWindsAPM::ThreadLocal
-
-  attr_accessor :reporter, :loaded
-end
-
-module SolarWindsAPM
-  extend SolarWindsAPMBase
-end
-
-# Setup an alias
-SolarWindsApm = SolarWindsAPM
-SolarwindsApm = SolarWindsAPM
-SolarwindsAPM = SolarWindsAPM
-Solarwindsapm = SolarWindsAPM
+require_relative './noop/context'
+require_relative './noop/metadata'
+require_relative './noop/reporter'
+require_relative './noop/span'

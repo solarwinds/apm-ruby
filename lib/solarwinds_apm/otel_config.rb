@@ -22,12 +22,6 @@ module SolarWindsAPM
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
     end
 
-    def self.validate_service_key
-      return unless (ENV['SW_APM_REPORTER'] || 'ssl') == 'ssl'
-
-      disable_agent unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
-    end
-
     def self.resolve_sampler
       sampler_config = {"trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode]}
       @@config[:sampler] =
@@ -62,12 +56,13 @@ module SolarWindsAPM
     end
 
     def self.print_config
-      @@config.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config:     #{config} = #{value}"}
+      @@config.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
       end
-      @@config_map.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config_map: #{config} = #{value}"}
+      @@config_map.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
       end
+      nil
     end
 
     def self.resolve_solarwinds_processor
@@ -100,12 +95,7 @@ module SolarWindsAPM
         return
       end
 
-      validate_service_key
-
-      return unless @@agent_enabled
-
       resolve_sampler
-
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_response_propagator

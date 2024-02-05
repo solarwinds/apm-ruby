@@ -12,7 +12,7 @@ module SolarWindsAPM
     MAJOR  = 6 # breaking,
     MINOR  = 0 # feature,
     PATCH  = 0 # fix => BFF
-    PRE    = 'prev6'.freeze
+    PRE    = 'prev7'.freeze
 
     STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')
   end
