@@ -9,11 +9,18 @@
 module SolarWindsAPM
   include Oboe_metal
 
+  @loaded   = false
   @reporter = nil
-  @loaded   = nil
 
   class << self
     attr_accessor :reporter, :loaded
+
+    def sample_rate(rate)
+      return unless SolarWindsAPM.loaded
+
+      # Update liboboe with the new SampleRate value
+      SolarWindsAPM::Context.setDefaultSampleRate(rate.to_i)
+    end
   end
 
   # Reporter that send span data to SWO
@@ -25,15 +32,14 @@ module SolarWindsAPM
       # Start the SolarWindsAPM Reporter
       #
       def start
-        SolarWindsAPM.loaded = false unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
-        return unless SolarWindsAPM.loaded
+        return unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
 
         begin
           options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
-
           SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
 
           report_init
+          SolarWindsAPM.loaded = true
         rescue StandardError=> e
           $stderr.puts e.message
           raise
@@ -165,18 +171,8 @@ module SolarWindsAPM
       end
     end
   end
-
-  class << self
-    def sample_rate(rate)
-      return unless SolarWindsAPM.loaded
-
-      # Update liboboe with the new SampleRate value
-      SolarWindsAPM::Context.setDefaultSampleRate(rate.to_i)
-    end
-  end
 end
 
-SolarWindsAPM.loaded = true
 # rubocop:enable Style/Documentation
 
 # Setup an alias
