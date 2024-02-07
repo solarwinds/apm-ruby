@@ -31,11 +31,6 @@ SimpleCov.start
 # needed by most tests
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
 
-# these two files are required for setting lambda false as default
-require './lib/solarwinds_apm/thread_local'
-require './lib/solarwinds_apm/base'
-SolarWindsAPM.is_lambda = false
-
 # write to a file as well as STDOUT (comes in handy with docker runs)
 # This approach preserves the coloring of pass fail, which the cli
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
@@ -162,9 +157,11 @@ end
 
 module SolarWindsAPM
   class << self
-    attr_accessor :logger
+    attr_accessor :logger, :is_lambda
   end
 end
+
+SolarWindsAPM.is_lambda = false
 
 # for custom_metrics_test.rb
 module SolarWindsAPM

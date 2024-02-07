@@ -209,6 +209,13 @@ describe 'Config Test' do
       _(SolarWindsAPM.logger.level).must_equal ::Logger::ERROR
     end
 
+    it 'debug_level is in the range with -1 as disable sw logger' do
+      SolarWindsAPM::Config[:debug_level] = -1
+      SolarWindsAPM::Config.set_log_level
+      _(SolarWindsAPM.logger.level).must_equal ::Logger::FATAL
+      assert_nil(SolarWindsAPM.logger.instance_variable_get(:@logdev))
+    end
+
     it 'env var override config' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config[:debug_level] = 1
@@ -292,4 +299,3 @@ describe 'Config Test' do
     end
   end
 end
-

@@ -14,5 +14,15 @@ module SolarWindsAPM
     # noop version of :send_report
     #
     def self.send_report(event, with_system_timestamp: false); end
+
+    ##
+    # noop version of :send_status
+    #
+    def self.send_status(event, context=nil, with_system_timestamp: false); end
+
+    ##
+    # noop version of :start
+    #
+    def self.start; end
   end
 end

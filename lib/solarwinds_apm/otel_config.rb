@@ -22,12 +22,6 @@ module SolarWindsAPM
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported. Reason #{reason}"}
     end
 
-    def self.validate_service_key
-      return unless (ENV['SW_APM_REPORTER'] || 'ssl') == 'ssl'
-
-      disable_agent(reason: "no valid SW_APM_SERVICE_KEY or service_key") unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
-    end
-
     def self.resolve_sampler
       sampler_config = {"trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode]}
       @@config[:sampler] =
@@ -62,12 +56,13 @@ module SolarWindsAPM
     end
 
     def self.print_config
-      @@config.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config:     #{config} = #{value}"}
+      @@config.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
       end
-      @@config_map.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config_map: #{config} = #{value}"}
+      @@config_map.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
       end
+      nil
     end
 
     #
@@ -82,8 +77,8 @@ module SolarWindsAPM
         disable_agent(reason: "no metrics_exporter with lambda environment.") unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
         disable_agent(reason: "no opentelemetry metrics sdk install. please install metrics_sdk.") unless defined?(::OpenTelemetry::SDK::Metrics)
 
-        exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
-        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: ENV['SW_APM_COLLECTOR'] || 'apm.collector.cloud.solarwinds.com')
+        exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: 'https://otel.collector.na-01.st-ssp.solarwinds.com:443/v1/trace')
+        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: 'https://otel.collector.na-01.st-ssp.solarwinds.com:443/v1/metrics')
         @@config[:metrics_exporter] = otlp_metric_exporter
 
         # meter_name is static for swo services
@@ -119,12 +114,7 @@ module SolarWindsAPM
         return
       end
 
-      validate_service_key
-
-      return unless @@agent_enabled
-
       resolve_sampler
-
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_response_propagator
@@ -133,8 +123,14 @@ module SolarWindsAPM
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
-      # OpenTelemetry initialization
-      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      if ENV['OTEL_LOG_LEVEL'].to_s.empty?
+        ::OpenTelemetry::SDK.configure do |c|
+          c.logger = ::Logger.new($stdout, level: ::SolarWindsAPM.logger.level) # sync solarwinds_apm logger to otel log
+          c.use_all(@@config_map)
+        end
+      else
+        ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      end
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 

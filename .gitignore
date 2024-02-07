@@ -65,6 +65,7 @@ rubocop_result.txt
 
 # sample script
 git_push.sh
+test_run.sh
 
 # act.secrets
 act.secrets

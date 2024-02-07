@@ -80,4 +80,3 @@ describe 'Loading Opentelemetry Test' do
     _(span_processors[0].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
   end
 end
-

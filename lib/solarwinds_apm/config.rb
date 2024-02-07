@@ -12,10 +12,14 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
-    LOGGER_LEVEL_MAPPING = {0 => ::Logger::FATAL, 1 => ::Logger::ERROR,
-                            2 => ::Logger::WARN, 3 => ::Logger::INFO,
-                            4 => ::Logger::DEBUG, 5 => ::Logger::DEBUG,
-                            6 => ::Logger::DEBUG}.freeze
+    LOGGER_LEVEL_MAPPING = {-1 => ::Logger::FATAL,
+                             0 => ::Logger::FATAL,
+                             1 => ::Logger::ERROR,
+                             2 => ::Logger::WARN,
+                             3 => ::Logger::INFO,
+                             4 => ::Logger::DEBUG,
+                             5 => ::Logger::DEBUG,
+                             6 => ::Logger::DEBUG}.freeze
 
     @@config = {}
     @@instrumentation = [:action_controller, :action_controller_api, :action_view,
@@ -75,6 +79,9 @@ module SolarWindsAPM
 
     def self.set_log_level
       log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
+
+      SolarWindsAPM.logger = ::Logger.new(nil) if log_level == -1
+
       SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || ::Logger::INFO # default log level info
     end
 
@@ -116,8 +123,9 @@ module SolarWindsAPM
     def self.print_config
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] General configurations list blow:"}
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"}
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
       end
+      nil
     end
 
     ##
@@ -135,6 +143,10 @@ module SolarWindsAPM
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
       load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'))
+      
+      load_config_file
+
+      print_config if SolarWindsAPM.logger.level.zero?
     end
 
     def self.update!(data)
@@ -251,5 +263,3 @@ module SolarWindsAPM
     private_class_method :reset_regexps
   end
 end
-
-SolarWindsAPM::Config.initialize

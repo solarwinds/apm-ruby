@@ -15,6 +15,7 @@ require_relative './support/oboe_tracing_mode'
 require_relative './support/txn_name_manager'
 require_relative './support/utils'
 require_relative './support/x_trace_options'
+require_relative './support/support_report'
 
 if SolarWindsAPM::Config[:tag_sql]
   if defined?(::Rails)

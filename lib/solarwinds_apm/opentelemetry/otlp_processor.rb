@@ -84,7 +84,8 @@ module SolarWindsAPM
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
         meter_attrs['sw.is_error'] = error?(span) ? 'true' : 'false'
         
-        meter_attrs['sw.transaction'] = calculate_transaction_names(span)
+        trans_name = calculate_transaction_names(span)
+        meter_attrs['sw.transaction'] = trans_name
         
         if span_http?(span)
           meter_attrs['http.status_code'] = get_http_status_code(span)
