@@ -3,6 +3,23 @@ https://github.com/solarwinds/apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
+# solarwinds_apm 6.0.0.prev6 (01/30/2024)
+
+This release includes the following features:
+
+* Updated release process and documentation.
+* Added custom metrics information to README.
+* Integrated rubocop-performance for code optimization.
+* Replace Packagecloud with GitHub package.
+* Removed database obfuscation logic set from SolarWinds side.
+* Changed trigger_tracing_mode to symbol.
+* Added dependabot.yml for automated dependency updates.
+* Ensured reporter starts regardless of worker or master status.
+* Upgraded to version 14.0.1.
+* Synchronized SolarWinds logger with OpenTelemetry logger.
+* Updated versioning and workflow for Amazon Linux 2 on checkout.
+* Dependency updates by Dependabot.
+
 # solarwinds_apm 6.0.0.preV5 (11/06/2023)
 
 This release includes the following features:
