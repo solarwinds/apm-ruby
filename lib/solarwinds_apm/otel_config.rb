@@ -19,7 +19,7 @@ module SolarWindsAPM
       return unless @@agent_enabled  # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported. Reason #{reason}"}
+      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] SolarWindsAPM disabled. No Trace exported. Reason: #{reason}"}
     end
 
     def self.resolve_sampler
@@ -76,18 +76,21 @@ module SolarWindsAPM
       if SolarWindsAPM.is_lambda
         disable_agent(reason: "no metrics_exporter with lambda environment.") unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
         disable_agent(reason: "no opentelemetry metrics sdk install. please install metrics_sdk.") unless defined?(::OpenTelemetry::SDK::Metrics)
+        disable_agent(reason: "no opentelemetry endpoint set") if ENV['SW_APM_COLLECTOR'].to_s.empty?
 
-        exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: 'https://otel.collector.na-01.st-ssp.solarwinds.com:443/v1/trace')
-        otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: 'https://otel.collector.na-01.st-ssp.solarwinds.com:443/v1/metrics')
-        @@config[:metrics_exporter] = otlp_metric_exporter
+        if @@agent_enabled
+          exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: "#{ENV['SW_APM_COLLECTOR']}/v1/trace")
+          otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: "#{ENV['SW_APM_COLLECTOR']}/v1/metrics")
+          @@config[:metrics_exporter] = otlp_metric_exporter
 
-        # meter_name is static for swo services
-        meters = {
-          'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-          'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
-        }
+          # meter_name is static for swo services
+          meters = {
+            'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
+            'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+          }
 
-        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, exporter, txn_manager)
+          @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, exporter, txn_manager)
+        end
       else
         exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
         @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)

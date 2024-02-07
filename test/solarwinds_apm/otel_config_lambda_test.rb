@@ -23,9 +23,13 @@ describe 'lambda environment' do
   it 'verify_otlp_metrics_exporter_trace_exporter_and_otlp_processor' do
     skip unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
 
+    ENV["SW_APM_COLLECTOR"] = 'https://abc.com'
+
     SolarWindsAPM::OTelConfig.initialize
     otel_config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)
     _(otel_config[:span_processor].class).must_equal SolarWindsAPM::OpenTelemetry::OTLPProcessor
     _(otel_config[:metrics_exporter].class).must_equal ::OpenTelemetry::Exporter::OTLP::MetricsExporter
+
+    ENV.delete("SW_APM_COLLECTOR")
   end
 end
