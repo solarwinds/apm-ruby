@@ -1,4 +1,4 @@
-require_relative './comment'
+require_relative './annotation'
 
 module SolarWindsAPM
   module SWOMarginalia
@@ -7,6 +7,8 @@ module SolarWindsAPM
     # This ActiveRecordInstrumentation should only work for activerecord < 7.0 since after rails 7
     # this module won't be prepend to activerecord
     module ActiveRecordInstrumentation
+      include Annotation
+
       def execute(sql, *args, **options)
         super(annotate_sql(sql), *args, **options)
       end
@@ -16,7 +18,15 @@ module SolarWindsAPM
         super(annotate_sql(sql), *args, **options)
       end
 
+      # For activerecord < 7.1.0
       def exec_query(sql, *args, **options)
+        super(annotate_sql(sql), *args, **options)
+      end
+
+      # This patch is for non-rails app (e.g. sinatra) that use activerecord >= 7.1.0
+      # From 7.1.0, query() changed calling from exec_query() to internal_exec_query()
+      # Psql is not affected because in psql, internal_exec_query calls execute_and_clear
+      def internal_exec_query(sql, *args, **options)
         super(annotate_sql(sql), *args, **options)
       end
 
@@ -26,35 +36,6 @@ module SolarWindsAPM
 
       def exec_update(sql, *args)
         super(annotate_sql(sql), *args)
-      end
-
-      def annotate_sql(sql)
-        SWOMarginalia::Comment.update_adapter!(self)            # switch to current sql adapter
-        comment = SWOMarginalia::Comment.construct_comment      # comment will include traceparent
-        if comment.present? && !sql.include?(comment)
-          sql = if SWOMarginalia::Comment.prepend_comment
-                  "/*#{comment}*/ #{sql}"
-                else
-                  "#{sql} /*#{comment}*/"
-                end
-        end
-
-        inline_comment = SWOMarginalia::Comment.construct_inline_comment # this is for customized_swo_inline_annotations (user-defined value)
-        if inline_comment.present? && !sql.include?(inline_comment)
-          sql = if SWOMarginalia::Comment.prepend_comment
-                  "/*#{inline_comment}*/ #{sql}"
-                else
-                  "#{sql} /*#{inline_comment}*/"
-                end
-        end
-
-        sql
-      end
-
-      # We don't want to trace framework caches.
-      # Only instrument SQL that directly hits the database.
-      def ignore_payload?(name)
-        %w[SCHEMA EXPLAIN CACHE].include?(name.to_s)
       end
     end
 

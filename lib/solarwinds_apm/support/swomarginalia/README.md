@@ -29,6 +29,10 @@ This folder contains the code that is copied from original [marginalia](https://
 ### load_swomarginalia.rb
 1. (new file) prepend the ActiveRecordInstrumentation to activerecord adapter
 
+### annotation.rb
+1. (new file) utilize comment file append the generated traceparent data into sql
+2. If sql already contains the same comments, then it won't inject again
+
 ## Example
 
 ### Sample output of rails application
