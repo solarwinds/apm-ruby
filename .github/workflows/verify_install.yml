@@ -25,13 +25,17 @@ env:
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   start_arm64_runner:
     outputs:
       matrix: ${{ steps.launch.outputs.matrix }} # this will be a json object mapping identifiers to labels and instance ids
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/action-github-app-token@v2
+      - uses: getsentry/action-github-app-token@v3
         id: github-token
         with:
           app_id: ${{ vars.APPLICATION_ID }}
@@ -39,8 +43,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.EC2_RUNNER_ARN }}
           aws-region: us-east-1
 
       - id: launch
@@ -136,7 +139,7 @@ jobs:
       - verify_installation
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/action-github-app-token@v2
+      - uses: getsentry/action-github-app-token@v3
         id: github-token
         with:
           app_id: ${{ vars.APPLICATION_ID }}
@@ -144,8 +147,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.EC2_RUNNER_ARN }}
           aws-region: us-east-1
       - uses: solarwindscloud/ec2-runner-action@main
         with:
