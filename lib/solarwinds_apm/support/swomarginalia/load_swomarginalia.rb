@@ -46,6 +46,7 @@ module SolarWindsAPM
         ActiveRecord::ConnectionAdapters::Mysql2Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)     if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
         ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)    if defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
+        ActiveRecord::ConnectionAdapters::TrilogyAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)    if defined? ActiveRecord::ConnectionAdapters::TrilogyAdapter
       end
     end
   end
