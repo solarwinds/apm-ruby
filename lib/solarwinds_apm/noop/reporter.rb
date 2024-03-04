@@ -4,33 +4,25 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-##
-# This module is the base module for SolarWindsAPM reporting.
+####
+# noop version of SolarWindsAPM::Reporter
 #
-module SolarWindsAPMBase
-  extend SolarWindsAPM::ThreadLocal
+module SolarWindsAPM
+  # Reporter
+  class Reporter
+    ##
+    # noop version of :send_report
+    #
+    def self.send_report(event, with_system_timestamp: false); end
 
-  attr_accessor :reporter, :loaded
+    ##
+    # noop version of :send_status
+    #
+    def self.send_status(event, context=nil, with_system_timestamp: false); end
 
-  ##
-  # Determines if we are running under a forking webserver
-  #
-  def forking_webserver?
-    if (defined?(::Unicorn) && ($PROGRAM_NAME =~ /unicorn/i)) ||
-       (defined?(::Puma) && ($PROGRAM_NAME =~ /puma/i))
-      true
-    else
-      false
-    end
+    ##
+    # noop version of :start
+    #
+    def self.start; end
   end
 end
-
-module SolarWindsAPM
-  extend SolarWindsAPMBase
-end
-
-# Setup an alias
-SolarWindsApm = SolarWindsAPM
-SolarwindsApm = SolarWindsAPM
-SolarwindsAPM = SolarWindsAPM
-Solarwindsapm = SolarWindsAPM

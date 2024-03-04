@@ -21,7 +21,7 @@ module SolarWindsAPM
       @debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
       # file name including path for log file
       # TODO eventually find better way to combine ruby and oboe logs
-      @log_file_path = ENV['SW_APM_LOGFILE'] || ''
+      @log_file_path = ENV['SW_APM_LOG_FILEPATH'] || ''
       # maximum number of transaction names to track
       @max_transactions = (ENV['SW_APM_MAX_TRANSACTIONS'] || -1).to_i
       # maximum wait time for flushing data before terminating in milli seconds
@@ -59,6 +59,8 @@ module SolarWindsAPM
       # hardcoded arg for trace id format to use w3c format
       # flag for format of metric (0 = Both; 1 = AppOptics only; 2 = SWO only; default = 0)
       @metric_format = determine_the_metric_model
+      # log type (0 = stderr; 1 = stdout; 2 = file; 3 = null; 4 = disabled; default = 0)
+      @log_type = determine_oboe_log_type
     end
 
     # for testing with changed ENV vars
@@ -75,7 +77,6 @@ module SolarWindsAPM
         @max_flush_wait_time,    # 4
         @events_flush_interval,  # 5
         @event_flush_batch_size, # 6
-
         @reporter,               # 7
         @host,                   # 8
         @service_key,            # 9
@@ -89,7 +90,8 @@ module SolarWindsAPM
         @ec2_md_timeout,         #17
         @grpc_proxy,             #18
         0,                       #19 arg for lambda (no lambda for ruby yet)
-        @metric_format           #22
+        @metric_format,          #20
+        @log_type                #21
       ]
     end
 
@@ -135,7 +137,6 @@ module SolarWindsAPM
       token = match[1]
       service_name = match[3]
 
-      puts "validate_token(token): #{validate_token(token)}"
       return '' unless validate_token(token)   # return if token is not even valid
 
       if service_name.empty?
@@ -257,6 +258,13 @@ module SolarWindsAPM
         SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"}
       end
       ""
+    end
+
+    def determine_oboe_log_type
+      log_type = 0
+      log_type = 2 unless ENV['SW_APM_LOG_FILEPATH'].to_s.empty?
+      log_type = 4 if @debug_level == -1
+      log_type
     end
   end
 end

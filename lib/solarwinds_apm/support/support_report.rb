@@ -7,12 +7,11 @@
 require 'rbconfig'
 require 'logger'
 
+##
+# This module is used to debug problematic setups and/or environments.
+# Depending on the environment, output may be to stdout or the framework
+# log file (e.g. log/production.log)
 module SolarWindsAPM
-  ##
-  # This module is used to debug problematic setups and/or environments.
-  # Depending on the environment, output may be to stdout or the framework
-  # log file (e.g. log/production.log)
-
   ##
   # yesno
   #
@@ -71,6 +70,12 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* SolarWindsAPM::Config Values'
     SolarWindsAPM.logger.warn '********************************************************'
+    SolarWindsAPM.logger.warn SolarWindsAPM::Config.print_config.to_s
+    
+    SolarWindsAPM.logger.warn '********************************************************'
+    SolarWindsAPM.logger.warn '* SolarWindsAPM::OTelConfig Values'
+    SolarWindsAPM.logger.warn '********************************************************'
+    SolarWindsAPM.logger.warn SolarWindsAPM::OTelConfig.print_config.to_s
 
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* OS, Platform + Env'
@@ -78,9 +83,7 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn "host_os:  #{RbConfig::CONFIG['host_os']}"
     SolarWindsAPM.logger.warn "sitearch: #{RbConfig::CONFIG['sitearch']}"
     SolarWindsAPM.logger.warn "arch:     #{RbConfig::CONFIG['arch']}"
-    SolarWindsAPM.logger.warn RUBY_PLATFORM
-    SolarWindsAPM.logger.warn "RACK_ENV: #{ENV['RACK_ENV']}"
-    SolarWindsAPM.logger.warn "RAILS_ENV: #{ENV['RAILS_ENV']}" if using_rails
+    SolarWindsAPM.logger.warn "Platform: #{RUBY_PLATFORM}"
 
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* END SolarWindsAPM Support Report'

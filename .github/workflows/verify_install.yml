@@ -8,12 +8,12 @@ on:
     inputs:
       install-registry:
         required: true
-        description: 'Registry used for install tests, e.g. RubyGem, packagecloud'
+        description: 'Registry used for install tests, e.g. RubyGem, GitHub'
         type: choice
         default: 'RubyGem'
         options:
         - RubyGem
-        - packagecloud
+        - GitHub
 
       solarwinds-version:
         required: true
@@ -25,13 +25,17 @@ env:
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   start_arm64_runner:
     outputs:
       matrix: ${{ steps.launch.outputs.matrix }} # this will be a json object mapping identifiers to labels and instance ids
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/action-github-app-token@v2
+      - uses: getsentry/action-github-app-token@v3
         id: github-token
         with:
           app_id: ${{ vars.APPLICATION_ID }}
@@ -39,8 +43,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.EC2_RUNNER_ARN }}
           aws-region: us-east-1
 
       - id: launch
@@ -113,12 +116,21 @@ jobs:
     steps:
       - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
         run: yum install -y tar gzip
-      - uses: actions/checkout@v3
+
+      - name: Checkout ${{ github.ref }}
+        if: ${{ matrix.hostname == 'rb3.1.0-amazlinux2' }}
+        uses: actions/checkout@v3
+
+      - name: Checkout ${{ github.ref }}
+        if: ${{ matrix.hostname != 'rb3.1.0-amazlinux2' }}
+        uses: actions/checkout@v4
+
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
         shell: sh
-
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
 
   terminate_arm64_runner:
     if: ${{ always() }}
@@ -127,7 +139,7 @@ jobs:
       - verify_installation
     runs-on: ubuntu-latest
     steps:
-      - uses: getsentry/action-github-app-token@v2
+      - uses: getsentry/action-github-app-token@v3
         id: github-token
         with:
           app_id: ${{ vars.APPLICATION_ID }}
@@ -135,8 +147,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.CI_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CI_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.EC2_RUNNER_ARN }}
           aws-region: us-east-1
       - uses: solarwindscloud/ec2-runner-action@main
         with:

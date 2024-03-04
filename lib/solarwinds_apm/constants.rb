@@ -7,11 +7,10 @@
 module SolarWindsAPM
   # Constants
   module Constants
-    HTTP_METHOD      = "http.method".freeze
-    HTTP_ROUTE       = "http.route".freeze
-    HTTP_STATUS_CODE = "http.status_code".freeze
-    HTTP_URL         = "http.url".freeze
-
+    HTTP_METHOD                      = "http.method".freeze
+    HTTP_ROUTE                       = "http.route".freeze
+    HTTP_STATUS_CODE                 = "http.status_code".freeze
+    HTTP_URL                         = "http.url".freeze
     INTL_SWO_AO_COLLECTOR            = "collector.appoptics.com".freeze
     INTL_SWO_AO_STG_COLLECTOR        = "collector-stg.appoptics.com".freeze
     INTL_SWO_COMMA                   = ",".freeze
@@ -30,7 +29,6 @@ module SolarWindsAPM
     INTL_SWO_OTEL_SCOPE_VERSION      = "otel.scope.version".freeze
     INTL_SWO_OTEL_STATUS             = "otel.status".freeze
     INTL_SWO_OTEL_STATUS_DESCRIPTION = "otel.status_description".freeze
-
     INTERNAL_TRIGGERED_TRACE         = "TriggeredTrace".freeze
   end
 end

@@ -22,27 +22,13 @@ module SolarWindsAPM
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
     end
 
-    def self.validate_service_key
-      return unless (ENV['SW_APM_REPORTER'] || 'ssl') == 'ssl'
-
-      disable_agent unless ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
-    end
-
     def self.resolve_sampler
-
-      resolve_sampler_config
+      sampler_config = {"trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode]}
       @@config[:sampler] =
         ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-          root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-          remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]),
-          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(@@config[:sampler_config]))
-    end
-
-    def self.resolve_sampler_config
-      sampler_config = {}
-      sampler_config["trigger_trace"] = "enabled"
-      sampler_config["trigger_trace"] = nil if ENV["SW_APM_TRIGGER_TRACING_MODE"] == 'disabled'
-      @@config[:sampler_config] = sampler_config
+          root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+          remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))
     end
 
     #
@@ -65,31 +51,18 @@ module SolarWindsAPM
       end
     end
 
-    def self.obfuscate_helper(instrumentation)
-      if @@config_map[instrumentation] # user provided the option
-        @@config_map[instrumentation][:db_statement] = :obfuscate unless @@config_map[instrumentation][:db_statement] # user provided the db_statement, ignore our default setting 
-      else
-        @@config_map[instrumentation] = {db_statement: :obfuscate}
-      end
-    end
-
-    def self.obfuscate_query
-      obfuscate_helper("OpenTelemetry::Instrumentation::Dalli")
-      obfuscate_helper("OpenTelemetry::Instrumentation::Mysql2")
-      obfuscate_helper("OpenTelemetry::Instrumentation::PG")
-    end
-
     def self.[](key)
       @@config[key.to_sym]
     end
 
     def self.print_config
-      @@config.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config:     #{config} = #{value}"}
+      @@config.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
       end
-      @@config_map.each do |config, value|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] config_map: #{config} = #{value}"}
+      @@config_map.each do |k,v|
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
       end
+      nil
     end
 
     def self.resolve_solarwinds_processor
@@ -122,23 +95,23 @@ module SolarWindsAPM
         return
       end
 
-      validate_service_key
-
-      return unless @@agent_enabled
-
       resolve_sampler
-
       resolve_solarwinds_propagator
       resolve_solarwinds_processor
       resolve_response_propagator
-
-      obfuscate_query
 
       print_config if SolarWindsAPM.logger.level.zero?
 
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
-      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      if ENV['OTEL_LOG_LEVEL'].to_s.empty?
+        ::OpenTelemetry::SDK.configure do |c|
+          c.logger = ::Logger.new($stdout, level: ::SolarWindsAPM.logger.level) # sync solarwinds_apm logger to otel log
+          c.use_all(@@config_map)
+        end
+      else
+        ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+      end
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 

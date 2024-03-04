@@ -12,6 +12,15 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
+    LOGGER_LEVEL_MAPPING = {-1 => ::Logger::FATAL,
+                             0 => ::Logger::FATAL,
+                             1 => ::Logger::ERROR,
+                             2 => ::Logger::WARN,
+                             3 => ::Logger::INFO,
+                             4 => ::Logger::DEBUG,
+                             5 => ::Logger::DEBUG,
+                             6 => ::Logger::DEBUG}.freeze
+
     @@config = {}
     @@instrumentation = [:action_controller, :action_controller_api, :action_view,
                          :active_record, :bunnyclient, :bunnyconsumer, :curb,
@@ -44,19 +53,20 @@ module SolarWindsAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files << config_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
+      config_files << config_file_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_apm_config.rb')
       config_files << config_file if File.exist?(config_file)
 
+      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Available config_files: #{config_files.join(', ')}" }
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}"} if config_files.size > 1
       load(config_files[0]) if config_files.size > 0
 
       set_log_level        # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
     end
 
-    def self.config_from_env
+    def self.config_file_from_env
       if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
         config_file = ENV['SW_APM_CONFIG_RUBY']
       elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb'))
@@ -68,11 +78,40 @@ module SolarWindsAPM
     end
 
     def self.set_log_level
-      SolarWindsAPM::Config[:debug_level] = 3 unless (-1..6).cover?(SolarWindsAPM::Config[:debug_level])
+      log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
 
-      # let's find and use the equivalent debug level for ruby
-      debug_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
-      SolarWindsAPM.logger.level = debug_level < 0 ? 6 : [4 - debug_level, 0].max
+      SolarWindsAPM.logger = ::Logger.new(nil) if log_level == -1
+
+      SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || ::Logger::INFO # default log level info
+    end
+
+    def self.enable_disable_config(env_var, key, value, default, bool: false)
+      env_value = ENV[env_var.to_s]&.downcase
+      valid_env_values = bool ? %w[true false] : %w[enabled disabled]
+
+      if env_var && valid_env_values.include?(env_value)
+        value = bool ? true?(env_value) : env_value.to_sym
+      elsif env_var && !env_value.to_s.empty?
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{ENV[env_var]}). Using default value: #{default}.")
+        return @@config[key.to_sym] = default
+      end
+
+      return @@config[key.to_sym] = value unless (bool && !boolean?(value)) || (!bool && !symbol?(value))
+
+      SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a #{valid_env_values.join('/')}. Using default value: #{default}.")
+      @@config[key.to_sym] = default
+    end
+
+    def self.true?(obj)
+      obj.to_s.casecmp("true").zero?
+    end
+
+    def self.boolean?(obj)
+      [true, false].include?(obj)
+    end
+
+    def self.symbol?(obj)
+      [:enabled, :disabled].include?(obj)
     end
 
     ##
@@ -84,8 +123,9 @@ module SolarWindsAPM
     def self.print_config
       SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] General configurations list blow:"}
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"}
+        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
       end
+      nil
     end
 
     ##
@@ -93,8 +133,9 @@ module SolarWindsAPM
     #
     # Initializer method to set everything up with a default configuration.
     # The defaults are read from the template configuration file.
+    # This will be called when require 'solarwinds_apm/config' happen
     #
-    def self.initialize(_data={})
+    def self.initialize
       # for config file backward compatibility
       @@instrumentation.each {|inst| @@config[inst] = {}}
       @@config[:transaction_name] = {}
@@ -123,6 +164,7 @@ module SolarWindsAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
+    # ENV always have higher precedence 
     #
     def self.[]=(key, value)
       key = key.to_sym
@@ -151,17 +193,14 @@ module SolarWindsAPM
       when :transaction_settings
         compile_settings(value)
 
+      when :trigger_tracing_mode
+        enable_disable_config('SW_APM_TRIGGER_TRACING_MODE', key, value, :enabled)
+
       when :tracing_mode
-        # ALL TRACING COMMUNICATION TO OBOE IS NOW HANDLED BY TransactionSettings
-        # Make sure that the mode is stored as a symbol
-        @@config[key.to_sym] = value.to_sym
+        enable_disable_config(nil, key, value, :enabled)
 
       when :tag_sql
-        if ENV.has_key?('SW_APM_TAG_SQL')
-          @@config[key.to_sym] = (ENV['SW_APM_TAG_SQL'] == 'true')
-        else
-          @@config[key.to_sym] = value
-        end
+        enable_disable_config('SW_APM_TAG_SQL', key, value, false, bool: true)
 
       else
         @@config[key.to_sym] = value

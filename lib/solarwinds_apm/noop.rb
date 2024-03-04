@@ -4,26 +4,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-module SolarWindsAPM
-  ##
-  # Provides thread local storage for SolarWindsAPM.
-  #
-  # Example usage:
-  # module SolarWindsAPMBase
-  #   extend SolarWindsAPM::ThreadLocal
-  #   thread_local :layer_op
-  # end
-  module ThreadLocal
-    def thread_local(name)
-      key = "__#{self}_#{name}__".intern
-
-      define_method(name) do
-        Thread.current[key]
-      end
-
-      define_method("#{name}=") do |value|
-        Thread.current[key] = value
-      end
-    end
-  end
-end
+require_relative './noop/context'
+require_relative './noop/metadata'
+require_relative './noop/reporter'
+require_relative './noop/span'

@@ -96,7 +96,7 @@ end
 def oboe_github_fetch
   oboe_version = File.read('ext/oboe_metal/src/VERSION').strip
   oboe_token = ENV['TRACE_BUILD_TOKEN']
-  oboe_github = "https://raw.githubusercontent.com/librato/solarwinds-apm-liboboe/liboboe-#{oboe_version}/liboboe/"
+  oboe_github = "https://raw.githubusercontent.com/solarwinds-cloud/solarwinds-apm-liboboe/liboboe-#{oboe_version}/liboboe/"
 
   FileUtils.mkdir_p(File.join(@ext_verify_dir, 'bson'))
 
@@ -366,20 +366,6 @@ def find_or_build_gem(version)
   abort('Could not find the required gem file.') if gem_to_push.nil? || gem_to_push_version != version
 
   gem_to_push
-end
-
-desc 'Build gem and push to packagecloud. Run as bundle exec rake build_gem_push_to_packagecloud[<version>]'
-task :build_gem_push_to_packagecloud, [:version] do |_, args|
-
-  require 'package_cloud'
-
-  abort('Require PACKAGECLOUD_TOKEN') if ENV['PACKAGECLOUD_TOKEN'].to_s.empty?
-
-  gem_to_push = find_or_build_gem(args[:version])
-
-  cli = PackageCloud::CLI::Entry.new
-  cli.push('solarwinds/solarwinds-apm-otel-ruby', gem_to_push.strip)
-  puts "\n=== Finished ===\n"
 end
 
 # need set the credentials under ~/.gem/credentials
