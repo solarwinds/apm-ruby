@@ -1,0 +1,11 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
+name: Build and publish ruby lambda layer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
