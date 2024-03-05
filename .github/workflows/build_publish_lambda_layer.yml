@@ -11,3 +11,14 @@ permissions:
   contents: read    # This is required for actions/checkout
 
 jobs:
+  # create one arm64 ec2 instance on aws as our runner
+  start_arm64_runner:
+    outputs:
+      matrix: ${{ steps.launch.outputs.matrix }} # this will be a json object mapping identifiers to labels and instance ids
+    runs-on: ubuntu-latest
+    steps:
+      - uses: getsentry/action-github-app-token@v3
+        id: github-token
+        with:
+          app_id: ${{ vars.APPLICATION_ID }}
+          private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
