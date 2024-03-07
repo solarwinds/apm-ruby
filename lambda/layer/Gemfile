@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'solarwinds_apm', '6.0.0.prev5'
+gem 'solarwinds_apm', '6.0.0.prev6'
 
 source 'https://rubygems.pkg.github.com/solarwinds' do
   gem 'opentelemetry-metrics-api', '0.0.1'
