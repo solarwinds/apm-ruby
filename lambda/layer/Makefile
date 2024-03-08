@@ -1,7 +1,6 @@
 
 build-OTelLayer:
 	mkdir -p $(ARTIFACTS_DIR)/ruby/gems/3.2.0
-	mkdir -p $(ARTIFACTS_DIR)/ruby/lib/
 	mkdir -p $(ARTIFACTS_DIR)/solarwinds-apm/
 	bundle config set --global silence_root_warning 1
 	bundle config set --local path 'ruby'
