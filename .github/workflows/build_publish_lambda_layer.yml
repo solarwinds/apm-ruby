@@ -1,7 +1,7 @@
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
-name: Build and publish ruby lambda layer
+name: Build publish lambda layer
 
 on:
   workflow_dispatch:
@@ -70,17 +70,11 @@ jobs:
       - uses: aws-actions/setup-sam@v2
 
       # Build inside Docker containers
-      # There is only two ruby runtime for aws lambda ruby 3.2 and 2.7
-      # Since the 2.7 is not supported by otel, then we don't use it
-      # BuildArchitecture: arch is for different architecture build
       - name: build lambda layer
         run: |
           uname -a
           cd lambda/
-          echo "" >> template.yml
-          echo "      BuildArchitecture: ${{ matrix.arch }}" >> template.yml
-          echo "" >> template.yml
-          sam build -u -t template.yml -e BUNDLE_RUBYGEMS__PKG__GITHUB__COM=$GITHUB_RUBY_TOKEN
+          sam build -u -t template.yml -e BUNDLE_RUBYGEMS__PKG__GITHUB__COM=$GITHUB_RUBY_TOKEN --parameter-overrides LayerArchitecture=${{ matrix.arch }}
           ./zip_layer.sh -n ruby-layer-${{ matrix.arch }}
         env:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
@@ -126,7 +120,7 @@ jobs:
         run: |
           cd lambda/
           aws lambda publish-layer-version \
-            --layer-name solarwinds-ruby-layer-$SOLARWINDS_APM_VERSION-${{ matrix.arch }} \
+            --layer-name solarwinds-apm-ruby-layer-${{ matrix.arch }}-$SOLARWINDS_APM_VERSION \
             --license-info "Apache 2.0" \
             --compatible-architectures ${{ matrix.arch }} \
             --compatible-runtimes ruby3.2 \
@@ -137,7 +131,7 @@ jobs:
 
       - name: grant permissions to public for the published layer
         run: |
-          layer_name=solarwinds-ruby-layer-$SOLARWINDS_APM_VERSION-${{ matrix.arch }}
+          layer_name=solarwinds-apm-ruby-layer-${{ matrix.arch }}-$SOLARWINDS_APM_VERSION
           latest_version=$(aws lambda list-layer-versions --layer-name $layer_name | jq -r '.LayerVersions | max_by(.Version) | .Version')
           aws lambda add-layer-version-permission \
             --layer-name $layer_name \

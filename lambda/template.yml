@@ -6,6 +6,10 @@ Parameters:
     Type: String
     Description: Lambda layer name to be published
     Default: opentelemetry-ruby
+  LayerArchitecture:
+    Type: String
+    Description: Lambda architecture
+    Default: x86_64
 Resources:
   OTelLayer:
     Type: AWS::Serverless::LayerVersion
@@ -17,3 +21,4 @@ Resources:
         - ruby3.2
     Metadata:
       BuildMethod: makefile
+      BuildArchitecture: !Ref LayerArchitecture
