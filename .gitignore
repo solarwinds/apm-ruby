@@ -69,3 +69,7 @@ test_run.sh
 
 # act.secrets
 act.secrets
+
+# lambda layer
+lambda/.aws-sam/*
+lambda/*.zip

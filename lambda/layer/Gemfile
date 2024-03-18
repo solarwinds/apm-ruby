@@ -1,0 +1,12 @@
+source 'https://rubygems.org'
+
+source "https://rubygems.pkg.github.com/xuan-cao-swi" do
+  gem "solarwinds_apm", "6.0.0.prev7"
+end
+
+source 'https://rubygems.pkg.github.com/solarwinds' do
+  gem 'opentelemetry-metrics-api', '0.0.1'
+  gem 'opentelemetry-metrics-sdk', '0.0.1'
+  gem 'opentelemetry-exporter-otlp', '0.26.1'
+  gem 'opentelemetry-instrumentation-aws_lambda', '0.0.1'
+end
