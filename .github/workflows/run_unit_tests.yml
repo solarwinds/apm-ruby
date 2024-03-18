@@ -9,6 +9,7 @@ on:
       - main
     paths-ignore:
       - 'test/Dockerfile'
+      - '.github/*'
   workflow_dispatch:
 
 jobs:
