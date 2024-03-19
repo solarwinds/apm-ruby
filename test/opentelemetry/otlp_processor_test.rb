@@ -40,20 +40,16 @@ describe 'otlp processor test' do
     sampling_metrics_registry = sampling_metrics.instance_variable_get(:@instrument_registry)
 
     _(@processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal "31e175128efc4018-00"
-    _(@processor.instance_variable_get(:@metrics).size).must_equal 11
+    _(@processor.instance_variable_get(:@metrics).size).must_equal 7
     _(@processor.instance_variable_get(:@description).size).must_equal 0
 
     refute_nil(request_metrics_registry['trace.service.response_time'])
-    refute_nil(request_metrics_registry['trace.service.requests'])
-    refute_nil(request_metrics_registry['trace.service.errors'])
     refute_nil(sampling_metrics_registry['trace.service.tracecount'])
     refute_nil(sampling_metrics_registry['trace.service.samplecount'])
     refute_nil(sampling_metrics_registry['trace.service.request_count'])
     refute_nil(sampling_metrics_registry['trace.service.tokenbucket_exhaustion_count'])
     refute_nil(sampling_metrics_registry['trace.service.through_trace_count'])
     refute_nil(sampling_metrics_registry['trace.service.triggered_trace_count'])
-    refute_nil(sampling_metrics_registry['trace.service.sample_rate'])
-    refute_nil(sampling_metrics_registry['trace.service.sample_source'])
   end
 
 end

@@ -65,36 +65,10 @@ module SolarWindsAPM
       nil
     end
 
-    #
-    # if the agent is built with lambda oboe, then use otlp trace and metrics exporter
-    # ensure the layer is installed with metrics_sdk and otlp-metrics-exporter
-    # and if one of the requirements is not met, then disable the agent
-    #
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
-
-      if SolarWindsAPM.is_lambda
-        disable_agent(reason: "no metrics_exporter with lambda environment.") unless defined?(::OpenTelemetry::Exporter::OTLP::MetricsExporter)
-        disable_agent(reason: "no opentelemetry metrics sdk install. please install metrics_sdk.") unless defined?(::OpenTelemetry::SDK::Metrics)
-        disable_agent(reason: "no opentelemetry endpoint set") if ENV['SW_APM_COLLECTOR'].to_s.empty?
-
-        if @@agent_enabled
-          exporter                    = ::OpenTelemetry::Exporter::OTLP::Exporter.new(endpoint: "#{ENV['SW_APM_COLLECTOR']}/v1/trace")
-          otlp_metric_exporter        = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new(endpoint: "#{ENV['SW_APM_COLLECTOR']}/v1/metrics")
-          @@config[:metrics_exporter] = otlp_metric_exporter
-
-          # meter_name is static for swo services
-          meters = {
-            'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-            'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
-          }
-
-          @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, exporter, txn_manager)
-        end
-      else
-        exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
-        @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
-      end
+      exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+      @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
     end
 
     def self.resolve_solarwinds_propagator
@@ -141,9 +115,6 @@ module SolarWindsAPM
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
-
-      # register metrics_exporter to meter_provider
-      ::OpenTelemetry.meter_provider.add_metric_reader(@@config[:metrics_exporter]) if @@config[:metrics_exporter]
 
       # append our processors (with our exporter)
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])

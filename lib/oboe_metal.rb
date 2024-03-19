@@ -26,7 +26,7 @@ module SolarWindsAPM
 
     def lambda?
       if ENV['LAMBDA_TASK_ROOT'] || ENV['AWS_LAMBDA_FUNCTION_NAME']
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] lambda environment; LAMBDA_TASK_ROOT: #{ENV['LAMBDA_TASK_ROOT']}; AWS_LAMBDA_FUNCTION_NAME: #{ENV['AWS_LAMBDA_FUNCTION_NAME']}"}
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] lambda environment - LAMBDA_TASK_ROOT: #{ENV['LAMBDA_TASK_ROOT']}; AWS_LAMBDA_FUNCTION_NAME: #{ENV['AWS_LAMBDA_FUNCTION_NAME']}"}
         true
       else
         false
