@@ -12,11 +12,14 @@ require 'opentelemetry/sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'opentelemetry-propagator-b3'
+require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
-
+require 'lumberjack'
+require 'logging'
 require 'bson'
 
+require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
 
 # simplecov coverage information

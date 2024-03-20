@@ -51,9 +51,6 @@ Gem::Specification.new do |s|
   # but that is not necessary and may restrict other gems
   s.add_runtime_dependency('json', '~> 2.0')
 
-  # Testing
-  s.add_development_dependency('opentelemetry-exporter-otlp', '>= 0.24.2')
-
   s.required_ruby_version = '>= 2.7.0'
   s.executables   = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
 end

@@ -26,9 +26,7 @@ describe 'otlp processor test' do
   end
 
   it 'processor_meters_should_be_nil_at_beginning' do
-
     _(@processor.instance_variable_get(:@metrics).size).must_equal 0
-    _(@processor.instance_variable_get(:@description).size).must_equal 0
   end
 
   it 'test_on_start_verfy_component_initialized_correctly' do
@@ -41,7 +39,6 @@ describe 'otlp processor test' do
 
     _(@processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal "31e175128efc4018-00"
     _(@processor.instance_variable_get(:@metrics).size).must_equal 7
-    _(@processor.instance_variable_get(:@description).size).must_equal 0
 
     refute_nil(request_metrics_registry['trace.service.response_time'])
     refute_nil(sampling_metrics_registry['trace.service.tracecount'])
@@ -51,5 +48,4 @@ describe 'otlp processor test' do
     refute_nil(sampling_metrics_registry['trace.service.through_trace_count'])
     refute_nil(sampling_metrics_registry['trace.service.triggered_trace_count'])
   end
-
 end

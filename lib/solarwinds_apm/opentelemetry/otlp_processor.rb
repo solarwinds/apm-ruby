@@ -15,9 +15,9 @@ module SolarWindsAPM
       # @exporter [Exporter] exporter reporter that send trace data
       def initialize(meters, exporter, txn_manager)
         super(exporter, txn_manager)
-        @meters      = meters
-        @metrics     = {}
-        @description = {}
+        @meters  = meters
+        @metrics = {}
+        @trace_span_id = nil
       end
 
       # Called when a {Span} is started, if the {Span#recording?}
@@ -34,14 +34,15 @@ module SolarWindsAPM
 
         initialize_metrics if @metrics.size == 0
 
-        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
+        @trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
+        parent_span    = ::OpenTelemetry::Trace.current_span(parent_context)
         return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
 
         span_attrs = span_attributes(span)
         span.add_attributes(span_attrs)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-        @txn_manager.set_root_context_h(span.context.hex_trace_id,"#{span.context.hex_span_id}-#{trace_flags}")
+        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")  # this is for custom api set_transaction_name to be able to retrieve right span_id from trace_id
       rescue StandardError => e
         SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] processor on_start error: #{e.message}"}
       end
@@ -55,7 +56,7 @@ module SolarWindsAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
-        # SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
 
         # metrics per trace, therefore, we only record the parent span (span.parent_span_id has to be 00000000000 INVALID_SPAN_ID to qualify as parent span)
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
@@ -74,6 +75,9 @@ module SolarWindsAPM
 
         record_sampling_metrics
         ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
+
+        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
+        @txn_manager.del(@trace_span_id)
       rescue StandardError => e
         SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
@@ -84,16 +88,11 @@ module SolarWindsAPM
       def span_attributes(span)
         span_attrs = {}
         trans_name = calculate_transaction_name_lambda(span)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] trans_name: #{trans_name}"}
-        @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = trans_name if span.context.trace_flags.sampled?
-        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
+        @txn_manager[@trace_span_id] = trans_name if span.context.trace_flags.sampled?
 
-        span_attrs['sw.transaction']  = trans_name.slice(0,255)
+        span_attrs['sw.transaction'] = trans_name
 
-        if span_http?(span)
-          span_attrs['http.status_code'] = get_http_status_code(span)
-          span_attrs['http.method'] = span.attributes[HTTP_METHOD]
-        end
+        span_attrs.merge!(http_attributes(span))
         span_attrs
       end
 
@@ -102,37 +101,43 @@ module SolarWindsAPM
         meter_attrs['sw.service_name'] = ENV['OTEL_SERVICE_NAME'] # Service name override tag. Only set if Service Name Override is set for this request.
         meter_attrs['sw.nonce']        = rand(2**64) >> 1
         meter_attrs['sw.is_error']     = error?(span) ? true : false
+        meter_attrs['sw.transaction']   = @txn_manager[@trace_span_id] if @txn_manager[@trace_span_id]
 
-        if span_http?(span)
-          meter_attrs['http.status_code'] = get_http_status_code(span)
-          meter_attrs['http.method'] = span.attributes[HTTP_METHOD]
-        end
-
+        meter_attrs.merge!(http_attributes(span))
         meter_attrs
       end
 
+      def http_attributes(span)
+        return {} unless span_http?(span)
+
+        {
+          'http.status_code' => get_http_status_code(span),
+          'http.method' => span.attributes[HTTP_METHOD]
+        }
+      end
+
       # custom SDK > configured name (e.g. env var: SW_APM_TRANSACTION_NAME) > automatic naming (AWS_LAMBDA_FUNCTION_NAME) > "unknown"
+      # @txn_manager.get(@trace_span_id) is to check if custom api has called set_transaction_name
       def calculate_transaction_name_lambda(span)
-        trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
-        trans_name = @txn_manager.get(trace_span_id)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] possible transaction name: #{trans_name} from #{trace_span_id}"}
-        @txn_manager.del(trace_span_id)
-        trans_name || ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || 'unknown'
+        trans_name = @txn_manager.get(@trace_span_id)
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] possible transaction name: #{trans_name} from #{@trace_span_id}"}
+
+        (trans_name || ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0,255)
       end
 
       def initialize_metrics
         request_meter  = @meters['sw.apm.request.metrics']
 
-        @metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds', description: nil || '')
+        @metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')
 
         sampling_meter = @meters['sw.apm.sampling.metrics']
 
-        @metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount', unit: nil, description: nil  || '')
-        @metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount', unit: nil, description: nil  || '')
-        @metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count', unit: nil, description: nil  || '')
-        @metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count', unit: nil, description: nil  || '')
-        @metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count', unit: nil, description: nil  || '')
-        @metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count', unit: nil, description: nil  || '')
+        @metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
+        @metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
+        @metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
+        @metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
+        @metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
+        @metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
       end
 
       # oboe_api will return 0 in case of failed operation, and report 0 value

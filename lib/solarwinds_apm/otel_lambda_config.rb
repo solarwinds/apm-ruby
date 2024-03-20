@@ -35,7 +35,8 @@ module SolarWindsAPM
       otlp_span_processor  = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, otlp_span_exporter, txn_manager)
 
       # append our propagators
-      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
+      solarwinds_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
+      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(solarwinds_propagator)
 
       # register metrics_exporter to meter_provider
       ::OpenTelemetry.meter_provider.add_metric_reader(otlp_metric_exporter)

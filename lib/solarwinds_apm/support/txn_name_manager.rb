@@ -6,6 +6,7 @@
 
 module SolarWindsAPM
   # SolarWindsTxnNameManager
+  # Transaction Name Manager is sole for enabling solarwinds api to call set_transaction_name
   class TxnNameManager
     def initialize
       @cache = {}
