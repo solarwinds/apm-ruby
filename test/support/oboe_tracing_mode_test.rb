@@ -6,7 +6,7 @@ require './lib/solarwinds_apm/support/oboe_tracing_mode'
 
 describe 'OboeTracingModeTest.rb' do
   before do
-    @oboe_tracing_mode = SolarWindsAPM::OpenTelemetry::OboeTracingMode
+    @oboe_tracing_mode = SolarWindsAPM::OboeTracingMode
   end
 
   it 'test get_oboe_trace_mode' do
@@ -36,5 +36,4 @@ describe 'OboeTracingModeTest.rb' do
     result = @oboe_tracing_mode.get_oboe_trigger_trace_mode(:disabled)
     _(result).must_equal 0
   end
-
 end

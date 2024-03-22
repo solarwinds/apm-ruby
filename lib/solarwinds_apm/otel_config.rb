@@ -15,6 +15,12 @@ module SolarWindsAPM
 
     @@agent_enabled    = true
 
+    LEVEL_LOGGER_MAPPING = {0 => 'debug',
+                            1 => 'info',
+                            2 => 'warn',
+                            3 => 'error',
+                            4 => 'fatal'}.freeze
+
     def self.disable_agent
       return unless @@agent_enabled  # only show the msg once
 
@@ -102,16 +108,11 @@ module SolarWindsAPM
 
       print_config if SolarWindsAPM.logger.level.zero?
 
+      # resolve OTEL environmental variables
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
+      ENV['OTEL_LOG_LEVEL'] = LEVEL_LOGGER_MAPPING[SolarWindsAPM.logger.level] if ENV['OTEL_LOG_LEVEL'].to_s.empty?
 
-      if ENV['OTEL_LOG_LEVEL'].to_s.empty?
-        ::OpenTelemetry::SDK.configure do |c|
-          c.logger = ::Logger.new($stdout, level: ::SolarWindsAPM.logger.level) # sync solarwinds_apm logger to otel log
-          c.use_all(@@config_map)
-        end
-      else
-        ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
-      end
+      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 

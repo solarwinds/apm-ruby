@@ -8,7 +8,9 @@ begin
   require 'solarwinds_apm/version'
   require 'solarwinds_apm/logger'
   if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
-    SolarWindsAPM.logger.warn 'SW_APM_ENABLED environment variable detected and was set to false; SolarWindsAPM disabled'
+    SolarWindsAPM.logger.info '==================================================================='
+    SolarWindsAPM.logger.info 'SW_APM_ENABLED environment variable detected and was set to false; SolarWindsAPM disabled'
+    SolarWindsAPM.logger.info '==================================================================='
     return
   end
 
@@ -38,6 +40,7 @@ begin
         require 'solarwinds_apm/api'
         require 'solarwinds_apm/support'
         require 'solarwinds_apm/opentelemetry'
+        require 'solarwinds_apm/patch'
         require 'solarwinds_apm/otel_config'
         
         if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'

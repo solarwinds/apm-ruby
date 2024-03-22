@@ -42,7 +42,7 @@ module SolarWindsAPM
           SolarWindsAPM.loaded = true
         rescue StandardError=> e
           $stderr.puts e.message
-          raise
+          SolarWindsAPM.loaded = false
         end
       end
       alias :restart :start
