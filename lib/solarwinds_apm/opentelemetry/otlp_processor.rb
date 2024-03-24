@@ -100,8 +100,8 @@ module SolarWindsAPM
         meter_attrs = {}
         meter_attrs['sw.service_name'] = ENV['OTEL_SERVICE_NAME'] # Service name override tag. Only set if Service Name Override is set for this request.
         meter_attrs['sw.nonce']        = rand(2**64) >> 1
-        meter_attrs['sw.is_error']     = error?(span) ? true : false
-        meter_attrs['sw.transaction']   = @txn_manager[@trace_span_id] if @txn_manager[@trace_span_id]
+        meter_attrs['sw.is_error']     = error?(span) == 1
+        meter_attrs['sw.transaction']  = @txn_manager.get(@trace_span_id) if @txn_manager.get(@trace_span_id)
 
         meter_attrs.merge!(http_attributes(span))
         meter_attrs
