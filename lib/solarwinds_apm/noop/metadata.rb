@@ -7,7 +7,6 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-#
 module SolarWindsAPM
   # Metadata
   class Metadata

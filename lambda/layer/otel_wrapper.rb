@@ -1,3 +1,7 @@
+require 'opentelemetry-metrics-api'
+require 'opentelemetry-metrics-sdk'
+require 'opentelemetry-exporter-otlp'
+
 require 'solarwinds_apm'
 require 'opentelemetry/instrumentation/aws_lambda'
 

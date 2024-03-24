@@ -12,9 +12,14 @@ require 'opentelemetry/sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
 require 'opentelemetry-propagator-b3'
+require 'opentelemetry-metrics-api'
+require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
+require 'lumberjack'
+require 'logging'
 require 'bson'
 
+require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
 
 # simplecov coverage information
@@ -155,9 +160,11 @@ end
 
 module SolarWindsAPM
   class << self
-    attr_accessor :logger
+    attr_accessor :logger, :is_lambda
   end
 end
+
+SolarWindsAPM.is_lambda = false
 
 # for custom_metrics_test.rb
 module SolarWindsAPM

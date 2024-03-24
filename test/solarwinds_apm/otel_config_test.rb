@@ -61,6 +61,12 @@ describe 'Loading Opentelemetry Test' do
       ::OpenTelemetry.logger = ''
     end
 
+    after do
+      ENV.delete('OTEL_LOG_LEVEL')
+      ENV.delete('SW_APM_DEBUG_LEVEL')
+      ::OpenTelemetry.logger = ''
+    end
+
     it 'no OTEL_LOG_LEVEL shows up, SW_APM_DEBUG_LEVEL 3 solarwinds_apm and otel have same logger level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config.set_log_level

@@ -9,17 +9,28 @@
 module SolarWindsAPM
   include Oboe_metal
 
-  @loaded   = false
-  @reporter = nil
+  @loaded    = false
+  @reporter  = nil
+  @oboe_api  = nil
+  @is_lambda = false
 
   class << self
-    attr_accessor :reporter, :loaded
+    attr_accessor :reporter, :loaded, :oboe_api, :is_lambda
 
     def sample_rate(rate)
       return unless SolarWindsAPM.loaded
 
       # Update liboboe with the new SampleRate value
       SolarWindsAPM::Context.setDefaultSampleRate(rate.to_i)
+    end
+
+    def lambda?
+      if ENV['LAMBDA_TASK_ROOT'] || ENV['AWS_LAMBDA_FUNCTION_NAME']
+        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] lambda environment - LAMBDA_TASK_ROOT: #{ENV['LAMBDA_TASK_ROOT']}; AWS_LAMBDA_FUNCTION_NAME: #{ENV['AWS_LAMBDA_FUNCTION_NAME']}"}
+        true
+      else
+        false
+      end
     end
   end
 

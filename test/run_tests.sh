@@ -50,7 +50,7 @@ echo "*** ruby version $ruby_version ***"
 # loop through gemfiles to set up and run tests
 for gemfile in "${gemfiles[@]}" ; do
 
-  echo "*** installing gems from $BUNDLE_GEMFILE ***"
+  echo "*** installing gems from $gemfile ***"
   if ! BUNDLE_GEMFILE=$gemfile bundle update; then
     echo "Problem during gem install. Skipping tests for $gemfile"
     exit_status=1

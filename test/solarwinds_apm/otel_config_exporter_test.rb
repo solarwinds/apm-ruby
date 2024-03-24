@@ -15,10 +15,6 @@ describe 'Loading Opentelemetry Test' do
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, {})
   end
 
-  after do 
-    clean_old_setting
-  end
-
   # Exporter Testing
   it 'test_exporter_with_default' do
 

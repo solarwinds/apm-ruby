@@ -15,11 +15,11 @@ module SolarWindsAPM
 
     @@agent_enabled    = true
 
-    def self.disable_agent
+    def self.disable_agent(reason: nil)
       return unless @@agent_enabled  # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
+      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] SolarWindsAPM disabled. No Trace exported. Reason: #{reason}"}
     end
 
     def self.resolve_sampler
@@ -67,7 +67,7 @@ module SolarWindsAPM
 
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
-      exporter    = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+      exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
       @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
     end
 
@@ -77,21 +77,17 @@ module SolarWindsAPM
 
     def self.validate_propagator(propagators)
       if propagators.nil?
-        disable_agent
+        disable_agent(reason: "propagators are invaliad.")
         return
       end
 
       SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] propagators: #{propagators.map(&:class)}"}
-      unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty? # rubocop:disable Style/GuardClause
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Missing tracecontext propagator."}
-        disable_agent
-      end
+      disable_agent(reason: "Missing tracecontext propagator.") unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."}
-        disable_agent
+        disable_agent(reason: "missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded.")
         return
       end
 

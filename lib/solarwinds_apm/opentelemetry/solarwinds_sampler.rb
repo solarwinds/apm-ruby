@@ -101,33 +101,40 @@ module SolarWindsAPM
           SolarWindsAPM::TransactionCache.set(transaction_naming_key, tracing_mode)
         end
 
-        sw_member_value    = parent_span_context.tracestate[SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY]
-        trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
-        sample_rate        = UNSET
-        options            = xtraceoptions&.options
-        trigger_trace      = xtraceoptions&.intify_trigger_trace || 0
-        signature          = xtraceoptions&.signature
-        timestamp          = xtraceoptions&.timestamp
+        if SolarWindsAPM.is_lambda
+          # trigger trace disabled at this point (https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3753116438/AWS+Lambda+Instrumentation+POC#Concerns)
+          do_metrics, do_sample, rate, source, bucket_rate,
+            bucket_cap, decision_type, auth, status_msg, auth_msg,
+              status = SolarWindsAPM.oboe_api.getTracingDecision
+        else
+          sw_member_value    = parent_span_context.tracestate[SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY]
+          trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
+          sample_rate        = UNSET
+          options            = xtraceoptions&.options
+          trigger_trace      = xtraceoptions&.intify_trigger_trace || 0
+          signature          = xtraceoptions&.signature
+          timestamp          = xtraceoptions&.timestamp
 
-        SolarWindsAPM.logger.debug do 
-          "[#{self.class}/#{__method__}] get liboboe decision parameters: \n
-                                         tracestring: #{tracestring}\n
-                                         sw_member_value: #{sw_member_value}\n
-                                         tracing_mode:    #{tracing_mode}\n
-                                         sample_rate:     #{sample_rate}\n
-                                         trigger_trace:   #{trigger_trace}\n
-                                         trigger_trace_mode:    #{trigger_trace_mode}\n
-                                         options:      #{options}\n
-                                         signature:    #{signature}\n
-                                         timestamp:    #{timestamp}"
+          SolarWindsAPM.logger.debug do 
+            "[#{self.class}/#{__method__}] get liboboe decision parameters: \n
+                                           tracestring: #{tracestring}\n
+                                           sw_member_value: #{sw_member_value}\n
+                                           tracing_mode:    #{tracing_mode}\n
+                                           sample_rate:     #{sample_rate}\n
+                                           trigger_trace:   #{trigger_trace}\n
+                                           trigger_trace_mode:    #{trigger_trace_mode}\n
+                                           options:      #{options}\n
+                                           signature:    #{signature}\n
+                                           timestamp:    #{timestamp}"
+          end
+
+          args = [tracestring, sw_member_value, tracing_mode, sample_rate,
+                  trigger_trace, trigger_trace_mode, options, signature,timestamp]
+
+          do_metrics, do_sample, rate, source, bucket_rate,
+            bucket_cap, decision_type, auth, status_msg, auth_msg,
+              status = SolarWindsAPM::Context.getDecisions(*args)
         end
-
-        args = [tracestring, sw_member_value, tracing_mode, sample_rate,
-                trigger_trace, trigger_trace_mode, options, signature,timestamp]
-
-        do_metrics, do_sample, rate, source, bucket_rate,
-          bucket_cap, decision_type, auth, status_msg, auth_msg,
-            status = SolarWindsAPM::Context.getDecisions(*args)
 
         decision = {}
         decision["do_metrics"]    = do_metrics > 0
