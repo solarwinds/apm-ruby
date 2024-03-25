@@ -49,7 +49,9 @@ if ENV['TEST_RUNS_TO_FILE']
 end
 
 # Print out a headline in with the settings used in the test run
-puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+if ENV['BUNDLE_GEMFILE'] != '/code/ruby-solarwinds/gemfiles/test_gems.gemfile'
+  puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+end
 
 ENV['RACK_ENV'] = 'test'
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new

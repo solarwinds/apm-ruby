@@ -46,6 +46,9 @@ echo "logfile name: $TEST_RUNS_FILE_NAME"
 ruby_version="$(ruby -e 'print(RUBY_VERSION)')"
 echo "*** ruby version $ruby_version ***"
 
+echo "Remove previous logfile"
+rm log/*.log
+
 ##
 # loop through gemfiles to set up and run tests
 for gemfile in "${gemfiles[@]}" ; do
@@ -62,6 +65,21 @@ for gemfile in "${gemfiles[@]}" ; do
   [[ $status -gt $exit_status ]] && exit_status=$status
   [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby_version !!!"
 done
+
+# explicitly test for solarwinds initialization
+if ! BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle update; then
+  echo "Problem during gem install. Skipping tests for $gemfile"
+  exit_status=1
+  continue
+fi
+
+for i in {1..7}; do
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
+  status=$?
+  [[ $status -gt $exit_status ]] && exit_status=$status
+  [[ $status -ne 0 ]] && echo "!!! Test suite failed for init_${i}_test.rb with Ruby $ruby_version !!!"
+done
+
 
 echo ""
 echo "--- SUMMARY ------------------------------"
