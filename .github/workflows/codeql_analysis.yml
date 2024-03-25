@@ -9,6 +9,9 @@ name: CodeQL Analysis
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - 'test/Dockerfile'
+      - '.github/*'
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
