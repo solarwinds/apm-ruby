@@ -73,8 +73,14 @@ if ! BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle update; then
   continue
 fi
 
-NUMBER_FILE=$(find test/solarwinds_apm/init_test/ -type f | wc -l)
-((NUMBER_FILE--))
+# create fake libsolarwinds_apm.so for testing
+cd test/clib
+ruby solarwinds_apm.rb
+make
+cd -
+echo "Fake libsolarwinds_apm.so created"
+
+NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
 for ((i = 1; i <= $NUMBER_FILE; i++)); do
   BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
   status=$?

@@ -11,13 +11,7 @@ describe 'solarwinds_apm_init_8' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 
-    if RUBY_PLATFORM.include?('aarch64') || RUBY_PLATFORM.include?('arm64')
-      FileUtils.cp("#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm_arm64.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
-    else
-      FileUtils.cp("#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm_amd64.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
-    end
-
-    # system('cp', "#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
+    FileUtils.cp("#{Dir.pwd}/test/clib/solarwinds_apm.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
 
     ENV['SW_APM_REPORTER'] = 'file'
 
@@ -37,6 +31,5 @@ describe 'solarwinds_apm_init_8' do
     _(SolarWindsAPM::Context.toString).must_equal '99-00000000000000000000000000000000-0000000000000000-00'
 
     FileUtils.rm("#{Dir.pwd}/lib/libsolarwinds_apm.so")
-    # system('rm', "#{Dir.pwd}/lib/libsolarwinds_apm.so")
   end
 end

@@ -43,6 +43,7 @@ vendor/
 *.DS_Store
 apm.collector.st-ssp.solarwinds.com
 appoptics.com
+*Makefile
 
 # test script
 install_gem.sh
