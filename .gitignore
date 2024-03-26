@@ -45,6 +45,7 @@ apm.collector.st-ssp.solarwinds.com
 appoptics.com
 *Makefile
 *.so
+*.o
 
 # test script
 install_gem.sh
