@@ -1,16 +1,23 @@
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
+
 require 'initest_helper'
 require 'fileutils'
 
 describe 'solarwinds_apm_init_8' do
-  it 'when_there_is_problem_loading_solarwinds_apm_io' do
+  it 'when_there_is_problem_solarwinds_apm_load_false' do
     puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 
-    FileUtils.cp("#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
+    if RUBY_PLATFORM.include?('aarch64') || RUBY_PLATFORM.include?('arm64')
+      FileUtils.cp("#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm_arm64.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
+    else
+      FileUtils.cp("#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm_amd64.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
+    end
+
+    # system('cp', "#{Dir.pwd}/test/solarwinds_apm/init_test/libsolarwinds_apm.so", "#{Dir.pwd}/lib/libsolarwinds_apm.so")
 
     ENV['SW_APM_REPORTER'] = 'file'
 
@@ -30,5 +37,6 @@ describe 'solarwinds_apm_init_8' do
     _(SolarWindsAPM::Context.toString).must_equal '99-00000000000000000000000000000000-0000000000000000-00'
 
     FileUtils.rm("#{Dir.pwd}/lib/libsolarwinds_apm.so")
+    # system('rm', "#{Dir.pwd}/lib/libsolarwinds_apm.so")
   end
 end

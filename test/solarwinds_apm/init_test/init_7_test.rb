@@ -14,7 +14,7 @@ describe 'solarwinds_apm_init_7' do
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'Error occurs while loading solarwinds_apm. SolarWinds APM disabled.'
-    assert_includes log_output.string, 'Error: cannot load such file -- /code/ruby-solarwinds/lib/libsolarwinds_apm.so'
+    assert_includes log_output.string, 'Error: cannot load such file'
     assert_includes log_output.string, 'See: https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent'
 
     assert_nil(defined?(SolarWindsAPM.loaded))

@@ -1,5 +1,6 @@
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
+
 require 'initest_helper'
 
 describe 'solarwinds_apm_init_1' do
