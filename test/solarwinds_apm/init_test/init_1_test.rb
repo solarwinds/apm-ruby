@@ -1,8 +1,6 @@
-# Copyright (c) 2019 SolarWinds, LLC.
+# Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
-
-require 'minitest_helper'
-$LOAD_PATH.unshift("#{Dir.pwd}/lib/")
+require 'initest_helper'
 
 describe 'solarwinds_apm_init_1' do
   it 'SW_APM_ENABLED_set_to_disabled' do

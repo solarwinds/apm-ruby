@@ -7,7 +7,7 @@
 require 'singleton'
 require 'uri'
 
-require_relative './support/service_key_service'
+require_relative './support/service_key_checker'
 
 module SolarWindsAPM
   # OboeInitOptions
@@ -127,8 +127,8 @@ module SolarWindsAPM
     end
 
     def read_and_validate_service_key
-      service_key_service = SolarWindsAPM::ServiceKeyService.new(@reporter)
-      service_key = service_key_service.read_and_validate_service_key
+      service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter)
+      service_key = service_key_checker.read_and_validate_service_key
       @service_name = service_key.split(':',2).last # instance variable used in testing
       service_key
     end

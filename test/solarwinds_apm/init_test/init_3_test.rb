@@ -1,8 +1,7 @@
-# Copyright (c) 2019 SolarWinds, LLC.
+# Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
-require 'minitest_helper'
-$LOAD_PATH.unshift("#{Dir.pwd}/lib/")
+require 'initest_helper'
 
 describe 'solarwinds_apm_init_3' do
   it 'SW_APM_SERVICE_KEY_is_invalid_missing_service_name' do

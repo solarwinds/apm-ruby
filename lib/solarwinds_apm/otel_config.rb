@@ -63,10 +63,10 @@ module SolarWindsAPM
 
     def self.print_config
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
       end
       @@config_map.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
       end
       nil
     end

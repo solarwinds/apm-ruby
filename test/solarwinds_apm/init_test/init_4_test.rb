@@ -1,8 +1,7 @@
-# Copyright (c) 2019 SolarWinds, LLC.
+# Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
-require 'minitest_helper'
-$LOAD_PATH.unshift("#{Dir.pwd}/lib/")
+require 'initest_helper'
 
 describe 'solarwinds_apm_init_4' do
   it 'RUBY_PLATFORM_is_non_linux' do
@@ -11,7 +10,7 @@ describe 'solarwinds_apm_init_4' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 
-    RUBY_PLATFORM = 'macos'.freeze
+    RUBY_PLATFORM = 'macos'.freeze # rubocop:disable Lint/ConstantDefinitionInBlock
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SolarWindsAPM warning: Platform macos not yet supported on current solarwinds_apm'

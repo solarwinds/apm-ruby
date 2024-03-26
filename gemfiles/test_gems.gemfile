@@ -1,5 +1,3 @@
-# this gemfile covers the basics for testing
-# included it in other gemfiles with the following line of code:
 source "https://rubygems.org"
 
 group :development, :test do

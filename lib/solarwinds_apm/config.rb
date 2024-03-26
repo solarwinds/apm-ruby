@@ -121,9 +121,9 @@ module SolarWindsAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] General configurations list blow:"}
+      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] General configurations list blow:"}
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
       end
       nil
     end

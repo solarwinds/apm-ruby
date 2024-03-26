@@ -73,7 +73,9 @@ if ! BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle update; then
   continue
 fi
 
-for i in {1..7}; do
+NUMBER_FILE=$(find test/solarwinds_apm/init_test/ -type f | wc -l)
+((NUMBER_FILE--))
+for ((i = 1; i <= $NUMBER_FILE; i++)); do
   BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
   status=$?
   [[ $status -gt $exit_status ]] && exit_status=$status

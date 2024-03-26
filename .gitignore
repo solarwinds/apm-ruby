@@ -40,7 +40,7 @@ gemfiles/.bundle/
 gemfiles/vendor*
 lib/libsolarwinds_apm.so
 vendor/
-.DS_Store
+*.DS_Store
 apm.collector.st-ssp.solarwinds.com
 appoptics.com
 
