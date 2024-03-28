@@ -82,7 +82,7 @@ module SolarWindsAPM
 
       SolarWindsAPM.logger = ::Logger.new(nil) if log_level == -1
 
-      SolarWindsAPM.logger.level = SW_LOG_LEVEL_MAPPING[log_level]&.dig(:stdlib) || ::Logger::INFO # default log level info
+      SolarWindsAPM.logger.level = SW_LOG_LEVEL_MAPPING.dig(log_level, :stdlib) || ::Logger::INFO # default log level info
     end
 
     def self.enable_disable_config(env_var, key, value, default, bool: false)

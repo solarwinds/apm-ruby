@@ -4,8 +4,8 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# This file is for loading support library
+# This file is for loading any customized patch for upstream
 
-require_relative './patch/otel_registry'
-
-OpenTelemetry::Instrumentation::Registry.prepend(SolarWindsAPM::Patch::OtelRegistry) if defined? OpenTelemetry::Instrumentation::Registry && OpenTelemetry::Instrumentation::Registry::VERSION <= '0.3.0'
+# e.g.
+# require_relative './patch/dummy_patch'
+# OpenTelemetry::Instrumentation::Registry.prepend(SolarWindsAPM::Patch::DummyPatch) if defined? OpenTelemetry::Instrumentation::Registry && OpenTelemetry::Instrumentation::Registry::VERSION <= '0.3.0'

@@ -104,10 +104,9 @@ module SolarWindsAPM
 
       # resolve OTEL environmental variables
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
-      # ENV['OTEL_LOG_LEVEL'] = LEVEL_LOGGER_MAPPING[SolarWindsAPM.logger.level] if ENV['OTEL_LOG_LEVEL'].to_s.empty?
       if ENV['OTEL_LOG_LEVEL'].to_s.empty?
         log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
-        ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING[log_level]&.dig(:otel)
+        ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING.dig(log_level, :otel)
       end
 
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
