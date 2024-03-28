@@ -366,7 +366,7 @@ describe 'OboeInitOptions' do
     _(sanitized_uri).must_equal "google.ca.appoptics"
   end
 
-  it 'test when otel_service_name exist' do
+  it 'test_when_otel_service_name_exist' do
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['OTEL_SERVICE_NAME'] = 'abcdef'
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
@@ -387,7 +387,7 @@ describe 'OboeInitOptions' do
     _(SolarWindsAPM::OboeInitOptions.instance.service_name).must_equal 'my-cool-service'
   end
 
-  it 'test when otel_service_name does not exist' do
+  it 'test_when_otel_service_name_does_not_exist' do
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq:my-cool-service'
     ENV['OTEL_SERVICE_NAME']  = nil
     SolarWindsAPM::OboeInitOptions.instance.re_init

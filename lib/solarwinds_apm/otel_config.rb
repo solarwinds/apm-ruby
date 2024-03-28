@@ -57,10 +57,10 @@ module SolarWindsAPM
 
     def self.print_config
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
       end
       @@config_map.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
       end
       nil
     end
@@ -102,16 +102,14 @@ module SolarWindsAPM
 
       print_config if SolarWindsAPM.logger.level.zero?
 
+      # resolve OTEL environmental variables
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
-
       if ENV['OTEL_LOG_LEVEL'].to_s.empty?
-        ::OpenTelemetry::SDK.configure do |c|
-          c.logger = ::Logger.new($stdout, level: ::SolarWindsAPM.logger.level) # sync solarwinds_apm logger to otel log
-          c.use_all(@@config_map)
-        end
-      else
-        ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
+        log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
+        ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING.dig(log_level, :otel)
       end
+
+      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
 

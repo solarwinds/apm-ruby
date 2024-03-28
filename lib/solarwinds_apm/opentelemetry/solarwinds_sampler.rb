@@ -102,7 +102,7 @@ module SolarWindsAPM
         end
 
         sw_member_value    = parent_span_context.tracestate[SolarWindsAPM::Constants::INTL_SWO_TRACESTATE_KEY]
-        trigger_trace_mode = OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
+        trigger_trace_mode = SolarWindsAPM::OboeTracingMode.get_oboe_trigger_trace_mode(@config["trigger_trace"])
         sample_rate        = UNSET
         options            = xtraceoptions&.options
         trigger_trace      = xtraceoptions&.intify_trigger_trace || 0
