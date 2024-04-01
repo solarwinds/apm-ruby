@@ -72,9 +72,13 @@ module SolarWindsAPM
 
   # CustomMetrics
   module CustomMetrics
-    def increment_metric(*) = false
+    def increment_metric(*)
+      false
+    end
 
-    def summary_metric(*) = false
+    def summary_metric(*)
+      false
+    end
   end
 
   # OpenTelemetry
