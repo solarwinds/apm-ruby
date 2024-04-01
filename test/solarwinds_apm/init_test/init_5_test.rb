@@ -15,5 +15,7 @@ describe 'solarwinds_apm_init_5' do
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SW_APM_SERVICE_KEY format problem. Service Name is missing.'
+
+    noop_shared_test
   end
 end

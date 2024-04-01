@@ -12,5 +12,7 @@ describe 'solarwinds_apm_init_1' do
     ENV['SW_APM_ENABLED'] = 'false'
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SW_APM_ENABLED environment variable detected and was set to false. SolarWindsAPM disabled'
+
+    noop_shared_test
   end
 end

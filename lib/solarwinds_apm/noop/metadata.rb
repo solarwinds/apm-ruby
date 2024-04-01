@@ -7,7 +7,6 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-#
 module SolarWindsAPM
   # Metadata
   class Metadata
@@ -20,8 +19,8 @@ module SolarWindsAPM
       Metadata.new
     end
 
-    def isValid
-      false
-    end
+    def self.fromString; '' end
+
+    def isValid; false end
   end
 end

@@ -19,10 +19,6 @@ describe 'solarwinds_apm_init_7' do
 
     assert_nil(defined?(SolarWindsAPM.loaded))
 
-    # we don't load noop in case that the oboe c lib is missing
-    assert_nil(defined?(SolarWindsAPM::Reporter))
-    assert_nil(defined?(SolarWindsAPM::Metadata))
-    assert_nil(defined?(SolarWindsAPM::Span))
-    assert_nil(defined?(SolarWindsAPM::Context))
+    noop_shared_test
   end
 end

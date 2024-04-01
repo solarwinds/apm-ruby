@@ -14,5 +14,7 @@ describe 'solarwinds_apm_init_4' do
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SolarWindsAPM warning: Platform macos not yet supported on current solarwinds_apm'
+
+    noop_shared_test
   end
 end
