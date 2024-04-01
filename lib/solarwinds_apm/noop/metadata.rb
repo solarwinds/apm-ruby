@@ -19,8 +19,8 @@ module SolarWindsAPM
       Metadata.new
     end
 
-    def self.fromString; '' end
+    def self.fromString = ''
 
-    def isValid; false end
+    def isValid = false
   end
 end

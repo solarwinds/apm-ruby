@@ -14,7 +14,7 @@ module SolarWindsAPM
 
   module Tracing
     # (wait_milliseconds=3000, integer_response: false)
-    def solarwinds_ready?(*args, **options)
+    def solarwinds_ready?(*_args, **options)
       options && options[:integer_response] ? 0 : false
     end
   end
@@ -37,27 +37,27 @@ module SolarWindsAPM
         @do_log = log?
       end
 
-      def for_log; '' end
+      def for_log = ''
 
-      def hash_for_log; {} end
+      def hash_for_log = {}
 
       private
 
       def current_span
-        ['00000000000000000000000000000000', '0000000000000000', '00', '00-00000000000000000000000000000000-0000000000000000-00']
+        %w[00000000000000000000000000000000 0000000000000000 00 00-00000000000000000000000000000000-0000000000000000-00]
       end
 
-      def log?; :never end
-      def valid?(*); false end
-      def sampled?(*); false end
-      def split(*); REGEXP.match('00-00000000000000000000000000000000-0000000000000000-00') end
+      def log? = :never
+      def valid?(*) = false
+      def sampled?(*) = false
+      def split(*) = REGEXP.match('00-00000000000000000000000000000000-0000000000000000-00')
     end
   end
 
   module CustomMetrics
-    def increment_metric(*); false end
+    def increment_metric(*) = false
 
-    def summary_metric(*); false end
+    def summary_metric(*) = false
   end
 
   module OpenTelemetry
@@ -65,7 +65,7 @@ module SolarWindsAPM
   end
 
   module TransactionName
-    def set_transaction_name(*); false end
+    def set_transaction_name(*) = false
   end
 end
 
