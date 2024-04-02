@@ -7,7 +7,7 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-module Oboe_metal
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Metadata
   class Metadata
     ##

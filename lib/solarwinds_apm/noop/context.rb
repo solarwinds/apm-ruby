@@ -10,7 +10,7 @@
 # module SolarWindsAPM
 # end
 
-module Oboe_metal
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Context for noop
   class Context
     ##

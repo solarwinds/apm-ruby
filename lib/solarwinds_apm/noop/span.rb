@@ -7,7 +7,7 @@
 ####
 # noop version of SolarWindsAPM::Span
 #
-module Oboe_metal
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Span
   class Span
     ##
