@@ -7,12 +7,12 @@
 begin
   require 'solarwinds_apm/logger'
   require 'solarwinds_apm/version'
+  require 'solarwinds_apm/noop'
   require 'opentelemetry-api'
   if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.info '==================================================================='
     SolarWindsAPM.logger.info 'SW_APM_ENABLED environment variable detected and was set to false. SolarWindsAPM disabled'
     SolarWindsAPM.logger.info '==================================================================='
-    require 'solarwinds_apm/noop'
     return
   end
 
@@ -27,7 +27,6 @@ begin
         SolarWindsAPM.logger.warn 'SW_APM_SERVICE_KEY Error. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages for more details.'
         SolarWindsAPM.logger.warn '=============================================================='
-        require 'solarwinds_apm/noop'
         return
       end
 
@@ -72,7 +71,6 @@ begin
         SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages.'
         SolarWindsAPM.logger.warn '=============================================================='
-        require 'solarwinds_apm/noop'
       end
     else
       SolarWindsAPM.logger.warn '==================================================================='
@@ -81,7 +79,6 @@ begin
       SolarWindsAPM.logger.warn 'SolarWinds APM disabled.'
       SolarWindsAPM.logger.warn 'Contact technicalsupport@solarwinds.com if this is unexpected.'
       SolarWindsAPM.logger.warn '==================================================================='
-      require 'solarwinds_apm/noop'
     end
   rescue LoadError => e
     SolarWindsAPM.logger.error '=============================================================='
@@ -89,11 +86,9 @@ begin
     SolarWindsAPM.logger.error "Error: #{e.message}"
     SolarWindsAPM.logger.error 'See: https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent'
     SolarWindsAPM.logger.error '=============================================================='
-    require 'solarwinds_apm/noop'
   end
   
 rescue StandardError => e
   $stderr.puts "[solarwinds_apm/error] Problem loading: #{e.inspect}"
   $stderr.puts e.backtrace
-  require 'solarwinds_apm/noop'
 end

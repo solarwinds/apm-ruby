@@ -7,7 +7,7 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-module SolarWindsAPM
+module Oboe_metal
   # Metadata
   class Metadata
     ##
@@ -19,8 +19,8 @@ module SolarWindsAPM
       Metadata.new
     end
 
-    def self.fromString
-      ''
+    def self.fromString(*)
+      Metadata.new
     end
 
     def isValid

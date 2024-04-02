@@ -7,7 +7,7 @@
 ####
 # noop version of SolarWindsAPM::Span
 #
-module SolarWindsAPM
+module Oboe_metal
   # Span
   class Span
     ##

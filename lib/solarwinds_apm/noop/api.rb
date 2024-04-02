@@ -11,7 +11,9 @@ module SolarWindsAPM
   # API
   module API 
   end
+end
 
+module NoopAPI
   # Tracing
   module Tracing
     # (wait_milliseconds=3000, integer_response: false)
@@ -94,8 +96,8 @@ module SolarWindsAPM
   end
 end
 
-SolarWindsAPM::API.extend(SolarWindsAPM::Tracing)
-SolarWindsAPM::API.extend(SolarWindsAPM::CurrentTraceInfo)
-SolarWindsAPM::API.extend(SolarWindsAPM::CustomMetrics)
-SolarWindsAPM::API.extend(SolarWindsAPM::OpenTelemetry)
-SolarWindsAPM::API.extend(SolarWindsAPM::TransactionName)
+SolarWindsAPM::API.extend(NoopAPI::Tracing)
+SolarWindsAPM::API.extend(NoopAPI::CurrentTraceInfo)
+SolarWindsAPM::API.extend(NoopAPI::CustomMetrics)
+SolarWindsAPM::API.extend(NoopAPI::OpenTelemetry)
+SolarWindsAPM::API.extend(NoopAPI::TransactionName)
