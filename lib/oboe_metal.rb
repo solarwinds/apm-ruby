@@ -43,17 +43,14 @@ module SolarWindsAPM
       # Start the SolarWindsAPM Reporter
       #
       def start
-        return unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
-
         begin
           options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
           SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
-
           report_init
           SolarWindsAPM.loaded = true
         rescue StandardError=> e
           $stderr.puts e.message
-          raise
+          SolarWindsAPM.loaded = false
         end
       end
       alias :restart :start

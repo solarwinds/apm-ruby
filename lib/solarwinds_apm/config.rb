@@ -12,14 +12,14 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
-    LOGGER_LEVEL_MAPPING = {-1 => ::Logger::FATAL,
-                             0 => ::Logger::FATAL,
-                             1 => ::Logger::ERROR,
-                             2 => ::Logger::WARN,
-                             3 => ::Logger::INFO,
-                             4 => ::Logger::DEBUG,
-                             5 => ::Logger::DEBUG,
-                             6 => ::Logger::DEBUG}.freeze
+    SW_LOG_LEVEL_MAPPING = {-1 => {:stdlib => ::Logger::FATAL, :otel => 'fatal'},
+                             0 => {:stdlib => ::Logger::FATAL, :otel => 'fatal'},
+                             1 => {:stdlib => ::Logger::ERROR, :otel => 'error'},
+                             2 => {:stdlib => ::Logger::WARN, :otel => 'warn'},
+                             3 => {:stdlib => ::Logger::INFO, :otel => 'info'},
+                             4 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'},
+                             5 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'},
+                             6 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'}}.freeze
 
     @@config = {}
     @@instrumentation = [:action_controller, :action_controller_api, :action_view,
@@ -82,7 +82,7 @@ module SolarWindsAPM
 
       SolarWindsAPM.logger = ::Logger.new(nil) if log_level == -1
 
-      SolarWindsAPM.logger.level = LOGGER_LEVEL_MAPPING[log_level] || ::Logger::INFO # default log level info
+      SolarWindsAPM.logger.level = SW_LOG_LEVEL_MAPPING.dig(log_level, :stdlib) || ::Logger::INFO # default log level info
     end
 
     def self.enable_disable_config(env_var, key, value, default, bool: false)
@@ -121,9 +121,9 @@ module SolarWindsAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] General configurations list blow:"}
+      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] General configurations list blow:"}
       @@config.each do |k,v|
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
+        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
       end
       nil
     end

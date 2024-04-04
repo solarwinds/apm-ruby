@@ -7,6 +7,8 @@
 require 'singleton'
 require 'uri'
 
+require_relative './support/service_key_checker'
+
 module SolarWindsAPM
   # OboeInitOptions
   class OboeInitOptions
@@ -119,81 +121,10 @@ module SolarWindsAPM
     end
 
     def read_and_validate_service_key
-      return '' unless @reporter == 'ssl'
-
-      service_key = ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
-      if service_key.nil? || service_key == ''
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured."}
-        return ''
-      end
-
-      match = service_key.match(/([^:]+)(:{0,1})(.*)/)
-      token = match[1]
-      service_name = match[3]
-
-      return '' unless validate_token(token)   # return if token is not even valid
-
-      if service_name.empty?
-        ENV.delete('OTEL_SERVICE_NAME')
-        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."}
-        return ''
-      end
-
-      # check OTEL_RESOURCE_ATTRIBUTES
-      otel_resource_service_name = nil
-      ENV['OTEL_RESOURCE_ATTRIBUTES']&.split(',')&.each do |pair|
-        key, value = pair.split('=')
-        if key == 'service.name'
-          otel_resource_service_name = value
-          break
-        end
-      end
-
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] provided otel_resource_service_name #{otel_resource_service_name}"} if otel_resource_service_name
-      service_name = otel_resource_service_name if otel_resource_service_name && validate_transform_service_name(otel_resource_service_name)
-
-      # check OTEL_SERVICE_NAME
-      otel_service_name = ENV['OTEL_SERVICE_NAME']
-      if otel_service_name && validate_transform_service_name(otel_service_name)
-        service_name = otel_service_name
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] provided otel_service_name #{otel_service_name}"}
-      elsif ENV['OTEL_SERVICE_NAME'].nil?
-        ENV['OTEL_SERVICE_NAME'] = service_name
-      end
-
-      return '' unless validate_transform_service_name(service_name)
-
-      "#{token}:#{service_name}"
-    end
-
-    # In case of java-collector, please provide a dummy service key
-    def validate_token(token)
-      unless /^[0-9a-zA-Z_-]{71}$/.match?(token)
-        masked = "#{token[0..3]}...#{token[-4..]}"
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{masked}"}
-        return false
-      end
-
-      true
-    end
-
-    def validate_transform_service_name(service_name)
-      if service_name.empty?
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name is missing"}
-        return false
-      end
-
-      name_ = service_name.dup
-      name_.downcase!
-      name_.gsub!(/[^a-z0-9.:_-]/, '')
-      name_ = name_[0..254]
-
-      if name_ != service_name
-        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. Service Name transformed from #{service_name} to #{name_}"}
-        service_name = name_
-      end
-      @service_name = service_name # instance variable used in testing
-      true
+      service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter)
+      service_key = service_key_checker.read_and_validate_service_key
+      @service_name = service_key.split(':',2).last # instance variable used in testing
+      service_key
     end
 
     def read_and_validate_ec2_md_timeout

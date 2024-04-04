@@ -54,45 +54,42 @@ describe 'Loading Opentelemetry Test' do
     end
   end
 
-  describe 'test logger level syncing between solarwinds_apm and opentelemetry' do
+  describe 'test_logger_level_sync_between_solarwinds_apm_and_opentelemetry' do
+    # if OTEL_LOG_LEVEL is not set, then opentelemetry logger level should be same as solarwinds apm
+    # if not provide logger, then opentelemetry will use default logger, otherwise, it will use forward_logger
+    # when define OpenTelemetry.logger = ::Logger.new($stdout, level: 1000), it will overwrite the forward_logger
     before do
       ENV.delete('OTEL_LOG_LEVEL')
       ENV.delete('SW_APM_DEBUG_LEVEL')
-      ::OpenTelemetry.logger = ''
+      ::OpenTelemetry.logger = nil
     end
 
-    after do
-      ENV.delete('OTEL_LOG_LEVEL')
-      ENV.delete('SW_APM_DEBUG_LEVEL')
-      ::OpenTelemetry.logger = ''
-    end
-
-    it 'no OTEL_LOG_LEVEL shows up, SW_APM_DEBUG_LEVEL 3 solarwinds_apm and otel have same logger level' do
+    it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_3_solarwinds_apm_and_otel_have_same_logger_level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
+      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
     end
 
-    it 'no OTEL_LOG_LEVEL shows up, SW_APM_DEBUG_LEVEL 2 solarwinds_apm and otel have same logger level' do
+    it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_2_solarwinds_apm_and_otel_have_same_logger_level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '2'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
+      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
     end
 
-    it 'no OTEL_LOG_LEVEL shows up, SW_APM_DEBUG_LEVEL 0 solarwinds_apm and otel have same logger level' do
+    it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_0_solarwinds_apm_and_otel_have_same_logger_level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '0'
       SolarWindsAPM::Config.set_log_level
+      # ::OpenTelemetry.logger = ''
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.instance_variable_get(:@logger).level).must_equal ::SolarWindsAPM.logger.level
+      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
     end
 
     # if user set OTEL_LOG_LEVEL, then the logger level will be separated
-    it 'OTEL_LOG_LEVEL shows up, solarwinds_apm and otel have different logger level' do
+    it 'OTEL_LOG_LEVEL_shows_up_solarwinds_apm_and_otel_have_different_logger_level' do
       ENV['OTEL_LOG_LEVEL'] = 'fatal'
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
-      ::OpenTelemetry.logger = nil
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
       _(::SolarWindsAPM.logger.level).must_equal 1
