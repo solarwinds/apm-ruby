@@ -31,13 +31,10 @@ module NoopAPI
     class TraceInfo
       attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
-      REGEXP = /^(?<tracestring>(?<version>[a-f0-9]{2})-(?<trace_id>[a-f0-9]{32})-(?<span_id>[a-f0-9]{16})-(?<flags>[a-f0-9]{2}))$/.freeze # rubocop:disable Style/RedundantFreeze
-      private_constant :REGEXP
-
       def initialize
-        @trace_id, @span_id, @trace_flags, @tracestring = current_span
-        @service_name = ENV['OTEL_SERVICE_NAME']
-        @do_log = log?
+        @trace_id, @span_id, @trace_flags, @tracestring = %w[00000000000000000000000000000000 0000000000000000 00 00-00000000000000000000000000000000-0000000000000000-00]
+        @service_name = ''
+        @do_log = :never
       end
 
       def for_log
@@ -46,28 +43,6 @@ module NoopAPI
 
       def hash_for_log
         {}
-      end
-
-      private
-
-      def current_span
-        %w[00000000000000000000000000000000 0000000000000000 00 00-00000000000000000000000000000000-0000000000000000-00]
-      end
-
-      def log?
-        :never
-      end
-
-      def valid?(*)
-        false
-      end
-
-      def sampled?(*)
-        false
-      end
-
-      def split(*)
-        REGEXP.match('00-00000000000000000000000000000000-0000000000000000-00')
       end
     end
   end
@@ -85,13 +60,15 @@ module NoopAPI
 
   # OpenTelemetry
   module OpenTelemetry
-    def in_span(*); end
+    def in_span(*)
+      yield if block_given?
+    end
   end
 
   # TransactionName
   module TransactionName
     def set_transaction_name(*)
-      false
+      true
     end
   end
 end

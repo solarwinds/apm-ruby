@@ -46,7 +46,7 @@ def noop_shared_test
   _(SolarWindsAPM::API.increment_metric).must_equal false
   _(SolarWindsAPM::API.summary_metric).must_equal false
   _(SolarWindsAPM::API.in_span).must_equal nil
-  _(SolarWindsAPM::API.set_transaction_name).must_equal false
+  _(SolarWindsAPM::API.set_transaction_name).must_equal true
   _(SolarWindsAPM::API.current_trace_info.hash_for_log.to_s).must_equal '{}'
   _(SolarWindsAPM::API.current_trace_info.for_log).must_equal ''
   _(SolarWindsAPM::API.current_trace_info.tracestring).must_equal '00-00000000000000000000000000000000-0000000000000000-00'
@@ -54,4 +54,11 @@ def noop_shared_test
   _(SolarWindsAPM::API.current_trace_info.span_id).must_equal '0000000000000000'
   _(SolarWindsAPM::API.current_trace_info.trace_id).must_equal '00000000000000000000000000000000'
   _(SolarWindsAPM::API.current_trace_info.do_log).must_equal :never
+
+  in_span_result = SolarWindsAPM::API.in_span('params') do |span|
+    value = 1 + 1
+    value
+  end
+
+  _(in_span_result).must_equal 2
 end
