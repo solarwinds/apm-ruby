@@ -32,7 +32,10 @@ module NoopAPI
       attr_reader :tracestring, :trace_id, :span_id, :trace_flags, :do_log
 
       def initialize
-        @trace_id, @span_id, @trace_flags, @tracestring = %w[00000000000000000000000000000000 0000000000000000 00 00-00000000000000000000000000000000-0000000000000000-00]
+        @trace_id = '00000000000000000000000000000000'
+        @span_id = '0000000000000000'
+        @trace_flags = '00'
+        @tracestring = '00-00000000000000000000000000000000-0000000000000000-00'
         @service_name = ''
         @do_log = :never
       end

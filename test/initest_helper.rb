@@ -55,7 +55,7 @@ def noop_shared_test
   _(SolarWindsAPM::API.current_trace_info.trace_id).must_equal '00000000000000000000000000000000'
   _(SolarWindsAPM::API.current_trace_info.do_log).must_equal :never
 
-  in_span_result = SolarWindsAPM::API.in_span('params') do |span|
+  in_span_result = SolarWindsAPM::API.in_span('params') do |_span|
     value = 1 + 1
     value
   end
