@@ -7,8 +7,7 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-#
-module SolarWindsAPM
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Metadata
   class Metadata
     ##
@@ -17,6 +16,10 @@ module SolarWindsAPM
     # needs to return an object that responds to :isValid
     #
     def self.makeRandom
+      Metadata.new
+    end
+
+    def self.fromString(*)
       Metadata.new
     end
 

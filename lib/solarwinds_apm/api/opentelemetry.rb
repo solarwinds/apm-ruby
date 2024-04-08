@@ -28,7 +28,7 @@ module SolarWindsAPM
       #   end
       # 
       # === Returns:
-      # * Objective
+      # * value returned by block
       #
       def in_span(name, attributes: nil, links: nil, start_timestamp: nil, kind: nil, &block)
         if block.nil?

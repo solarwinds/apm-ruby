@@ -7,6 +7,8 @@
 begin
   require 'solarwinds_apm/logger'
   require 'solarwinds_apm/version'
+  require 'solarwinds_apm/noop'
+  require 'opentelemetry-api'
   if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.info '==================================================================='
     SolarWindsAPM.logger.info 'SW_APM_ENABLED environment variable detected and was set to false. SolarWindsAPM disabled'
@@ -65,7 +67,6 @@ begin
           SolarWindsAPM.logger.warn '=============================================================='
         end
       else
-        require 'solarwinds_apm/noop'
         SolarWindsAPM.logger.warn '=============================================================='
         SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages.'

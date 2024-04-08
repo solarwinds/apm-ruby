@@ -31,3 +31,34 @@ end
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
 $LOAD_PATH.unshift("#{Dir.pwd}/lib/")
+
+def noop_shared_test
+  _(SolarWindsAPM::Reporter.respond_to?(:start)).must_equal true
+  _(SolarWindsAPM::Reporter.respond_to?(:send_status)).must_equal true
+  _(SolarWindsAPM::Reporter.respond_to?(:send_report)).must_equal true
+  _(SolarWindsAPM::Metadata.respond_to?(:makeRandom)).must_equal true
+  _(SolarWindsAPM::Span.respond_to?(:createHttpSpan)).must_equal true
+  _(SolarWindsAPM::Span.respond_to?(:createSpan)).must_equal true
+  _(SolarWindsAPM::Context.toString).must_equal '99-00000000000000000000000000000000-0000000000000000-00'
+
+  _(defined?(SolarWindsAPM::API)).must_equal 'constant'
+  _(SolarWindsAPM::API.solarwinds_ready?(300)).must_equal false
+  _(SolarWindsAPM::API.increment_metric).must_equal false
+  _(SolarWindsAPM::API.summary_metric).must_equal false
+  _(SolarWindsAPM::API.in_span).must_equal nil
+  _(SolarWindsAPM::API.set_transaction_name).must_equal true
+  _(SolarWindsAPM::API.current_trace_info.hash_for_log.to_s).must_equal '{}'
+  _(SolarWindsAPM::API.current_trace_info.for_log).must_equal ''
+  _(SolarWindsAPM::API.current_trace_info.tracestring).must_equal '00-00000000000000000000000000000000-0000000000000000-00'
+  _(SolarWindsAPM::API.current_trace_info.trace_flags).must_equal '00'
+  _(SolarWindsAPM::API.current_trace_info.span_id).must_equal '0000000000000000'
+  _(SolarWindsAPM::API.current_trace_info.trace_id).must_equal '00000000000000000000000000000000'
+  _(SolarWindsAPM::API.current_trace_info.do_log).must_equal :never
+
+  in_span_result = SolarWindsAPM::API.in_span('params') do |_span|
+    value = 1 + 1
+    value
+  end
+
+  _(in_span_result).must_equal 2
+end

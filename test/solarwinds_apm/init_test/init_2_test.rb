@@ -15,5 +15,7 @@ describe 'solarwinds_apm_init_2' do
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SW_APM_SERVICE_KEY problem. API Token in wrong format'
+
+    noop_shared_test
   end
 end

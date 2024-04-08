@@ -7,15 +7,26 @@
 ####
 # noop version of SolarWindsAPM::Context
 #
-module SolarWindsAPM
+# module SolarWindsAPM
+# end
+
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Context for noop
-  module Context
+  class Context
     ##
     # noop version of :toString
     # toString would return the current trace context as string
     #
     def self.toString
       '99-00000000000000000000000000000000-0000000000000000-00'
+    end
+
+    def self.isReady(*)
+      false
+    end
+
+    def self.getDecisions(*)
+      [-1, -1, -1, 0, 0.0, 0.0, -1, -1, '', '', 4]
     end
 
     ##
