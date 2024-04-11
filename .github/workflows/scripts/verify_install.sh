@@ -20,7 +20,7 @@ elif [ "$pretty_name" = "Amazon Linux 2" ]; then
     && echo 'bundler' > ~/.rbenv/default-gems
   . ~/.profile && rbenv install 3.1.0
   rbenv local 3.1.0
-elif [ "$pretty_name" = "Amazon Linux 2023" ]; then
+elif [[ "$pretty_name" == "Amazon Linux 2023"* ]] ; then
   yum update && yum install -y ruby-devel gcc-c++ make tar openssl-devel git zlib-devel
   git clone https://github.com/rbenv/rbenv.git ~/.rbenv \
     && git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build \

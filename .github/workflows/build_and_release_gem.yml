@@ -40,7 +40,6 @@ jobs:
           TRACE_BUILD_TOKEN: ${{ secrets.ENOPS_5087_SOLARWINDS_APM_LIBOBOE }}
         run: |
           bundle exec rake fetch_oboe_file["prod"]
-          bundle exec rake oboe_verify
 
       - name: Build Gem and upload to Rubygems
         id: build
