@@ -49,7 +49,7 @@ Other exporters must first be installed and required before loading `solarwinds_
 gem "opentelemetry-exporter-otlp"
 
 # end of Gemfile
-gem 'solarwinds_apm', '>=6.0.0.pre'
+gem 'solarwinds_apm'
 ```
 
 And set the environment variable:
