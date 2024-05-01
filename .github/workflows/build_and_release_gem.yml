@@ -36,8 +36,6 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends bison swig
 
       - name: Download files from cloud.solarwinds.com and create swig wrapper
-        env:
-          TRACE_BUILD_TOKEN: ${{ secrets.ENOPS_5087_SOLARWINDS_APM_LIBOBOE }}
         run: |
           bundle exec rake fetch_oboe_file["prod"]
 
