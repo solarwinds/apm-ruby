@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -25,7 +27,7 @@ describe 'Loading Opentelemetry Test' do
 
     it 'default_response_propagators_with_other_rack_config' do
       SolarWindsAPM::OTelConfig.initialize_with_config do |config|
-        config['OpenTelemetry::Instrumentation::Rack'] = {:record_frontend_span => true}
+        config['OpenTelemetry::Instrumentation::Rack'] = { record_frontend_span: true }
       end
       rack_config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
       _(rack_config.count).must_equal 2
@@ -35,7 +37,7 @@ describe 'Loading Opentelemetry Test' do
 
     it 'default_response_propagators_with_other_response_propagators' do
       SolarWindsAPM::OTelConfig.initialize_with_config do |config|
-        config['OpenTelemetry::Instrumentation::Rack'] = {:response_propagators => ['String']}
+        config['OpenTelemetry::Instrumentation::Rack'] = { response_propagators: ['String'] }
       end
       rack_config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
       _(rack_config.count).must_equal 1
@@ -46,7 +48,7 @@ describe 'Loading Opentelemetry Test' do
 
     it 'default_response_propagators_with_non_array_response_propagators' do
       SolarWindsAPM::OTelConfig.initialize_with_config do |config|
-        config['OpenTelemetry::Instrumentation::Rack'] = {:response_propagators => 'String'}
+        config['OpenTelemetry::Instrumentation::Rack'] = { response_propagators: 'String' }
       end
       rack_config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)['OpenTelemetry::Instrumentation::Rack']
       _(rack_config.count).must_equal 1
@@ -61,21 +63,21 @@ describe 'Loading Opentelemetry Test' do
     before do
       ENV.delete('OTEL_LOG_LEVEL')
       ENV.delete('SW_APM_DEBUG_LEVEL')
-      ::OpenTelemetry.logger = nil
+      OpenTelemetry.logger = nil
     end
 
     it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_3_solarwinds_apm_and_otel_have_same_logger_level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
+      _(OpenTelemetry.logger.level).must_equal SolarWindsAPM.logger.level
     end
 
     it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_2_solarwinds_apm_and_otel_have_same_logger_level' do
       ENV['SW_APM_DEBUG_LEVEL'] = '2'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
+      _(OpenTelemetry.logger.level).must_equal SolarWindsAPM.logger.level
     end
 
     it 'no_OTEL_LOG_LEVEL_shows_up_SW_APM_DEBUG_LEVEL_0_solarwinds_apm_and_otel_have_same_logger_level' do
@@ -83,7 +85,7 @@ describe 'Loading Opentelemetry Test' do
       SolarWindsAPM::Config.set_log_level
       # ::OpenTelemetry.logger = ''
       SolarWindsAPM::OTelConfig.initialize
-      _(::OpenTelemetry.logger.level).must_equal ::SolarWindsAPM.logger.level
+      _(OpenTelemetry.logger.level).must_equal SolarWindsAPM.logger.level
     end
 
     # if user set OTEL_LOG_LEVEL, then the logger level will be separated
@@ -92,8 +94,8 @@ describe 'Loading Opentelemetry Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config.set_log_level
       SolarWindsAPM::OTelConfig.initialize
-      _(::SolarWindsAPM.logger.level).must_equal 1
-      _(::OpenTelemetry.logger.level).must_equal 4
+      _(SolarWindsAPM.logger.level).must_equal 1
+      _(OpenTelemetry.logger.level).must_equal 4
     end
   end
 end

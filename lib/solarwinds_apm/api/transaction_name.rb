@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -35,18 +37,22 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def set_transaction_name(custom_name=nil)
+      def set_transaction_name(custom_name = nil)
         status = true
         if ENV.fetch('SW_APM_ENABLED', 'true') == 'false' ||
            SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00'
           # library disabled or noop, just log and skip work.
           # TODO: can we have a single indicator that the API is in noop mode?
-          SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode."}
+          SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode." }
         elsif custom_name.nil? || custom_name.empty?
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."}
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."
+          end
           status = false
         elsif SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor].nil?
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."}
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."
+          end
           status = false
         else
           solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
@@ -56,14 +62,18 @@ module SolarWindsAPM
             current_trace_id = current_span.context.hex_trace_id
             entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context_h(current_trace_id)&.split('-')
             if entry_span_id.to_s.empty? || trace_flags.to_s.empty?
-              SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: record not found in the transaction manager."}
+              SolarWindsAPM.logger.warn do
+                "[#{name}/#{__method__}] Set transaction name failed: record not found in the transaction manager."
+              end
               status = false
             else
-              solarwinds_processor.txn_manager.set("#{current_trace_id}-#{entry_span_id}",custom_name)
-              SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Cached custom transaction name for #{current_trace_id}-#{entry_span_id} as #{custom_name}"}
+              solarwinds_processor.txn_manager.set("#{current_trace_id}-#{entry_span_id}", custom_name)
+              SolarWindsAPM.logger.debug do
+                "[#{name}/#{__method__}] Cached custom transaction name for #{current_trace_id}-#{entry_span_id} as #{custom_name}"
+              end
             end
           else
-            SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Set transaction name failed: invalid span context."}
+            SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Set transaction name failed: invalid span context." }
             status = false
           end
         end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -6,7 +8,6 @@ require 'minitest/mock'
 require './lib/solarwinds_apm/api'
 
 describe 'Test solarwinds_ready API call' do
-
   it 'default_test_solarwinds_ready' do
     SolarWindsAPM::Context.stub(:isReady, 1) do
       _(SolarWindsAPM::API.solarwinds_ready?).must_equal true

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
 # this Gemfile is very minimal
@@ -10,7 +12,7 @@ group :development, :test do
   gem 'irb', '>= 1.0.0' # if RUBY_VERSION >= '2.6.0'
   gem 'memory_profiler'
   gem 'rubocop'
-  gem 'rubocop-rake', require: false
   gem 'rubocop-performance', require: false
+  gem 'rubocop-rake', require: false
   gemspec
 end

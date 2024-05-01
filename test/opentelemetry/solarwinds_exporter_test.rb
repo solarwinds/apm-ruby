@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
@@ -14,7 +16,7 @@ describe 'SolarWindsExporterTest' do
   before do
     txn_name_manager = SolarWindsAPM::TxnNameManager.new
     @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_name_manager)
-    SolarWindsAPM::Config[:log_args] = true                                     
+    SolarWindsAPM::Config[:log_args] = true
   end
 
   it 'test_normalize_framework_name' do
@@ -52,26 +54,27 @@ describe 'SolarWindsExporterTest' do
   end
 
   it 'test_report_info_event' do
-    span_event = ::OpenTelemetry::SDK::Trace::Event.new
-    span_event.name='test'
-    span_event.attributes={:test => 1}
-    span_event.timestamp=1
+    span_event = OpenTelemetry::SDK::Trace::Event.new
+    span_event.name = 'test'
+    span_event.attributes = { test: 1 }
+    span_event.timestamp = 1
     result = @exporter.send(:report_info_event, span_event)
     _(result).must_equal true
   end
 
   it 'test_report_exception_event' do
-    span_event = ::OpenTelemetry::SDK::Trace::Event.new
-    span_event.name='test'
-    span_event.attributes={:test => 1}
-    span_event.timestamp=1
+    span_event = OpenTelemetry::SDK::Trace::Event.new
+    span_event.name = 'test'
+    span_event.attributes = { test: 1 }
+    span_event.timestamp = 1
     result = @exporter.send(:report_exception_event, span_event)
     _(result).must_equal true
   end
 
   it 'test_add_info_transaction_name' do
     span_data = create_span_data
-    @exporter.instance_variable_get(:@txn_manager).set('32c45e377a528ec9161631f7f758e1a7-a4a4399daca598c1','solarwinds')
+    @exporter.instance_variable_get(:@txn_manager).set('32c45e377a528ec9161631f7f758e1a7-a4a4399daca598c1',
+                                                       'solarwinds')
     result = @exporter.send(:add_info_transaction_name, span_data, SolarWindsAPM::Context)
     _(result).must_equal 'solarwinds'
   end
@@ -80,7 +83,7 @@ describe 'SolarWindsExporterTest' do
     span_data = create_span_data
     context   = SolarWindsAPM::Context.createEvent(10_000)
     result = @exporter.send(:add_instrumented_framework, context, span_data)
-    assert_nil(result)   
+    assert_nil(result)
   end
 
   it 'test_add_instrumentation_scope' do
@@ -93,7 +96,6 @@ describe 'SolarWindsExporterTest' do
   it 'test_log_span_data' do
     span_data = create_span_data
     result = @exporter.send(:log_span_data, span_data)
-    _(result).must_equal ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+    _(result).must_equal OpenTelemetry::SDK::Trace::Export::SUCCESS
   end
-
 end

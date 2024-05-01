@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -12,7 +14,7 @@ module SolarWindsAPM
       FAILURE = ::OpenTelemetry::SDK::Trace::Export::FAILURE
 
       private_constant(:SUCCESS, :FAILURE)
-    
+
       def initialize(txn_manager: nil)
         @shutdown           = false
         @txn_manager        = txn_manager
@@ -45,31 +47,36 @@ module SolarWindsAPM
       private
 
       def log_span_data(span_data)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data: #{span_data.inspect}\n"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_data: #{span_data.inspect}\n" }
 
         md = build_meta_data(span_data)
         event = nil
-        if span_data.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+        if span_data.parent_span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
+          event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i)
+          add_info_transaction_name(span_data, event)
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Start a new trace." }
+        else
           parent_md = build_meta_data(span_data, parent: true)
           event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i, parent_md)
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."}
-        else
-          event = @context.createEntry(md, (span_data.start_timestamp.to_i / 1000).to_i) 
-          add_info_transaction_name(span_data, event)
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Start a new trace."}
+          SolarWindsAPM.logger.debug do
+            "[#{self.class}/#{__method__}] Continue trace from parent metadata: #{parent_md.toString}."
+          end
         end
-        
+
         layer_name = "#{span_data.kind}:#{span_data.name}"
         event.addInfo('Layer', layer_name)
         event.addInfo('sw.span_kind', span_data.kind.to_s)
         event.addInfo('Language', 'Ruby')
-        
+
         add_instrumentation_scope(event, span_data)
         add_instrumented_framework(event, span_data)
         add_span_data_attributes(event, span_data.attributes) if span_data.attributes
 
-        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS, span_data.status.ok?? 'OK' : 'ERROR')
-        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS_DESCRIPTION, span_data.status.description) unless span_data.status.description.empty?
+        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS, span_data.status.ok? ? 'OK' : 'ERROR')
+        unless span_data.status.description.empty?
+          event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_STATUS_DESCRIPTION,
+                        span_data.status.description)
+        end
 
         @reporter.send_report(event, with_system_timestamp: false)
 
@@ -81,10 +88,10 @@ module SolarWindsAPM
         event = @context.createExit((span_data.end_timestamp.to_i / 1000).to_i)
         event.addInfo('Layer', layer_name)
         @reporter.send_report(event, with_system_timestamp: false)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Exit a trace: #{event.metadataString}" }
         SUCCESS
       rescue StandardError => e
-        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] exporter error: \n #{e.message} #{e.backtrace}\n"}
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] exporter error: \n #{e.message} #{e.backtrace}\n" }
         FAILURE
       end
 
@@ -93,23 +100,23 @@ module SolarWindsAPM
       def add_span_data_attributes(event, span_attributes)
         target     = 'http.target'
         attributes = span_attributes.dup
-        attributes[target] = attributes[target].split('?').first if attributes[target] && SolarWindsAPM::Config[:log_args] == false # remove url parameters
+        attributes[target] = attributes[target].split('?').first if attributes[target] && SolarWindsAPM::Config[:log_args] == false
         attributes.each { |k, v| event.addInfo(k, v) }
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] span_data attributes added: #{attributes.inspect}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_data attributes added: #{attributes.inspect}" }
       end
 
       ##
       # get instrumentation scope data: scope name and version.
       # the version if the opentelemetry-instrumentation-* gem version
       def add_instrumentation_scope(event, span_data)
-        scope_name = ""
-        scope_version = ""
+        scope_name = ''
+        scope_version = ''
         if span_data.instrumentation_scope
           scope_name = span_data.instrumentation_scope.name if span_data.instrumentation_scope.name
           scope_version = span_data.instrumentation_scope.version if span_data.instrumentation_scope.version
         end
-        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_SCOPE_NAME, scope_name) 
-        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_SCOPE_VERSION, scope_version)        
+        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_SCOPE_NAME, scope_name)
+        event.addInfo(SolarWindsAPM::Constants::INTL_SWO_OTEL_SCOPE_VERSION, scope_version)
       end
 
       ##
@@ -118,22 +125,24 @@ module SolarWindsAPM
       def add_instrumented_framework(event, span_data)
         scope_name = span_data.instrumentation_scope.name
         scope_name = scope_name.downcase if scope_name
-        return unless scope_name&.include? "opentelemetry::instrumentation"
-          
-        framework = scope_name.split("::")[2..]&.join("::")
+        return unless scope_name&.include? 'opentelemetry::instrumentation'
+
+        framework = scope_name.split('::')[2..]&.join('::')
         return if framework.nil? || framework.empty?
-        
+
         framework         = normalize_framework_name(framework)
         framework_version = check_framework_version(framework)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] #{span_data.instrumentation_scope.name} with #{framework} and version #{framework_version}"}
-        event.addInfo("Ruby.#{framework}.Version",framework_version) unless framework_version.nil?
+        SolarWindsAPM.logger.debug do
+          "[#{self.class}/#{__method__}] #{span_data.instrumentation_scope.name} with #{framework} and version #{framework_version}"
+        end
+        event.addInfo("Ruby.#{framework}.Version", framework_version) unless framework_version.nil?
       end
 
       ##
       # helper function that extract gem library version for func add_instrumented_framework
       def check_framework_version(framework)
         framework_version = nil
-        if @version_cache.has_key?(framework)
+        if @version_cache.key?(framework)
 
           framework_version = @version_cache[framework]
         else
@@ -142,14 +151,20 @@ module SolarWindsAPM
             require framework
             framework_version = Gem.loaded_specs[framework].version.to_s
           rescue LoadError => e
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] couldn't load #{framework} with error #{e.message}; skip"}
+            SolarWindsAPM.logger.debug do
+              "[#{self.class}/#{__method__}] couldn't load #{framework} with error #{e.message}; skip"
+            end
           rescue StandardError => e
-            SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] couldn't find #{framework} with error #{e.message}; skip"}
+            SolarWindsAPM.logger.debug do
+              "[#{self.class}/#{__method__}] couldn't find #{framework} with error #{e.message}; skip"
+            end
           ensure
             @version_cache[framework] = framework_version
           end
         end
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current framework version cached: #{@version_cache.inspect}"}
+        SolarWindsAPM.logger.debug do
+          "[#{self.class}/#{__method__}] current framework version cached: #{@version_cache.inspect}"
+        end
         framework_version
       end
 
@@ -157,21 +172,20 @@ module SolarWindsAPM
       # helper function that convert opentelemetry instrumentation name to gem library understandable
       def normalize_framework_name(framework)
         case framework
-        when "net::http"
-          normalized = "net/http"
+        when 'net::http'
+          'net/http'
         else
-          normalized = framework
+          framework
         end
-        normalized
       end
 
       ##
       # Add transaction name from cache to root span then removes from cache
       def add_info_transaction_name(span_data, event)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] transaction manager: #{@txn_manager.inspect}."}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] transaction manager: #{@txn_manager.inspect}." }
         trace_span_id = "#{span_data.hex_trace_id}-#{span_data.hex_span_id}"
         txname = @txn_manager.get(trace_span_id) || ''
-        event.addInfo("TransactionName", txname)
+        event.addInfo('TransactionName', txname)
         @txn_manager.del(trace_span_id)
       end
 
@@ -190,7 +204,7 @@ module SolarWindsAPM
           attributes.each { |key, value| event.addInfo(key, value) }
         end
 
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] exception event #{event.metadataString}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] exception event #{event.metadataString}" }
         @reporter.send_report(event, with_system_timestamp: false)
       end
 
@@ -200,12 +214,12 @@ module SolarWindsAPM
         event = @context.createEvent((span_event.timestamp.to_i / 1000).to_i)
         event.addInfo('Label', 'info')
         span_event.attributes&.each { |key, value| event.addInfo(key, value) }
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] info event #{event.metadataString}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] info event #{event.metadataString}" }
         @reporter.send_report(event, with_system_timestamp: false)
       end
 
       def build_meta_data(span_data, parent: false)
-        flag = span_data.trace_flags.sampled?? 1 : 0
+        flag = span_data.trace_flags.sampled? ? 1 : 0
         xtr = parent == false ? "00-#{span_data.hex_trace_id}-#{span_data.hex_span_id}-0#{flag}" : "00-#{span_data.hex_trace_id}-#{span_data.hex_parent_span_id}-0#{flag}"
         @metadata.fromString(xtr)
       end

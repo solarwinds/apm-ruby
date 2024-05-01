@@ -8,11 +8,11 @@ module SolarWindsAPM
     module Comment
       mattr_accessor :components, :lines_to_ignore, :prepend_comment
       SWOMarginalia::Comment.components ||= [:traceparent]
-      # To add new components: 
+      # To add new components:
       # Create file and load after loading solarwinds_apm, and add following:
       # SolarWindsAPM::SWOMarginalia::Comment.component = [:user_defined]
 
-      def self.update!(controller=nil)
+      def self.update!(controller = nil)
         self.marginalia_controller = controller
       end
 
@@ -78,11 +78,11 @@ module SolarWindsAPM
       end
 
       def self.application
-        if defined?(::Rails.application)
-          SWOMarginalia.application_name ||= ::Rails.application.class.name.split("::").first
-        else
-          SWOMarginalia.application_name ||= "rails"
-        end
+        SWOMarginalia.application_name ||= if defined?(::Rails.application)
+                                             ::Rails.application.class.name.split('::').first
+                                           else
+                                             'rails'
+                                           end
 
         SWOMarginalia.application_name
       end
@@ -104,7 +104,7 @@ module SolarWindsAPM
       end
 
       def self.sidekiq_job
-        marginalia_job["class"] if marginalia_job.respond_to?(:[])
+        marginalia_job['class'] if marginalia_job.respond_to?(:[])
       end
 
       DEFAULT_LINES_TO_IGNORE_REGEX = %r{\.rvm|/ruby/gems/|vendor/|marginalia|rbenv|monitor\.rb.*mon_synchronize}.freeze # rubocop:disable Style/RedundantFreeze
@@ -116,13 +116,13 @@ module SolarWindsAPM
           line !~ SWOMarginalia::Comment.lines_to_ignore
         end
         return unless last_line
-        
+
         root = if defined?(Rails) && Rails.respond_to?(:root)
                  Rails.root.to_s
                elsif defined?(RAILS_ROOT)
                  RAILS_ROOT
                else
-                 ""
+                 ''
                end
         last_line = last_line[root.length..] if last_line.start_with? root
         last_line
@@ -139,7 +139,7 @@ module SolarWindsAPM
       def self.request_id
         return unless marginalia_controller.respond_to?(:request) && marginalia_controller.request.respond_to?(:uuid)
 
-        marginalia_controller.request.uuid  
+        marginalia_controller.request.uuid
       end
 
       def self.socket
@@ -160,26 +160,27 @@ module SolarWindsAPM
         connection_config[:database]
       end
 
-      ## 
+      ##
       # Insert trace string as traceparent to sql statement
       # Not insert if:
       #   there is no valid current trace context
       #   current trace context is not sampled
-      # 
+      #
       def self.traceparent
         span_context = ::OpenTelemetry::Trace.current_span.context
         return '' if span_context == ::OpenTelemetry::Trace::SpanContext::INVALID
 
-        trace_flag = span_context.trace_flags.sampled? ? '01': '00'
+        trace_flag = span_context.trace_flags.sampled? ? '01' : '00'
         return '' if trace_flag == '00'
 
         format(
           '00-%<trace_id>s-%<span_id>s-%<trace_flags>.2d',
           trace_id: span_context.hex_trace_id,
           span_id: span_context.hex_span_id,
-          trace_flags: trace_flag)
+          trace_flags: trace_flag
+        )
       rescue NameError => e
-        SolarWindsAPM.logger.error {"[#{name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}"}
+        SolarWindsAPM.logger.error { "[#{name}/#{__method__}] Couldn't find OpenTelemetry. Error: #{e.message}" }
       end
 
       if Gem::Version.new(ActiveRecord::VERSION::STRING) < Gem::Version.new('6.1')

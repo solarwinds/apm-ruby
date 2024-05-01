@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -17,11 +19,11 @@ begin
   end
 
   begin
-    if /linux/.match?(RUBY_PLATFORM)
+    if RUBY_PLATFORM.include?('linux')
       require 'solarwinds_apm/config'
       SolarWindsAPM::Config.load_config_file
 
-      require 'solarwinds_apm/oboe_init_options'      # setup oboe reporter options
+      require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
       unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
         SolarWindsAPM.logger.warn '=============================================================='
         SolarWindsAPM.logger.warn 'SW_APM_SERVICE_KEY Error. SolarWinds APM disabled'
@@ -30,8 +32,8 @@ begin
         return
       end
 
-      require_relative './libsolarwinds_apm.so'       # load c-lib oboe
-      require_relative './oboe_metal'                 # initialize reporter: SolarWindsAPM.loaded = true
+      require_relative 'libsolarwinds_apm.so'       # load c-lib oboe
+      require_relative 'oboe_metal'                 # initialize reporter: SolarWindsAPM.loaded = true
 
       require 'opentelemetry/sdk/version'                 # load otel sdk version
       require 'opentelemetry/instrumentation/all/version' # load otel instrumentation
@@ -43,7 +45,7 @@ begin
       SolarWindsAPM.logger.info "OpenTelemetry instrumentation version: #{OpenTelemetry::Instrumentation::All::VERSION}."
       SolarWindsAPM.logger.info '==================================================================='
 
-      SolarWindsAPM::Reporter.start                 # start the reporter, any issue will be logged
+      SolarWindsAPM::Reporter.start # start the reporter, any issue will be logged
 
       if SolarWindsAPM.loaded
         require 'solarwinds_apm/constants'
@@ -52,7 +54,7 @@ begin
         require 'solarwinds_apm/opentelemetry'
         require 'solarwinds_apm/patch'
         require 'solarwinds_apm/otel_config'
-        
+
         if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
           SolarWindsAPM::OTelConfig.initialize
         elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
@@ -87,8 +89,7 @@ begin
     SolarWindsAPM.logger.error 'See: https://documentation.solarwinds.com/en/success_center/observability/default.htm#cshid=config-ruby-agent'
     SolarWindsAPM.logger.error '=============================================================='
   end
-  
 rescue StandardError => e
-  $stderr.puts "[solarwinds_apm/error] Problem loading: #{e.inspect}"
-  $stderr.puts e.backtrace
+  warn "[solarwinds_apm/error] Problem loading: #{e.inspect}"
+  warn e.backtrace
 end

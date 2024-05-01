@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
@@ -19,7 +21,7 @@ describe 'solarwinds_apm_init_8' do
 
     assert_includes log_output.string, 'SolarWindsAPM not loaded. SolarWinds APM disabled'
     assert_includes log_output.string, 'Please check previous log messages.'
-    
+
     _(SolarWindsAPM.loaded).must_equal false
 
     FileUtils.rm("#{Dir.pwd}/lib/libsolarwinds_apm.so")

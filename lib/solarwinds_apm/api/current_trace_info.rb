@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -13,8 +15,8 @@ module SolarWindsAPM
       # {TraceInfo#trace_flags}<br>
       # {TraceInfo#for_log}<br>
       # {TraceInfo#hash_for_log}
-      # 
-      # The <tt>SolarWindsAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the 
+      #
+      # The <tt>SolarWindsAPM::Config[:log_traceId]</tt> configuration setting for automatic trace context in logs affects the
       # return value of methods in this module.
       #
       # The following options are available:<br>
@@ -56,13 +58,13 @@ module SolarWindsAPM
 
         def initialize
           @trace_id, @span_id, @trace_flags, @tracestring = current_span
-          @service_name = ENV['OTEL_SERVICE_NAME']
+          @service_name = ENV.fetch('OTEL_SERVICE_NAME', nil)
           @do_log = log? # true if the tracecontext should be added to logs
         end
 
         # for_log returns a string in the format
         # 'trace_id=<trace_id> span_id=<span_id> trace_flags=<trace_flags>' or empty string.
-        # 
+        #
         # An empty string is returned depending on the setting for
         # <tt>SolarWindsAPM::Config[:log_traceId]</tt>, which can be :never,
         # :sampled, :traced, or :always.
@@ -88,7 +90,7 @@ module SolarWindsAPM
         #                            span_id: '49e60702469db05f',
         #                            trace_flags: 01,
         #                            resource.service.name: 'otel_service_name' }  or {} depends on Config
-        #   
+        #
         #   # For lograge:
         #   Lograge.custom_options = lambda do |event|
         #     SolarWindsAPM::API.current_trace_info.hash_for_log
@@ -98,7 +100,12 @@ module SolarWindsAPM
         # * Hash
         #
         def hash_for_log
-          @hash_for_log = @do_log ? {'trace_id' => @trace_id, 'span_id' => @span_id, 'trace_flags' => @trace_flags, 'resource.service.name' => @service_name} : {}
+          @hash_for_log = if @do_log
+                            { 'trace_id' => @trace_id, 'span_id' => @span_id, 'trace_flags' => @trace_flags,
+                              'resource.service.name' => @service_name }
+                          else
+                            {}
+                          end
         end
 
         private
@@ -107,7 +114,7 @@ module SolarWindsAPM
           span     = ::OpenTelemetry::Trace.current_span if defined?(::OpenTelemetry::Trace)
           trace_id = span.context.hex_trace_id
           span_id  = span.context.hex_span_id
-          trace_flags = span.context.trace_flags.sampled?? '01' : '00'
+          trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
           tracestring = "00-#{trace_id}-#{span_id}-#{trace_flags}"
           [trace_id, span_id, trace_flags, tracestring]
         end
@@ -130,7 +137,7 @@ module SolarWindsAPM
         def valid?(tracestring)
           matches = REGEXP.match(tracestring)
 
-          matches && matches[:trace_id] != ("0" * 32)
+          matches && matches[:trace_id] != ('0' * 32)
         end
 
         def sampled?(tracestring)

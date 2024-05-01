@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
@@ -7,7 +9,7 @@ require 'minitest/reporters'
 require 'minitest'
 require 'minitest/focus'
 require 'minitest/debugger' if ENV['DEBUG']
-require 'minitest/hooks/default'  # adds after(:all)
+require 'minitest/hooks/default' # adds after(:all)
 require 'opentelemetry/sdk'
 require 'opentelemetry-common'
 require 'opentelemetry-api'
@@ -34,11 +36,11 @@ ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-1111111111111
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
 if ENV['TEST_RUNS_TO_FILE']
   FileUtils.mkdir_p('log') # create if it doesn't exist
-  if ENV['TEST_RUNS_FILE_NAME']
-    $out_file = File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
-  else
-    $out_file = File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
-  end
+  $out_file = if ENV['TEST_RUNS_FILE_NAME']
+                File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
+              else
+                File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
+              end
   $out_file.sync = true
   $stdout.sync = true
 
@@ -49,7 +51,7 @@ if ENV['TEST_RUNS_TO_FILE']
 end
 
 # Print out a headline in with the settings used in the test run
-puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV['BUNDLE_GEMFILE'])} #{ENV['DBTYPE']} #{ENV['TEST_PREPARED_STATEMENT']} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV.fetch('BUNDLE_GEMFILE', nil))} #{ENV.fetch('DBTYPE', nil)} #{ENV.fetch('TEST_PREPARED_STATEMENT', nil)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
 ENV['RACK_ENV'] = 'test'
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
@@ -61,6 +63,7 @@ SolarWindsAPM.logger.level = 1
 module Dummy
   class TextMapPropagator
     def inject(carrier, context: ::OpenTelemetry::Context.current, setter: ::OpenTelemetry::Context::Propagation.text_map_setter); end
+
     def extract(carrier, context: ::OpenTelemetry::Context.current, getter: ::OpenTelemetry::Context::Propagation.text_map_getter); end
   end
 end
@@ -85,8 +88,8 @@ module SolarWindsAPM
       do_metrics = 1
       do_sample = 0
       rate = 1_000_000
-      status_msg = "auth-failed"
-      auth_msg = "bad-signature"
+      status_msg = 'auth-failed'
+      auth_msg = 'bad-signature'
       source = 6
       bucket_rate = 0.0
       status = -5
@@ -176,8 +179,7 @@ module SolarWindsAPM
   end
 end
 
-class CustomInMemorySpanExporter < ::OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter
-  
+class CustomInMemorySpanExporter < OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter
   def finished_spans
     @finished_spans.clone.freeze
   end
@@ -196,10 +198,10 @@ end
 def extract_span(exporter)
   finished_spans = []
   retry_count    = 5
-  while finished_spans.size == 0
+  while finished_spans.empty?
 
     break if retry_count > 5
-    
+
     finished_spans = exporter.finished_spans
     retry_count   += 1
     sleep retry_count
@@ -214,36 +216,35 @@ end
 # create sample otel span_data object
 #
 def create_span_data
-
   layer  = :internal
-  status = ::OpenTelemetry::Trace::Status.ok("good")
-  attributes = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
-  resource = ::OpenTelemetry::SDK::Resources::Resource.create({"service.name"=>"", "process.pid"=>31_208})
-  instrumentation_scope = ::OpenTelemetry::SDK::InstrumentationScope.new("OpenTelemetry::Instrumentation::Net::HTTP", "1.2.3")
-  trace_flags  = ::OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
-  tracestate   = ::OpenTelemetry::Trace::Tracestate.from_hash({"sw"=>"0000000000000000-01"})
+  status = OpenTelemetry::Trace::Status.ok('good')
+  attributes = { 'net.peer.name' => 'sample-rails', 'net.peer.port' => 8002 }
+  resource = OpenTelemetry::SDK::Resources::Resource.create({ 'service.name' => '', 'process.pid' => 31_208 })
+  instrumentation_scope = OpenTelemetry::SDK::InstrumentationScope.new('OpenTelemetry::Instrumentation::Net::HTTP',
+                                                                       '1.2.3')
+  trace_flags  = OpenTelemetry::Trace::TraceFlags.from_byte(0x01)
+  tracestate   = OpenTelemetry::Trace::Tracestate.from_hash({ 'sw' => '0000000000000000-01' })
   span_id_hex  = "\xA4\xA49\x9D\xAC\xA5\x98\xC1"
   trace_id_hex = "2\xC4^7zR\x8E\xC9\x16\x161\xF7\xF7X\xE1\xA7"
 
-  ::OpenTelemetry::SDK::Trace::SpanData.new("connect",
-                                            layer,
-                                            status,
-                                            ("\0" * 8).b,
-                                            2,
-                                            2,
-                                            0,
-                                            1_669_317_386_253_789_212,
-                                            1_669_317_386_298_642_087,
-                                            attributes,
-                                            nil,
-                                            nil,
-                                            resource,
-                                            instrumentation_scope,
-                                            span_id_hex,
-                                            trace_id_hex,
-                                            trace_flags,
-                                            tracestate)
-
+  OpenTelemetry::SDK::Trace::SpanData.new('connect',
+                                          layer,
+                                          status,
+                                          ("\0" * 8).b,
+                                          2,
+                                          2,
+                                          0,
+                                          1_669_317_386_253_789_212,
+                                          1_669_317_386_298_642_087,
+                                          attributes,
+                                          nil,
+                                          nil,
+                                          resource,
+                                          instrumentation_scope,
+                                          span_id_hex,
+                                          trace_id_hex,
+                                          trace_flags,
+                                          tracestate)
 end
 
 ##
@@ -252,28 +253,29 @@ end
 # create sample otel span object
 #
 def create_span
-  span_limits  = ::OpenTelemetry::SDK::Trace::SpanLimits.new(attribute_count_limit: 1,
-                                                             event_count_limit: 1,
-                                                             link_count_limit: 1,
-                                                             event_attribute_count_limit: 1,
-                                                             link_attribute_count_limit: 1,
-                                                             attribute_length_limit: 32,
-                                                             event_attribute_length_limit: 32)
-  attributes   = {"net.peer.name"=>"sample-rails", "net.peer.port"=>8002}
-  span_context = ::OpenTelemetry::Trace::SpanContext.new(span_id: "1\xE1u\x12\x8E\xFC@\x18", trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j")
-  ::OpenTelemetry::SDK::Trace::Span.new(span_context,
-                                        ::OpenTelemetry::Context.empty,
-                                        ::OpenTelemetry::Trace::Span::INVALID,
-                                        'name',
-                                        ::OpenTelemetry::Trace::SpanKind::INTERNAL,
-                                        nil,
-                                        span_limits,
-                                        [],
-                                        attributes,
-                                        nil,
-                                        Time.now,
-                                        nil,
-                                        nil)
+  span_limits  = OpenTelemetry::SDK::Trace::SpanLimits.new(attribute_count_limit: 1,
+                                                           event_count_limit: 1,
+                                                           link_count_limit: 1,
+                                                           event_attribute_count_limit: 1,
+                                                           link_attribute_count_limit: 1,
+                                                           attribute_length_limit: 32,
+                                                           event_attribute_length_limit: 32)
+  attributes   = { 'net.peer.name' => 'sample-rails', 'net.peer.port' => 8002 }
+  span_context = OpenTelemetry::Trace::SpanContext.new(span_id: "1\xE1u\x12\x8E\xFC@\x18",
+                                                       trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j")
+  OpenTelemetry::SDK::Trace::Span.new(span_context,
+                                      OpenTelemetry::Context.empty,
+                                      OpenTelemetry::Trace::Span::INVALID,
+                                      'name',
+                                      OpenTelemetry::Trace::SpanKind::INTERNAL,
+                                      nil,
+                                      span_limits,
+                                      [],
+                                      attributes,
+                                      nil,
+                                      Time.now,
+                                      nil,
+                                      nil)
 end
 
 ##
@@ -309,15 +311,15 @@ def obtain_all_traces
     s = StringIO.new(contents[0])
 
     until s.eof?
-      traces << if ::BSON.respond_to? :read_bson_document
+      traces << if BSON.respond_to? :read_bson_document
                   BSON.read_bson_document(s)
                 else
                   BSON::Document.from_bson(s)
                 end
     end
   else
-    bbb = ::BSON::ByteBuffer.new(contents[0])
-    traces << Hash.from_bson(bbb) until bbb.length == 0
+    bbb = BSON::ByteBuffer.new(contents[0])
+    traces << Hash.from_bson(bbb) until bbb.empty?
   end
 
   traces
@@ -330,14 +332,17 @@ end
 #
 def create_context(trace_id:,
                    span_id:,
-                   trace_flags: ::OpenTelemetry::Trace::TraceFlags::DEFAULT)
-  context = ::OpenTelemetry::Trace.context_with_span(
-    ::OpenTelemetry::Trace.non_recording_span(
-      ::OpenTelemetry::Trace::SpanContext.new(
+                   trace_flags: OpenTelemetry::Trace::TraceFlags::DEFAULT)
+  context = OpenTelemetry::Trace.context_with_span(
+    OpenTelemetry::Trace.non_recording_span(
+      OpenTelemetry::Trace::SpanContext.new(
         trace_id: Array(trace_id).pack('H*'),
         span_id: Array(span_id).pack('H*'),
-        trace_flags: trace_flags)))
-  conext_key = ::OpenTelemetry::Context.create_key('b3-debug-key')
+        trace_flags: trace_flags
+      )
+    )
+  )
+  conext_key = OpenTelemetry::Context.create_key('b3-debug-key')
   context.set_value(conext_key, true)
 end
 

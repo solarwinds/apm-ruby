@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
@@ -14,11 +16,11 @@ ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-1111111111111
 # `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
 if ENV['TEST_RUNS_TO_FILE']
   FileUtils.mkdir_p('log') # create if it doesn't exist
-  if ENV['TEST_RUNS_FILE_NAME']
-    $out_file = File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
-  else
-    $out_file = File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
-  end
+  $out_file = if ENV['TEST_RUNS_FILE_NAME']
+                File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
+              else
+                File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
+              end
   $out_file.sync = true
   $stdout.sync = true
 

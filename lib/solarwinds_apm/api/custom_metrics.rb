@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -30,12 +32,12 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def increment_metric(name, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
+      def increment_metric(name, count = 1, with_hostname = false, tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count) == 0
+        SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count).zero?
       end
 
       # Send values with counts
@@ -64,12 +66,12 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def summary_metric(name, value, count=1, with_hostname=false, tags_kvs={}) # rubocop:disable Style/OptionalBooleanParameter
+      def summary_metric(name, value, count = 1, with_hostname = false, tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
         return true unless SolarWindsAPM.loaded
 
         with_hostname = with_hostname ? 1 : 0
         tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count) == 0
+        SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count).zero?
       end
 
       private

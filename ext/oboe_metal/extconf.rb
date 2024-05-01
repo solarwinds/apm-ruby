@@ -7,14 +7,14 @@ require 'mkmf'
 require 'rbconfig'
 require 'open-uri'
 
-CONFIG['warnflags'] = CONFIG['warnflags'].gsub(/-Wdeclaration-after-statement/, '')
-                                         .gsub(/-Wimplicit-function-declaration/, '')
-                                         .gsub(/-Wimplicit-int/, '')
-                                         .gsub(/-Wno-tautological-compare/, '')
-                                         .gsub(/-Wno-self-assign/, '')
-                                         .gsub(/-Wno-parentheses-equality/, '')
-                                         .gsub(/-Wno-constant-logical-operand/, '')
-                                         .gsub(/-Wno-cast-function-type/, '')
+CONFIG['warnflags'] = CONFIG['warnflags'].gsub('-Wdeclaration-after-statement', '')
+                                         .gsub('-Wimplicit-function-declaration', '')
+                                         .gsub('-Wimplicit-int', '')
+                                         .gsub('-Wno-tautological-compare', '')
+                                         .gsub('-Wno-self-assign', '')
+                                         .gsub('-Wno-parentheses-equality', '')
+                                         .gsub('-Wno-constant-logical-operand', '')
+                                         .gsub('-Wno-cast-function-type', '')
 init_mkmf(CONFIG)
 
 ext_dir = __dir__
@@ -27,7 +27,7 @@ swo_include = File.join(ext_dir, 'src')
 # Download the appropriate liboboe from Staging or Production
 version = File.read(File.join(swo_include, 'VERSION')).strip
 if ENV['OBOE_DEV'].to_s.casecmp('true').zero?
-  swo_path = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly"
+  swo_path = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly'
   puts 'Fetching c-lib from DEVELOPMENT Build'
 elsif ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
   swo_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
@@ -65,7 +65,7 @@ clib = File.join(swo_lib_dir, swo_clib)
 
 retries = 3
 success = false
-while retries > 0
+while retries.positive?
   begin
     IO.copy_stream(URI.parse(swo_item).open, clib)
     clib_checksum = Digest::SHA256.file(clib).hexdigest
@@ -73,29 +73,29 @@ while retries > 0
 
     # unfortunately these messages only show if the install command is run
     # with the `--verbose` flag
-    if clib_checksum != checksum
-      $stderr.puts '== ERROR ================================================================='
-      $stderr.puts 'Checksum Verification failed for the c-extension of the solarwinds_apm gem'
-      $stderr.puts 'Installation cannot continue'
-      $stderr.puts "\nChecksum packaged with gem:   #{checksum}"
-      $stderr.puts "Checksum calculated from lib: #{clib_checksum}"
-      $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists'
-      $stderr.puts '=========================================================================='
-      exit 1
-    else
+    if clib_checksum == checksum
       success = true
       retries = 0
+    else
+      warn '== ERROR ================================================================='
+      warn 'Checksum Verification failed for the c-extension of the solarwinds_apm gem'
+      warn 'Installation cannot continue'
+      warn "\nChecksum packaged with gem:   #{checksum}"
+      warn "Checksum calculated from lib: #{clib_checksum}"
+      warn 'Contact technicalsupport@solarwinds.com if the problem persists'
+      warn '=========================================================================='
+      exit 1
     end
   rescue StandardError => e
     File.write(clib, '')
     retries -= 1
-    if retries == 0
-      $stderr.puts '== ERROR =========================================================='
-      $stderr.puts 'Download of the c-extension for the solarwinds_apm gem failed.'
-      $stderr.puts 'solarwinds_apm will not instrument the code. No tracing will occur.'
-      $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
-      $stderr.puts "error: #{swo_item}\n#{e.message}"
-      $stderr.puts '==================================================================='
+    if retries.zero?
+      warn '== ERROR =========================================================='
+      warn 'Download of the c-extension for the solarwinds_apm gem failed.'
+      warn 'solarwinds_apm will not instrument the code. No tracing will occur.'
+      warn 'Contact technicalsupport@solarwinds.com if the problem persists.'
+      warn "error: #{swo_item}\n#{e.message}"
+      warn '==================================================================='
       create_makefile('oboe_noop', 'noop')
     end
     sleep 0.5
@@ -116,35 +116,35 @@ if success
     $libs = append_library($libs, 'oboe')
     $libs = append_library($libs, 'stdc++')
 
-    $CFLAGS << " #{ENV['CFLAGS']}"
+    $CFLAGS << " #{ENV.fetch('CFLAGS', nil)}"
     # $CPPFLAGS << " #{ENV['CPPFLAGS']} -std=c++11"
     # TODO for debugging: -pg -gdwarf-2, remove for production
     # -pg does not work on alpine https://www.openwall.com/lists/musl/2014/11/05/2
-    $CPPFLAGS << " #{ENV['CPPFLAGS']} -std=c++11  -gdwarf-2 -I$$ORIGIN/../ext/oboe_metal/include -I$$ORIGIN/../ext/oboe_metal/src"
+    $CPPFLAGS << " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11  -gdwarf-2 -I$$ORIGIN/../ext/oboe_metal/include -I$$ORIGIN/../ext/oboe_metal/src"
     # $CPPFLAGS << " #{ENV['CPPFLAGS']} -std=c++11 -I$$ORIGIN/../ext/oboe_metal/include"
-    $LIBS << " #{ENV['LIBS']}"
+    $LIBS << " #{ENV.fetch('LIBS', nil)}"
 
     # use "z,defs" to see what happens during linking
     # $LDFLAGS << " #{ENV['LDFLAGS']} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib,-z,defs'  -lrt"
-    $LDFLAGS << " #{ENV['LDFLAGS']} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib' -lrt"
-    $CXXFLAGS += " -std=c++11 "
+    $LDFLAGS << " #{ENV.fetch('LDFLAGS', nil)} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib' -lrt"
+    $CXXFLAGS += ' -std=c++11 '
 
     # ____ include debug info, comment out when not debugging
     # ____ -pg -> profiling info for gprof
-    CONFIG["debugflags"] = "-ggdb3 "
-    CONFIG["optflags"] = "-O0"
+    CONFIG['debugflags'] = '-ggdb3 '
+    CONFIG['optflags'] = '-O0'
 
     create_makefile('libsolarwinds_apm', 'src')
   else
-    $stderr.puts '== ERROR ========================================================='
+    warn '== ERROR ========================================================='
     if have_library('oboe')
-      $stderr.puts "The c-library either needs to be updated or doesn't match the OS."
-      $stderr.puts 'No tracing will occur.'
+      warn "The c-library either needs to be updated or doesn't match the OS."
+      warn 'No tracing will occur.'
     else
-      $stderr.puts 'Could not find a matching c-library. No tracing will occur.'
+      warn 'Could not find a matching c-library. No tracing will occur.'
     end
-    $stderr.puts 'Contact technicalsupport@solarwinds.com if the problem persists.'
-    $stderr.puts '=================================================================='
+    warn 'Contact technicalsupport@solarwinds.com if the problem persists.'
+    warn '=================================================================='
     create_makefile('oboe_noop', 'noop')
   end
 end
