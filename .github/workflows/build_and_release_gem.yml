@@ -36,11 +36,8 @@ jobs:
           sudo apt-get update && sudo apt-get install -y --no-install-recommends bison swig
 
       - name: Download files from cloud.solarwinds.com and create swig wrapper
-        env:
-          TRACE_BUILD_TOKEN: ${{ secrets.ENOPS_5087_SOLARWINDS_APM_LIBOBOE }}
         run: |
           bundle exec rake fetch_oboe_file["prod"]
-          bundle exec rake oboe_verify
 
       - name: Build Gem and upload to Rubygems
         id: build
@@ -92,6 +89,6 @@ jobs:
           SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
         run: |
           sleep 20
-          apt-get update && apt-get install -y ruby-dev g++ make
+          sudo apt-get update && sudo apt-get install -y ruby-dev g++ make
           gem install solarwinds_apm --version ${{ steps.build.outputs.gem_version }}
           ruby ./scripts/test_install.rb

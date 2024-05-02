@@ -94,32 +94,6 @@ end
 @ext_dir = File.expand_path('ext/oboe_metal')
 @ext_verify_dir = File.expand_path('ext/oboe_metal/verify')
 
-def oboe_github_fetch
-  oboe_version = File.read('ext/oboe_metal/src/VERSION').strip
-  oboe_token = ENV.fetch('TRACE_BUILD_TOKEN', nil)
-  oboe_github = "https://raw.githubusercontent.com/solarwinds-cloud/solarwinds-apm-liboboe/liboboe-#{oboe_version}/liboboe/"
-
-  FileUtils.mkdir_p(File.join(@ext_verify_dir, 'bson'))
-
-  # fetch files
-  @files.each do |filename|
-    uri = URI(File.join(oboe_github, filename).to_s)
-    req = Net::HTTP::Get.new(uri)
-    req['Authorization'] = "token #{oboe_token}"
-
-    local_file = File.join(@ext_verify_dir, filename)
-
-    puts "fetching #{filename}"
-    puts "      to #{local_file}"
-
-    res = Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-      http.request(req)
-    end
-
-    File.open(local_file, 'wb') { |f| f.puts res.body }
-  end
-end
-
 desc 'fetch oboe file from different environment'
 task :fetch_oboe_file, [:env] do |_t, args|
   abort('Missing env argument (abort)') if args['env'].nil? || args['env'].empty?
@@ -209,23 +183,6 @@ task :fetch_oboe_file, [:env] do |_t, args|
   end
 
   puts 'Fetching finished.'
-end
-
-desc 'Verify files'
-task :oboe_verify do
-  oboe_github_fetch
-  @files.each do |filename|
-    puts "Verifying #{filename}"
-
-    sha_local = Digest::SHA2.file(File.join(@ext_dir, 'src', filename)).hexdigest
-    sha_remote = Digest::SHA2.file(File.join(@ext_verify_dir, filename)).hexdigest
-
-    if sha_local != sha_remote # rubocop:disable Style/Next
-      puts "#{filename} from github and agent-binaries.cloud.solarwinds differ"
-      puts `diff #{File.join(@ext_dir, 'src', filename)} #{File.join(@ext_verify_dir, filename)}`
-      exit 1
-    end
-  end
 end
 
 desc 'Build and publish to Rubygems'
