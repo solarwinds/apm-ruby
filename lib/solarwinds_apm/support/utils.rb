@@ -12,10 +12,9 @@ module SolarWindsAPM
     VERSION = '00'
 
     def self.trace_state_header(trace_state)
-      return nil if trace_state.nil?
+      return nil if trace_state.nil? || trace_state.empty?
 
-      arr    = []
-      trace_state.to_h.each { |key, value| arr << "#{key}=#{value}" }
+      arr = trace_state.to_h.map { |key, value| "#{key}=#{value}" }
       header = arr.join(',')
       SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] generated trace_state_header: #{header}" }
       header
