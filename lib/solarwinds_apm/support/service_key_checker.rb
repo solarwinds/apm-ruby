@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -17,20 +19,24 @@ module SolarWindsAPM
 
       service_key = fetch_service_key
       if service_key.empty?
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured."}
+        SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured." }
         return ''
       end
 
       token, _, service_name = parse_service_key(service_key)
       if token.empty? || !validate_token(token)
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{token[0..3]}...#{token[-4..]}"}
+        SolarWindsAPM.logger.error do
+          "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{token[0..3]}...#{token[-4..]}"
+        end
         return ''
       end
 
       # if no service_name from service_key, then the SW_APM_SERVICE_KEY is not right format, return
       if service_name.empty?
         ENV.delete('OTEL_SERVICE_NAME')
-        SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."}
+        SolarWindsAPM.logger.warn do
+          "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."
+        end
         return ''
       end
 
@@ -86,7 +92,11 @@ module SolarWindsAPM
       name_.downcase!
       name_.gsub!(/[^a-z0-9.:_-]/, '')
       name_ = name_[0..254]
-      SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Service Name transformed from #{service_name} to #{name_}"} if name_ != service_name
+      if name_ != service_name
+        SolarWindsAPM.logger.warn do
+          "[#{self.class}/#{__method__}] Service Name transformed from #{service_name} to #{name_}"
+        end
+      end
 
       name_
     end

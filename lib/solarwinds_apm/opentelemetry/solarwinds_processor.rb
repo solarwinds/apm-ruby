@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -8,10 +10,10 @@ module SolarWindsAPM
   module OpenTelemetry
     # reference: OpenTelemetry::SDK::Trace::SpanProcessor
     class SolarWindsProcessor
-      HTTP_METHOD      = "http.method".freeze
-      HTTP_ROUTE       = "http.route".freeze
-      HTTP_STATUS_CODE = "http.status_code".freeze
-      HTTP_URL         = "http.url".freeze
+      HTTP_METHOD      = 'http.method'
+      HTTP_ROUTE       = 'http.route'
+      HTTP_STATUS_CODE = 'http.status_code'
+      HTTP_URL         = 'http.url'
       LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE = 0
 
       attr_reader :txn_manager
@@ -31,16 +33,17 @@ module SolarWindsAPM
       # @param [Context] parent_context the parent {Context} of the newly
       #  started span.
       def on_start(span, parent_context)
-
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"}
+        SolarWindsAPM.logger.debug do
+          "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
+        end
 
         parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
         return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-        @txn_manager.set_root_context_h(span.context.hex_trace_id,"#{span.context.hex_span_id}-#{trace_flags}")
+        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
       rescue StandardError => e
-        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] processor on_start error: #{e.message}"}
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}
@@ -52,9 +55,9 @@ module SolarWindsAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
 
-        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
           @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
           return
         end
@@ -68,7 +71,7 @@ module SolarWindsAPM
           request_method = span.attributes[HTTP_METHOD]
           url_tran       = span.attributes[HTTP_URL]
 
-          SolarWindsAPM.logger.debug do 
+          SolarWindsAPM.logger.debug do
             "[#{self.class}/#{__method__}] createHttpSpan with\n
                                           trans_name: #{trans_name}\n
                                           url_tran: #{url_tran}\n
@@ -79,11 +82,12 @@ module SolarWindsAPM
                                           has_error: #{has_error}"
           end
 
-          liboboe_txn_name = SolarWindsAPM::Span.createHttpSpan(trans_name,url_tran,domain,span_time,status_code,request_method,has_error)
-  
+          liboboe_txn_name = SolarWindsAPM::Span.createHttpSpan(trans_name, url_tran, domain, span_time, status_code,
+                                                                request_method, has_error)
+
         else
-          
-          SolarWindsAPM.logger.debug do 
+
+          SolarWindsAPM.logger.debug do
             "[#{self.class}/#{__method__}] createSpan with \n
                                           trans_name: #{trans_name}\n
                                           domain: #{domain}\n
@@ -94,12 +98,17 @@ module SolarWindsAPM
           liboboe_txn_name = SolarWindsAPM::Span.createSpan(trans_name, domain, span_time, has_error)
         end
 
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] liboboe_txn_name: #{liboboe_txn_name}"}
-        @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] = liboboe_txn_name if span.context.trace_flags.sampled?
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] liboboe_txn_name: #{liboboe_txn_name}" }
+        if span.context.trace_flags.sampled?
+          @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] =
+            liboboe_txn_name
+        end
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
       rescue StandardError => e
-        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
+        SolarWindsAPM.logger.info do
+          "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"
+        end
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
@@ -153,10 +162,12 @@ module SolarWindsAPM
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
         trans_name = @txn_manager.get(trace_span_id)
         if trans_name
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"}
+          SolarWindsAPM.logger.debug do
+            "[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"
+          end
           @txn_manager.del(trace_span_id)
-        elsif ENV.has_key?('SW_APM_TRANSACTION_NAME') && ENV['SW_APM_TRANSACTION_NAME'] != ''
-          trans_name =  ENV['SW_APM_TRANSACTION_NAME']
+        elsif ENV.key?('SW_APM_TRANSACTION_NAME') && ENV['SW_APM_TRANSACTION_NAME'] != ''
+          trans_name = ENV.fetch('SW_APM_TRANSACTION_NAME', nil)
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if span.name && (trans_name.nil? || trans_name.empty?)

@@ -1,4 +1,5 @@
 #!/usr/bin/env rake
+# frozen_string_literal: true
 
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
@@ -51,11 +52,11 @@ Example:
   bundle exec rake 'docker_tests[,false]'
   bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64]'"
 task :docker_tests, [:tag, :runtests, :platform] do |_, args|
-  args.with_defaults(:tag => '3.1-bullseye', :runtests => 'true')
-  opt = " --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds"
+  args.with_defaults(tag: '3.1-bullseye', runtests: 'true')
+  opt = +' --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds'
   opt << " --platform #{args.platform}" unless args.platform.to_s.empty?
   if args.runtests == 'true'
-    opt << " --entrypoint test/test_setup.sh -e RUN_TESTS=1"
+    opt << ' --entrypoint test/test_setup.sh -e RUN_TESTS=1'
   else
     opt << " --interactive --name ruby_sw_apm_#{args.tag}"
     cmd = '/bin/sh'
@@ -67,8 +68,8 @@ task :docker_tests, [:tag, :runtests, :platform] do |_, args|
 end
 
 desc 'Start ubuntu docker container for testing and debugging.'
-task :docker_dev => [:docker_down] do
-  cmd="docker-compose run --service-ports \
+task docker_dev: [:docker_down] do
+  cmd = "docker-compose run --service-ports \
   --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development"
   Dir.chdir('test') do
     sh cmd do |ok, res|
@@ -86,7 +87,7 @@ end
 
 desc 'alias for fetch_oboe_file_from_staging'
 task :fetch do
-  Rake::Task["fetch_oboe_file"].invoke("stg")
+  Rake::Task['fetch_oboe_file'].invoke('stg')
 end
 
 @files = %w[oboe.h oboe_api.h oboe_api.cpp oboe.i oboe_debug.h bson/bson.h bson/platform_hacks.h]
@@ -95,38 +96,38 @@ end
 
 desc 'fetch oboe file from different environment'
 task :fetch_oboe_file, [:env] do |_t, args|
-  abort("Missing env argument (abort)") if args["env"].nil? || args["env"].empty?
+  abort('Missing env argument (abort)') if args['env'].nil? || args['env'].empty?
 
   begin
-    swig_version = %x(swig -version)
+    swig_version = `swig -version`
   rescue StandardError => e
     swig_version = ''
     puts "Error getting swig version: #{e.message}"
   end
   swig_valid_version = swig_version.scan(/swig version [34].\d*.\d*/i)
   if swig_valid_version.empty?
-    $stderr.puts '== ERROR ================================================================='
-    $stderr.puts "Could not find required swig version > 3.0.8, found #{swig_version.inspect}"
-    $stderr.puts 'Please install swig "> 3.0.8" and try again.'
-    $stderr.puts '=========================================================================='
+    warn '== ERROR ================================================================='
+    warn "Could not find required swig version > 3.0.8, found #{swig_version.inspect}"
+    warn 'Please install swig "> 3.0.8" and try again.'
+    warn '=========================================================================='
     raise
   else
-    $stderr.puts "+++++++++++ Using #{swig_version.strip.split("\n")[0]}"
+    warn "+++++++++++ Using #{swig_version.strip.split("\n")[0]}"
   end
 
   ext_src_dir = File.expand_path('ext/oboe_metal/src')
   ext_lib_dir = File.expand_path('ext/oboe_metal/lib')
   oboe_version = File.read(File.join(ext_src_dir, 'VERSION')).strip
 
-  case args["env"]
-  when "dev"
-    oboe_dir = "https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly/"
-    puts "Fetching c-lib from DEVELOPMENT"
-    puts "This is an unstable build and this gem should only be used for testing"
-  when "stg"
+  case args['env']
+  when 'dev'
+    oboe_dir = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly/'
+    puts 'Fetching c-lib from DEVELOPMENT'
+    puts 'This is an unstable build and this gem should only be used for testing'
+  when 'stg'
     oboe_dir = "https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/#{oboe_version}"
     puts "Fetching c-lib from STAGING !!!!!! C-Lib VERSION: #{oboe_version} !!!!!!!"
-  when "prod"
+  when 'prod'
     oboe_dir = "https://agent-binaries.cloud.solarwinds.com/apm/c-lib/#{oboe_version}"
     puts "Fetching c-lib from PRODUCTION !!!!!! C-Lib VERSION: #{oboe_version} !!!!!!!"
   end
@@ -178,10 +179,10 @@ task :fetch_oboe_file, [:env] do |_t, args|
 
   FileUtils.cd(ext_src_dir) do
     sh 'swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i'
-    FileUtils.rm('oboe.i') if args["env"] != "prod"
+    FileUtils.rm('oboe.i') if args['env'] != 'prod'
   end
 
-  puts "Fetching finished."
+  puts 'Fetching finished.'
 end
 
 desc 'Build and publish to Rubygems'
@@ -194,9 +195,7 @@ task :build_and_publish_gem do
 
   exit 1 unless system('gem', 'build', gemspec_file)
 
-  if ENV['GEM_HOST_API_KEY']
-    exit 1 unless system('gem', 'push', gem_file)
-  end
+  exit 1 if ENV['GEM_HOST_API_KEY'] && !system('gem', 'push', gem_file)
 end
 
 desc "Build the gem's c extension"
@@ -212,7 +211,7 @@ task :compile do
   sh "#{Gem.ruby} extconf.rb"
   sh '/usr/bin/env make'
 
-  File.delete(final_so) if File.exist?(final_so)
+  FileUtils.rm_f(final_so)
 
   if File.exist?(so_file)
     FileUtils.mv(so_file, final_so)
@@ -270,14 +269,13 @@ task :distclean do
 end
 
 desc 'Rebuild the gem c extension without fetching the oboe files, without recreating the swig wrapper'
-task :recompile => [:distclean, :compile]
+task recompile: %i[distclean compile]
 
 desc 'Build the gem c extension ...'
-task :cfc => [:clean, :fetch, :compile]
+task cfc: %i[clean fetch compile]
 
 desc 'Build gem locally for testing'
 task :build_gem do
-
   puts "\n=== building for MRI ===\n"
   FileUtils.mkdir_p('builds') if Dir['builds'].empty?
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
@@ -287,7 +285,7 @@ task :build_gem do
 
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
-  Rake::Task["fetch_oboe_file"].invoke("stg")
+  Rake::Task['fetch_oboe_file'].invoke('stg')
   system('gem build solarwinds_apm.gemspec')
 
   gemname = Dir['solarwinds_apm*.gem'].first
@@ -329,7 +327,8 @@ end
 # but there are other auth methods. see more on https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-rubygems-registry
 desc 'Push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
 task :push_gem_to_github_package, [:version] do |_, args|
-  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds', "builds/solarwinds_apm-#{args[:version]}.gem")
+  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds',
+                       "builds/solarwinds_apm-#{args[:version]}.gem")
   puts "\n=== Finished ===\n"
 end
 
@@ -346,20 +345,20 @@ task :rubocop do
   _arg1, arg2 = ARGV
 
   rubocop_file = "#{__dir__}/rubocop_result.txt"
-  File.delete(rubocop_file) if File.exist?(rubocop_file)
-  new_file = File.new(rubocop_file, "w")
+  FileUtils.rm_f(rubocop_file)
+  new_file = File.new(rubocop_file, 'w')
   new_file.close
 
-  %x(bundle exec rubocop --auto-correct) if arg2 == 'auto-safe'
-  %x(bundle exec rubocop --auto-correct-all) if arg2 == 'auto-all'
-  %x(bundle exec rubocop > rubocop_result.txt)
+  `bundle exec rubocop --auto-correct` if arg2 == 'auto-safe'
+  `bundle exec rubocop --auto-correct-all` if arg2 == 'auto-all'
+  `bundle exec rubocop > rubocop_result.txt`
   exit 1
 end
 
 desc 'Remove all the logs generated from run_test.sh'
 task :cleanup_logs do
-  %x(rm log/testrun_*)
-  %x(rm log/test_direct_*)
-  %x(rm log/postgresql/postgresql-*)
+  `rm log/testrun_*`
+  `rm log/test_direct_*`
+  `rm log/postgresql/postgresql-*`
   puts 'Log cleaned.'
 end

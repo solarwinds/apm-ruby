@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -10,13 +12,13 @@ describe 'SolarWinds TransactionCache Test' do
   end
 
   it 'test set and get' do
-    SolarWindsAPM::TransactionCache.set('a','b')
-    _(SolarWindsAPM::TransactionCache.get("a")).must_equal "b"
+    SolarWindsAPM::TransactionCache.set('a', 'b')
+    _(SolarWindsAPM::TransactionCache.get('a')).must_equal 'b'
   end
 
   it 'test del' do
-    SolarWindsAPM::TransactionCache.set('a','b')
+    SolarWindsAPM::TransactionCache.set('a', 'b')
     SolarWindsAPM::TransactionCache.del('a')
-    _(SolarWindsAPM::TransactionCache.get("a")).must_equal nil
+    _(SolarWindsAPM::TransactionCache.get('a')).must_equal nil
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -16,19 +18,20 @@ module SolarWindsAPM
     @@agent_enabled    = true
 
     def self.disable_agent
-      return unless @@agent_enabled  # only show the msg once
+      return unless @@agent_enabled # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Agent disabled. No Trace exported."}
+      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Agent disabled. No Trace exported." }
     end
 
     def self.resolve_sampler
-      sampler_config = {"trigger_trace" => SolarWindsAPM::Config[:trigger_tracing_mode]}
+      sampler_config = { 'trigger_trace' => SolarWindsAPM::Config[:trigger_tracing_mode] }
       @@config[:sampler] =
         ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
           root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
           remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config))
+          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
+        )
     end
 
     #
@@ -36,18 +39,20 @@ module SolarWindsAPM
     #
     def self.resolve_response_propagator
       response_propagator  = SolarWindsAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
-      rack_setting         = @@config_map["OpenTelemetry::Instrumentation::Rack"]
-      
+      rack_setting         = @@config_map['OpenTelemetry::Instrumentation::Rack']
+
       if rack_setting
         if rack_setting[:response_propagators].instance_of?(Array)
           rack_setting[:response_propagators].append(response_propagator)
         elsif rack_setting[:response_propagators].nil?
           rack_setting[:response_propagators] = [response_propagator]
         else
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, please provide Array e.g. [#{rack_setting[:response_propagators]}]"}
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, please provide Array e.g. [#{rack_setting[:response_propagators]}]"
+          end
         end
       else
-        @@config_map["OpenTelemetry::Instrumentation::Rack"] = {response_propagators: [response_propagator]}
+        @@config_map['OpenTelemetry::Instrumentation::Rack'] = { response_propagators: [response_propagator] }
       end
     end
 
@@ -56,11 +61,11 @@ module SolarWindsAPM
     end
 
     def self.print_config
-      @@config.each do |k,v|
-        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}"}
+      @@config.each do |k, v|
+        SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.class}" }
       end
-      @@config_map.each do |k,v|
-        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}"}
+      @@config_map.each do |k, v|
+        SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v}" }
       end
       nil
     end
@@ -81,16 +86,18 @@ module SolarWindsAPM
         return
       end
 
-      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] propagators: #{propagators.map(&:class)}"}
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] propagators: #{propagators.map(&:class)}" }
       unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty? # rubocop:disable Style/GuardClause
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Missing tracecontext propagator."}
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Missing tracecontext propagator." }
         disable_agent
       end
     end
 
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."}
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
+        end
         disable_agent
         return
       end
@@ -140,14 +147,18 @@ module SolarWindsAPM
     #
     def self.initialize_with_config
       unless block_given?
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Block not given while doing in-code configuration. Agent disabled."}
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] Block not given while doing in-code configuration. Agent disabled."
+        end
         return
       end
 
       yield @@config_map
 
       if @@config_map.empty?
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] No configuration given for in-code configuration. Agent disabled."}
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] No configuration given for in-code configuration. Agent disabled."
+        end
         return
       end
 

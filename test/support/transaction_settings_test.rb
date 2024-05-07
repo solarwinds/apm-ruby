@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -6,7 +8,6 @@ require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support/transaction_settings'
 
 describe 'SolarWinds Transaction Setting Test' do
-
   it 'test non transaction_settings' do
     SolarWindsAPM::Config[:transaction_settings] = []
     trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: 'google.ca', name: 'HTTP GET', kind: :connect)
@@ -21,7 +22,8 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
@@ -31,7 +33,8 @@ describe 'SolarWinds Transaction Setting Test' do
         regexp: '^.*\/google\/.*$'
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
@@ -44,7 +47,8 @@ describe 'SolarWinds Transaction Setting Test' do
       }
     ]
 
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
   end
 
@@ -56,7 +60,8 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :enabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 
@@ -73,7 +78,8 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 
@@ -85,13 +91,16 @@ describe 'SolarWinds Transaction Setting Test' do
         tracing: :disabled
       }
     ]
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/cool_image.png', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/cool_image.png',
+                                                            name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
 
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/image.js', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/images/image.js',
+                                                            name: 'HTTP GET', kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 0
 
-    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/imagesjs/', name: 'HTTP GET', kind: :connect)
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search/google/imagesjs/', name: 'HTTP GET',
+                                                            kind: :connect)
     _(trans_settings.calculate_trace_mode).must_equal 1
   end
 end

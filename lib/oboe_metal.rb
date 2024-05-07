@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -32,17 +34,15 @@ module SolarWindsAPM
       # Start the SolarWindsAPM Reporter
       #
       def start
-        begin
-          options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
-          SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
-          report_init
-          SolarWindsAPM.loaded = true
-        rescue StandardError=> e
-          $stderr.puts e.message
-          SolarWindsAPM.loaded = false
-        end
+        options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
+        SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
+        report_init
+        SolarWindsAPM.loaded = true
+      rescue StandardError => e
+        warn e.message
+        SolarWindsAPM.loaded = false
       end
-      alias :restart :start
+      alias restart start
 
       ##
       # sendReport
@@ -58,7 +58,7 @@ module SolarWindsAPM
       #
       # Send the report for the given event
       #
-      def send_status(evt, context=nil, with_system_timestamp: true)
+      def send_status(evt, context = nil, with_system_timestamp: true)
         SolarWindsAPM.reporter.sendStatus(evt, context, with_system_timestamp)
       end
 
@@ -68,7 +68,7 @@ module SolarWindsAPM
       # installed, as well as the version of instrumentation and version of
       # layer.
       #
-      def report_init(layer=:rack) # :nodoc:
+      def report_init(layer = :rack) # :nodoc:
         # Don't send __Init in test or if SolarWindsAPM
         # isn't fully loaded (e.g. missing c-extension)
         return unless SolarWindsAPM.loaded
@@ -85,7 +85,7 @@ module SolarWindsAPM
       #
       # * +layer+ - The layer the reported event belongs to
       # * +kvs+ - A hash containing key/value pairs that will be reported along with this event
-      def log_init(layer=:rack, kvs={})
+      def log_init(layer = :rack, kvs = {})
         context = SolarWindsAPM::Metadata.makeRandom
         return SolarWindsAPM::Context.toString unless context.isValid
 
@@ -108,15 +108,15 @@ module SolarWindsAPM
       # and for SolarWindsAPM.support_report.
       #
       def build_swo_init_report
-
-        platform_info = {'__Init' => true}
+        platform_info = { '__Init' => true }
 
         begin
           platform_info['APM.Version']             = SolarWindsAPM::Version::STRING
           platform_info['APM.Extension.Version']   = extension_lib_version
 
           # OTel Resource Attributes (Optional)
-          platform_info['process.executable.path'] = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
+          platform_info['process.executable.path'] =
+            File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']).sub(/.*\s.*/m, '"\&"')
           platform_info['process.executable.name'] = RbConfig::CONFIG['ruby_install_name']
           platform_info['process.command_line']    = $PROGRAM_NAME
           platform_info['process.telemetry.path']  = Gem::Specification.find_by_name('solarwinds_apm')&.full_gem_path
@@ -127,10 +127,14 @@ module SolarWindsAPM
           # Collect up opentelemetry sdk version (Instrumented Library Versions) (Required)
           begin
             require 'opentelemetry/sdk'
-            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each {|k,v| platform_info[k] = v}
-            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each {|k,v| platform_info[k] = v}
+            ::OpenTelemetry::SDK::Resources::Resource.telemetry_sdk.attribute_enumerator.each do |k, v|
+              platform_info[k] = v
+            end
+            ::OpenTelemetry::SDK::Resources::Resource.process.attribute_enumerator.each { |k, v| platform_info[k] = v }
           rescue StandardError => e
-            SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Fail to extract telemetry attributes. Error: #{e.message}"}
+            SolarWindsAPM.logger.warn do
+              "[#{self.class}/#{__method__}] Fail to extract telemetry attributes. Error: #{e.message}"
+            end
           end
         rescue StandardError, ScriptError => e
           # Also rescue ScriptError (aka SyntaxError) in case one of the expected
@@ -138,8 +142,8 @@ module SolarWindsAPM
 
           platform_info['Error'] = "Error in build_report: #{e.message}"
 
-          SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Error in build_init_report: #{e.message}"}
-          SolarWindsAPM.logger.debug {e.backtrace}
+          SolarWindsAPM.logger.warn { "[#{self.class}/#{__method__}] Error in build_init_report: #{e.message}" }
+          SolarWindsAPM.logger.debug { e.backtrace }
         end
         platform_info
       end
@@ -150,7 +154,7 @@ module SolarWindsAPM
       def report_gem_in_use
         platform_info = {}
         if defined?(Gem) && Gem.respond_to?(:loaded_specs)
-          Gem.loaded_specs.each_pair {|k, v| platform_info["Ruby.#{k}.Version"] = v.version.to_s}
+          Gem.loaded_specs.each_pair { |k, v| platform_info["Ruby.#{k}.Version"] = v.version.to_s }
         else
           platform_info.merge!(legacy_build_init_report)
         end
@@ -169,8 +173,6 @@ module SolarWindsAPM
     end
   end
 end
-
-# rubocop:enable Style/Documentation
 
 # Setup an alias
 SolarWindsApm = SolarWindsAPM

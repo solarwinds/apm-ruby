@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -32,8 +34,8 @@ module SolarWindsAPM
       enabled_regexps  = SolarWindsAPM::Config[:enabled_regexps]
       disabled_regexps = SolarWindsAPM::Config[:disabled_regexps]
 
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] enabled_regexps: #{enabled_regexps&.inspect}"}
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] disabled_regexps: #{disabled_regexps&.inspect}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] enabled_regexps: #{enabled_regexps&.inspect}" }
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] disabled_regexps: #{disabled_regexps&.inspect}" }
 
       return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(@url_path) }
       return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(@url_path) }
@@ -42,7 +44,9 @@ module SolarWindsAPM
 
       true
     rescue StandardError => e
-      SolarWindsAPM.logger.warn {"[#{self.class}/#{__method__}] Could not determine tracing status for #{kind}. #{e.inspect}. transaction_settings regexps/extensions igonred/unfiltered."}
+      SolarWindsAPM.logger.warn do
+        "[#{self.class}/#{__method__}] Could not determine tracing status for #{kind}. #{e.inspect}. transaction_settings regexps/extensions igonred/unfiltered."
+      end
       true
     end
   end
