@@ -44,3 +44,6 @@ Gemspec/RequiredRubyVersion:
 Naming/VariableNumber:
   Exclude:
     - 'gemfiles/*.gemfile'
+Metrics/BlockNesting:
+  Exclude:
+    - 'lib/solarwinds_apm.rb'
