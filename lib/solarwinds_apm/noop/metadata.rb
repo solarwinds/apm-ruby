@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -7,7 +9,7 @@
 ####
 # noop version of SolarWindsAPM::Metadata
 #
-module SolarWindsAPM
+module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
   # Metadata
   class Metadata
     ##
@@ -16,6 +18,10 @@ module SolarWindsAPM
     # needs to return an object that responds to :isValid
     #
     def self.makeRandom
+      Metadata.new
+    end
+
+    def self.fromString(*)
       Metadata.new
     end
 

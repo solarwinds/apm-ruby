@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -24,7 +26,7 @@ module SolarWindsAPM
 
     def set(key, value)
       @cache[key] = value
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txn manager current cache #{@cache.inspect}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] txn manager current cache #{@cache.inspect}" }
     end
 
     alias []= set
@@ -33,7 +35,9 @@ module SolarWindsAPM
       @mutex.synchronize do
         @root_context_h[key] = value
       end
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] txn manager current root_context_h #{@root_context_h.inspect}"}
+      SolarWindsAPM.logger.debug do
+        "[#{self.class}/#{__method__}] txn manager current root_context_h #{@root_context_h.inspect}"
+      end
     end
 
     def get_root_context_h(key)

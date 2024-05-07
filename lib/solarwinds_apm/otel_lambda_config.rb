@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -18,15 +20,15 @@ module SolarWindsAPM
       ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
 
       ::OpenTelemetry::SDK.configure do |c|
-        c.resource = {'sw.apm.version' => SolarWindsAPM::Version::STRING,
-                      'sw.data.module' => 'apm',
-                      'service.name' => ENV['OTEL_SERVICE_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME']}
+        c.resource = { 'sw.apm.version' => SolarWindsAPM::Version::STRING,
+                       'sw.data.module' => 'apm',
+                       'service.name' => ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil) }
       end
 
       # meter_name is static for swo services
       meters = {
         'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-        'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+        'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
       }
 
       txn_manager          = SolarWindsAPM::TxnNameManager.new
@@ -48,9 +50,10 @@ module SolarWindsAPM
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
         root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new,
         remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new,
-        remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new)
+        remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new
+      )
 
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] SolarWindsAPM lambda configuration initialized"}
+      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SolarWindsAPM lambda configuration initialized" }
 
       nil
     end

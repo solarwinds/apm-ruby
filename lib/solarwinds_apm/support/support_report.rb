@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -29,8 +31,8 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn '*   Please email the output of this report to SWO-support@solarwinds.com'
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn "Ruby: #{RUBY_DESCRIPTION}"
-    SolarWindsAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}"   # replace $0 to get executing script
-    SolarWindsAPM.logger.warn "ARGV: #{ARGV.inspect}" 
+    SolarWindsAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}" # replace $0 to get executing script
+    SolarWindsAPM.logger.warn "ARGV: #{ARGV.inspect}"
     SolarWindsAPM.logger.warn "SolarWindsAPM.loaded == #{SolarWindsAPM.loaded}"
 
     SolarWindsAPM.logger.warn "SolarWindsAPM::Ruby defined?: #{yesno(defined?(SolarWindsAPM::Ruby))}"
@@ -71,7 +73,7 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn '* SolarWindsAPM::Config Values'
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn SolarWindsAPM::Config.print_config.to_s
-    
+
     SolarWindsAPM.logger.warn '********************************************************'
     SolarWindsAPM.logger.warn '* SolarWindsAPM::OTelConfig Values'
     SolarWindsAPM.logger.warn '********************************************************'

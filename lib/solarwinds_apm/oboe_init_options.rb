@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -7,7 +9,7 @@
 require 'singleton'
 require 'uri'
 
-require_relative './support/service_key_checker'
+require_relative 'support/service_key_checker'
 
 module SolarWindsAPM
   # OboeInitOptions
@@ -82,18 +84,18 @@ module SolarWindsAPM
         @reporter,               # 7
         @host,                   # 8
         @service_key,            # 9
-        @certificates,           #10
-        @buffer_size,            #11
-        @trace_metrics,          #12
-        @histogram_precision,    #13
-        @token_bucket_capacity,  #14
-        @token_bucket_rate,      #15
-        @file_single,            #16
-        @ec2_md_timeout,         #17
-        @grpc_proxy,             #18
-        0,                       #19 arg for lambda (no lambda for ruby yet)
-        @metric_format,          #20
-        @log_type                #21
+        @certificates,           # 10
+        @buffer_size,            # 11
+        @trace_metrics,          # 12
+        @histogram_precision,    # 13
+        @token_bucket_capacity,  # 14
+        @token_bucket_rate,      # 15
+        @file_single,            # 16
+        @ec2_md_timeout,         # 17
+        @grpc_proxy,             # 18
+        0,                       # 19 arg for lambda (no lambda for ruby yet)
+        @metric_format,          # 20
+        @log_type                # 21
       ]
     end
 
@@ -104,17 +106,14 @@ module SolarWindsAPM
     private
 
     def reporter_and_host
-
       reporter = ENV['SW_APM_REPORTER'] || 'ssl'
 
-      case reporter
-      when 'ssl', 'file'
-        host = ENV['SW_APM_COLLECTOR'] || ''
-      when 'null'
-        host = ''
-      else
-        host = ''
-      end
+      host = case reporter
+             when 'ssl', 'file'
+               ENV['SW_APM_COLLECTOR'] || ''
+             else
+               ''
+             end
 
       host = sanitize_collector_uri(host) unless reporter == 'file'
       [reporter, host]
@@ -123,7 +122,7 @@ module SolarWindsAPM
     def read_and_validate_service_key
       service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter)
       service_key = service_key_checker.read_and_validate_service_key
-      @service_name = service_key.split(':',2).last # instance variable used in testing
+      @service_name = service_key.split(':', 2).last # instance variable used in testing
       service_key
     end
 
@@ -139,8 +138,8 @@ module SolarWindsAPM
       proxy = ENV['SW_APM_PROXY'] || SolarWindsAPM::Config[:http_proxy] || ''
       return proxy if proxy == ''
 
-      unless /http:\/\/.*:\d+$/.match?(proxy)
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] SW_APM_PROXY/http_proxy doesn't start with 'http://', #{proxy}"}
+      unless %r{http://.*:\d+$}.match?(proxy)
+        SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] SW_APM_PROXY/http_proxy doesn't start with 'http://', #{proxy}" }
         return '' # try without proxy, it may work, shouldn't crash but may not report
       end
 
@@ -150,13 +149,15 @@ module SolarWindsAPM
     def read_certificates
       certificate = ''
 
-      file = appoptics_collector?? "#{__dir__}/cert/star.appoptics.com.issuer.crt" : ENV['SW_APM_TRUSTEDPATH']
+      file = appoptics_collector? ? "#{__dir__}/cert/star.appoptics.com.issuer.crt" : ENV.fetch('SW_APM_TRUSTEDPATH', nil)
       return certificate if file.nil? || file&.empty?
 
       begin
-        certificate = File.open(file,"r").read
+        certificate = File.read(file)
       rescue StandardError => e
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] certificates: #{file} doesn't exist or caused by #{e.message}."}
+        SolarWindsAPM.logger.error do
+          "[#{self.class}/#{__method__}] certificates: #{file} doesn't exist or caused by #{e.message}."
+        end
       end
 
       certificate
@@ -170,7 +171,7 @@ module SolarWindsAPM
       allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com',
                      'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
 
-      (allowed_uri.include? ENV["SW_APM_COLLECTOR"])? true : false
+      (allowed_uri.include? ENV.fetch('SW_APM_COLLECTOR', nil))
     end
 
     def sanitize_collector_uri(uri)
@@ -180,9 +181,11 @@ module SolarWindsAPM
         sanitized_uri = ::URI.parse("http://#{uri}").host
         return sanitized_uri unless sanitized_uri.nil?
       rescue StandardError => e
-        SolarWindsAPM.logger.error {"[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"}
+        SolarWindsAPM.logger.error do
+          "[#{self.class}/#{__method__}] uri for collector #{uri} is malformat. Error: #{e.message}"
+        end
       end
-      ""
+      ''
     end
 
     def determine_oboe_log_type

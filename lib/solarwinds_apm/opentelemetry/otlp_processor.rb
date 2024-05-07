@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -27,12 +29,12 @@ module SolarWindsAPM
       # not throw or block the execution thread.
       #
       # @param [Span] span the {Span} that just started.
-      # @param [Context] parent_context the 
+      # @param [Context] parent_context the
       #  started span.
       def on_start(span, parent_context)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}" }
 
-        initialize_metrics if @metrics.size == 0
+        initialize_metrics if @metrics.empty?
 
         @trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
         parent_span    = ::OpenTelemetry::Trace.current_span(parent_context)
@@ -42,9 +44,9 @@ module SolarWindsAPM
         span.add_attributes(span_attrs)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")  # this is for custom api set_transaction_name to be able to retrieve right span_id from trace_id
+        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}") # this is for custom api set_transaction_name to be able to retrieve right span_id from trace_id
       rescue StandardError => e
-        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] processor on_start error: #{e.message}"}
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
       # Called when a {Span} is ended, if the {Span#recording?}
@@ -56,10 +58,10 @@ module SolarWindsAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
 
         # metrics per trace, therefore, we only record the parent span (span.parent_span_id has to be 00000000000 INVALID_SPAN_ID to qualify as parent span)
-        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID 
+        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
           return unless span.context.trace_flags.sampled?
 
           @exporter&.export([span.to_span_data])
@@ -79,7 +81,7 @@ module SolarWindsAPM
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @txn_manager.del(@trace_span_id)
       rescue StandardError => e
-        SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"}
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}" }
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
@@ -98,7 +100,7 @@ module SolarWindsAPM
 
       def meter_attributes(span)
         meter_attrs = {}
-        meter_attrs['sw.service_name'] = ENV['OTEL_SERVICE_NAME'] # Service name override tag. Only set if Service Name Override is set for this request.
+        meter_attrs['sw.service_name'] = ENV.fetch('OTEL_SERVICE_NAME', nil) # Service name override tag. Only set if Service Name Override is set for this request.
         meter_attrs['sw.nonce']        = rand(2**64) >> 1
         meter_attrs['sw.is_error']     = error?(span) == 1
         meter_attrs['sw.transaction']  = @txn_manager.get(@trace_span_id) if @txn_manager.get(@trace_span_id)
@@ -120,9 +122,9 @@ module SolarWindsAPM
       # @txn_manager.get(@trace_span_id) is to check if custom api has called set_transaction_name
       def calculate_transaction_name_lambda(span)
         trans_name = @txn_manager.get(@trace_span_id)
-        SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] possible transaction name: #{trans_name} from #{@trace_span_id}"}
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] possible transaction name: #{trans_name} from #{@trace_span_id}" }
 
-        (trans_name || ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0,255)
+        (trans_name || ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
       end
 
       def initialize_metrics
@@ -144,10 +146,10 @@ module SolarWindsAPM
       # sampling metrics is recorded for each span (include non-entry span)
       # metrics should be exported after sampling decision is made
       def record_sampling_metrics
-        _, trace_count   = SolarWindsAPM.oboe_api.consumeTraceCount
+        _, trace_count = SolarWindsAPM.oboe_api.consumeTraceCount
         @metrics[:tracecount].add(trace_count)
 
-        _, sample_count  = SolarWindsAPM.oboe_api.consumeSampleCount
+        _, sample_count = SolarWindsAPM.oboe_api.consumeSampleCount
         @metrics[:samplecount].add(sample_count)
 
         _, request_count = SolarWindsAPM.oboe_api.consumeRequestCount
@@ -156,10 +158,10 @@ module SolarWindsAPM
         _, token_bucket_exhaustion_count = SolarWindsAPM.oboe_api.consumeTokenBucketExhaustionCount
         @metrics[:toex_count].add(token_bucket_exhaustion_count)
 
-        _, through_trace_count     = SolarWindsAPM.oboe_api.consumeThroughTraceCount
+        _, through_trace_count = SolarWindsAPM.oboe_api.consumeThroughTraceCount
         @metrics[:through_count].add(through_trace_count)
 
-        _, triggered_trace_count   = SolarWindsAPM.oboe_api.consumeTriggeredTraceCount
+        _, triggered_trace_count = SolarWindsAPM.oboe_api.consumeTriggeredTraceCount
         @metrics[:tt_count].add(triggered_trace_count)
       end
     end

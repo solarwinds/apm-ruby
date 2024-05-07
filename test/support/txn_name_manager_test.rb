@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
@@ -6,28 +8,27 @@ require './lib/solarwinds_apm/support/txn_name_manager'
 
 describe 'SolarWindsTXNNameManangerTest.rb' do
   before do
-
     @txn_manager = SolarWindsAPM::TxnNameManager.new
-    @txn_manager.set("c","d")
+    @txn_manager.set('c', 'd')
   end
 
   it 'test_set' do
-    @txn_manager.set("a","b")
-    _(@txn_manager.get("a")).must_equal "b"
+    @txn_manager.set('a', 'b')
+    _(@txn_manager.get('a')).must_equal 'b'
   end
 
   it 'test_[]' do
-    @txn_manager["e"] = "f"
-    _(@txn_manager.get("e")).must_equal "f"
+    @txn_manager['e'] = 'f'
+    _(@txn_manager.get('e')).must_equal 'f'
   end
 
   it 'test_del' do
-    @txn_manager.del("c")
-    assert_nil(@txn_manager.get("c"))
+    @txn_manager.del('c')
+    _(@txn_manager.get('c')).must_equal nil
   end
 
   it 'test_get' do
-    _(@txn_manager.get("c")).must_equal "d"
+    @txn_manager.get('c').must_equal 'd'
   end
 
   it 'test_set_get_root_context' do

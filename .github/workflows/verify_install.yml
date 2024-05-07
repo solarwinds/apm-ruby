@@ -21,7 +21,7 @@ on:
 
 env:
   SW_APM_SERVICE_KEY: ${{ secrets.APM_RUBY_INSTALL_TESTING_SWO_KEY }}
-  SW_APM_COLLECTOR: apm.collector.cloud.solarwinds.com
+  SW_APM_COLLECTOR: apm.collector.na-01.cloud.solarwinds.com
   MODE: ${{ github.event.inputs.install-registry }}
   SOLARWINDS_APM_VERSION: ${{ github.event.inputs.solarwinds-version }}
 
@@ -130,7 +130,7 @@ jobs:
         run: ./verify_install.sh
         shell: sh
         env:
-          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
 
   terminate_arm64_runner:
     if: ${{ always() }}

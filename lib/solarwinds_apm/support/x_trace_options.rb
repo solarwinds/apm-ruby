@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -7,9 +9,9 @@
 module SolarWindsAPM
   # XTraceOptions
   class XTraceOptions
-    attr_reader :options, :signature, :trigger_trace, :timestamp, 
+    attr_reader :options, :signature, :trigger_trace, :timestamp,
                 :sw_keys, :custom_kvs, :ignored
-    
+
     ##
     # use by Trigger Tracing
     # TODO - refactor for w3c when ticket ready
@@ -36,10 +38,10 @@ module SolarWindsAPM
     # - ts (unix timestamp)
     # - other keys will be reported in the response options as ignored
 
-    SW_XTRACEOPTIONS_RESPONSE_KEY = 'xtrace_options_response'.freeze
+    SW_XTRACEOPTIONS_RESPONSE_KEY = 'xtrace_options_response'
 
     def initialize(context)
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] x_trace_options context: #{context.inspect}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] x_trace_options context: #{context.inspect}" }
       @context = context.dup
       @trigger_trace = false
       @custom_kvs = {}
@@ -64,19 +66,19 @@ module SolarWindsAPM
           end
         when 'sw-keys'
           if @sw_keys
-            SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] Duplicate key: #{k[0]}"}
+            SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] Duplicate key: #{k[0]}" }
           else
             @sw_keys = k[1].strip
           end
         when /^custom-[^\s]*$/
           if @custom_kvs[k[0]]
-            SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] Duplicate key: #{k[0]}"}
+            SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] Duplicate key: #{k[0]}" }
           else
             @custom_kvs[k[0]] = k[1].strip
           end
         when 'ts'
-          if @timestamp > 0
-            SolarWindsAPM.logger.info {"[#{self.class}/#{__method__}] Duplicate key: #{k[0]}"}
+          if @timestamp.positive?
+            SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] Duplicate key: #{k[0]}" }
           else
             @timestamp = k[1].to_i
           end
@@ -84,13 +86,15 @@ module SolarWindsAPM
           @ignored << k[0]
         end
       end
-      SolarWindsAPM.logger.info("[#{self.class}/#{__method__}] Some keys were ignored: #{@ignored.join(',')}") unless @ignored.empty?
+      return if @ignored.empty?
+
+      SolarWindsAPM.logger.info("[#{self.class}/#{__method__}] Some keys were ignored: #{@ignored.join(',')}")
     end
 
     def add_kvs(kvs, settings)
       return unless settings.auth_ok?
 
-      @custom_kvs.each { |k,v| kvs[k] = v } unless @custom_kvs.empty?
+      @custom_kvs.each { |k, v| kvs[k] = v } unless @custom_kvs.empty?
       kvs['SWKeys'] = @sw_keys if @sw_keys
       kvs['TriggeredTrace'] = true if settings.triggered_trace?
     end
@@ -98,24 +102,26 @@ module SolarWindsAPM
     def obtain_signature
       # INTL_SWO_SIGNATURE_KEY = sw_signature
       signature = obtain_sw_value(SolarWindsAPM::Constants::INTL_SWO_SIGNATURE_KEY)
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] x_trace_options option_signature: #{signature}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] x_trace_options option_signature: #{signature}" }
       signature
     end
 
     def options_header
-      # INTL_SWO_X_OPTIONS_KEY = sw_xtraceoptions 
+      # INTL_SWO_X_OPTIONS_KEY = sw_xtraceoptions
       header = obtain_sw_value(SolarWindsAPM::Constants::INTL_SWO_X_OPTIONS_KEY)
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] x_trace_options option_header: #{header}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] x_trace_options option_header: #{header}" }
       header
     end
 
     def obtain_sw_value(type)
       sw_value = nil
-      instance_variable = @context&.instance_variable_get("@entries")
+      instance_variable = @context&.instance_variable_get('@entries')
       instance_variable&.each do |key, value|
-        if key.instance_of?(::String)
-          sw_value = value if key == type
-          SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] obtained sw value: #{type} #{key}: #{value.inspect}"}
+        next unless key.instance_of?(::String)
+
+        sw_value = value if key == type
+        SolarWindsAPM.logger.debug do
+          "[#{self.class}/#{__method__}] obtained sw value: #{type} #{key}: #{value.inspect}"
         end
       end
       sw_value

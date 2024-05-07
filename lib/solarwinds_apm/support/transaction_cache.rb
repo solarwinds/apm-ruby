@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -16,7 +18,7 @@ module SolarWindsAPM
     end
 
     def self.get(key)
-      return nil unless @cache.has_key?(key)
+      return nil unless @cache.key?(key)
 
       @order.delete(key)
       @order.push(key)
@@ -38,7 +40,7 @@ module SolarWindsAPM
     end
 
     def self.set(key, value)
-      if @cache.has_key?(key)
+      if @cache.key?(key)
         @cache.delete(key)
       elsif @order.size >= @capacity
         evict_key = @order.shift
@@ -47,7 +49,7 @@ module SolarWindsAPM
 
       @cache[key] = value
       @order.push(key)
-      SolarWindsAPM.logger.debug {"[#{self.class}/#{__method__}] current TransactionCache #{@cache.inspect}"}
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] current TransactionCache #{@cache.inspect}" }
     end
   end
 end

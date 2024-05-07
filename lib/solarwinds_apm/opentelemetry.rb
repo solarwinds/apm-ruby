@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -7,9 +9,9 @@
 require 'opentelemetry/sdk'
 require 'opentelemetry/instrumentation/all'
 
-require_relative './opentelemetry/solarwinds_propagator'
-require_relative './opentelemetry/solarwinds_processor'
-require_relative './opentelemetry/solarwinds_sampler'
-require_relative './opentelemetry/solarwinds_exporter'
-require_relative './opentelemetry/solarwinds_response_propagator'
-require_relative './opentelemetry/otlp_processor'
+require_relative 'opentelemetry/solarwinds_propagator'
+require_relative 'opentelemetry/solarwinds_processor'
+require_relative 'opentelemetry/solarwinds_sampler'
+require_relative 'opentelemetry/solarwinds_exporter'
+require_relative 'opentelemetry/solarwinds_response_propagator'
+require_relative 'opentelemetry/otlp_processor'

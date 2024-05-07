@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -12,24 +14,24 @@ module SolarWindsAPM
   # Use SolarWindsAPM::Config.show to view the entire nested hash.
   #
   module Config
-    SW_LOG_LEVEL_MAPPING = {-1 => {:stdlib => ::Logger::FATAL, :otel => 'fatal'},
-                             0 => {:stdlib => ::Logger::FATAL, :otel => 'fatal'},
-                             1 => {:stdlib => ::Logger::ERROR, :otel => 'error'},
-                             2 => {:stdlib => ::Logger::WARN, :otel => 'warn'},
-                             3 => {:stdlib => ::Logger::INFO, :otel => 'info'},
-                             4 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'},
-                             5 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'},
-                             6 => {:stdlib => ::Logger::DEBUG, :otel => 'debug'}}.freeze
+    SW_LOG_LEVEL_MAPPING = { -1 => { stdlib: ::Logger::FATAL, otel: 'fatal' },
+                             0 => { stdlib: ::Logger::FATAL, otel: 'fatal' },
+                             1 => { stdlib: ::Logger::ERROR, otel: 'error' },
+                             2 => { stdlib: ::Logger::WARN, otel: 'warn' },
+                             3 => { stdlib: ::Logger::INFO, otel: 'info' },
+                             4 => { stdlib: ::Logger::DEBUG, otel: 'debug' },
+                             5 => { stdlib: ::Logger::DEBUG, otel: 'debug' },
+                             6 => { stdlib: ::Logger::DEBUG, otel: 'debug' } }.freeze
 
     @@config = {}
-    @@instrumentation = [:action_controller, :action_controller_api, :action_view,
-                         :active_record, :bunnyclient, :bunnyconsumer, :curb,
-                         :dalli, :delayed_jobclient, :delayed_jobworker,
-                         :excon, :faraday, :graphql, :grpc_client, :grpc_server, :grape,
-                         :httpclient, :nethttp, :memcached, :mongo, :moped, :padrino, :rack, :redis,
-                         :resqueclient, :resqueworker, :rest_client,
-                         :sequel, :sidekiqclient, :sidekiqworker, :sinatra, :typhoeus,
-                         :curb, :excon, :faraday, :httpclient, :nethttp, :rest_client, :typhoeus]
+    @@instrumentation = %i[action_controller action_controller_api action_view
+                           active_record bunnyclient bunnyconsumer curb
+                           dalli delayed_jobclient delayed_jobworker
+                           excon faraday graphql grpc_client grpc_server grape
+                           httpclient nethttp memcached mongo moped padrino rack redis
+                           resqueclient resqueworker rest_client
+                           sequel sidekiqclient sidekiqworker sinatra typhoeus
+                           curb excon faraday httpclient nethttp rest_client typhoeus]
 
     ##
     # load_config_file
@@ -53,26 +55,32 @@ module SolarWindsAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files << config_file_from_env if ENV.has_key?('SW_APM_CONFIG_RUBY')
+      config_files << config_file_from_env if ENV.key?('SW_APM_CONFIG_RUBY')
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_apm_config.rb')
       config_files << config_file if File.exist?(config_file)
 
-      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Available config_files: #{config_files.join(', ')}" }
-      SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}"} if config_files.size > 1
-      load(config_files[0]) if config_files.size > 0
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Available config_files: #{config_files.join(', ')}" }
+      if config_files.size > 1
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}"
+        end
+      end
+      load(config_files[0]) if config_files.size.positive?
 
-      set_log_level        # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
+      set_log_level # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
     end
 
     def self.config_file_from_env
-      if File.exist?(ENV['SW_APM_CONFIG_RUBY']) && !File.directory?(ENV['SW_APM_CONFIG_RUBY'])
-        config_file = ENV['SW_APM_CONFIG_RUBY']
-      elsif File.exist?(File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb'))
-        config_file = File.join(ENV['SW_APM_CONFIG_RUBY'], 'solarwinds_apm_config.rb')
+      if File.exist?(ENV.fetch('SW_APM_CONFIG_RUBY', nil)) && !File.directory?(ENV.fetch('SW_APM_CONFIG_RUBY', nil))
+        config_file = ENV.fetch('SW_APM_CONFIG_RUBY', nil)
+      elsif File.exist?(File.join(ENV.fetch('SW_APM_CONFIG_RUBY', nil), 'solarwinds_apm_config.rb'))
+        config_file = File.join(ENV.fetch('SW_APM_CONFIG_RUBY', nil), 'solarwinds_apm_config.rb')
       else
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV['SW_APM_CONFIG_RUBY']}"}
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV.fetch('SW_APM_CONFIG_RUBY', nil)}"
+        end
       end
       config_file
     end
@@ -92,7 +100,7 @@ module SolarWindsAPM
       if env_var && valid_env_values.include?(env_value)
         value = bool ? true?(env_value) : env_value.to_sym
       elsif env_var && !env_value.to_s.empty?
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{ENV[env_var]}). Using default value: #{default}.")
+        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{ENV.fetch(env_var, nil)}). Using default value: #{default}.")
         return @@config[key.to_sym] = default
       end
 
@@ -103,7 +111,7 @@ module SolarWindsAPM
     end
 
     def self.true?(obj)
-      obj.to_s.casecmp("true").zero?
+      obj.to_s.casecmp('true').zero?
     end
 
     def self.boolean?(obj)
@@ -111,7 +119,7 @@ module SolarWindsAPM
     end
 
     def self.symbol?(obj)
-      [:enabled, :disabled].include?(obj)
+      %i[enabled disabled].include?(obj)
     end
 
     ##
@@ -121,9 +129,13 @@ module SolarWindsAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] General configurations list blow:"}
-      @@config.each do |k,v|
-        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"} unless @@instrumentation.include?(k)
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] General configurations list blow:" }
+      @@config.each do |k, v|
+        next if @@instrumentation.include?(k)
+
+        SolarWindsAPM.logger.debug do
+          "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"
+        end
       end
       nil
     end
@@ -137,13 +149,15 @@ module SolarWindsAPM
     #
     def self.initialize
       # for config file backward compatibility
-      @@instrumentation.each {|inst| @@config[inst] = {}}
+      @@instrumentation.each { |inst| @@config[inst] = {} }
       @@config[:transaction_name] = {}
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
-      load(File.join(File.dirname(File.dirname(__FILE__)), 'rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'))
-      
+
+      load(File.join(File.dirname(File.dirname(__FILE__)),
+                     'rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'))
+
       load_config_file
 
       print_config if SolarWindsAPM.logger.level.zero?
@@ -168,7 +182,7 @@ module SolarWindsAPM
     #
     # Config variable assignment method.  Here we validate and store the
     # assigned value(s) and trigger any secondary action needed.
-    # ENV always have higher precedence 
+    # ENV always have higher precedence
     #
     def self.[]=(key, value)
       key = key.to_sym
@@ -176,18 +190,24 @@ module SolarWindsAPM
 
       case key
       when :sampling_rate
-        SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] sampling_rate is not a supported setting for SolarWindsAPM::Config. Please use :sample_rate."}
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] sampling_rate is not a supported setting for SolarWindsAPM::Config. Please use :sample_rate."
+        end
 
       when :sample_rate
         unless value.is_a?(Integer) || value.is_a?(Float)
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :sample_rate must be a number between 0 and 1000000 (1m) (provided: #{value}), corrected to 0"}
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] :sample_rate must be a number between 0 and 1000000 (1m) (provided: #{value}), corrected to 0"
+          end
           value = 0
         end
 
         # Validate :sample_rate value
         unless value.between?(0, 1e6)
-          new_value = value < 0 ? 0 : 1_000_000
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] :sample_rate must be between 0 and 1000000 (1m) (provided: #{value}), corrected to #{new_value}"}
+          new_value = value.negative? ? 0 : 1_000_000
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] :sample_rate must be between 0 and 1000000 (1m) (provided: #{value}), corrected to #{new_value}"
+          end
         end
 
         # Assure value is an integer
@@ -221,7 +241,7 @@ module SolarWindsAPM
       end
 
       # `tracing: disabled` is the default
-      disabled = settings.select { |v| !v.has_key?(:tracing) || v[:tracing] == :disabled }
+      disabled = settings.select { |v| !v.key?(:tracing) || v[:tracing] == :disabled }
       enabled  = settings.select { |v| v[:tracing] == :enabled }
 
       SolarWindsAPM::Config[:enabled_regexps] = compile_regexp(enabled)
@@ -238,18 +258,18 @@ module SolarWindsAPM
 
     def self.compile_settings_regexp(value)
       regexps = value.select do |v|
-        v.has_key?(:regexp) &&
+        v.key?(:regexp) &&
           !(v[:regexp].is_a?(String) && v[:regexp].empty?) &&
           !(v[:regexp].is_a?(Regexp) && v[:regexp].inspect == '//')
       end
 
       regexps.map! do |v|
-        begin
-          v[:regexp].is_a?(String) ? Regexp.new(v[:regexp], v[:opts]) : Regexp.new(v[:regexp])
-        rescue StandardError => e
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] Problem compiling transaction_settings item #{v}, will ignore. Error: #{e.message}"}
-          nil
+        v[:regexp].is_a?(String) ? Regexp.new(v[:regexp], v[:opts]) : Regexp.new(v[:regexp])
+      rescue StandardError => e
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] Problem compiling transaction_settings item #{v}, will ignore. Error: #{e.message}"
         end
+        nil
       end
       regexps.keep_if { |v| !v.nil? }
       regexps.empty? ? nil : regexps

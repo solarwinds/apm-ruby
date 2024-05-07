@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -6,7 +8,6 @@ require 'logger'
 require './lib/solarwinds_apm/config'
 
 describe 'Config Test' do
-
   describe '#config_file_from_env' do
     after do
       ENV.delete('SW_APM_CONFIG_RUBY')
@@ -38,7 +39,6 @@ describe 'Config Test' do
   end
 
   describe '#enable_disable_config' do
-
     before do
       SolarWindsAPM::Config.initialize
     end
@@ -189,30 +189,30 @@ describe 'Config Test' do
   describe '#set_log_level' do
     before do
       SolarWindsAPM::Config.initialize
-      @current_debug_level = ENV['SW_APM_DEBUG_LEVEL']
+      @current_debug_level = ENV.fetch('SW_APM_DEBUG_LEVEL', nil)
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
 
     after do
       ENV['SW_APM_DEBUG_LEVEL'] = @current_debug_level
     end
-    
+
     it 'debug_level is out of range use default INFO' do
       SolarWindsAPM::Config[:debug_level] = 7
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::INFO
+      _(SolarWindsAPM.logger.level).must_equal Logger::INFO
     end
 
     it 'debug_level is in the range' do
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::ERROR
+      _(SolarWindsAPM.logger.level).must_equal Logger::ERROR
     end
 
     it 'debug_level is in the range with -1 as disable sw logger' do
       SolarWindsAPM::Config[:debug_level] = -1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::FATAL
+      _(SolarWindsAPM.logger.level).must_equal Logger::FATAL
       assert_nil(SolarWindsAPM.logger.instance_variable_get(:@logdev))
     end
 
@@ -220,39 +220,39 @@ describe 'Config Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '3'
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::INFO
+      _(SolarWindsAPM.logger.level).must_equal Logger::INFO
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
 
     it 'env var is in the range with 2' do
       SolarWindsAPM::Config[:debug_level] = 2
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::WARN
+      _(SolarWindsAPM.logger.level).must_equal Logger::WARN
     end
 
     it 'env var is in the range with 3' do
       SolarWindsAPM::Config[:debug_level] = 3
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::INFO
+      _(SolarWindsAPM.logger.level).must_equal Logger::INFO
     end
-    
+
     it 'env var is in the range with 0' do
       SolarWindsAPM::Config[:debug_level] = 0
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::FATAL
+      _(SolarWindsAPM.logger.level).must_equal Logger::FATAL
     end
 
     it 'env var is in the range with 4' do
       SolarWindsAPM::Config[:debug_level] = 4
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::DEBUG
+      _(SolarWindsAPM.logger.level).must_equal Logger::DEBUG
     end
 
     it 'env var override config but out of range' do
       ENV['SW_APM_DEBUG_LEVEL'] = '7'
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::INFO
+      _(SolarWindsAPM.logger.level).must_equal Logger::INFO
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
 
@@ -260,7 +260,7 @@ describe 'Config Test' do
       ENV['SW_APM_DEBUG_LEVEL'] = '-10'
       SolarWindsAPM::Config[:debug_level] = 1
       SolarWindsAPM::Config.set_log_level
-      _(SolarWindsAPM.logger.level).must_equal ::Logger::INFO
+      _(SolarWindsAPM.logger.level).must_equal Logger::INFO
       ENV.delete('SW_APM_DEBUG_LEVEL')
     end
   end

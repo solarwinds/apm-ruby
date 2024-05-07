@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -5,7 +7,6 @@ require 'minitest_helper'
 require './lib/solarwinds_apm/api'
 
 describe 'SolarWinds API in_span Test' do
-
   let(:sdk) { OpenTelemetry::SDK }
   let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
   let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
@@ -23,10 +24,10 @@ describe 'SolarWinds API in_span Test' do
 
     OpenTelemetry::Context.with_current(parent_context) do
       tracer.in_span('root') do
-        SolarWindsAPM::API.in_span('child1') {}
-        SolarWindsAPM::API.in_span('child2') {}
+        SolarWindsAPM::API.in_span('child1') { nil }
+        SolarWindsAPM::API.in_span('child2') { nil }
         SolarWindsAPM::API.in_span('child3') do |span|
-          span.add_attributes({"test_attribute" => "attribute_1"})
+          span.add_attributes({ 'test_attribute' => 'attribute_1' })
         end
         SolarWindsAPM::API.in_span('child4') # no block given, should ignore
       end
@@ -39,7 +40,7 @@ describe 'SolarWinds API in_span Test' do
 
   describe 'test_in_span_wrapper_from_solarwinds_apm' do
     it 'test_in_span' do
-      skip if finished_spans.size == 0
+      skip if finished_spans.empty?
 
       _(finished_spans.size).must_equal(4)
       _(finished_spans[0].name).must_equal('child1')

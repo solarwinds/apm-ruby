@@ -1,16 +1,20 @@
-source "https://rubygems.org"
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
 
 group :development, :test do
   gem 'benchmark-ips', '>= 2.7.2'
   gem 'bson'
   gem 'byebug', '>= 8.0.0'
-  gem 'debugger',     :platform  =>  :mri_19
+  gem 'debugger', platform: :mri_19
   gem 'e2mmap'
   gem 'get_process_mem'
   gem 'irb', '>= 1.0.0'
+  gem 'logging'
+  gem 'lumberjack'
   gem 'memory_profiler'
   gem 'minitest'
-  gem 'minitest-debugger', :require => false
+  gem 'minitest-debugger', require: false
   gem 'minitest-focus', '>=1.1.2'
   gem 'minitest-hooks', '>= 1.5.0'
   gem 'minitest-reporters', '< 1.0.18'
@@ -19,11 +23,9 @@ group :development, :test do
   gem 'rack-test'
   gem 'rake'
   gem 'rubocop', require: false
-  gem "simplecov", require: false, group: :test
+  gem 'simplecov', require: false, group: :test
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
-  gem 'lumberjack'
-  gem 'logging'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'

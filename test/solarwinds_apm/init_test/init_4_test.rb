@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
@@ -10,9 +12,12 @@ describe 'solarwinds_apm_init_4' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 
-    RUBY_PLATFORM = 'macos'.freeze # rubocop:disable Lint/ConstantDefinitionInBlock
+    RUBY_PLATFORM = 'macos' # rubocop:disable Lint/ConstantDefinitionInBlock
 
     require './lib/solarwinds_apm'
-    assert_includes log_output.string, 'SolarWindsAPM warning: Platform macos not yet supported on current solarwinds_apm'
+    assert_includes log_output.string,
+                    'SolarWindsAPM warning: Platform macos not yet supported on current solarwinds_apm'
+
+    noop_shared_test
   end
 end

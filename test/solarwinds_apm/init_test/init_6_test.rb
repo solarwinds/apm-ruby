@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2024 SolarWinds, LLC.
 # All rights reserved.
 
@@ -15,5 +17,7 @@ describe 'solarwinds_apm_init_6' do
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'SW_APM_SERVICE_KEY not configured.'
+
+    noop_shared_test
   end
 end

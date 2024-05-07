@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
@@ -9,13 +11,12 @@ require './lib/solarwinds_apm/otel_config'
 require './lib/solarwinds_apm/api'
 
 describe 'otlp processor test' do
-
   before do
-    @exporter    = ::OpenTelemetry::Exporter::OTLP::Exporter.new
+    @exporter    = OpenTelemetry::Exporter::OTLP::Exporter.new
     @txn_manager = SolarWindsAPM::TxnNameManager.new
 
-    @meters = {'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-              'sw.apm.request.metrics'  => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')}
+    @meters = { 'sw.apm.sampling.metrics' => OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
+                'sw.apm.request.metrics' => OpenTelemetry.meter_provider.meter('sw.apm.request.metrics') }
 
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@meters, @exporter, @txn_manager)
   end
@@ -30,14 +31,14 @@ describe 'otlp processor test' do
   end
 
   it 'test_on_start_verfy_component_initialized_correctly' do
-    @processor.on_start(create_span, ::OpenTelemetry::Context.current)
+    @processor.on_start(create_span, OpenTelemetry::Context.current)
 
     request_metrics           = @processor.instance_variable_get(:@meters)['sw.apm.request.metrics']
     sampling_metrics          = @processor.instance_variable_get(:@meters)['sw.apm.sampling.metrics']
     request_metrics_registry  = request_metrics.instance_variable_get(:@instrument_registry)
     sampling_metrics_registry = sampling_metrics.instance_variable_get(:@instrument_registry)
 
-    _(@processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal "31e175128efc4018-00"
+    _(@processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal '31e175128efc4018-00'
     _(@processor.instance_variable_get(:@metrics).size).must_equal 7
 
     refute_nil(request_metrics_registry['trace.service.response_time'])

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # © 2023 SolarWinds Worldwide, LLC. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
@@ -26,18 +28,20 @@ module SolarWindsAPM
       #     req = Net::HTTP::Get.new(url.to_s)
       #     res = Net::HTTP.start(url.host, url.port) {|http| http.request(req)}
       #   end
-      # 
+      #
       # === Returns:
-      # * Objective
+      # * value returned by block
       #
       def in_span(name, attributes: nil, links: nil, start_timestamp: nil, kind: nil, &block)
         if block.nil?
-          SolarWindsAPM.logger.warn {"[#{name}/#{__method__}] please provide block when using in_span function"}
+          SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] please provide block when using in_span function" }
           return
         end
 
-        SolarWindsAPM.logger.debug {"[#{name}/#{__method__}] solarwinds_apm in_span with OTEL_SERVICE_NAME #{ENV['OTEL_SERVICE_NAME']}"}
-        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV['OTEL_SERVICE_NAME'])
+        SolarWindsAPM.logger.debug do
+          "[#{name}/#{__method__}] solarwinds_apm in_span with OTEL_SERVICE_NAME #{ENV.fetch('OTEL_SERVICE_NAME', nil)}"
+        end
+        current_tracer = ::OpenTelemetry.tracer_provider.tracer(ENV.fetch('OTEL_SERVICE_NAME', nil))
         current_tracer.in_span(name, attributes: attributes, links: links, start_timestamp: start_timestamp, kind: kind, &block)
       end
     end
