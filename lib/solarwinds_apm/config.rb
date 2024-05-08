@@ -283,3 +283,5 @@ module SolarWindsAPM
     private_class_method :reset_regexps
   end
 end
+
+SolarWindsAPM::Config.initialize

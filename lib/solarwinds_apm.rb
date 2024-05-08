@@ -21,8 +21,6 @@ begin
   begin
     if RUBY_PLATFORM.include?('linux')
       require 'solarwinds_apm/config'
-      SolarWindsAPM::Config.load_config_file
-
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
       unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
         SolarWindsAPM.logger.warn '=============================================================='
@@ -52,7 +50,6 @@ begin
 
         SolarWindsAPM.oboe_api = SolarWindsAPM::OboeAPI.new # start oboe api for lambda env
         SolarWindsAPM.is_lambda = true
-        require 'solarwinds_apm/noop'
         require 'solarwinds_apm/otel_lambda_config'
 
         SolarWindsAPM::OTelLambdaConfig.initialize # we don't allow in-code configuration under lambda env

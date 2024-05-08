@@ -22,17 +22,11 @@ module SolarWindsAPM
         @trace_span_id = nil
       end
 
-      # Called when a {Span} is started, if the {Span#recording?}
-      # returns true.
-      #
-      # This method is called synchronously on the execution thread, should
-      # not throw or block the execution thread.
-      #
       # @param [Span] span the {Span} that just started.
       # @param [Context] parent_context the
       #  started span.
       def on_start(span, parent_context)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}" }
 
         initialize_metrics if @metrics.empty?
 
@@ -49,13 +43,6 @@ module SolarWindsAPM
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
-      # Called when a {Span} is ended, if the {Span#recording?}
-      # returns true.
-      #
-      # This method is called synchronously on the execution thread, should
-      # not throw or block the execution thread.
-      # Only calculate inbound metrics for service root spans
-      #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
