@@ -2,7 +2,7 @@
 # Copyright (c) SolarWinds, LLC.
 # All rights reserved.
 
-if grep -q "gem 'opentelemetry-metrics-sdk'" gemfiles/test_gems.gemfile && [[ "$RUBY_VERSION" == '2.7.5' ]] ; then
+if grep -q "gem 'opentelemetry-metrics-sdk'" gemfiles/test_gems.gemfile && [ "$RUBY_VERSION" = '2.7.5' ]; then
   echo "Skip test for 2.7.5 if using otel metrics"
   exit 0
 fi
