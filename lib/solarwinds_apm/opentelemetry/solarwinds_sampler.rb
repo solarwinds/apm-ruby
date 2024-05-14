@@ -136,6 +136,7 @@ module SolarWindsAPM
                 trigger_trace, trigger_trace_mode, options, signature, timestamp]
 
         if SolarWindsAPM.is_lambda
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] get decision from oboe_api" }
           # trigger trace disabled at this point (https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3753116438/AWS+Lambda+Instrumentation+POC#Concerns)
           do_metrics, do_sample, rate, source, bucket_rate,
             bucket_cap, decision_type, auth, status_msg, auth_msg,

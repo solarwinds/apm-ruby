@@ -23,6 +23,7 @@ module SolarWindsAPM
         c.resource = { 'sw.apm.version' => SolarWindsAPM::Version::STRING,
                        'sw.data.module' => 'apm',
                        'service.name' => ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil) }
+        c.use 'OpenTelemetry::Instrumentation::AwsLambda'
       end
 
       # meter_name is static for swo services
@@ -53,7 +54,10 @@ module SolarWindsAPM
         remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new
       )
 
-      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SolarWindsAPM lambda configuration initialized" }
+      SolarWindsAPM.logger.warn do
+        "[#{name}/#{__method__}] SolarWindsAPM lambda configuration initialized \
+        \nOpenTelemetry.tracer_provider: #{::OpenTelemetry.tracer_provider.inspect}"
+      end
 
       nil
     end
