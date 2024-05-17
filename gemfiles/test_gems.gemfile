@@ -30,10 +30,5 @@ group :development, :test do
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
-
-  source 'https://rubygems.pkg.github.com/solarwinds' do
-    gem 'opentelemetry-metrics-api', '0.0.1'
-    gem 'opentelemetry-metrics-sdk', '0.0.1'
-    gem 'opentelemetry-exporter-otlp', '0.26.1'
-  end
+  gem 'opentelemetry-exporter-otlp'
 end

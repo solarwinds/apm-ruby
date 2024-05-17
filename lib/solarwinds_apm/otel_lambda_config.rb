@@ -26,26 +26,15 @@ module SolarWindsAPM
         c.use 'OpenTelemetry::Instrumentation::AwsLambda'
       end
 
-      # meter_name is static for swo services
-      meters = {
-        'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-        'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
-      }
-
-      txn_manager          = SolarWindsAPM::TxnNameManager.new
-      otlp_metric_exporter = ::OpenTelemetry::Exporter::OTLP::MetricsExporter.new
-      otlp_span_exporter   = ::OpenTelemetry::Exporter::OTLP::Exporter.new
-      otlp_span_processor  = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(meters, otlp_span_exporter, txn_manager)
-
       # append our propagators
-      solarwinds_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
-      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(solarwinds_propagator)
+      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 
       # register metrics_exporter to meter_provider
-      ::OpenTelemetry.meter_provider.add_metric_reader(otlp_metric_exporter)
+      ::OpenTelemetry.meter_provider.add_metric_reader(::OpenTelemetry::Exporter::OTLP::MetricsExporter.new)
 
       # append our processors (with our exporter)
-      ::OpenTelemetry.tracer_provider.add_span_processor(otlp_span_processor)
+      processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(::OpenTelemetry::Exporter::OTLP::Exporter.new, SolarWindsAPM::TxnNameManager.new)
+      ::OpenTelemetry.tracer_provider.add_span_processor(processor)
 
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(

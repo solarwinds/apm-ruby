@@ -3,6 +3,7 @@
 require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
+require 'opentelemetry-instrumentation-aws_lambda'
 require 'solarwinds_apm'
 
 def otel_wrapper(event:, context:)

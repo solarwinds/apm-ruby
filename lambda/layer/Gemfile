@@ -2,6 +2,8 @@
 
 source 'https://rubygems.org'
 
+gem 'opentelemetry-instrumentation-aws_lambda', '~> 0.1.0'
+
 source 'https://rubygems.pkg.github.com/xuan-cao-swi' do
   gem 'solarwinds_apm', '6.0.0.prev7'
 end

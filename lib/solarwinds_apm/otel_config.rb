@@ -72,7 +72,7 @@ module SolarWindsAPM
 
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
-      exporter                  = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+      exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
       @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
     end
 

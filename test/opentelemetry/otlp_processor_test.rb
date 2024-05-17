@@ -12,6 +12,8 @@ require './lib/solarwinds_apm/api'
 
 describe 'otlp processor test' do
   before do
+    skip unless defined?(OpenTelemetry::SDK::Metrics)
+
     @exporter    = OpenTelemetry::Exporter::OTLP::Exporter.new
     @txn_manager = SolarWindsAPM::TxnNameManager.new
 

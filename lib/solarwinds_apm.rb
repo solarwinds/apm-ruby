@@ -22,7 +22,7 @@ begin
     if RUBY_PLATFORM.include?('linux')
       require 'solarwinds_apm/config'
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
-      unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
+      if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && (ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty?) # lambda env doesn't need SW_APM_SERVICE_KEY
         SolarWindsAPM.logger.warn '=============================================================='
         SolarWindsAPM.logger.warn 'SW_APM_SERVICE_KEY Error. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages for more details.'

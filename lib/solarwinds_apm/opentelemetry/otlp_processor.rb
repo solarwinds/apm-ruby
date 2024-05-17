@@ -15,9 +15,9 @@ module SolarWindsAPM
       # @param [Hash] meters the hash of meter created by ::OpenTelemetry.meter_provider.meter('meter_name')
       # @param [TxnNameManager] txn_manager storage for transaction name
       # @exporter [Exporter] exporter reporter that send trace data
-      def initialize(meters, exporter, txn_manager)
+      def initialize(exporter, txn_manager)
         super(exporter, txn_manager)
-        @meters  = meters
+        @meters = init_meters
         @metrics = {}
         @trace_span_id = nil
       end
@@ -45,7 +45,7 @@ module SolarWindsAPM
 
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
 
         # metrics per trace, therefore, we only record the parent span (span.parent_span_id has to be 00000000000 INVALID_SPAN_ID to qualify as parent span)
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
@@ -57,7 +57,9 @@ module SolarWindsAPM
         end
 
         meter_attrs = meter_attributes(span)
-        span_time   = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
+        span_time = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
+
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] entry span, response_time: #{span_time}." }
 
         @metrics[:response_time].record(span_time, attributes: meter_attrs)
         @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
@@ -67,12 +69,21 @@ module SolarWindsAPM
 
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         @txn_manager.del(@trace_span_id)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}" }
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
       private
+
+      # Create two meters for sampling and request count
+      def init_meters
+        @meters = {
+          'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
+          'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+        }
+      end
 
       def span_attributes(span)
         span_attrs = {}
@@ -134,21 +145,27 @@ module SolarWindsAPM
       # metrics should be exported after sampling decision is made
       def record_sampling_metrics
         _, trace_count = SolarWindsAPM.oboe_api.consumeTraceCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] trace_count: #{trace_count}" }
         @metrics[:tracecount].add(trace_count)
 
         _, sample_count = SolarWindsAPM.oboe_api.consumeSampleCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] sample_count: #{sample_count}" }
         @metrics[:samplecount].add(sample_count)
 
         _, request_count = SolarWindsAPM.oboe_api.consumeRequestCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] request_count: #{request_count}" }
         @metrics[:request_count].add(request_count)
 
         _, token_bucket_exhaustion_count = SolarWindsAPM.oboe_api.consumeTokenBucketExhaustionCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] tokenbucket_exhaustion_count: #{token_bucket_exhaustion_count}" }
         @metrics[:toex_count].add(token_bucket_exhaustion_count)
 
         _, through_trace_count = SolarWindsAPM.oboe_api.consumeThroughTraceCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] through_trace_count: #{through_trace_count}" }
         @metrics[:through_count].add(through_trace_count)
 
         _, triggered_trace_count = SolarWindsAPM.oboe_api.consumeTriggeredTraceCount
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] triggered_trace_count: #{triggered_trace_count}" }
         @metrics[:tt_count].add(triggered_trace_count)
       end
     end
