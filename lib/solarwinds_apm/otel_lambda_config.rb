@@ -33,7 +33,7 @@ module SolarWindsAPM
       ::OpenTelemetry.meter_provider.add_metric_reader(::OpenTelemetry::Exporter::OTLP::MetricsExporter.new)
 
       # append our processors (with our exporter)
-      processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(::OpenTelemetry::Exporter::OTLP::Exporter.new, SolarWindsAPM::TxnNameManager.new)
+      processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(::OpenTelemetry::Exporter::OTLP::Exporter.new)
       ::OpenTelemetry.tracer_provider.add_span_processor(processor)
 
       # configure sampler afterwards

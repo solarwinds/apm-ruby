@@ -15,11 +15,10 @@ module SolarWindsAPM
       # @param [Hash] meters the hash of meter created by ::OpenTelemetry.meter_provider.meter('meter_name')
       # @param [TxnNameManager] txn_manager storage for transaction name
       # @exporter [Exporter] exporter reporter that send trace data
-      def initialize(exporter, txn_manager)
-        super(exporter, txn_manager)
-        @meters = init_meters
-        @metrics = {}
-        @trace_span_id = nil
+      def initialize(exporter)
+        super(exporter, nil)
+        @meters   = init_meters
+        @metrics  = {}
       end
 
       # @param [Span] span the {Span} that just started.
@@ -30,15 +29,11 @@ module SolarWindsAPM
 
         initialize_metrics if @metrics.empty?
 
-        @trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
-        parent_span    = ::OpenTelemetry::Trace.current_span(parent_context)
+        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
         return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
 
         span_attrs = span_attributes(span)
         span.add_attributes(span_attrs)
-
-        trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}") # this is for custom api set_transaction_name to be able to retrieve right span_id from trace_id
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -67,8 +62,6 @@ module SolarWindsAPM
         record_sampling_metrics
         ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
 
-        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
-        @txn_manager.del(@trace_span_id)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}" }
@@ -86,12 +79,7 @@ module SolarWindsAPM
       end
 
       def span_attributes(span)
-        span_attrs = {}
-        trans_name = calculate_transaction_name_lambda(span)
-        @txn_manager[@trace_span_id] = trans_name if span.context.trace_flags.sampled?
-
-        span_attrs['sw.transaction'] = trans_name
-
+        span_attrs = { 'sw.transaction' => (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255) }
         span_attrs.merge!(http_attributes(span))
         span_attrs
       end
@@ -101,7 +89,7 @@ module SolarWindsAPM
         meter_attrs['sw.service_name'] = ENV.fetch('OTEL_SERVICE_NAME', nil) # Service name override tag. Only set if Service Name Override is set for this request.
         meter_attrs['sw.nonce']        = rand(2**64) >> 1
         meter_attrs['sw.is_error']     = error?(span) == 1
-        meter_attrs['sw.transaction']  = @txn_manager.get(@trace_span_id) if @txn_manager.get(@trace_span_id)
+        meter_attrs['sw.transaction']  = (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
 
         meter_attrs.merge!(http_attributes(span))
         meter_attrs
@@ -116,17 +104,8 @@ module SolarWindsAPM
         }
       end
 
-      # custom SDK > configured name (e.g. env var: SW_APM_TRANSACTION_NAME) > automatic naming (AWS_LAMBDA_FUNCTION_NAME) > "unknown"
-      # @txn_manager.get(@trace_span_id) is to check if custom api has called set_transaction_name
-      def calculate_transaction_name_lambda(span)
-        trans_name = @txn_manager.get(@trace_span_id)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] possible transaction name: #{trans_name} from #{@trace_span_id}" }
-
-        (trans_name || ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
-      end
-
       def initialize_metrics
-        request_meter  = @meters['sw.apm.request.metrics']
+        request_meter = @meters['sw.apm.request.metrics']
 
         @metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')
 

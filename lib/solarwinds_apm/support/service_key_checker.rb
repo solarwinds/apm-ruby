@@ -16,6 +16,7 @@ module SolarWindsAPM
 
     def read_and_validate_service_key
       return '' unless @reporter == 'ssl'
+      return '' unless ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty? # lambda env doesn't need SW_APM_SERVICE_KEY
 
       service_key = fetch_service_key
       if service_key.empty?
