@@ -86,8 +86,6 @@ module SolarWindsAPM
 
       def meter_attributes(span)
         meter_attrs = {}
-        meter_attrs['sw.service_name'] = ENV.fetch('OTEL_SERVICE_NAME', nil) # Service name override tag. Only set if Service Name Override is set for this request.
-        meter_attrs['sw.nonce']        = rand(2**64) >> 1
         meter_attrs['sw.is_error']     = error?(span) == 1
         meter_attrs['sw.transaction']  = (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
 
