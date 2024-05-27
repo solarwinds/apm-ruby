@@ -22,7 +22,7 @@ begin
     if RUBY_PLATFORM.include?('linux')
       require 'solarwinds_apm/config'
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
-      if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && (ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty?) # lambda env doesn't need SW_APM_SERVICE_KEY
+      if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && !SolarWindsAPM::OboeInitOptions.instance.lambda_env
         SolarWindsAPM.logger.warn '=============================================================='
         SolarWindsAPM.logger.warn 'SW_APM_SERVICE_KEY Error. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages for more details.'
@@ -43,13 +43,12 @@ begin
       SolarWindsAPM.logger.info "OpenTelemetry instrumentation version: #{OpenTelemetry::Instrumentation::All::VERSION}."
       SolarWindsAPM.logger.info '==================================================================='
 
-      if SolarWindsAPM.lambda?
+      if SolarWindsAPM::OboeInitOptions.instance.lambda_env
         SolarWindsAPM.logger.info '==================================================================='
         SolarWindsAPM.logger.info "Ruby #{RUBY_VERSION} on platform #{RUBY_PLATFORM} is running in lambda environment."
         SolarWindsAPM.logger.info '==================================================================='
 
         SolarWindsAPM.oboe_api = SolarWindsAPM::OboeAPI.new # start oboe api for lambda env
-        SolarWindsAPM.is_lambda = true
         require 'solarwinds_apm/otel_lambda_config'
 
         SolarWindsAPM::OTelLambdaConfig.initialize # we don't allow in-code configuration under lambda env

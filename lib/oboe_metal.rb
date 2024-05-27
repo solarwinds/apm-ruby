@@ -14,25 +14,15 @@ module SolarWindsAPM
   @loaded    = false
   @reporter  = nil
   @oboe_api  = nil
-  @is_lambda = false
 
   class << self
-    attr_accessor :reporter, :loaded, :oboe_api, :is_lambda
+    attr_accessor :reporter, :loaded, :oboe_api
 
     def sample_rate(rate)
       return unless SolarWindsAPM.loaded
 
       # Update liboboe with the new SampleRate value
       SolarWindsAPM::Context.setDefaultSampleRate(rate.to_i)
-    end
-
-    def lambda?
-      if ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty?
-        false
-      else
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] lambda environment - LAMBDA_TASK_ROOT: #{ENV.fetch('LAMBDA_TASK_ROOT', nil)}; AWS_LAMBDA_FUNCTION_NAME: #{ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)}" }
-        true
-      end
     end
   end
 

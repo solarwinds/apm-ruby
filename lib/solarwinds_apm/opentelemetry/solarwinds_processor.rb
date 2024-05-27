@@ -34,8 +34,7 @@ module SolarWindsAPM
           "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
         end
 
-        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-        return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+        return if non_entry_span(parent_context)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
@@ -142,6 +141,16 @@ module SolarWindsAPM
       # if no status_code in attributes of HTTP span
       def get_http_status_code(span)
         span.attributes[HTTP_STATUS_CODE] || LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE
+      end
+
+      # check if it's entry span based on no parent or parent is remote
+      def non_entry_span(parent_context)
+        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
+        if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+          true
+        else
+          false
+        end
       end
 
       # Get trans_name and url_tran of this span instance.

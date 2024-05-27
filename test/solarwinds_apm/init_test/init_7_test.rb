@@ -13,6 +13,8 @@ describe 'solarwinds_apm_init_7' do
     SolarWindsAPM.logger = Logger.new(log_output)
 
     ENV['SW_APM_REPORTER'] = 'file'
+    ENV.delete('LAMBDA_TASK_ROOT')
+    ENV.delete('AWS_LAMBDA_FUNCTION_NAME')
 
     require './lib/solarwinds_apm'
     assert_includes log_output.string, 'Error occurs while loading solarwinds_apm. SolarWinds APM disabled.'

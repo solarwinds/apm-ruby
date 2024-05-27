@@ -17,8 +17,8 @@ module SolarWindsAPM
       # @exporter [Exporter] exporter reporter that send trace data
       def initialize(exporter)
         super(exporter, nil)
-        @meters   = init_meters
-        @metrics  = {}
+        @meters  = init_meters
+        @metrics = init_metrics
       end
 
       # @param [Span] span the {Span} that just started.
@@ -27,13 +27,9 @@ module SolarWindsAPM
       def on_start(span, parent_context)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}" }
 
-        initialize_metrics if @metrics.empty?
+        return if non_entry_span(parent_context)
 
-        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-        return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
-
-        span_attrs = span_attributes(span)
-        span.add_attributes(span_attrs)
+        span.add_attributes(span_attributes(span))
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -42,13 +38,14 @@ module SolarWindsAPM
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
 
-        # metrics per trace, therefore, we only record the parent span (span.parent_span_id has to be 00000000000 INVALID_SPAN_ID to qualify as parent span)
+        # non entry span
         if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
           return unless span.context.trace_flags.sampled?
 
           @exporter&.export([span.to_span_data])
-          record_sampling_metrics
+          # record_sampling_metrics
           ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
+          return
         end
 
         meter_attrs = meter_attributes(span)
@@ -79,18 +76,25 @@ module SolarWindsAPM
       end
 
       def span_attributes(span)
-        span_attrs = { 'sw.transaction' => (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255) }
+        span_attrs = { 'sw.transaction' => calculate_lambda_transaction_name }
         span_attrs.merge!(http_attributes(span))
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_attrs: #{span_attrs.inspect}" }
         span_attrs
       end
 
       def meter_attributes(span)
-        meter_attrs = {}
-        meter_attrs['sw.is_error']     = error?(span) == 1
-        meter_attrs['sw.transaction']  = (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
+        meter_attrs = {
+          'sw.is_error' => error?(span) == 1,
+          'sw.transaction' => calculate_lambda_transaction_name
+        }
 
         meter_attrs.merge!(http_attributes(span))
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] meter_attrs: #{meter_attrs.inspect}" }
         meter_attrs
+      end
+
+      def calculate_lambda_transaction_name
+        (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
       end
 
       def http_attributes(span)
@@ -102,7 +106,7 @@ module SolarWindsAPM
         }
       end
 
-      def initialize_metrics
+      def init_metrics
         request_meter = @meters['sw.apm.request.metrics']
 
         @metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')

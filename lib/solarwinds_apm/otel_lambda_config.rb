@@ -23,7 +23,7 @@ module SolarWindsAPM
         c.resource = { 'sw.apm.version' => SolarWindsAPM::Version::STRING,
                        'sw.data.module' => 'apm',
                        'service.name' => ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil) }
-        c.use 'OpenTelemetry::Instrumentation::AwsLambda'
+        c.use_all()
       end
 
       # append our propagators

@@ -161,11 +161,9 @@ end
 
 module SolarWindsAPM
   class << self
-    attr_accessor :logger, :is_lambda
+    attr_accessor :logger
   end
 end
-
-SolarWindsAPM.is_lambda = false
 
 # for custom_metrics_test.rb
 module SolarWindsAPM

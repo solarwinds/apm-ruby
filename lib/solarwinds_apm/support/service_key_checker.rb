@@ -10,13 +10,14 @@ module SolarWindsAPM
   # ServiceKeyChecker
   # It is a service that validate the service_key
   class ServiceKeyChecker
-    def initialize(reporter)
+    def initialize(reporter, is_lambda)
       @reporter = reporter
+      @is_lambda = is_lambda
     end
 
     def read_and_validate_service_key
       return '' unless @reporter == 'ssl'
-      return '' unless ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty? # lambda env doesn't need SW_APM_SERVICE_KEY
+      return '' if @is_lambda
 
       service_key = fetch_service_key
       if service_key.empty?
