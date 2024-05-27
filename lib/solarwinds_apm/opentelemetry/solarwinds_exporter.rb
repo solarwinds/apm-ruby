@@ -24,7 +24,7 @@ module SolarWindsAPM
         @version_cache      = {}
       end
 
-      def export(span_data, _timeout: nil)
+      def export(span_data, timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
         return FAILURE if @shutdown
 
         status = SUCCESS

@@ -55,8 +55,8 @@ module SolarWindsAPM
           end
           status = false
         else
-          solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
-          current_span         = ::OpenTelemetry::Trace.current_span
+          solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor]
+          current_span = ::OpenTelemetry::Trace.current_span
 
           if current_span.context.valid?
             current_trace_id = current_span.context.hex_trace_id

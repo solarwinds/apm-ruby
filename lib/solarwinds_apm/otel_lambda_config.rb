@@ -17,7 +17,11 @@ module SolarWindsAPM
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
 
-      ENV['OTEL_TRACES_EXPORTER'] = 'none' if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
+      if ENV['OTEL_TRACES_EXPORTER'].to_s.empty?
+        ENV['OTEL_TRACES_EXPORTER'] = 'otlp'
+      elsif !ENV['OTEL_TRACES_EXPORTER'].include? 'otlp'
+        ENV['OTEL_TRACES_EXPORTER'] += ',otlp'
+      end
 
       ::OpenTelemetry::SDK.configure do |c|
         c.resource = { 'sw.apm.version' => SolarWindsAPM::Version::STRING,
@@ -32,9 +36,8 @@ module SolarWindsAPM
       # register metrics_exporter to meter_provider
       ::OpenTelemetry.meter_provider.add_metric_reader(::OpenTelemetry::Exporter::OTLP::MetricsExporter.new)
 
-      # append our processors (with our exporter)
-      processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(::OpenTelemetry::Exporter::OTLP::Exporter.new)
-      ::OpenTelemetry.tracer_provider.add_span_processor(processor)
+      # append our processors (with our metrics exporter)
+      ::OpenTelemetry.tracer_provider.add_span_processor(SolarWindsAPM::OpenTelemetry::OTLPProcessor.new)
 
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(

@@ -73,7 +73,8 @@ module SolarWindsAPM
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
       exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
-      @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+      @@config[:metrics_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(txn_manager)
+      @@config[:span_processor] = ::OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(exporter)
     end
 
     def self.resolve_solarwinds_propagator
@@ -120,6 +121,7 @@ module SolarWindsAPM
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
 
       # append our processors (with our exporter)
+      ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:metrics_processor])
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
 
       # configure sampler afterwards

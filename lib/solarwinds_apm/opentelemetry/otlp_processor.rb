@@ -12,11 +12,8 @@ module SolarWindsAPM
     class OTLPProcessor < SolarWindsProcessor
       attr_accessor :description
 
-      # @param [Hash] meters the hash of meter created by ::OpenTelemetry.meter_provider.meter('meter_name')
-      # @param [TxnNameManager] txn_manager storage for transaction name
-      # @exporter [Exporter] exporter reporter that send trace data
-      def initialize(exporter)
-        super(exporter, nil)
+      def initialize
+        super(nil)
         @meters  = init_meters
         @metrics = init_metrics
       end
@@ -38,18 +35,12 @@ module SolarWindsAPM
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
 
-        # non entry span
-        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
-          return unless span.context.trace_flags.sampled?
-
-          @exporter&.export([span.to_span_data])
-          return
-        end
+        # return if span is non-entry span
+        return if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
 
         record_request_metrics(span)
         record_sampling_metrics
 
-        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
         ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
@@ -61,14 +52,14 @@ module SolarWindsAPM
 
       # Create two meters for sampling and request count
       def init_meters
-        @meters = {
+        {
           'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
           'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
         }
       end
 
       def span_attributes(span)
-        span_attrs = { 'sw.transaction' => calculate_lambda_transaction_name }
+        span_attrs = { 'sw.transaction' => calculate_lambda_transaction_name(span) }
         span_attrs.merge!(http_attributes(span))
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_attrs: #{span_attrs.inspect}" }
         span_attrs
@@ -77,7 +68,7 @@ module SolarWindsAPM
       def meter_attributes(span)
         meter_attrs = {
           'sw.is_error' => error?(span) == 1,
-          'sw.transaction' => calculate_lambda_transaction_name
+          'sw.transaction' => calculate_lambda_transaction_name(span)
         }
 
         meter_attrs.merge!(http_attributes(span))
@@ -85,7 +76,7 @@ module SolarWindsAPM
         meter_attrs
       end
 
-      def calculate_lambda_transaction_name
+      def calculate_lambda_transaction_name(span)
         (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
       end
 
@@ -100,17 +91,17 @@ module SolarWindsAPM
 
       def init_metrics
         request_meter = @meters['sw.apm.request.metrics']
-
-        @metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')
-
         sampling_meter = @meters['sw.apm.sampling.metrics']
 
-        @metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
-        @metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
-        @metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
-        @metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
-        @metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
-        @metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
+        metrics = {}
+        metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')
+        metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
+        metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
+        metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
+        metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
+        metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
+        metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
+        metrics
       end
 
       def record_request_metrics(span)

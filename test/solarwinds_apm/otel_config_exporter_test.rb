@@ -22,9 +22,9 @@ describe 'Loading Opentelemetry Test' do
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
 
     span_processors = OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    _(span_processors.count).must_equal 1
+    _(span_processors.count).must_equal 2
     _(span_processors[0].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsProcessor
-    _(span_processors[0].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
+    assert_nil(span_processors[0].instance_variable_get(:@exporter))
   end
 
   it 'test_exporter_with_default_otlp_exporter' do
@@ -32,11 +32,11 @@ describe 'Loading Opentelemetry Test' do
     SolarWindsAPM::OTelConfig.initialize
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
     span_processors = OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    _(span_processors.count).must_equal 2
+    _(span_processors.count).must_equal 3
     _(span_processors[0].class).must_equal OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor
     _(span_processors[0].instance_variable_get(:@exporter).class).must_equal OpenTelemetry::Exporter::OTLP::Exporter
     _(span_processors[1].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsProcessor
-    _(span_processors[1].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
+    assert_nil(span_processors[1].instance_variable_get(:@exporter))
   end
 
   it 'test_exporter_with_bad_exporter' do
@@ -45,9 +45,9 @@ describe 'Loading Opentelemetry Test' do
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
 
     span_processors = OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    _(span_processors.count).must_equal 1
+    _(span_processors.count).must_equal 2
     _(span_processors[0].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsProcessor
-    _(span_processors[0].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
+    assert_nil(span_processors[0].instance_variable_get(:@exporter))
   end
 
   it 'test_exporter_with_zipkin_jaeger_exporter' do
@@ -56,13 +56,13 @@ describe 'Loading Opentelemetry Test' do
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
 
     span_processors = OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    _(span_processors.count).must_equal 3
+    _(span_processors.count).must_equal 4
     _(span_processors[0].class).must_equal OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor
     _(span_processors[0].instance_variable_get(:@exporter).class).must_equal OpenTelemetry::Exporter::OTLP::Exporter
     _(span_processors[1].class).must_equal OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor
     _(span_processors[1].instance_variable_get(:@span_exporter).class).must_equal OpenTelemetry::SDK::Trace::Export::ConsoleSpanExporter
     _(span_processors[2].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsProcessor
-    _(span_processors[2].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
+    assert_nil(span_processors[2].instance_variable_get(:@exporter))
   end
 
   it 'test_exporter_with_empty_OTEL_TRACES_EXPORTER' do
@@ -71,8 +71,8 @@ describe 'Loading Opentelemetry Test' do
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
 
     span_processors = OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors)
-    _(span_processors.count).must_equal 1
+    _(span_processors.count).must_equal 2
     _(span_processors[0].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsProcessor
-    _(span_processors[0].instance_variable_get(:@exporter).class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsExporter
+    assert_nil(span_processors[0].instance_variable_get(:@exporter))
   end
 end

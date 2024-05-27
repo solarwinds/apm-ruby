@@ -18,8 +18,7 @@ module SolarWindsAPM
 
       attr_reader :txn_manager
 
-      def initialize(exporter, txn_manager)
-        @exporter = exporter
+      def initialize(txn_manager)
         @txn_manager = txn_manager
       end
 
@@ -48,11 +47,7 @@ module SolarWindsAPM
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
-
-        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
-          @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
-          return
-        end
+        return if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
 
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
         domain     = nil
@@ -96,31 +91,25 @@ module SolarWindsAPM
             liboboe_txn_name
         end
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
-        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
       rescue StandardError => e
         SolarWindsAPM.logger.info do
-          "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"
+          "[#{self.class}/#{__method__}] solarwinds_processor on_finish error: #{e.message}"
         end
         ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
-      # Export all ended spans to the configured `Exporter` that have not yet
-      # been exported.
-      #
       # @param [optional Numeric] timeout An optional timeout in seconds.
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def force_flush(timeout: nil)
-        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
-      # Called when {TracerProvider#shutdown} is called.
-      #
       # @param [optional Numeric] timeout An optional timeout in seconds.
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def shutdown(timeout: nil)
-        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      def shutdown(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private
