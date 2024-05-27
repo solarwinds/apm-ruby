@@ -146,11 +146,7 @@ module SolarWindsAPM
       # check if it's entry span based on no parent or parent is remote
       def non_entry_span(parent_context)
         parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-        if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
-          true
-        else
-          false
-        end
+        parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
       end
 
       # Get trans_name and url_tran of this span instance.

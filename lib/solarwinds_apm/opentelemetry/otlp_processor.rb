@@ -43,22 +43,14 @@ module SolarWindsAPM
           return unless span.context.trace_flags.sampled?
 
           @exporter&.export([span.to_span_data])
-          # record_sampling_metrics
-          ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
           return
         end
 
-        meter_attrs = meter_attributes(span)
-        span_time = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
-
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] entry span, response_time: #{span_time}." }
-
-        @metrics[:response_time].record(span_time, attributes: meter_attrs)
-        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
-
+        record_request_metrics(span)
         record_sampling_metrics
-        ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
 
+        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
+        ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}" }
@@ -121,9 +113,14 @@ module SolarWindsAPM
         @metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
       end
 
+      def record_request_metrics(span)
+        meter_attrs = meter_attributes(span)
+        span_time = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] entry span, response_time: #{span_time}." }
+        @metrics[:response_time].record(span_time, attributes: meter_attrs)
+      end
+
       # oboe_api will return 0 in case of failed operation, and report 0 value
-      # sampling metrics is recorded for each span (include non-entry span)
-      # metrics should be exported after sampling decision is made
       def record_sampling_metrics
         _, trace_count = SolarWindsAPM.oboe_api.consumeTraceCount
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] trace_count: #{trace_count}" }
