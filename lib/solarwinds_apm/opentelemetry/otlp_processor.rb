@@ -44,8 +44,7 @@ module SolarWindsAPM
         ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
-        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}" }
-        ::OpenTelemetry::SDK::Trace::Export::FAILURE
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
       end
 
       private
