@@ -95,7 +95,6 @@ module SolarWindsAPM
         SolarWindsAPM.logger.info do
           "[#{self.class}/#{__method__}] solarwinds_processor on_finish error: #{e.message}"
         end
-        ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
       # @param [optional Numeric] timeout An optional timeout in seconds.
