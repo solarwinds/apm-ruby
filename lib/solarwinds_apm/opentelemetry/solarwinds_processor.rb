@@ -33,10 +33,11 @@ module SolarWindsAPM
           "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
         end
 
-        return if non_entry_span(parent_context)
+        return if non_entry_span(parent_context: parent_context)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
+        span.add_attributes({'sw.is_entry_span' => true})
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -47,7 +48,8 @@ module SolarWindsAPM
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
-        return if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
+
+        return if non_entry_span(span: span)
 
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
         domain     = nil
@@ -132,9 +134,13 @@ module SolarWindsAPM
       end
 
       # check if it's entry span based on no parent or parent is remote
-      def non_entry_span(parent_context)
-        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-        parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+      def non_entry_span(span: nil, parent_context: nil)
+        if parent_context
+          parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
+          parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+        elsif span
+          span.attributes['sw.is_entry_span'] == true
+        end
       end
 
       # Get trans_name and url_tran of this span instance.

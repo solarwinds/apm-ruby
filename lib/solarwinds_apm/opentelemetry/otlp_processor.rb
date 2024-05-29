@@ -24,9 +24,10 @@ module SolarWindsAPM
       def on_start(span, parent_context)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}" }
 
-        return if non_entry_span(parent_context)
+        return if non_entry_span(parent_context: parent_context)
 
         span.add_attributes(span_attributes(span))
+        span.add_attributes({'sw.is_entry_span' => true})
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -36,7 +37,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
 
         # return if span is non-entry span
-        return if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
+        return if non_entry_span(span: span)
 
         record_request_metrics(span)
         record_sampling_metrics
@@ -59,7 +60,6 @@ module SolarWindsAPM
 
       def span_attributes(span)
         span_attrs = { 'sw.transaction' => calculate_lambda_transaction_name(span) }
-        span_attrs.merge!(http_attributes(span))
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_attrs: #{span_attrs.inspect}" }
         span_attrs
       end
@@ -67,25 +67,16 @@ module SolarWindsAPM
       def meter_attributes(span)
         meter_attrs = {
           'sw.is_error' => error?(span) == 1,
-          'sw.transaction' => calculate_lambda_transaction_name(span)
+          'sw.transaction' => calculate_lambda_transaction_name(span),
+          'http.status_code' => get_http_status_code(span),
+          'http.method' => span.attributes[HTTP_METHOD]
         }
-
-        meter_attrs.merge!(http_attributes(span))
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] meter_attrs: #{meter_attrs.inspect}" }
         meter_attrs
       end
 
       def calculate_lambda_transaction_name(span)
         (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span.name || 'unknown').slice(0, 255)
-      end
-
-      def http_attributes(span)
-        return {} unless span_http?(span)
-
-        {
-          'http.status_code' => get_http_status_code(span),
-          'http.method' => span.attributes[HTTP_METHOD]
-        }
       end
 
       def init_metrics
