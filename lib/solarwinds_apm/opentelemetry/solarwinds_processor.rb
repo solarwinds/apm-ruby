@@ -37,7 +37,7 @@ module SolarWindsAPM
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
-        span.add_attributes({'sw.is_entry_span' => true})
+        span.add_attributes({ 'sw.is_entry_span' => true })
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end

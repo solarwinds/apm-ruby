@@ -27,7 +27,7 @@ module SolarWindsAPM
         return if non_entry_span(parent_context: parent_context)
 
         span.add_attributes(span_attributes(span))
-        span.add_attributes({'sw.is_entry_span' => true})
+        span.add_attributes({ 'sw.is_entry_span' => true })
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
