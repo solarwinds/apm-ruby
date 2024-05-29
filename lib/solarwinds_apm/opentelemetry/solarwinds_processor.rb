@@ -139,7 +139,7 @@ module SolarWindsAPM
           parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
           parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
         elsif span
-          span.attributes['sw.is_entry_span'] == true
+          span.attributes['sw.is_entry_span'] != true
         end
       end
 
