@@ -154,8 +154,13 @@ module SolarWindsAPM
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
+
       load(File.join(File.dirname(File.dirname(__FILE__)),
                      'rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'))
+
+      load_config_file
+
+      print_config if SolarWindsAPM.logger.level.zero?
     end
 
     def self.update!(data)

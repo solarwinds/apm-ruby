@@ -135,23 +135,31 @@ module SolarWindsAPM
         args = [tracestring, sw_member_value, tracing_mode, sample_rate,
                 trigger_trace, trigger_trace_mode, options, signature, timestamp]
 
-        do_metrics, do_sample, rate, source, bucket_rate,
-          bucket_cap, decision_type, auth, status_msg, auth_msg,
-            status = SolarWindsAPM::Context.getDecisions(*args)
+        if SolarWindsAPM::OboeInitOptions.instance.lambda_env
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] get decision from oboe_api" }
+          # trigger trace disabled at this point (https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3753116438/AWS+Lambda+Instrumentation+POC#Concerns)
+          do_metrics, do_sample, rate, source, bucket_rate,
+            bucket_cap, decision_type, auth, status_msg, auth_msg,
+              status = SolarWindsAPM.oboe_api.getTracingDecision(*args)
+        else
+          do_metrics, do_sample, rate, source, bucket_rate,
+            bucket_cap, decision_type, auth, status_msg, auth_msg,
+              status = SolarWindsAPM::Context.getDecisions(*args)
+        end
 
-        decision = {}
-        decision['do_metrics']    = do_metrics.positive?
-        decision['do_sample']     = do_sample.positive?
-        decision['rate']          = rate
-        decision['source']        = source
-        decision['bucket_rate']   = bucket_rate
-        decision['bucket_cap']    = bucket_cap
-        decision['decision_type'] = decision_type
-        decision['auth']          = auth
-        decision['status_msg']    = status_msg
-        decision['auth_msg']      = auth_msg
-        decision['status']        = status
-        decision
+        {
+          'do_metrics' => do_metrics.positive?,
+          'do_sample' => do_sample.positive?,
+          'rate' => rate,
+          'source' => source,
+          'bucket_rate' => bucket_rate,
+          'bucket_cap' => bucket_cap,
+          'decision_type' => decision_type,
+          'auth' => auth,
+          'status_msg' => status_msg,
+          'auth_msg' => auth_msg,
+          'status' => status
+        }
       end
 
       def otel_decision_from_liboboe(liboboe_decision)

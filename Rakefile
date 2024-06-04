@@ -153,15 +153,12 @@ task :fetch_oboe_file, [:env] do |_t, args|
     IO.copy_stream(URI.parse(remote_file).open, local_file)
   end
 
-  sha_files = ['liboboe-1.0-x86_64.so.sha256',
-               'liboboe-1.0-lambda-x86_64.so.sha256',
-               'liboboe-1.0-aarch64.so.sha256',
+  sha_files = ['liboboe-1.0-lambda-x86_64.so.sha256',
+               'liboboe-1.0-lambda-aarch64.so.sha256',
+               'liboboe-1.0-x86_64.so.sha256',
                'liboboe-1.0-aarch64.so.sha256',
                'liboboe-1.0-alpine-x86_64.so.sha256',
-               'liboboe-1.0-alpine-aarch64.so.sha256',
-               'liboboe-1.0-alpine-aarch64.so.sha256',
-               'liboboe-1.0-alpine-x86_64.so.sha256',
-               'liboboe-1.0-x86_64.so.sha256']
+               'liboboe-1.0-alpine-aarch64.so.sha256']
 
   sha_files.each do |filename|
     remote_file = File.join(oboe_dir, filename)

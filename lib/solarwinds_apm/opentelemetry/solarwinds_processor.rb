@@ -18,16 +18,12 @@ module SolarWindsAPM
 
       attr_reader :txn_manager
 
-      def initialize(exporter, txn_manager)
-        @exporter = exporter
+      def initialize(txn_manager)
         @txn_manager = txn_manager
       end
 
       # Called when a {Span} is started, if the {Span#recording?}
       # returns true.
-      #
-      # This method is called synchronously on the execution thread, should
-      # not throw or block the execution thread.
       #
       # @param [Span] span the {Span} that just started.
       # @param [Context] parent_context the parent {Context} of the newly
@@ -37,11 +33,11 @@ module SolarWindsAPM
           "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
         end
 
-        parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-        return if parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+        return if non_entry_span(parent_context: parent_context)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
+        span.add_attributes({ 'sw.is_entry_span' => true })
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -49,18 +45,11 @@ module SolarWindsAPM
       # Called when a {Span} is ended, if the {Span#recording?}
       # returns true.
       #
-      # This method is called synchronously on the execution thread, should
-      # not throw or block the execution thread.
-      # Only calculate inbound metrics for service root spans
-      #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
 
-        if span.parent_span_id != ::OpenTelemetry::Trace::INVALID_SPAN_ID
-          @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
-          return
-        end
+        return if non_entry_span(span: span)
 
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
         domain     = nil
@@ -104,36 +93,24 @@ module SolarWindsAPM
             liboboe_txn_name
         end
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
-        @exporter&.export([span.to_span_data]) if span.context.trace_flags.sampled?
       rescue StandardError => e
         SolarWindsAPM.logger.info do
-          "[#{self.class}/#{__method__}] can't flush span to exporter; processor on_finish error: #{e.message}"
+          "[#{self.class}/#{__method__}] solarwinds_processor on_finish error: #{e.message}"
         end
-        ::OpenTelemetry::SDK::Trace::Export::FAILURE
       end
 
-      # Export all ended spans to the configured `Exporter` that have not yet
-      # been exported.
-      #
-      # This method should only be called in cases where it is absolutely
-      # necessary, such as when using some FaaS providers that may suspend
-      # the process after an invocation, but before the `Processor` exports
-      # the completed spans.
-      #
       # @param [optional Numeric] timeout An optional timeout in seconds.
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def force_flush(timeout: nil)
-        @exporter&.force_flush(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
-      # Called when {TracerProvider#shutdown} is called.
-      #
       # @param [optional Numeric] timeout An optional timeout in seconds.
       # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
       #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
-      def shutdown(timeout: nil)
-        @exporter&.shutdown(timeout: timeout) || ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      def shutdown(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private
@@ -154,6 +131,16 @@ module SolarWindsAPM
       # if no status_code in attributes of HTTP span
       def get_http_status_code(span)
         span.attributes[HTTP_STATUS_CODE] || LIBOBOE_HTTP_SPAN_STATUS_UNAVAILABLE
+      end
+
+      # check if it's entry span based on no parent or parent is remote
+      def non_entry_span(span: nil, parent_context: nil)
+        if parent_context
+          parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
+          parent_span && parent_span.context != ::OpenTelemetry::Trace::SpanContext::INVALID && parent_span.context.remote? == false
+        elsif span
+          span.attributes['sw.is_entry_span'] != true
+        end
       end
 
       # Get trans_name and url_tran of this span instance.

@@ -16,9 +16,11 @@ module SolarWindsAPM
   class OboeInitOptions
     include Singleton
 
-    attr_reader :reporter, :host, :service_name, :ec2_md_timeout, :grpc_proxy # exposing these mainly for testing
+    attr_reader :reporter, :host, :service_name, :ec2_md_timeout, :grpc_proxy, :lambda_env # exposing these mainly for testing
 
     def initialize
+      # determining the lambda env based on env var (not used in array_for_oboe for oboe initialization)
+      @lambda_env = determine_lambda
       # optional hostname alias
       @hostname_alias = ENV['SW_APM_HOSTNAME_ALIAS'] || SolarWindsAPM::Config[:hostname_alias] || ''
       # level at which log messages will be written to log file (0-6)
@@ -108,27 +110,19 @@ module SolarWindsAPM
     def reporter_and_host
       reporter = ENV['SW_APM_REPORTER'] || 'ssl'
 
-      host = ''
-      case reporter
-      when 'ssl', 'file'
-        host = ENV['SW_APM_COLLECTOR'] || ''
-      when 'udp'
-        host = ENV['SW_APM_COLLECTOR'] || "#{SolarWindsAPM::Config[:reporter_host]}:#{SolarWindsAPM::Config[:reporter_port]}"
-        # TODO: decide what to do
-        # ____ SolarWindsAPM::Config[:reporter_host] and
-        # ____ SolarWindsAPM::Config[:reporter_port] were moved here from
-        # ____ oboe_metal.rb and are not documented anywhere
-        # ____ udp is for internal use only
-      when 'null'
-        host = ''
-      end
+      host = case reporter
+             when 'ssl', 'file'
+               ENV['SW_APM_COLLECTOR'] || ''
+             else
+               ''
+             end
 
       host = sanitize_collector_uri(host) unless reporter == 'file'
       [reporter, host]
     end
 
     def read_and_validate_service_key
-      service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter)
+      service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter, @lambda_env)
       service_key = service_key_checker.read_and_validate_service_key
       @service_name = service_key.split(':', 2).last # instance variable used in testing
       service_key
@@ -201,6 +195,15 @@ module SolarWindsAPM
       log_type = 2 unless ENV['SW_APM_LOG_FILEPATH'].to_s.empty?
       log_type = 4 if @debug_level == -1
       log_type
+    end
+
+    def determine_lambda
+      if ENV['LAMBDA_TASK_ROOT'].to_s.empty? && ENV['AWS_LAMBDA_FUNCTION_NAME'].to_s.empty?
+        false
+      else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] lambda environment - LAMBDA_TASK_ROOT: #{ENV.fetch('LAMBDA_TASK_ROOT', nil)}; AWS_LAMBDA_FUNCTION_NAME: #{ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)}" }
+        true
+      end
     end
   end
 end

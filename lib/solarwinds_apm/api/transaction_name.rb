@@ -49,14 +49,14 @@ module SolarWindsAPM
             "[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."
           end
           status = false
-        elsif SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor].nil?
+        elsif SolarWindsAPM::OTelConfig[:metrics_processor].nil?
           SolarWindsAPM.logger.warn do
             "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."
           end
           status = false
         else
-          solarwinds_processor = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:span_processor]
-          current_span         = ::OpenTelemetry::Trace.current_span
+          solarwinds_processor = SolarWindsAPM::OTelConfig[:metrics_processor]
+          current_span = ::OpenTelemetry::Trace.current_span
 
           if current_span.context.valid?
             current_trace_id = current_span.context.hex_trace_id

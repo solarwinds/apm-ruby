@@ -24,7 +24,7 @@ module SolarWindsAPM
         @version_cache      = {}
       end
 
-      def export(span_data, _timeout: nil)
+      def export(span_data, timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
         return FAILURE if @shutdown
 
         status = SUCCESS
@@ -149,7 +149,7 @@ module SolarWindsAPM
 
           begin
             require framework
-            framework_version = Gem.loaded_specs[framework].version.to_s
+            framework_version = Gem.loaded_specs[version_framework_name(framework)].version.to_s
           rescue LoadError => e
             SolarWindsAPM.logger.debug do
               "[#{self.class}/#{__method__}] couldn't load #{framework} with error #{e.message}; skip"
@@ -174,6 +174,17 @@ module SolarWindsAPM
         case framework
         when 'net::http'
           'net/http'
+        else
+          framework
+        end
+      end
+
+      ##
+      # helper function that convert opentelemetry instrumentation name to gem library understandable
+      def version_framework_name(framework)
+        case framework
+        when 'net/http'
+          'net-http'
         else
           framework
         end

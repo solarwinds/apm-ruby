@@ -10,12 +10,14 @@ module SolarWindsAPM
   # ServiceKeyChecker
   # It is a service that validate the service_key
   class ServiceKeyChecker
-    def initialize(reporter)
+    def initialize(reporter, is_lambda)
       @reporter = reporter
+      @is_lambda = is_lambda
     end
 
     def read_and_validate_service_key
       return '' unless @reporter == 'ssl'
+      return '' if @is_lambda
 
       service_key = fetch_service_key
       if service_key.empty?

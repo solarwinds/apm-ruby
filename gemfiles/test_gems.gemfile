@@ -27,8 +27,8 @@ group :development, :test do
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
 
-  gem 'opentelemetry-exporter-otlp', '~> 0.24.0'
+  gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
-  gem 'opentelemetry-sdk'
+  gem 'opentelemetry-exporter-otlp'
 end

@@ -11,11 +11,12 @@
 module SolarWindsAPM
   include Oboe_metal
 
-  @loaded   = false
-  @reporter = nil
+  @loaded    = false
+  @reporter  = nil
+  @oboe_api  = nil
 
   class << self
-    attr_accessor :reporter, :loaded
+    attr_accessor :reporter, :loaded, :oboe_api
 
     def sample_rate(rate)
       return unless SolarWindsAPM.loaded

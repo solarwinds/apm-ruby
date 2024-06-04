@@ -17,11 +17,11 @@ module SolarWindsAPM
 
     @@agent_enabled    = true
 
-    def self.disable_agent
+    def self.disable_agent(reason: nil)
       return unless @@agent_enabled # only show the msg once
 
       @@agent_enabled = false
-      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Agent disabled. No Trace exported." }
+      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SolarWindsAPM disabled. No Trace exported. Reason: #{reason}" }
     end
 
     def self.resolve_sampler
@@ -72,8 +72,9 @@ module SolarWindsAPM
 
     def self.resolve_solarwinds_processor
       txn_manager = SolarWindsAPM::TxnNameManager.new
-      exporter    = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
-      @@config[:span_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(exporter, txn_manager)
+      exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: txn_manager)
+      @@config[:metrics_processor] = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(txn_manager)
+      @@config[:span_processor] = ::OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(exporter)
     end
 
     def self.resolve_solarwinds_propagator
@@ -82,23 +83,17 @@ module SolarWindsAPM
 
     def self.validate_propagator(propagators)
       if propagators.nil?
-        disable_agent
+        disable_agent(reason: 'propagators are invaliad.')
         return
       end
 
       SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] propagators: #{propagators.map(&:class)}" }
-      unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty? # rubocop:disable Style/GuardClause
-        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Missing tracecontext propagator." }
-        disable_agent
-      end
+      disable_agent(reason: 'Missing tracecontext propagator.') unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
-        SolarWindsAPM.logger.warn do
-          "[#{name}/#{__method__}] missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded."
-        end
-        disable_agent
+        disable_agent(reason: 'missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded.')
         return
       end
 
@@ -126,6 +121,7 @@ module SolarWindsAPM
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
 
       # append our processors (with our exporter)
+      ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:metrics_processor])
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
 
       # configure sampler afterwards

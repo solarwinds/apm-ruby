@@ -70,6 +70,7 @@ jobs:
       - uses: aws-actions/setup-sam@v2
 
       # Build inside Docker containers
+      # -u in sam build will automatically set LAMBDA_TASK_ROOT (see: https://github.com/aws/aws-sam-cli/issues/3407)
       - name: build lambda layer
         run: |
           uname -a

@@ -12,10 +12,9 @@ require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsProcessor' do
   before do
-    @txn_name_manager = SolarWindsAPM::TxnNameManager.new
-    @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)
-    @processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter,
-                                                                       @txn_name_manager)
+    @txn_manager = SolarWindsAPM::TxnNameManager.new
+    # @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)
+    @processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@txn_manager)
   end
 
   it 'test_calculate_span_time' do
@@ -79,7 +78,7 @@ describe 'SolarWindsProcessor' do
 
   it 'test_on_start' do
     span = create_span
-    processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@exporter, @txn_name_manager)
+    processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@txn_manager)
     processor.on_start(span, OpenTelemetry::Context.current)
     _(processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal '31e175128efc4018-00'
   end

@@ -37,7 +37,10 @@ Gem::Specification.new do |s|
               'ext/oboe_metal/lib/liboboe-1.0-alpine-x86_64.so.sha256',
               'ext/oboe_metal/lib/liboboe-1.0-x86_64.so.sha256',
               'ext/oboe_metal/lib/liboboe-1.0-aarch64.so.sha256',
-              'ext/oboe_metal/lib/liboboe-1.0-alpine-aarch64.so.sha256']
+              'ext/oboe_metal/lib/liboboe-1.0-alpine-aarch64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-lambda-x86_64.so.sha256',
+              'ext/oboe_metal/lib/liboboe-1.0-lambda-aarch64.so.sha256']
+
   s.files -= ['Rakefile']
 
   s.extensions = ['ext/oboe_metal/extconf.rb']
@@ -49,9 +52,6 @@ Gem::Specification.new do |s|
   # this still gives a warning, would have to be pinned to a minor version
   # but that is not necessary and may restrict other gems
   s.add_runtime_dependency('json', '~> 2.0')
-
-  # Testing
-  s.add_development_dependency('opentelemetry-exporter-otlp', '>= 0.24.2')
 
   s.required_ruby_version = '>= 2.7.0'
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }

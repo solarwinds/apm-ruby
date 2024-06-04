@@ -21,10 +21,8 @@ begin
   begin
     if RUBY_PLATFORM.include?('linux')
       require 'solarwinds_apm/config'
-      SolarWindsAPM::Config.load_config_file
-
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
-      unless SolarWindsAPM::OboeInitOptions.instance.service_key_ok?
+      if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && !SolarWindsAPM::OboeInitOptions.instance.lambda_env
         SolarWindsAPM.logger.warn '=============================================================='
         SolarWindsAPM.logger.warn 'SW_APM_SERVICE_KEY Error. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages for more details.'
@@ -45,34 +43,45 @@ begin
       SolarWindsAPM.logger.info "OpenTelemetry instrumentation version: #{OpenTelemetry::Instrumentation::All::VERSION}."
       SolarWindsAPM.logger.info '==================================================================='
 
-      SolarWindsAPM::Reporter.start # start the reporter, any issue will be logged
+      if SolarWindsAPM::OboeInitOptions.instance.lambda_env
+        SolarWindsAPM.logger.info '==================================================================='
+        SolarWindsAPM.logger.info "Ruby #{RUBY_VERSION} on platform #{RUBY_PLATFORM} is running in lambda environment."
+        SolarWindsAPM.logger.info '==================================================================='
 
-      if SolarWindsAPM.loaded
-        require 'solarwinds_apm/constants'
-        require 'solarwinds_apm/api'
-        require 'solarwinds_apm/support'
-        require 'solarwinds_apm/opentelemetry'
-        require 'solarwinds_apm/patch'
-        require 'solarwinds_apm/otel_config'
+        SolarWindsAPM.oboe_api = SolarWindsAPM::OboeAPI.new # start oboe api for lambda env
+        require 'solarwinds_apm/otel_lambda_config'
 
-        if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
-          SolarWindsAPM::OTelConfig.initialize
-        elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
+        SolarWindsAPM::OTelLambdaConfig.initialize # we don't allow in-code configuration under lambda env
+      else
+        SolarWindsAPM::Reporter.start # start the reporter, any issue will be logged
+
+        if SolarWindsAPM.loaded
+          require 'solarwinds_apm/constants'
+          require 'solarwinds_apm/api'
+          require 'solarwinds_apm/support'
+          require 'solarwinds_apm/opentelemetry'
+          require 'solarwinds_apm/patch'
+          require 'solarwinds_apm/otel_config'
+
+          if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
+            SolarWindsAPM::OTelConfig.initialize
+          elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
+            SolarWindsAPM.logger.warn '=============================================================='
+            SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'
+            SolarWindsAPM.logger.warn 'You need to initialize Ruby library in application with'
+            SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelConfig.initialize_with_config do |config|'
+            SolarWindsAPM.logger.warn '  # ... your configuration code'
+            SolarWindsAPM.logger.warn 'end'
+            SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
+            SolarWindsAPM.logger.warn "\e[1mPlease discard this message if application have already taken this action.\e[0m"
+            SolarWindsAPM.logger.warn '=============================================================='
+          end
+        else
           SolarWindsAPM.logger.warn '=============================================================='
-          SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'
-          SolarWindsAPM.logger.warn 'You need to initialize Ruby library in application with'
-          SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelConfig.initialize_with_config do |config|'
-          SolarWindsAPM.logger.warn '  # ... your configuration code'
-          SolarWindsAPM.logger.warn 'end'
-          SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
-          SolarWindsAPM.logger.warn "\e[1mPlease discard this message if application have already taken this action.\e[0m"
+          SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. SolarWinds APM disabled'
+          SolarWindsAPM.logger.warn 'Please check previous log messages.'
           SolarWindsAPM.logger.warn '=============================================================='
         end
-      else
-        SolarWindsAPM.logger.warn '=============================================================='
-        SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. SolarWinds APM disabled'
-        SolarWindsAPM.logger.warn 'Please check previous log messages.'
-        SolarWindsAPM.logger.warn '=============================================================='
       end
     else
       SolarWindsAPM.logger.warn '==================================================================='
