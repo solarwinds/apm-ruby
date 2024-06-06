@@ -23,8 +23,17 @@ module SolarWindsAPM
         ENV['OTEL_TRACES_EXPORTER'] += ',otlp'
       end
 
-      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
-      ::OpenTelemetry::SDK.configure { c.use_all }
+      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},\
+sw.data.module=apm,\
+service.name=#{ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)},\
+host.name=#{ENV.fetch('HOSTNAME', nil)},\
+faas.max_memory=#{ENV.fetch('AWS_LAMBDA_FUNCTION_MEMORY_SIZE', nil)},\
+cloud.platform=aws_lambda,\
+sw.cloud.aws.resource.type=Lambda,\
+os.type=#{resolve_os_type},\
+faas.instance=#{ENV.fetch('AWS_LAMBDA_LOG_STREAM_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
+
+      ::OpenTelemetry::SDK.configure(&:use_all)
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
@@ -48,6 +57,10 @@ module SolarWindsAPM
       end
 
       nil
+    end
+
+    def self.resolve_os_type
+      RUBY_PLATFORM.include?('linux') ? 'linux' : ''
     end
   end
 end
