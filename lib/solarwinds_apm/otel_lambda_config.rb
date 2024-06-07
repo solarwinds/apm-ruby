@@ -49,9 +49,5 @@ module SolarWindsAPM
 
       nil
     end
-
-    def self.resolve_os_type
-      RUBY_PLATFORM.include?('linux') ? 'linux' : ''
-    end
   end
 end
