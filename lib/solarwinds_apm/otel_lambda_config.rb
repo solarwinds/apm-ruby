@@ -23,12 +23,8 @@ module SolarWindsAPM
         ENV['OTEL_TRACES_EXPORTER'] += ',otlp'
       end
 
-      ::OpenTelemetry::SDK.configure do |c|
-        c.resource = { 'sw.apm.version' => SolarWindsAPM::Version::STRING,
-                       'sw.data.module' => 'apm',
-                       'service.name' => ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil) }
-        c.use_all
-      end
+      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV['OTEL_SERVICE_NAME'] || ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
+      ::OpenTelemetry::SDK.configure(&:use_all)
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)

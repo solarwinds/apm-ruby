@@ -67,10 +67,13 @@ module SolarWindsAPM
       def meter_attributes(span)
         meter_attrs = {
           'sw.is_error' => error?(span) == 1,
-          'sw.transaction' => calculate_lambda_transaction_name(span),
-          'http.status_code' => get_http_status_code(span),
-          'http.method' => span.attributes[HTTP_METHOD]
+          'sw.transaction' => calculate_lambda_transaction_name(span)
         }
+
+        http_status_code = get_http_status_code(span)
+        meter_attrs['http.status_code'] = http_status_code if http_status_code != 0
+        meter_attrs['http.method'] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
+
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] meter_attrs: #{meter_attrs.inspect}" }
         meter_attrs
       end
@@ -84,7 +87,7 @@ module SolarWindsAPM
         sampling_meter = @meters['sw.apm.sampling.metrics']
 
         metrics = {}
-        metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'milliseconds')
+        metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
         metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
         metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
         metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
