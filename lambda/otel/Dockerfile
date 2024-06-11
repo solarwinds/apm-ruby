@@ -1,5 +1,9 @@
 FROM ubuntu:latest
 
+ARG MATRIX_ARCH
+ARG BUNDLE_RUBYGEMS__PKG__GITHUB__COM
+ENV LAMBDA_TASK_ROOT=/fake_lambda_task_root/
+
 RUN mkdir /build
 
 COPY . /build
@@ -46,7 +50,7 @@ RUN ls -al /build/ruby/gems
 # zip all the gems (make sure wrapper is in solarwinds-apm folder)
 RUN mkdir /build/solarwinds-apm/
 WORKDIR /build
-RUN cp layer/otel_wrapper . && cp layer/wrapper solarwinds-apm/
+RUN cp layer/otel_wrapper.rb . && cp layer/wrapper solarwinds-apm/
 RUN zip -r ruby-layer-$MATRIX_ARCH.zip ruby/ solarwinds-apm/ otel_wrapper.rb
 
 CMD cp /build/ruby-layer-$MATRIX_ARCH.zip /out/ruby-layer-$MATRIX_ARCH.zip

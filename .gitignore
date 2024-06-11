@@ -77,3 +77,4 @@ act.secrets
 lambda/.aws-sam/*
 lambda/*.zip
 *.zip
+lambda/build/*
