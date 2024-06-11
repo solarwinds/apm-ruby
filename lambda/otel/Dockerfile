@@ -29,8 +29,8 @@ RUN . ~/.profile \
 
 WORKDIR /build/layer
 
-RUN . ~/.profile && rbenv local 3.2.0 && bundle install
-RUN . ~/.profile && rbenv local 3.3.0 && bundle install
+RUN . ~/.profile && rbenv local 3.2.0 && bundle update
+RUN . ~/.profile && rbenv local 3.3.0 && bundle update
 
 WORKDIR /root/.rbenv/versions/3.2.0/lib/ruby/gems/
 RUN zip -r gems-3.2.0.zip 3.2.0/
