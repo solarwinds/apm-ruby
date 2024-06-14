@@ -80,7 +80,7 @@ From [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby
 > '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG}, and '_ENABLED' appended.
 > For example: OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
 
-For example, if you want to disable sinatra, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
+For example to disable sinatra instrumentation, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
 
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
