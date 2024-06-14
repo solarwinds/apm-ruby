@@ -92,7 +92,6 @@ or in your initialization step
 ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED']='false'
 ```
 
-See more details in [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61)
 
 
 ## Configuration File
