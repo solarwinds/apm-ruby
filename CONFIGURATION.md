@@ -69,6 +69,32 @@ export OTEL_SERVICE_NAME=bar
 ruby application.rb
 ```
 
+### Instrumentation
+
+You can use OpenTelemetry Ruby instrumentation environmental variable to disable certain instrumentation.
+
+> The instrumention class establishes a convention for disabling an instrumentation
+> by environment variable and local configuration. An instrumentation disabled
+> by environment variable will take precedence over local config. The
+> convention for environment variable name is the library name, upcased with
+> '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG}, and '_ENABLED' appended.
+> For example: OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
+
+For example, if you want to disable sinatra, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
+
+```bash
+export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
+```
+
+or in your initialization step
+
+```ruby
+ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED']='false'
+```
+
+See more details in [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61)
+
+
 ## Configuration File
 
 On startup, the library looks for the configuration file in the following locations under the application's current working directory:
