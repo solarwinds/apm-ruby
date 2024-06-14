@@ -71,7 +71,7 @@ ruby application.rb
 
 ### Instrumentation
 
-You can use OpenTelemetry Ruby instrumentation environmental variable to disable certain instrumentation.
+You can use OpenTelemetry Ruby instrumentation environment variables to disable certain instrumentation.
 
 > The instrumention class establishes a convention for disabling an instrumentation
 > by environment variable and local configuration. An instrumentation disabled
