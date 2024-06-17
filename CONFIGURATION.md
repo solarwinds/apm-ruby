@@ -72,8 +72,8 @@ ruby application.rb
 
 ### Instrumentation
 
-You can use OpenTelemetry Ruby instrumentation environmental variable to disable certain instrumentation.
-
+You can use OpenTelemetry Ruby instrumentation environment variables to disable certain instrumentation.
+From [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61):
 > The instrumention class establishes a convention for disabling an instrumentation
 > by environment variable and local configuration. An instrumentation disabled
 > by environment variable will take precedence over local config. The
@@ -81,7 +81,7 @@ You can use OpenTelemetry Ruby instrumentation environmental variable to disable
 > '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG}, and '_ENABLED' appended.
 > For example: OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
 
-For example, if you want to disable sinatra, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
+For example to disable sinatra instrumentation, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
 
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
@@ -120,7 +120,6 @@ ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 ```
 
 See more details in [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61)
-
 
 ## Configuration File
 
