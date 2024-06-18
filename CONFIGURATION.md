@@ -13,7 +13,8 @@ Many OpenTelemetry instrumenter configurations can be set within the `SolarWinds
 
 ## Programmatic Configuration
 
-**Important**: this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
+> [!IMPORTANT]
+> this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
 
 ### Instrumentation
 
