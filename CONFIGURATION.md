@@ -7,7 +7,7 @@ export SW_APM_SERVICE_KEY=<set-service-key-here>
 
 Configuration can be set several ways, with the following precedence:
 
-`environmental variable > programmatic > configuration file > default`
+`environment variable > programmatic > configuration file > default`
 
 Many OpenTelemetry instrumenter configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumenter](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note that [environment varables](#instrumentation-1) can be used to simply disable an instrumentation and set basic instrumentation options.
 
