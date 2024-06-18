@@ -3,18 +3,20 @@
 By default all applicable instrumentations are enabled. The only required configuration is the service key, so a minimal example to get started is:
 ```bash
 export SW_APM_SERVICE_KEY=<set-service-key-here>
-ruby application.rb
 ```
 
 Configuration can be set several ways, with the following precedence:
 
-`in-code > environmental variable > configuration file > default`
+`environment variable > programmatic > configuration file > default`
 
-## In-code Configuration
+Many OpenTelemetry instrumenter configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumenter](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note that [environment varables](#instrumentation-1) can be used to simply disable an instrumentation and set basic instrumentation options.
 
-Many OpenTelemetry instrumenter configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config` block, which overrides the same options set via environment variable or configuration file. Please consult the individual [instrumenter](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available.
+## Programmatic Configuration
 
-**Important**: this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
+> [!IMPORTANT]
+> this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
+
+### Instrumentation
 
 Below is an example that disables Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes:
 ```ruby
@@ -69,6 +71,57 @@ export OTEL_SERVICE_NAME=bar
 ruby application.rb
 ```
 
+### Instrumentation
+
+You can use OpenTelemetry Ruby instrumentation environment variables to disable certain instrumentation.
+From [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61):
+> The instrumention class establishes a convention for disabling an instrumentation
+> by environment variable and local configuration. An instrumentation disabled
+> by environment variable will take precedence over local config. The
+> convention for environment variable name is the library name, upcased with
+> '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG}, and '_ENABLED' appended.
+> For example: OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
+
+For example to disable sinatra instrumentation, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
+
+```bash
+export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
+```
+
+or in your initialization step
+
+```ruby
+ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED']='false'
+```
+
+Options setup through enviromental variables
+
+> Checks to see if user pass any environment variable that set option for instrumentation.
+> By convention, the environment variable will be the instrumentation name upper cased,
+> with '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG} and _CONFIG_OPTS appended.
+> For example, the, environment variable name for OpenTelemetry::Instrumentation::Faraday
+> will be OTEL_RUBY_INSTRUMENTATION_FARADAY_CONFIG_OPTS. A value of 'peer_service=new_service;'
+> will overrides the option set from ::OpenTelemetry::SDK.configure do |c| ... end for faraday.
+>
+> For array option, simply separate the value by , (e.g. option=a,b,c,d).
+> For boolean option, set value by true or false (e.g. option=true).
+> For integer, string, enum, set value by string (e.g. option=string).
+> Callable option is not allowed to set through environment variable.
+
+For example, to disable db.statement obfuscation in mysql2 instrumentation, set `OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS` through
+
+```bash
+export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
+```
+
+or in your initialization step
+
+```ruby
+ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
+```
+
+See more details in [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61)
+
 ## Configuration File
 
 On startup, the library looks for the configuration file in the following locations under the application's current working directory:
@@ -107,7 +160,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 
 Environment Variable | Config File Key | Description | Default
 -------------------- | --------------- | ----------- | -------
-`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [In-code Configuration](#in-code-configuration) for details. | `true`
+`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
 `SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
 `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
 `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3

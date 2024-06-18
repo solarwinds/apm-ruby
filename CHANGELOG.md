@@ -3,6 +3,15 @@ https://github.com/solarwinds/apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
+# solarwinds_apm 6.0.0 (04/11/2024)
+
+This release includes the following features:
+
+* First official apm-ruby release.
+* Add lambda layer workflow.
+* Refactor on logging when service key is invalid.
+* Using noop for all possible error from our agent.
+
 # solarwinds_apm 6.0.0.prev6 (01/30/2024)
 
 This release includes the following features:
