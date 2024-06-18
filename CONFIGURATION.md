@@ -110,7 +110,7 @@ Options setup through enviromental variables
 For example, if you want to set db_statement option to include for mysql2, you can set `OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS` through
 
 ```bash
-export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED='db_statement=include;'
+export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
 ```
 
 or in your initialization step
