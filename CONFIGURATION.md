@@ -107,7 +107,7 @@ Options setup through enviromental variables
 > For integer, string, enum, set value by string (e.g. option=string).
 > Callable option is not allowed to set through environment variable.
 
-For example, if you want to set db_statement option to include for mysql2, you can set `OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS` through
+For example, to disable db.statement obfuscation in mysql2 instrumentation, set `OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS` through
 
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
