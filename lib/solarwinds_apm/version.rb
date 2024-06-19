@@ -12,7 +12,7 @@ module SolarWindsAPM
   # solarwinds_apm.gemspec during gem build process
   module Version
     MAJOR  = 6 # breaking,
-    MINOR  = 0 # feature,
+    MINOR  = 1 # feature,
     PATCH  = 0 # fix => BFF
     PRE    = nil
 
