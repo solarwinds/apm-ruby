@@ -16,6 +16,7 @@ begin
     op.call
     puts "Looks good!"
   end
+  sleep 10
 rescue StandardError => e
   puts "aborting!!! Agent error: #{e.message}"
   exit false
