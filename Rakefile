@@ -282,7 +282,7 @@ task :build_gem do
 
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
-  Rake::Task['fetch_oboe_file'].invoke('stg')
+  Rake::Task['fetch_oboe_file'].invoke('prod')
   system('gem build solarwinds_apm.gemspec')
 
   gemname = Dir['solarwinds_apm*.gem'].first
