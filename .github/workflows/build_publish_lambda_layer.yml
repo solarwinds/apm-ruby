@@ -94,6 +94,8 @@ jobs:
           - x86_64
           - arm64
     steps:
+      - uses: actions/checkout@v4
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN }}
