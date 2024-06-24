@@ -1,0 +1,16 @@
+FROM public.ecr.aws/sam/build-ruby3.2:latest
+
+ARG BUNDLE_RUBYGEMS__PKG__GITHUB__COM
+ENV LAMBDA_TASK_ROOT=/fake_lambda_task_root/
+
+RUN mkdir /build
+COPY . /build
+
+WORKDIR /build/layer
+RUN bundle config set --local path 'ruby'
+RUN bundle update
+
+WORKDIR /build/layer/ruby/ruby
+RUN zip -r gems-3.2.0.zip 3.2.0/
+
+CMD cp /build/layer/ruby/ruby/gems-3.2.0.zip /out/gems-3.2.0.zip

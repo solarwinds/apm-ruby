@@ -43,7 +43,7 @@ vendor/
 *.DS_Store
 apm.collector.st-ssp.solarwinds.com
 appoptics.com
-*Makefile
+test/clib/Makefile
 *.so
 *.o
 
@@ -77,3 +77,4 @@ act.secrets
 lambda/.aws-sam/*
 lambda/*.zip
 *.zip
+lambda/build/*

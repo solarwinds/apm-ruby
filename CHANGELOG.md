@@ -3,6 +3,14 @@ https://github.com/solarwinds/apm-ruby/releases
 
 Dates in this file are in the format MM/DD/YYYY.
 
+# solarwinds_apm 6.0.1 (06/20/2024)
+
+This release includes the following features:
+
+* Documentation update.
+* Reduce the length pf rubocop config file.
+* Oboe version update to 15.0.1.
+
 # solarwinds_apm 6.0.0 (04/11/2024)
 
 This release includes the following features:
