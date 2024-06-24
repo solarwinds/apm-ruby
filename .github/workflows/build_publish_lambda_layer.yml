@@ -13,8 +13,6 @@ permissions:
 jobs:
   # build layer on arm64 and amd64, then upload to artifacts
   build_layer:
-    needs:
-      - start_arm64_runner
     strategy:
       fail-fast: false
       matrix:
@@ -22,7 +20,7 @@ jobs:
           - x86_64
           - arm64
 
-    runs-on: ${{ matrix.arch == 'arm64' && && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
+    runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
 
     steps:
       - uses: actions/checkout@v3
