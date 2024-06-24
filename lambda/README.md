@@ -1,6 +1,6 @@
 # SolarWinds Lambda Ruby Layer
 
-## Building Lambda Ruby Layer With OpenTelemetry Ruby Dependencies
+## Building Lambda Ruby Layer With OpenTelemetry Ruby Dependencies Using SAM
 
 Build
 ```bash
