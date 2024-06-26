@@ -37,8 +37,8 @@ module SolarWindsAPM
       def start
         options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
         SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
-        report_init
         SolarWindsAPM.loaded = true
+        report_init
       rescue StandardError => e
         warn e.message
         SolarWindsAPM.loaded = false
@@ -76,6 +76,7 @@ module SolarWindsAPM
 
         platform_info = build_swo_init_report
         log_init(layer, platform_info)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Init message has been sent." }
       end
 
       ##
