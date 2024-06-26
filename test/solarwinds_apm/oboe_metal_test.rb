@@ -8,11 +8,10 @@ require 'minitest_helper'
 describe 'Oboe Metal Test' do
   describe 'Reporter Test' do
     before do
-      module SolarWindsAPM
-        module Oboe_metal
+      module SolarWindsAPM # rubocop:disable Lint/ConstantDefinitionInBlock
+        module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
           class Reporter
-            def initialize(*)
-            end
+            def initialize(*); end
           end
         end
       end
@@ -45,9 +44,11 @@ describe 'Oboe Metal Test' do
     end
 
     it 'test_build_swo_init_report_without_error' do
-      class Gem::Specification
-        def self.find_by_name(name, *requirements)
-          Gem::Dependency.new('irb', *requirements).to_spec
+      module Gem # rubocop:disable Lint/ConstantDefinitionInBlock
+        class Specification
+          def self.find_by_name(_name, *requirements)
+            Gem::Dependency.new('irb', *requirements).to_spec
+          end
         end
       end
 
@@ -63,7 +64,7 @@ describe 'Oboe Metal Test' do
         _(platform_info['os.type']).wont_be_nil
         _(platform_info['Ruby.irb.Version']).wont_be_nil
         _(platform_info['telemetry.sdk.name']).must_equal 'opentelemetry'
-        _(platform_info['process.runtime.name']).must_equal 'ruby'       
+        _(platform_info['process.runtime.name']).must_equal 'ruby'
       end
     end
   end
