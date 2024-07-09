@@ -42,9 +42,12 @@ module SolarWindsAPM
         remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new
       )
 
-      SolarWindsAPM.logger.warn do
+      SolarWindsAPM.logger.info do
         "[#{name}/#{__method__}] SolarWindsAPM lambda configuration initialized \
-        \nOpenTelemetry.tracer_provider: #{::OpenTelemetry.tracer_provider.inspect}"
+        \n                                               Installed instrumentation: #{::OpenTelemetry.tracer_provider.instance_variable_get(:@registry).keys} \
+        \n                                               SpanProcessor: #{::OpenTelemetry.tracer_provider.instance_variable_get(:@span_processors).map(&:class)} \
+        \n                                               Sampler: #{::OpenTelemetry.tracer_provider.instance_variable_get(:@sampler).inspect} \
+        \n                                               Resource: #{::OpenTelemetry.tracer_provider.instance_variable_get(:@resource).inspect}"
       end
 
       nil
