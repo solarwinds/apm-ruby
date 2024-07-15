@@ -12,7 +12,7 @@ require './lib/solarwinds_apm/api'
 
 describe 'otlp processor test' do
   before do
-    skip unless defined?(OpenTelemetry::SDK::Metrics)
+    skip unless defined?(OpenTelemetry::SDK::Metrics) # skip if no metrics_sdk loaded
 
     @exporter    = OpenTelemetry::Exporter::OTLP::Exporter.new
     @txn_manager = SolarWindsAPM::TxnNameManager.new
@@ -28,10 +28,12 @@ describe 'otlp processor test' do
     @processor.instance_variable_get(:@meters)['sw.apm.sampling.metrics'].instance_variable_set(:@instrument_registry, {})
   end
 
+  # Yellow ERROR due to missing metrics_sdk so far for testing otlp processor
   it 'processor_meters_should_be_nil_at_beginning' do
     _(@processor.instance_variable_get(:@metrics).size).must_equal 0
   end
 
+  # Yellow ERROR due to missing metrics_sdk so far for testing otlp processor
   it 'test_on_start_verfy_component_initialized_correctly' do
     @processor.on_start(create_span, OpenTelemetry::Context.current)
 

@@ -12,6 +12,9 @@ describe 'Oboe Metal Test' do
         module Oboe_metal # rubocop:disable Naming/ClassAndModuleCamelCase
           class Reporter
             def initialize(*); end
+            def sendReport(*)
+              true
+            end
           end
         end
       end
