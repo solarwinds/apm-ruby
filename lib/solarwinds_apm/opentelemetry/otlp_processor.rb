@@ -100,6 +100,7 @@ module SolarWindsAPM
       def record_request_metrics(span)
         meter_attrs = meter_attributes(span)
         span_time = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
+        span_time = (span_time / 1e3).round
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] entry span, response_time: #{span_time}." }
         @metrics[:response_time].record(span_time, attributes: meter_attrs)
       end
