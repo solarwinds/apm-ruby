@@ -10,7 +10,25 @@ WORKDIR /build/layer
 RUN bundle config set --local path 'ruby'
 RUN bundle update
 
+RUN for file in /build/layer/solarwinds_apm-*.gem; do \
+    if [ -f "$file" ]; then \
+        echo "$file exists."; \
+        arch=$(uname -m); \
+        gem install $file; \
+        gem_name=$(basename "$file"); \
+        file_name="${gem_name%.*}"; \
+        rm -rf /build/layer/ruby/ruby/3.2.0/gems/$file_name; \
+        rm -rf /build/layer/ruby/ruby/3.2.0/extensions/$arch-linux/3.2.0/$file_name; \
+        rm /build/layer/ruby/ruby/3.2.0/specifications/$file_name.gemspec; \
+        cp -R /var/lang/lib/ruby/gems/3.2.0/gems/$file_name/ /build/layer/ruby/ruby/3.2.0/gems/; \
+        cp -R /var/lang/lib/ruby/gems/3.2.0/extensions/$arch-linux/3.2.0/$file_name /build/layer/ruby/ruby/3.2.0/extensions/$arch-linux/3.2.0/; \
+        cp /var/lang/lib/ruby/gems/3.2.0/specifications/$file_name.gemspec /build/layer/ruby/ruby/3.2.0/specifications; \
+    fi; \
+    done
+
+RUN rm /build/layer/ruby/ruby/3.2.0/cache/*
+
 WORKDIR /build/layer/ruby/ruby
-RUN zip -r gems-3.2.0.zip 3.2.0/
+RUN zip -qr gems-3.2.0.zip 3.2.0/
 
 CMD cp /build/layer/ruby/ruby/gems-3.2.0.zip /out/gems-3.2.0.zip

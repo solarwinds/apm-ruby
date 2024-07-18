@@ -8,4 +8,4 @@ source 'https://rubygems.pkg.github.com/solarwinds' do
   gem 'opentelemetry-metrics-sdk', '0.0.1'
 end
 
-gem 'solarwinds_apm', '6.0.1'
+gem 'solarwinds_apm', '6.0.2'

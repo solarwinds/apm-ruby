@@ -69,7 +69,7 @@ end
 
 desc 'Start ubuntu docker container for testing and debugging.'
 task docker_dev: [:docker_down] do
-  cmd = "docker-compose run --service-ports \
+  cmd = "docker compose run --service-ports \
   --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development"
   Dir.chdir('test') do
     sh cmd do |ok, res|
@@ -81,7 +81,7 @@ end
 desc 'Stop all containers that were started for testing and debugging'
 task :docker_down do
   Dir.chdir('test') do
-    sh 'docker-compose down -v --remove-orphans'
+    sh 'docker compose down -v --remove-orphans'
   end
 end
 
