@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   # build layer on arm64 and amd64, then upload to artifacts
+  # act -j build_layer --container-architecture linux/arm64
   build_layer:
     strategy:
       fail-fast: false

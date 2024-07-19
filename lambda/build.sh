@@ -3,6 +3,11 @@ set -e
 
 if [ $SOLARWINDS_SOURCE = 'Local' ]; then
     cd ../
+    sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make swig bison
+    gem install bundler
+    echo 'gem: --no-document' >> ~/.gemrc
+    bundle install --without development --without test
+    bundle exec rake fetch_oboe_file["prod"]
     gem build solarwinds_apm.gemspec
     CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
     mv $CURRENT_GEM lambda/otel/layer/
