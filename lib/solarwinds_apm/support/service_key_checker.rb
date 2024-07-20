@@ -26,7 +26,7 @@ module SolarWindsAPM
       end
 
       token, _, service_name = parse_service_key(service_key)
-      if token.empty? || !validate_token(token)
+      if token.empty?
         SolarWindsAPM.logger.error do
           "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{token[0..3]}...#{token[-4..]}"
         end
@@ -82,11 +82,6 @@ module SolarWindsAPM
         key, value = pair.split('=')
         break value if key == 'service.name'
       end || ''
-    end
-
-    # In case of java-collector, please provide a dummy service key
-    def validate_token(token)
-      /^[0-9a-zA-Z_-]{71}$/.match?(token)
     end
 
     def transform_service_name(service_name)
