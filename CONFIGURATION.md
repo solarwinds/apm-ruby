@@ -156,6 +156,48 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ]
 ```
 
+### Tag Trace Context with Query
+
+You can set `SW_APM_TAG_SQL=true` or set `:tag_sql` to true in the configuration file to enable appending current trace information into the query. For example:
+```
+# query without tag sql
+SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
+
+# query with tag sql
+SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
+```
+
+For Rails < 7 and non-Rails applications, we use [Marginalia](https://github.com/basecamp/marginalia) to inject comments in ActiveRecord.
+
+For Rails >= 7, Rails integrates Marginalia into its framework (see [documentation](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html)). You can set up the tag SQL through Rails configuration. See the example:
+```ruby
+class Application < Rails::Application
+  config.active_record.query_log_tags_enabled = true
+  config.active_record.query_log_tags = [
+    {
+      traceparent: -> {
+        SolarWindsAPM::SWOMarginalia::Comment.traceparent
+      }
+    }
+  ]
+end
+```
+
+For Rails >= 7.1, you can change the comment format from the default to SQLCommenter (SolarWindsAPM enforces the SQLCommenter format):
+```ruby
+class Application < Rails::Application
+  config.active_record.query_log_tags_enabled = true
+  config.active_record.query_log_tags = [
+    {
+      traceparent: -> {
+        SolarWindsAPM::SWOMarginalia::Comment.traceparent
+      }
+    }
+  ]
+  config.active_record.query_log_tags_format = :sqlcommenter
+end
+```
+
 ## Reference
 
 Environment Variable | Config File Key | Description | Default
