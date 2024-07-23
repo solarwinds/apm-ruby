@@ -19,7 +19,6 @@ require_relative 'support/utils'
 require_relative 'support/x_trace_options'
 require_relative 'support/support_report'
 
-# rubocop:disable Metrics/BlockNesting
 if SolarWindsAPM::Config[:tag_sql]
   if defined?(Rails)
     if Rails.version < '7'
@@ -33,4 +32,3 @@ if SolarWindsAPM::Config[:tag_sql]
     SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
   end
 end
-# rubocop:enable Metrics/BlockNesting

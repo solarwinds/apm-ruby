@@ -47,3 +47,4 @@ Naming/VariableNumber:
 Metrics/BlockNesting:
   Exclude:
     - 'lib/solarwinds_apm.rb'
+    - 'lib/solarwinds_apm/support.rb'
