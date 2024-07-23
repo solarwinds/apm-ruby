@@ -139,6 +139,27 @@ export SW_APM_CONFIG_RUBY=config/file/location.rb
 
 The configuration file should be Ruby code that sets key/values in the hash exposed by `SolarWindsAPM::Config`. The bundled [Rails generator template file](https://github.com/solarwinds/apm-ruby/blob/main/lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb) serves as an example of the supported values, see also the [Reference](#reference) section.
 
+## Reference
+
+Environment Variable | Config File Key | Description | Default
+-------------------- | --------------- | ----------- | -------
+`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
+`SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
+`SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
+`SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
+`SW_APM_EC2_METADATA_TIMEOUT` | `:ec2_metadata_timeout` | Timeout for AWS IMDS metadata retrieval in milliseconds. | 1000
+`SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
+`SW_APM_LOG_FILEPATH` | N/A | Configure the log file path for the C extension, e.g. `export SW_APM_LOG_FILEPATH=/path/file_path.log`. If set, messages from the C extension are written to the specified file instead of stderr.  | None
+`SW_APM_PROXY` | `:http_proxy` | Configure an HTTP proxy through which the library connects to the collector. | None
+`SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of _token:service name_, **required**. |
+`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#tag-query-with-trace-context) for details.| false
+`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
+`SW_APM_TRUSTEDPATH` | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
+N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
+N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
+N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
+N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None
+
 ### Transaction Filtering
 
 Specific transactions can be disabled from tracing (suppressing both spans and metrics) using the `:transaction_settings` configuration. An example that filters out static assets and a message consumer:
@@ -156,9 +177,9 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ]
 ```
 
-### Tag Trace Context with Query
+### Tag Query with Trace Context
 
-You can set `SW_APM_TAG_SQL=true` or set `:tag_sql` to true in the configuration file to enable appending current trace information into the query. For example:
+You can set the environment variable `SW_APM_TAG_SQL` or configuration file option `:tag_sql` to true to enable appending the current trace context into a database query as a SQL comment. For example:
 ```
 # query without tag sql
 SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
@@ -167,9 +188,9 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
 SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
 ```
 
-For Rails < 7 and non-Rails applications, we use [Marginalia](https://github.com/basecamp/marginalia) to inject comments in ActiveRecord.
+For Rails < 7 and non-Rails applications, we use a port of [Marginalia](https://github.com/basecamp/marginalia) that patches ActiveRecord to inject the comment.
 
-For Rails >= 7, Rails integrates Marginalia into its framework (see [documentation](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html)). You can set up the tag SQL through Rails configuration. See the example:
+For Rails >= 7, Marginalia is [integrated into ActiveRecord](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html) so enabling this feature should be done through Rails [configuration](https://guides.rubyonrails.org/v7.0/configuring.html#config-active-record-query-log-tags-enabled). For example:
 ```ruby
 class Application < Rails::Application
   config.active_record.query_log_tags_enabled = true
@@ -183,38 +204,4 @@ class Application < Rails::Application
 end
 ```
 
-For Rails >= 7.1, you can change the comment format from the default to SQLCommenter (SolarWindsAPM enforces the SQLCommenter format):
-```ruby
-class Application < Rails::Application
-  config.active_record.query_log_tags_enabled = true
-  config.active_record.query_log_tags = [
-    {
-      traceparent: -> {
-        SolarWindsAPM::SWOMarginalia::Comment.traceparent
-      }
-    }
-  ]
-  config.active_record.query_log_tags_format = :sqlcommenter
-end
-```
-
-## Reference
-
-Environment Variable | Config File Key | Description | Default
--------------------- | --------------- | ----------- | -------
-`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
-`SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
-`SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
-`SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
-`SW_APM_EC2_METADATA_TIMEOUT` | `:ec2_metadata_timeout` | Timeout for AWS IMDS metadata retrieval in milliseconds. | 1000
-`SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
-`SW_APM_LOG_FILEPATH` | N/A | Configure the log file path for the C extension, e.g. `export SW_APM_LOG_FILEPATH=/path/file_path.log`. If set, messages from the C extension are written to the specified file instead of stderr.  | None
-`SW_APM_PROXY` | `:http_proxy` | Configure an HTTP proxy through which the library connects to the collector. | None
-`SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of _token:service name_, **required**. |
-`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable. | false
-`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
-`SW_APM_TRUSTEDPATH` | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
-N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
-N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
-N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
-N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. | None
+Note that with Rails >= 7.1 the comment format can be specified via the `config.active_record.query_log_tags_format` option. SolarWinds Observability functionality depends on the default `:sqlcommenter` format, it is not recommended to change this value.
