@@ -19,25 +19,18 @@ require_relative 'support/utils'
 require_relative 'support/x_trace_options'
 require_relative 'support/support_report'
 
+# rubocop:disable Metrics/BlockNesting
 if SolarWindsAPM::Config[:tag_sql]
   if defined?(Rails)
-
-    if Rails.version >= '7'
-      SolarWindsAPM.logger.info do
-        'In Rails 7, tag tracecontext on a query by including SolarWindsAPM::SWOMarginalia::Comment.traceparent as a function in config.active_record.query_log_tags. ' \
-          'In Rails >= 7.1, change the default formatter to sqlcommenter via config.active_record.query_log_tags_format = :sqlcommenter for the correct format. ' \
-          'For more info, visit https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html'
-      end
-      require_relative 'support/swomarginalia/comment'
-    end
-
     if Rails.version < '7'
       require_relative 'support/swomarginalia/railtie'
-    elsif Rails.version >= '7' && Rails.version < '7.1'
-      require_relative 'support/swomarginalia/formatter'
+    else
+      require_relative 'support/swomarginalia/comment'
+      require_relative 'support/swomarginalia/formatter' if Rails.version <= '7.1'
     end
   elsif defined?(ActiveRecord)
     require_relative 'support/swomarginalia/load_swomarginalia'
     SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
   end
 end
+# rubocop:enable Metrics/BlockNesting
