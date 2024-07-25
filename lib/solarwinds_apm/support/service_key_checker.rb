@@ -66,7 +66,7 @@ module SolarWindsAPM
     end
 
     def parse_service_key(service_key)
-      match = service_key.match(/([^:]+)(:{0,1})(.*)/)
+      match = service_key.match(/([^:]*)(:{0,1})(.*)/)
       return ['', '', ''] if match.nil?
 
       [match[1], match[2], match[3]]
