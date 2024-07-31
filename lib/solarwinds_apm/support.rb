@@ -23,20 +23,9 @@ if SolarWindsAPM::Config[:tag_sql]
   if defined?(Rails)
     if Rails.version < '7'
       require_relative 'support/swomarginalia/railtie'
-    elsif Rails.version >= '7'
-      # User has to define in their config/environments:
-      # config.active_record.query_log_tags = [
-      #   {
-      #     tracecontext: -> {
-      #       SolarWindsAPM::SWOMarginalia::Comment.traceparent
-      #     }
-      #   }
-      # ]
-      SolarWindsAPM.logger.info do
-        'In Rails 7, tag tracecontext on a query by including SolarWindsAPM::SWOMarginalia::Comment.traceparent as function in config.active_record.query_log_tags.'
-      end
-      SolarWindsAPM.logger.info { 'For more information, please check https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html' }
+    else
       require_relative 'support/swomarginalia/comment'
+      require_relative 'support/swomarginalia/formatter' if Rails.version <= '7.1'
     end
   elsif defined?(ActiveRecord)
     require_relative 'support/swomarginalia/load_swomarginalia'
