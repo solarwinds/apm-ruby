@@ -12,8 +12,8 @@ on:
         type: choice
         default: 'RubyGem'
         options:
-        - RubyGem
-        - GitHub
+          - RubyGem
+          - GitHub
 
       solarwinds-version:
         required: true

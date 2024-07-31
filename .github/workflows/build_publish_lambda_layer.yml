@@ -5,6 +5,15 @@ name: Build publish lambda layer
 
 on:
   workflow_dispatch:
+    inputs:
+      solarwinds-source:
+        required: true
+        description: 'solarwinds_apm source for build layers, e.g. RubyGem, Local'
+        type: choice
+        default: 'RubyGem'
+        options:
+          - RubyGem
+          - Local
 
 permissions:
   id-token: write   # This is required for requesting the JWT
@@ -12,6 +21,7 @@ permissions:
 
 jobs:
   # build layer on arm64 and amd64, then upload to artifacts
+  # act -j build_layer --container-architecture linux/arm64
   build_layer:
     strategy:
       fail-fast: false
@@ -34,6 +44,7 @@ jobs:
         env:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           MATRIX_ARCH: ${{ matrix.arch }}
+          SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
 
       - name: Show directory contents
         run: |

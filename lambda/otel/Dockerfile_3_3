@@ -8,9 +8,21 @@ COPY . /build
 
 WORKDIR /build/layer
 RUN bundle config set --local path 'ruby'
-RUN bundle update
+
+RUN ls | grep solarwinds_apm-*.gem > gem_file.txt 2>/dev/null || true
+RUN export gem_file=$(cat gem_file.txt) && \
+    if [ -f "$gem_file" ]; then \
+        echo "$gem_file exists."; \
+        sed -i '$ s/^/#/' /build/layer/Gemfile; \
+        bundle update; \
+        bundle exec gem install $gem_file; \
+    else \
+        bundle update; \
+    fi
+
+RUN rm /build/layer/ruby/ruby/3.3.0/cache/*
 
 WORKDIR /build/layer/ruby/ruby
-RUN zip -r gems-3.3.0.zip 3.3.0/
+RUN zip -qr gems-3.3.0.zip 3.3.0/
 
 CMD cp /build/layer/ruby/ruby/gems-3.3.0.zip /out/gems-3.3.0.zip
