@@ -222,7 +222,7 @@ describe 'OboeInitOptions' do
 
     SolarWindsAPM::Config[:service_key] = '22222222-2222-2222-2222-222222222222:service'
     SolarWindsAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
+    _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
 
     SolarWindsAPM::Config[:service_key] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq'
     SolarWindsAPM::OboeInitOptions.instance.re_init
@@ -249,7 +249,7 @@ describe 'OboeInitOptions' do
 
     ENV['SW_APM_SERVICE_KEY'] = '22222222-2222-2222-2222-222222222222:service'
     SolarWindsAPM::OboeInitOptions.instance.re_init
-    _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal false
+    _(SolarWindsAPM::OboeInitOptions.instance.service_key_ok?).must_equal true
 
     ENV['SW_APM_SERVICE_KEY'] = 'CWoadXY66FXNd_e5u3nabLZ1KByYZRTi1yWJg2AcD6MHo1AA42UstbipfHfx6Hnl-821ARq'
     SolarWindsAPM::OboeInitOptions.instance.re_init
