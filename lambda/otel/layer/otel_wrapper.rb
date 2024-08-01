@@ -3,9 +3,11 @@
 require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
+require 'opentelemetry/instrumentation/aws_lambda/handler'
+
+otel_lambda_handler = OpenTelemetry::Instrumentation::AwsLambda::Handler.new
 require 'solarwinds_apm'
 
-def otel_wrapper(event:, context:)
-  otel_wrapper = OpenTelemetry::Instrumentation::AwsLambda::Handler.new
-  otel_wrapper.call_wrapped(event: event, context: context)
+define_method(:otel_wrapper) do |event:, context:|
+  otel_lambda_handler.call_wrapped(event: event, context: context)
 end
