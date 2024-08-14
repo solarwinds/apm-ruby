@@ -1,3 +1,6 @@
+
+# Noop Mode
+
 Here we can define modules and classes for noop mode.
 
 Instead of polluting code with SolarWindsAPM.loaded conditionals

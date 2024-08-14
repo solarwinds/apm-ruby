@@ -1,12 +1,15 @@
 # solarwinds_apm
+
 The `solarwinds_apm` gem starting from version 6.0.0 is an [OpenTelemetry Ruby](https://opentelemetry.io/docs/instrumentation/ruby/) distribution. It provides automatic instrumentation and custom SolarWinds Observability features for Ruby applications.
 
 ## Requirements
+
 Only Linux is supported, the gem will go into no-op mode on other platforms. MRI Ruby version 3 or above is required. The [SolarWinds Observability documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm) has details on the supported platforms and system dependencies.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
 ## Installation and Setup
+
 `solarwinds_apm` is [available on Rubygems](https://rubygems.org/gems/solarwinds_apm). Install with:
 
 ```bash
