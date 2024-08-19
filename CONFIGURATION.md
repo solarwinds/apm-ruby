@@ -205,3 +205,18 @@ end
 ```
 
 Note that with Rails >= 7.1 the comment format can be specified via the `config.active_record.query_log_tags_format` option. SolarWinds Observability functionality depends on the default `:sqlcommenter` format, it is not recommended to change this value.
+
+#### Change db_statment option to `:include`
+
+> [!IMPORTANT]
+> The `db_statement` option for database-related instrumentation needs to be set to `:include`
+
+In OpenTelemetry Instrumentation, all database-related instrumentation sets the attribute `db.statement` to `:obfuscate` by default (e.g., [mysql2](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-mysql2/v0.27.2/instrumentation/mysql2/lib/opentelemetry/instrumentation/mysql2/instrumentation.rb#L23), [pg](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-pg/v0.28.0/instrumentation/pg/lib/opentelemetry/instrumentation/pg/instrumentation.rb#L28), and [trilogy](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-trilogy/v0.59.3/instrumentation/trilogy/lib/opentelemetry/instrumentation/trilogy/instrumentation.rb#L27)). `Obfuscate` will mask out every sensitive value, including comments; therefore, to overcome this setting, the option `db_statement` needs to be set to `:include`.
+
+To change the default value of the instrumentation option, please refer to the [Environment Variables](#environment-variables) or [Programmatic Configuration](#programmatic-configuration).
+
+For example, to set the `db_statement` option for the mysql2 instrumentation to "include", export the following environment variable:
+
+```console
+export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include'
+```

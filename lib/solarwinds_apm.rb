@@ -73,7 +73,6 @@ begin
             SolarWindsAPM.logger.warn '  # ... your configuration code'
             SolarWindsAPM.logger.warn 'end'
             SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
-            SolarWindsAPM.logger.warn "\e[1mPlease discard this message if application have already taken this action.\e[0m"
             SolarWindsAPM.logger.warn '=============================================================='
           end
         else

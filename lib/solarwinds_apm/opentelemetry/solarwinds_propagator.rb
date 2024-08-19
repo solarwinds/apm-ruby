@@ -54,7 +54,7 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] inject context: #{context.inspect}" }
 
           span_context = ::OpenTelemetry::Trace.current_span(context)&.context
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_context #{span_context.inspect}" }
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_context: #{span_context.inspect}" }
           return unless span_context&.valid?
 
           trace_flag = span_context.trace_flags.sampled? ? 1 : 0
