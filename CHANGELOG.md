@@ -5,6 +5,13 @@ For the latest release info, see here:
 
 Dates in this file are in the format MM/DD/YYYY.
 
+## solarwinds_apm 6.0.2 (06/27/2024)
+
+This release includes the following features:
+
+* Add multi-runtime lambda layer
+* Fix the issue of init msg not sent
+
 ## solarwinds_apm 6.0.1 (06/20/2024)
 
 This release includes the following features:
