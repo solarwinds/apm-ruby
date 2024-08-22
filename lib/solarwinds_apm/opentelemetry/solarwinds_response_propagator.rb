@@ -35,9 +35,10 @@ module SolarWindsAPM
         def inject(carrier, context: ::OpenTelemetry::Context.current,
                    setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
           span_context = ::OpenTelemetry::Trace.current_span(context).context
-          SolarWindsAPM.logger.debug do
-            "[#{self.class}/#{__method__}] context: #{context.inspect}; span_context: #{span_context.inspect}"
-          end
+
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] context current_span: #{context.instance_variable_get(:@entries)&.values&.first.inspect}" }
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_context: #{span_context.inspect}" }
+
           return unless span_context&.valid?
 
           x_trace                = Utils.traceparent_from_context(span_context)

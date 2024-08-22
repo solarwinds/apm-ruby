@@ -126,6 +126,15 @@ module SolarWindsAPM
 
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
+
+      require_relative 'patches/tag_sql_patch'
+
+      if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
+        SolarWindsAPM.logger.info '==================================================================='
+        SolarWindsAPM.logger.info "\e[1mSolarWindsAPM manual initialization was successful.\e[0m"
+        SolarWindsAPM.logger.info '==================================================================='
+      end
+
       nil
     end
 

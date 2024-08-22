@@ -22,7 +22,7 @@ module SolarWindsAPM
       # @param [Context] parent_context the
       #  started span.
       def on_start(span, parent_context)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start span: #{span.to_span_data.inspect}" }
 
         return if non_entry_span(parent_context: parent_context)
 
