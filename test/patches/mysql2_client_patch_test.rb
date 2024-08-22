@@ -3,6 +3,7 @@
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
+# rubocop:disable Lint/ConstantDefinitionInBlock
 require 'minitest_helper'
 require './lib/solarwinds_apm/patches/tag_sql_constants'
 
@@ -19,10 +20,10 @@ describe 'mysql2_client_patch' do
     module Mysql2
       class Client
         def config
-          {:db_statement => :obfuscate}
+          { db_statement: :obfuscate }
         end
-        def mock_query(sql)
-        end
+
+        def mock_query(sql); end
       end
     end
 
@@ -55,12 +56,12 @@ describe 'mysql2_client_patch' do
   end
 
   it 'should_patch_when_exist_mysql2_and_instrumentation' do
-    load File.expand_path('../../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __FILE__)
-    _(::Mysql2::Client.ancestors[0]).must_equal SolarWindsAPM::Patches::SWOMysql2ClientPatch
+    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
+    _(Mysql2::Client.ancestors[0]).must_equal SolarWindsAPM::Patches::SWOMysql2ClientPatch
   end
 
   it 'should_keep_traceparent_when_obfuscate' do
-    load File.expand_path('../../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __FILE__)
+    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
     client = Mysql2::Client.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     _(attributes['db.statement']).must_equal "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = '?' LIMIT '?'/*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/"
@@ -70,12 +71,12 @@ describe 'mysql2_client_patch' do
     module Mysql2
       class Client
         def config
-          {:db_statement => :include}
+          { db_statement: :include }
         end
       end
     end
 
-    load File.expand_path('../../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __FILE__)
+    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
     client = Mysql2::Client.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     _(attributes['db.statement']).must_equal "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/"
@@ -85,14 +86,16 @@ describe 'mysql2_client_patch' do
     module Mysql2
       class Client
         def config
-          {:db_statement => :omit}
+          { db_statement: :omit }
         end
       end
     end
 
-    load File.expand_path('../../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __FILE__)
+    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
     client = Mysql2::Client.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     assert_nil(attributes['db.statement'])
   end
 end
+
+# rubocop:enable Lint/ConstantDefinitionInBlock
