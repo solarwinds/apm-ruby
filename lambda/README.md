@@ -3,12 +3,14 @@
 ## Building Lambda Ruby Layer With OpenTelemetry Ruby Dependencies Using SAM
 
 Build
+
 ```bash
 sam build -u -t template.yml -e BUNDLE_RUBYGEMS__PKG__GITHUB__COM=<your_github_token>
 ```
 
 Make sure the layer structure like below with your zip
-```
+
+```console
 ruby
     └── gems
         └── 3.2.0

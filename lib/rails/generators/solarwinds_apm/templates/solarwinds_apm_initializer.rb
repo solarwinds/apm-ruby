@@ -7,7 +7,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 # SolarWindsAPM Configuration for the Ruby Agent aka solarwinds_apm gem
-# https://cloud.solarwinds.com/
+# https://www.solarwinds.com/solarwinds-observability/registration
 #
 # More information on configuring the Ruby Agent can be found here:
 # https://documentation.solarwinds.com/en/success_center/swaas/default.htm#cshid=config-ruby-agent
