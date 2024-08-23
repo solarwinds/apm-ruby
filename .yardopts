@@ -1,5 +1,4 @@
 --no-private
---readme yardoc_frontpage.md
 lib/solarwinds_apm/api/tracing.rb
 lib/solarwinds_apm/api/current_trace_info.rb
 lib/solarwinds_apm/api/transaction_name.rb
