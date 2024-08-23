@@ -78,3 +78,6 @@ lambda/.aws-sam/*
 lambda/*.zip
 *.zip
 lambda/build/*
+
+# reverse lab reports
+reports/

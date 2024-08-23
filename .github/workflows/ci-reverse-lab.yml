@@ -1,0 +1,53 @@
+# Copyright (c) 2023 SolarWinds, LLC.
+# All rights reserved.
+
+name: CI Reverse Lab Scan
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci-reverse-lab-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby 3.1 and bundle
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.1
+
+      - name: Build apm-ruby
+        id: build-apm-ruby-ci-reverse-lab
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make swig bison json
+          sudo gem install bundler
+          sudo echo 'gem: --no-document' >> ~/.gemrc
+          sudo bundle install --without development --without test
+          sudo gem build solarwinds_apm.gemspec
+          CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
+          GEM_VERSION=$(echo "$CURRENT_GEM" | grep -oP '(?<=solarwinds_apm-)[0-9]+\.[0-9]+\.[0-9]+(\.[a-z0-9]+)?(?=\.gem)')
+          echo "current_gem=$CURRENT_GEM" >> $GITHUB_OUTPUT
+          echo "gem_version=$GEM_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Run Reverse Lab Scan
+        run: |
+          docker run --rm \
+            -u $(id -u):$(id -g) \
+            -v "$(pwd)/:/packages:ro" \
+            -v "$(pwd)/reports:/reports" \
+            -e RLPORTAL_ACCESS_TOKEN=${{ secrets.REVERSE_LAB_TOKEN }} \
+            reversinglabs/rl-scanner-cloud \
+            rl-scan \
+              --rl-portal-server solarwinds \
+              --rl-portal-org SolarWinds \
+              --rl-portal-group "SaaS  - Agents- SWO" \
+              --purl solarwinds-apm-ruby/apm-ruby@${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }} \
+              --file-path /packages/${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }} \
+              --report-path /reports \
+              --report-format all
+
+      - name: Check Scan Status
+        working-directory: .github/workflows/scripts
+        run: ruby ci-reverse-lab-scan.rb
