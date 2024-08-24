@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # act -j ci-reverse-lab-scan --container-architecture linux/arm64
   ci-reverse-lab-scan:
     runs-on: ubuntu-latest
 
@@ -21,15 +22,21 @@ jobs:
       - name: Build apm-ruby
         id: build-apm-ruby-ci-reverse-lab
         run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make swig bison json
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make swig bison
           sudo gem install bundler
           sudo echo 'gem: --no-document' >> ~/.gemrc
           sudo bundle install --without development --without test
+          sudo bundle exec rake fetch_oboe_file["prod"]
           sudo gem build solarwinds_apm.gemspec
           CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
           GEM_VERSION=$(echo "$CURRENT_GEM" | grep -oP '(?<=solarwinds_apm-)[0-9]+\.[0-9]+\.[0-9]+(\.[a-z0-9]+)?(?=\.gem)')
           echo "current_gem=$CURRENT_GEM" >> $GITHUB_OUTPUT
           echo "gem_version=$GEM_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Print Gem and Version (in case some debugging is needed)
+        run: |
+          echo "Gem name:       ${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }}"
+          echo "Gem version:       ${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }}"
 
       - name: Run Reverse Lab Scan
         run: |
