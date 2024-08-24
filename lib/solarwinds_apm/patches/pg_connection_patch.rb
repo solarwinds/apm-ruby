@@ -11,9 +11,9 @@ module SolarWindsAPM
       def obfuscate_sql(sql)
         if config[:db_statement] == :obfuscate
           extracted_comments = sql.match(TagSqlConstants::TRACEPARENT_REGEX)
-          super + extracted_comments&.match(0).to_s
+          super(sql) + extracted_comments&.match(0).to_s
         else
-          super
+          super(sql)
         end
       end
     end

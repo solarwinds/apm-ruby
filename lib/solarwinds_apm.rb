@@ -20,7 +20,7 @@ begin
 
   begin
     if RUBY_PLATFORM.include?('linux')
-      require 'solarwinds_apm/config'
+      require 'solarwinds_apm/config'            # initialize is called at end of config.rb file
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
       if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && !SolarWindsAPM::OboeInitOptions.instance.lambda_env
         SolarWindsAPM.logger.warn '=============================================================='

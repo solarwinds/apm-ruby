@@ -359,3 +359,15 @@ def clean_old_setting
   ENV.delete('OTEL_TRACES_EXPORTER')
   ENV.delete('SW_APM_ENABLED')
 end
+
+##
+# Some Marco
+#
+
+module OpenTelemetry
+  module SemanticConventions
+    module Trace
+      DB_STATEMENT = 'db.statement'
+    end
+  end
+end

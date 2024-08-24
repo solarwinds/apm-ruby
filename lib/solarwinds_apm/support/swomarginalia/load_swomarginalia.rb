@@ -6,7 +6,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-require_relative 'swomarginalia'
+require_relative './swomarginalia'
 
 module SolarWindsAPM
   module SWOMarginalia
@@ -22,10 +22,12 @@ module SolarWindsAPM
 
         ::ActiveJob::Base.class_eval do
           around_perform do |job, block|
-            SWOMarginalia::Comment.update_job! job
-            block.call
-          ensure
-            SWOMarginalia::Comment.clear_job!
+            begin
+              SWOMarginalia::Comment.update_job! job
+              block.call
+            ensure
+              SWOMarginalia::Comment.clear_job!
+            end
           end
         end
       end
@@ -41,14 +43,12 @@ module SolarWindsAPM
       end
 
       def self.insert_into_active_record
-        ActiveRecord::ConnectionAdapters::Mysql2Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
-        ActiveRecord::ConnectionAdapters::MysqlAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::MysqlAdapter
+        # only rails < 5 has MysqlAdapter (https://github.com/rails/rails/tree/v4.2.11.3/activerecord/lib/active_record/connection_adapters)
+        ActiveRecord::ConnectionAdapters::MysqlAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)      if defined? ActiveRecord::ConnectionAdapters::MysqlAdapter
+        ActiveRecord::ConnectionAdapters::Mysql2Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)     if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
         ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
-        return unless defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
-
-        return unless defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
-
-        ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)
+        ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)    if defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
+        ActiveRecord::ConnectionAdapters::TrilogyAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)    if defined? ActiveRecord::ConnectionAdapters::TrilogyAdapter
       end
     end
   end

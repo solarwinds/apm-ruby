@@ -127,7 +127,7 @@ module SolarWindsAPM
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
 
-      require_relative 'patches/tag_sql_patch'
+      require_relative 'patches/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
 
       if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
         SolarWindsAPM.logger.info '==================================================================='

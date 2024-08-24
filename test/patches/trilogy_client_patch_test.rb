@@ -7,84 +7,81 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/patches/tag_sql_constants'
 
-describe 'mysql2_client_patch' do
+describe 'tag_sql_patch_test' do
   before do
-    module Mysql2
-      class Client
-        def config
-          { db_statement: :obfuscate }
-        end
-
-        def mock_query(sql); end
+    class Trilogy
+      def config
+        { db_statement: :obfuscate }
       end
+
+      def mock_query(sql); end
     end
 
     module OpenTelemetry
       module Instrumentation
-        module Mysql2
+        module Trilogy
           module Patches
             module Client
-              # mocked client based on otel mysql2 instrumentation
+              # mocked client based on otel trilogy instrumentation
               def mock_query(sql)
-                _otel_span_attributes(sql)
+                client_attributes(sql)
               end
 
-              def _otel_span_attributes(sql)
+              def client_attributes(sql)
                 attributes = {}
-                case config[:db_statement]
-                when :include
-                  attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] = sql
-                when :obfuscate
-                  attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] = "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = '?' LIMIT '?'"
+                if sql
+                  case config[:db_statement]
+                  when :obfuscate
+                    attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] = "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = '?' LIMIT '?'"
+                  when :include
+                    attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] = sql
+                  end
                 end
+
                 attributes
               end
             end
           end
         end
       end
-      Mysql2::Client.prepend(OpenTelemetry::Instrumentation::Mysql2::Patches::Client)
+      Trilogy.prepend(OpenTelemetry::Instrumentation::Trilogy::Patches::Client)
     end
   end
 
-  it 'mysql2_should_patch_when_exist_mysql2_and_instrumentation' do
-    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
-    _(Mysql2::Client.ancestors[0]).must_equal SolarWindsAPM::Patches::SWOMysql2ClientPatch
+  it 'trilogy_should_patch_when_exist_trilogy_and_instrumentation' do
+    load File.expand_path('../../lib/solarwinds_apm/patches/trilogy_client_patch.rb', __dir__)
+    _(Trilogy.ancestors[0]).must_equal SolarWindsAPM::Patches::SWOTrilogyClientPatch
   end
 
   it 'should_keep_traceparent_when_obfuscate' do
-    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
-    client = Mysql2::Client.new
+    load File.expand_path('../../lib/solarwinds_apm/patches/trilogy_client_patch.rb', __dir__)
+    client = Trilogy.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     _(attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT]).must_equal "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = '?' LIMIT '?'/*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/"
   end
 
-  it 'mysql2_should_not_change_anything_when_non_obfuscate' do
-    module Mysql2
-      class Client
-        def config
-          { db_statement: :include }
-        end
+  it 'trilogy_should_not_change_anything_when_non_obfuscate' do
+    class Trilogy
+      def config
+        { db_statement: :include }
       end
     end
 
-    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
-    client = Mysql2::Client.new
+    load File.expand_path('../../lib/solarwinds_apm/patches/trilogy_client_patch.rb', __dir__)
+    client = Trilogy.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     _(attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT]).must_equal "SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/"
   end
 
-  it 'mysql2_should_no_db_statement_include' do
-    module Mysql2
-      class Client
-        def config
-          { db_statement: :omit }
-        end
+  it 'trilogy_should_no_db_statement_include' do
+    class Trilogy
+      def config
+        { db_statement: :omit }
       end
     end
 
-    load File.expand_path('../../lib/solarwinds_apm/patches/mysql2_client_patch.rb', __dir__)
-    client = Mysql2::Client.new
+    load File.expand_path('../../lib/solarwinds_apm/patches/trilogy_client_patch.rb', __dir__)
+    client = Trilogy.new
     attributes = client.mock_query("SELECT `customers`.* FROM `customers` WHERE `customers`.`contactLastName` = 'Schmitt' LIMIT 1 /*traceparent='00-f0ebd771266f8c359af8b10c1c57e623-aecd3d0c5c4f9a94-01'*/")
     assert_nil(attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT])
   end

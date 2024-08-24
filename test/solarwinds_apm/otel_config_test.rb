@@ -98,4 +98,32 @@ describe 'Loading Opentelemetry Test' do
       _(OpenTelemetry.logger.level).must_equal 4
     end
   end
+
+  describe 'check_if_tag_sql_patch' do
+    it 'tag_sql_is_off' do
+      ENV['SW_APM_TAG_SQL'] = 'false'
+      SolarWindsAPM::Config.initialize
+      _(SolarWindsAPM::Config[:tag_sql]).must_equal false
+
+      SolarWindsAPM::OTelConfig.initialize
+      assert_nil(defined?(SolarWindsAPM::Patches::SWOMysql2ClientPatch))
+      assert_nil(defined?(SolarWindsAPM::Patches::SWOPgConnectionPatch))
+      assert_nil(defined?(SolarWindsAPM::Patches::SWOTrilogyClientPatch))
+
+      ENV.delete('SW_APM_TAG_SQL')
+    end
+
+    it 'tag_sql_is_on' do
+      ENV['SW_APM_TAG_SQL'] = 'true'
+      SolarWindsAPM::Config.initialize
+      _(SolarWindsAPM::Config[:tag_sql]).must_equal true
+
+      SolarWindsAPM::OTelConfig.initialize
+      _(defined?(SolarWindsAPM::Patches::SWOMysql2ClientPatch)).must_equal 'constant'
+      _(defined?(SolarWindsAPM::Patches::SWOPgConnectionPatch)).must_equal 'constant'
+      _(defined?(SolarWindsAPM::Patches::SWOTrilogyClientPatch)).must_equal 'constant'
+
+      ENV.delete('SW_APM_TAG_SQL')
+    end
+  end
 end
