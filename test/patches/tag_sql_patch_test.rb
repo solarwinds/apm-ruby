@@ -3,12 +3,13 @@
 # Copyright (c) 2023 SolarWinds, LLC.
 # All rights reserved.
 
+# rubocop:disable Lint/ConstantDefinitionInBlock
 require 'minitest_helper'
 
 describe 'trilogy_client_patch' do
   it 'should_not_patch_if_tag_sql_is_false' do
     load File.expand_path('../../lib/solarwinds_apm/patches/tag_sql_constants.rb', __dir__)
-    
+
     _(Trilogy.ancestors[0]).must_equal SolarWindsAPM::Patches::SWOTrilogyClientPatch
   end
 
@@ -45,3 +46,5 @@ describe 'trilogy_client_patch' do
     assert_nil(attributes[OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT])
   end
 end
+
+# rubocop:enable Lint/ConstantDefinitionInBlock

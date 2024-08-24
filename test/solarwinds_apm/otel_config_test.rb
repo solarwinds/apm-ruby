@@ -123,6 +123,9 @@ describe 'Loading Opentelemetry Test' do
       _(defined?(SolarWindsAPM::Patches::SWOPgConnectionPatch)).must_equal 'constant'
       _(defined?(SolarWindsAPM::Patches::SWOTrilogyClientPatch)).must_equal 'constant'
 
+      SolarWindsAPM::Patches.send(:remove_const, :SWOMysql2ClientPatch)
+      SolarWindsAPM::Patches.send(:remove_const, :SWOPgConnectionPatch)
+      SolarWindsAPM::Patches.send(:remove_const, :SWOTrilogyClientPatch)
       ENV.delete('SW_APM_TAG_SQL')
     end
   end

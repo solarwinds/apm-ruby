@@ -6,7 +6,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-require_relative './swomarginalia'
+require_relative 'swomarginalia'
 
 module SolarWindsAPM
   module SWOMarginalia
@@ -22,12 +22,10 @@ module SolarWindsAPM
 
         ::ActiveJob::Base.class_eval do
           around_perform do |job, block|
-            begin
-              SWOMarginalia::Comment.update_job! job
-              block.call
-            ensure
-              SWOMarginalia::Comment.clear_job!
-            end
+            SWOMarginalia::Comment.update_job! job
+            block.call
+          ensure
+            SWOMarginalia::Comment.clear_job!
           end
         end
       end

@@ -1,4 +1,6 @@
-require_relative './annotation'
+# frozen_string_literal: true
+
+require_relative 'annotation'
 
 module SolarWindsAPM
   module SWOMarginalia

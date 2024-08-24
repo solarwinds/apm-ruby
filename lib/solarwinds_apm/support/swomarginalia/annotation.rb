@@ -1,4 +1,6 @@
-require_relative './comment'
+# frozen_string_literal: true
+
+require_relative 'comment'
 
 module SolarWindsAPM
   module SWOMarginalia
