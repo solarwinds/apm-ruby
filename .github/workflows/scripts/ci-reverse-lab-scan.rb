@@ -20,4 +20,5 @@ else
 	exit(1)
 end
 
+puts "Scan report complete. No issues"
 exit(0)
