@@ -3,11 +3,12 @@
 require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
+
 # We need to load the function code's dependencies, and _before_ any dependencies might
 # be initialized outside of the function handler, bootstrap instrumentation. This allows
 # instrumentation targets to be present, and accommodates instrumentations like AWS SDK
-# that add plugins on client initialization (vs. prepending methods). 
-def preload_libraries
+# that add plugins on client initialization (vs. prepending methods).
+def preload_function_dependencies
   default_task_location = '/var/task'
 
   handler_file = ENV.values_at('ORIG_HANDLER', '_HANDLER').compact.first&.split('.')&.first
@@ -28,27 +29,12 @@ def preload_libraries
   end
 end
 
-preload_libraries
+preload_function_dependencies
 
-require 'opentelemetry/instrumentation/aws_sdk/handler'
-require 'opentelemetry/instrumentation/aws_sdk/services'
+require 'opentelemetry-registry'
+require 'opentelemetry-instrumentation-all'
 
-def loaded_constants
-  services = Aws.constants & OpenTelemetry::Instrumentation::AwsSdk::SERVICES.map(&:to_sym)
-
-  services.each_with_object([]) do |service, constants|
-    next if Aws.autoload?(service)
-
-    begin
-      constants << Aws.const_get(service, false).const_get(:Client, false)
-    rescue StandardError => e
-      OpenTelemetry.logger.warn { "Constant could not be loaded: #{e.message}" }
-    end
-  end
-end
-
-Seahorse::Client::Base.add_plugin(OpenTelemetry::Instrumentation::AwsSdk::Plugin) if defined?(Seahorse::Client::Base)
-loaded_constants.each { |klass| klass.add_plugin(OpenTelemetry::Instrumentation::AwsSdk::Plugin) }
+OpenTelemetry::Instrumentation.registry.install_all
 
 require 'solarwinds_apm'
 
