@@ -77,54 +77,21 @@ ruby application.rb
 
 ### Instrumentation Environment Variables
 
-You can use OpenTelemetry Ruby instrumentation environment variables to disable certain instrumentation.
-From [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61):
-> The instrumention class establishes a convention for disabling an instrumentation
-> by environment variable and local configuration. An instrumentation disabled
-> by environment variable will take precedence over local config. The
-> convention for environment variable name is the library name, upcased with
-> '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG}, and '_ENABLED' appended.
-> For example: OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED = false.
+You can use OpenTelemetry Ruby instrumentation environment variables to [disable](https://opentelemetry.io/docs/languages/ruby/libraries/#overriding-configuration-for-specific-instrumentation-libraries-with-environment-variables) or [configure](https://opentelemetry.io/docs/languages/ruby/libraries/#configuring-specific-instrumentation-libraries-with-environment-variables) certain instrumentation, see the [OpenTelemetry Docs](https://opentelemetry.io/docs/languages/ruby/libraries/#use-instrumentation-libraries) for details.
 
-For example to disable sinatra instrumentation, you can set `OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED` to false through
+For example, to disable sinatra instrumentation and disable mysql2 instrumentation's obfuscation of db.statement:
 
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
-```
-
-or in your initialization step
-
-```ruby
-ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED']='false'
-```
-
-Options setup through enviromental variables
-
-> Checks to see if user pass any environment variable that set option for instrumentation.
-> By convention, the environment variable will be the instrumentation name upper cased,
-> with '::' replaced by underscores, OPENTELEMETRY shortened to OTEL_{LANG} and_CONFIG_OPTS appended.
-> For example, the, environment variable name for OpenTelemetry::Instrumentation::Faraday
-> will be OTEL_RUBY_INSTRUMENTATION_FARADAY_CONFIG_OPTS. A value of 'peer_service=new_service;'
-> will overrides the option set from ::OpenTelemetry::SDK.configure do |c| ... end for faraday.
->
-> For array option, simply separate the value by , (e.g. option=a,b,c,d).
-> For boolean option, set value by true or false (e.g. option=true).
-> For integer, string, enum, set value by string (e.g. option=string).
-> Callable option is not allowed to set through environment variable.
-
-For example, to disable db.statement obfuscation in mysql2 instrumentation, set `OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS` through
-
-```bash
 export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
 ```
 
-or in your initialization step
+or in your initialization step:
 
 ```ruby
+ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED'] = 'false'
 ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 ```
-
-See more details in [instrumentation-base](https://github.com/open-telemetry/opentelemetry-ruby-contrib/blob/opentelemetry-instrumentation-base/v0.22.3/instrumentation/base/lib/opentelemetry/instrumentation/base.rb#L56-L61)
 
 ## Configuration File
 
