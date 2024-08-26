@@ -29,12 +29,15 @@ def preload_function_dependencies
   end
 end
 
-preload_function_dependencies
+unless ENV['SW_APM_LAMBDA_PRELOAD_DEPS'].to_s.downcase == 'false'
+  OpenTelemetry.logger.warn { "SW_APM_LAMBDA_PRELOAD_DEPS set to #{ENV.fetch('SW_APM_LAMBDA_PRELOAD_DEPS', nil)}. No libraries will be preloaded." }
+  preload_function_dependencies
 
-require 'opentelemetry-registry'
-require 'opentelemetry-instrumentation-all'
+  require 'opentelemetry-registry'
+  require 'opentelemetry-instrumentation-all'
 
-OpenTelemetry::Instrumentation.registry.install_all
+  OpenTelemetry::Instrumentation.registry.install_all
+end
 
 require 'solarwinds_apm'
 
