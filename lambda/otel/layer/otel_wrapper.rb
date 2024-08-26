@@ -3,7 +3,10 @@
 require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
-
+# We need to load the function code's dependencies, and _before_ any dependencies might
+# be initialized outside of the function handler, bootstrap instrumentation. This allows
+# instrumentation targets to be present, and accommodates instrumentations like AWS SDK
+# that add plugins on client initialization (vs. prepending methods). 
 def preload_libraries
   default_task_location = '/var/task'
 
