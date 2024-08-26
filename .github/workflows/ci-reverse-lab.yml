@@ -49,7 +49,7 @@ jobs:
             rl-scan \
               --rl-portal-server solarwinds \
               --rl-portal-org SolarWinds \
-              --rl-portal-group "SaaS  - Agents- SWO" \
+              --rl-portal-group "SaaS-Agents-SWO" \
               --purl solarwinds-apm-ruby/apm-ruby@${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }} \
               --file-path /packages/${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }} \
               --report-path /reports \
