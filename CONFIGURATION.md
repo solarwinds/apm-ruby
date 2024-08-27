@@ -130,7 +130,6 @@ Environment Variable | Config File Key | Description | Default
 `SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
 `SW_APM_TRUSTEDPATH` | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
 `SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option is particularly used in apm-ruby lambda layer for preloading user-defined ruby library, and install opentelemetry instrumentation. | `false`
-N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | `true`
 `SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
 N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
 N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
