@@ -38,23 +38,23 @@ jobs:
           echo "Gem name:       ${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }}"
           echo "Gem version:       ${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }}"
 
-      - name: Run Reverse Lab Scan
-        run: |
-          docker run --rm \
-            -u $(id -u):$(id -g) \
-            -v "$(pwd)/:/packages:ro" \
-            -v "$(pwd)/reports:/reports" \
-            -e RLPORTAL_ACCESS_TOKEN=${{ secrets.REVERSE_LAB_TOKEN }} \
-            reversinglabs/rl-scanner-cloud \
-            rl-scan \
-              --rl-portal-server solarwinds \
-              --rl-portal-org SolarWinds \
-              --rl-portal-group "SaaS-Agents-SWO" \
-              --purl solarwinds-apm-ruby/apm-ruby@${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }} \
-              --file-path /packages/${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }} \
-              --report-path /reports \
-              --report-format all
+      - name: Scan build artifact on the Portal
+        id: rl-scan
 
-      - name: Check Scan Status
-        working-directory: .github/workflows/scripts
-        run: ruby ci-reverse-lab-scan.rb
+        env:
+          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
+
+        uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
+        with:
+          artifact-to-scan: ${{ steps.build-apm-ruby-ci-reverse-lab.outputs.current_gem }}
+          rl-verbose: true
+          rl-portal-server: solarwinds
+          rl-portal-org: SolarWinds
+          rl-portal-group: SaaS-Agents-SWO
+          rl-package-url: solarwinds-apm-ruby/apm-ruby@${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }}
+
+      - name: report the scan status
+        if: success() || failure()
+        run: |
+          echo "The status is: '${{ steps.rl-scan.outputs.status }}'"
+          echo "The description is: '${{ steps.rl-scan.outputs.description }}'"
