@@ -1,9 +1,18 @@
+# Changelog
+
 For the latest release info, see here:
-https://github.com/solarwinds/apm-ruby/releases
+<https://github.com/solarwinds/apm-ruby/releases>
 
 Dates in this file are in the format MM/DD/YYYY.
 
-# solarwinds_apm 6.0.1 (06/20/2024)
+## solarwinds_apm 6.0.2 (06/27/2024)
+
+This release includes the following features:
+
+* Add multi-runtime lambda layer
+* Fix the issue of init msg not sent
+
+## solarwinds_apm 6.0.1 (06/20/2024)
 
 This release includes the following features:
 
@@ -11,7 +20,7 @@ This release includes the following features:
 * Reduce the length pf rubocop config file.
 * Oboe version update to 15.0.1.
 
-# solarwinds_apm 6.0.0 (04/11/2024)
+## solarwinds_apm 6.0.0 (04/11/2024)
 
 This release includes the following features:
 
@@ -20,7 +29,7 @@ This release includes the following features:
 * Refactor on logging when service key is invalid.
 * Using noop for all possible error from our agent.
 
-# solarwinds_apm 6.0.0.prev6 (01/30/2024)
+## solarwinds_apm 6.0.0.prev6 (01/30/2024)
 
 This release includes the following features:
 
@@ -37,7 +46,7 @@ This release includes the following features:
 * Updated versioning and workflow for Amazon Linux 2 on checkout.
 * Dependency updates by Dependabot.
 
-# solarwinds_apm 6.0.0.preV5 (11/06/2023)
+## solarwinds_apm 6.0.0.preV5 (11/06/2023)
 
 This release includes the following features:
 
@@ -49,13 +58,13 @@ This release includes the following features:
 * Bug fix on determining the service_name from oboe_init
 * Backward compatibility of custom metrics in [#74](https://github.com/solarwinds/apm-ruby/pull/74)
 
-# solarwinds_apm 6.0.0.preV4 (09/14/2023)
+## solarwinds_apm 6.0.0.preV4 (09/14/2023)
 
 This release includes the following features:
 
 * Relaxed the opentelemetry-sdk version requirement to 1.2.0 for common version 0.19.6
 
-# solarwinds_apm 6.0.0.preV3 (09/13/2023)
+## solarwinds_apm 6.0.0.preV3 (09/13/2023)
 
 This release includes the following features:
 
@@ -71,7 +80,7 @@ This release includes the following features:
 * Changed layer to span.kind:span.name
 * Removed extensions from transaction_settings
 
-# solarwinds_apm 6.0.0.preV2 (08/08/2023)
+## solarwinds_apm 6.0.0.preV2 (08/08/2023)
 
 This release includes the following features:
 
@@ -81,7 +90,7 @@ This release includes the following features:
 * Unsupport tracecontext in sql for non-rails app with activerecord > 7
 * Updated README.md, CONTRIBUTING.md and CONFIG.md
 
-# solarwinds_apm 6.0.0.preV1 (06/16/2023)
+## solarwinds_apm 6.0.0.preV1 (06/16/2023)
 
 This release includes the following features:
 

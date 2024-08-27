@@ -1,0 +1,21 @@
+name: Markdown Lint Check
+
+on:
+  pull_request:
+
+jobs:
+  markdownlint-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # equivalent cli: markdownlint-cli2  "**/*.md" "#lambda/.aws-sam/**" "#.github/pull_request_template.md" "#.github/ISSUE_TEMPLATE/bug-or-feature-request.md"  --config .markdownlint.json
+      - name: "Markdown Lint Check"
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          fix: false
+          globs: |
+            **/*.md
+            !lambda/.aws-sam/**
+            !.github/pull_request_template.md
+            !.github/ISSUE_TEMPLATE/bug-or-feature-request.md
