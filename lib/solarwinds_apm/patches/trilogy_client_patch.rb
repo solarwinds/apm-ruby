@@ -9,7 +9,7 @@ module SolarWindsAPM
     module SWOTrilogyClientPatch
       # this method is just save the traceparent comment before sanitization
       def client_attributes(sql = nil)
-        if config[:db_statement] == :obfuscate
+        if sql && config[:db_statement] == :obfuscate
           extracted_comments = sql.match(TagSqlConstants::TRACEPARENT_REGEX)
           attributes = super
           attributes[::OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] = attributes[::OpenTelemetry::SemanticConventions::Trace::DB_STATEMENT] + extracted_comments&.match(0).to_s
