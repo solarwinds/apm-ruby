@@ -29,7 +29,7 @@ module SolarWindsAPM
     INTL_SWO_SUPPORT_EMAIL           = 'SWO-support@solarwinds.com'
     INTL_SWO_OTEL_SCOPE_NAME         = 'otel.scope.name'
     INTL_SWO_OTEL_SCOPE_VERSION      = 'otel.scope.version'
-    INTL_SWO_OTEL_STATUS             = 'otel.status'
+    INTL_SWO_OTEL_STATUS             = 'otel.status_code'
     INTL_SWO_OTEL_STATUS_DESCRIPTION = 'otel.status_description'
     INTERNAL_TRIGGERED_TRACE         = 'TriggeredTrace'
   end
