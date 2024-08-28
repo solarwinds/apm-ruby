@@ -45,10 +45,9 @@ Gem::Specification.new do |s|
 
   s.extensions = ['ext/oboe_metal/extconf.rb']
 
-  # OTEL dependencies
+  s.add_dependency('json')
   s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
   s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
-  s.add_dependency('json')
 
   s.required_ruby_version = '>= 2.7.0'
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
