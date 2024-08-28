@@ -41,8 +41,6 @@ module SolarWindsAPM
       end
 
       def self.insert_into_active_record
-        # only rails < 5 has MysqlAdapter (https://github.com/rails/rails/tree/v4.2.11.3/activerecord/lib/active_record/connection_adapters)
-        ActiveRecord::ConnectionAdapters::MysqlAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)      if defined? ActiveRecord::ConnectionAdapters::MysqlAdapter
         ActiveRecord::ConnectionAdapters::Mysql2Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)     if defined? ActiveRecord::ConnectionAdapters::Mysql2Adapter
         ActiveRecord::ConnectionAdapters::PostgreSQLAdapter.prepend(SWOMarginalia::ActiveRecordInstrumentation) if defined? ActiveRecord::ConnectionAdapters::PostgreSQLAdapter
         ActiveRecord::ConnectionAdapters::SQLite3Adapter.prepend(SWOMarginalia::ActiveRecordInstrumentation)    if defined? ActiveRecord::ConnectionAdapters::SQLite3Adapter
