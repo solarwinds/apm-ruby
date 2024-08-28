@@ -48,10 +48,7 @@ Gem::Specification.new do |s|
   # OTEL dependencies
   s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
   s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
-
-  # this still gives a warning, would have to be pinned to a minor version
-  # but that is not necessary and may restrict other gems
-  s.add_dependency('json', '~> 2.0')
+  s.add_dependency('json')
 
   s.required_ruby_version = '>= 2.7.0'
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
