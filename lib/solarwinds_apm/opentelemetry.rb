@@ -9,6 +9,8 @@
 require 'opentelemetry/sdk'
 require 'opentelemetry/instrumentation/all'
 
+# TODO: in future, it should add opentelemetry-metrics-sdk and require it here
+
 require_relative 'opentelemetry/solarwinds_propagator'
 require_relative 'opentelemetry/solarwinds_processor'
 require_relative 'opentelemetry/solarwinds_sampler'
