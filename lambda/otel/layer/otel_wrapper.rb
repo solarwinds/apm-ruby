@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'opentelemetry-metrics-api'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
+require 'opentelemetry-exporter-otlp-metrics'
 
 # We need to load the function code's dependencies, and _before_ any dependencies might
 # be initialized outside of the function handler, bootstrap instrumentation. This allows
