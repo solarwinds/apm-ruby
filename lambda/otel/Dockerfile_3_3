@@ -20,7 +20,7 @@ RUN export gem_file=$(cat gem_file.txt) && \
         bundle update; \
     fi
 
-RUN rm /build/layer/ruby/ruby/3.3.0/cache/*
+RUN rm /build/layer/ruby/ruby/3.3.0/cache/* && rm /build/layer/ruby/ruby/3.3.0/doc/*
 
 WORKDIR /build/layer/ruby/ruby
 RUN zip -qr gems-3.3.0.zip 3.3.0/
