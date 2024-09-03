@@ -48,3 +48,6 @@ Metrics/BlockNesting:
   Exclude:
     - 'lib/solarwinds_apm.rb'
     - 'lib/solarwinds_apm/support.rb'
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'test/api/custom_instrumentation_test.rb'

@@ -11,6 +11,7 @@ require_relative 'api/current_trace_info'
 require_relative 'api/tracing'
 require_relative 'api/opentelemetry'
 require_relative 'api/custom_metrics'
+require_relative 'api/custom_instrumentation'
 
 module SolarWindsAPM
   module API
@@ -19,5 +20,6 @@ module SolarWindsAPM
     extend SolarWindsAPM::API::Tracing
     extend SolarWindsAPM::API::OpenTelemetry
     extend SolarWindsAPM::API::CustomMetrics
+    extend SolarWindsAPM::API::Tracer
   end
 end
