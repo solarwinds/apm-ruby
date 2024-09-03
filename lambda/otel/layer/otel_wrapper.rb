@@ -36,7 +36,7 @@ else
 
   handler_file = preload_function_dependencies
 
-  OpenTelemetry.logger.info { "Libraries in #{handler_file} will be preloaded." } if handler_file
+  OpenTelemetry.logger.info { "Libraries in #{handler_file} have been preloaded." } if handler_file
 
   require 'opentelemetry-registry'
   require 'opentelemetry-instrumentation-all'
