@@ -15,7 +15,7 @@ def preload_function_dependencies
 
   unless handler_file && File.exist?("#{default_task_location}/#{handler_file}.rb")
     OpenTelemetry.logger.warn { 'Could not find the original handler file to preload libraries.' }
-    return
+    return nil
   end
 
   libraries = File.read("#{default_task_location}/#{handler_file}.rb")
@@ -27,11 +27,16 @@ def preload_function_dependencies
   rescue StandardError => e
     OpenTelemetry.logger.warn { "Could not load library #{lib}: #{e.message}" }
   end
+  handler_file
 end
 
-unless ENV['SW_APM_LAMBDA_PRELOAD_DEPS'].to_s.downcase == 'false'
+if ENV['SW_APM_LAMBDA_PRELOAD_DEPS'].to_s.downcase == 'false'
   OpenTelemetry.logger.warn { "SW_APM_LAMBDA_PRELOAD_DEPS set to #{ENV.fetch('SW_APM_LAMBDA_PRELOAD_DEPS', nil)}. No libraries will be preloaded." }
-  preload_function_dependencies
+else
+
+  handler_file = preload_function_dependencies
+
+  OpenTelemetry.logger.info { "Libraries in #{handler_file} have been preloaded." } if handler_file
 
   require 'opentelemetry-registry'
   require 'opentelemetry-instrumentation-all'
