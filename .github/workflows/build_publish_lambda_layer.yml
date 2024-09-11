@@ -33,7 +33,6 @@ jobs:
   # act -j build_layer --container-architecture linux/arm64
   build_layer:
     strategy:
-      fail-fast: false
       matrix:
         arch:
           - x86_64
@@ -72,7 +71,6 @@ jobs:
       - build_layer
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         aws_region: 
           - ap-northeast-1
