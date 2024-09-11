@@ -77,7 +77,7 @@ RUN curl -SL https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz \
 
 # set up github package credentials for pushing
 RUN mkdir ~/.gem \
-    && echo -e "---\n:github: Bearer ${BUNDLE_RUBYGEMS__PKG__GITHUB__COM}" >> ~/.gem/credentials \
+    && echo "---\n:github: Bearer ${BUNDLE_RUBYGEMS__PKG__GITHUB__COM}" >> ~/.gem/credentials \
     && chmod 0600 ~/.gem/credentials
 
 ENV PATH="/usr/local/bin:/root/.rbenv/bin:/root/.rbenv/shims:$PATH"

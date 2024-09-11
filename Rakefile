@@ -78,6 +78,16 @@ task docker_dev: [:docker_down] do
   end
 end
 
+desc 'Start ubuntu docker container for testing and debugging.'
+task :docker_build do
+  cmd = 'docker compose build --no-cache'
+  Dir.chdir('test') do
+    sh cmd do |ok, res|
+      puts "ok: #{ok}, #{res.inspect}"
+    end
+  end
+end
+
 desc 'Stop all containers that were started for testing and debugging'
 task :docker_down do
   Dir.chdir('test') do
@@ -89,10 +99,6 @@ desc 'alias for fetch_oboe_file_from_staging'
 task :fetch do
   Rake::Task['fetch_oboe_file'].invoke('stg')
 end
-
-@files = %w[oboe.h oboe_api.h oboe_api.cpp oboe.i oboe_debug.h bson/bson.h bson/platform_hacks.h]
-@ext_dir = File.expand_path('ext/oboe_metal')
-@ext_verify_dir = File.expand_path('ext/oboe_metal/verify')
 
 desc 'fetch oboe file from different environment'
 task :fetch_oboe_file, [:env] do |_t, args|
@@ -143,15 +149,16 @@ task :fetch_oboe_file, [:env] do |_t, args|
   files = %w[bson/bson.h bson/platform_hacks.h
              oboe.h oboe_api.h oboe_api.cpp oboe_debug.h oboe.i]
 
-  files.each do |filename|
-    remote_file = File.join(oboe_dir, 'include', filename)
-    local_file = File.join(ext_src_dir, filename)
+  fetch_file_from_cloud(files, oboe_dir, ext_src_dir, 'include')
 
-    puts "fetching #{remote_file}"
-    puts "      to #{local_file}"
+  debug_files = %w[liboboe-1.0-aarch64.so.debug
+                   liboboe-1.0-alpine-aarch64.so.debug
+                   liboboe-1.0-alpine-x86_64.so.debug
+                   liboboe-1.0-lambda-aarch64.so.debug
+                   liboboe-1.0-lambda-x86_64.so.debug
+                   liboboe-1.0-x86_64.so.debug]
 
-    IO.copy_stream(URI.parse(remote_file).open, local_file)
-  end
+  fetch_file_from_cloud(debug_files, oboe_dir, ext_lib_dir, 'debug')
 
   sha_files = ['liboboe-1.0-lambda-x86_64.so.sha256',
                'liboboe-1.0-lambda-aarch64.so.sha256',
@@ -160,9 +167,20 @@ task :fetch_oboe_file, [:env] do |_t, args|
                'liboboe-1.0-alpine-x86_64.so.sha256',
                'liboboe-1.0-alpine-aarch64.so.sha256']
 
-  sha_files.each do |filename|
-    remote_file = File.join(oboe_dir, filename)
-    local_file  = File.join(ext_lib_dir, filename)
+  fetch_file_from_cloud(sha_files, oboe_dir, ext_lib_dir)
+
+  FileUtils.cd(ext_src_dir) do
+    sh 'swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i'
+    FileUtils.rm('oboe.i') if args['env'] != 'prod'
+  end
+
+  puts 'Fetching finished.'
+end
+
+def fetch_file_from_cloud(files, oboe_dir, dest_dir, folder = '')
+  files.each do |filename|
+    remote_file = File.join(oboe_dir, folder, filename)
+    local_file  = File.join(dest_dir, filename)
 
     puts "fetching #{remote_file}"
     puts "      to #{local_file}"
@@ -173,13 +191,6 @@ task :fetch_oboe_file, [:env] do |_t, args|
       puts "File #{remote_file} missing. #{e.message}"
     end
   end
-
-  FileUtils.cd(ext_src_dir) do
-    sh 'swig -c++ -ruby -module oboe_metal -o oboe_swig_wrap.cc oboe.i'
-    FileUtils.rm('oboe.i') if args['env'] != 'prod'
-  end
-
-  puts 'Fetching finished.'
 end
 
 desc 'Build and publish to Rubygems'
