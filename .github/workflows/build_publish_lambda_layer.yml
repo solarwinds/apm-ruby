@@ -15,6 +15,15 @@ on:
           - RubyGem
           - Local
 
+      publish-dest:
+        required: true
+        description: 'Publish destination, one of: staging, production'
+        type: choice
+        default: 'staging'
+        options:
+          - staging
+          - production
+
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
@@ -24,7 +33,6 @@ jobs:
   # act -j build_layer --container-architecture linux/arm64
   build_layer:
     strategy:
-      fail-fast: false
       matrix:
         arch:
           - x86_64
@@ -63,19 +71,40 @@ jobs:
       - build_layer
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         aws_region: 
+          - ap-northeast-1
+          - ap-northeast-2
+          - ap-south-1
+          - ap-southeast-1
+          - ap-southeast-2
+          - ca-central-1
+          - eu-central-1
+          - eu-north-1
+          - eu-west-1
+          - eu-west-2
+          - eu-west-3
+          - sa-east-1
           - us-east-1
+          - us-east-2
+          - us-west-1
+          - us-west-2
         arch:
           - x86_64
           - arm64
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - if: ${{ inputs.publish-dest == 'staging' }}
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN }}
+          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
+          aws-region: ${{ matrix.aws_region }}
+
+      - if: ${{ inputs.publish-dest == 'production' }}
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_PROD }}
           aws-region: ${{ matrix.aws_region }}
 
       - name: extract layer zip from artifacts
