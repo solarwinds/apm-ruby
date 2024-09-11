@@ -151,15 +151,6 @@ task :fetch_oboe_file, [:env] do |_t, args|
 
   fetch_file_from_cloud(files, oboe_dir, ext_src_dir, 'include')
 
-  debug_files = %w[liboboe-1.0-aarch64.so.debug
-                   liboboe-1.0-alpine-aarch64.so.debug
-                   liboboe-1.0-alpine-x86_64.so.debug
-                   liboboe-1.0-lambda-aarch64.so.debug
-                   liboboe-1.0-lambda-x86_64.so.debug
-                   liboboe-1.0-x86_64.so.debug]
-
-  fetch_file_from_cloud(debug_files, oboe_dir, ext_lib_dir, 'debug')
-
   sha_files = ['liboboe-1.0-lambda-x86_64.so.sha256',
                'liboboe-1.0-lambda-aarch64.so.sha256',
                'liboboe-1.0-x86_64.so.sha256',

@@ -66,8 +66,7 @@ Some inspiring examples here:
 
 <https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86>
 
-
-# Debug the c-code with core dump
+## Debug the c-code with core dump
 
 If the core dump is produced, it's easier to check the backtrace with it in gdb
 
@@ -77,37 +76,74 @@ For example, `(core dumped)` indicate the crash file is dumped
 ./start.sh: line 37:    65 Segmentation fault      (core dumped) ...
 ```
 
-## Prepare
+### Prepare
 
-1. Install solarwinds_apm with debug symbol on
+#### 1. Install solarwinds_apm with debug symbol on
 
 ```console
-export OBOE_DEBUG=true          # for debug flag when compiling
-export OBOE_DEV=true            # optional: if you want to install the nightly build liboboe
+export OBOE_DEBUG=true  # enable debug flag when compiling; and also download *.debug into lib/ when create the gem for ease of use
+export OBOE_DEV=true    # optional: if you want to install the nightly build liboboe
 
 gem install solarwinds_apm
 ```
 
-2. Check the core dump size is not constrained
+#### 2. Check the core dump size is not constrained
+
 ```console
 ulimit -c unlimited       # have to set this for unlimited core dump file size without trimmed error message
 ```
 
-3. Check if the crash report program is configured correctly
+#### 3. Check if the crash report program is configured correctly
 
-Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://www.cyberciti.biz/faq/how-to-on-enable-kernel-crash-dump-on-debian-linux/)
+Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
 
 In ubuntu, if disable the apport by `service apport stop`, the core dump file will be stored in the current directory and named as `core`
 
-## Debug by checking the backtrace after obtain core dump file
+#### 4. Gather the `*.debug` file for oboe symbol
 
-1. Check that ruby is debuggable
+Assume the gem has following file structure
+
+```console
+root@docker:~/.rbenv/versions/3.1.0/lib/ruby/gems/3.1.0/gems/solarwinds_apm-6.0.6# tree .
+|-- ext
+|   `-- oboe_metal
+|       |-- init_solarwinds_apm.o
+|       |-- lib
+|       |   |-- liboboe-1.0-aarch64.so
+|       |   |-- liboboe-1.0.so.0 -> liboboe-1.0-aarch64.so
+|       |   `-- liboboe.so -> liboboe-1.0-aarch64.so
+|       |-- libsolarwinds_apm.so
+|       |-- oboe_api.o
+|       |-- oboe_swig_wrap.o
+|       `-- src
+|           |-- ...
+`-- lib
+    |-- libsolarwinds_apm.so
+    |-- oboe_metal.rb
+    |-- rails
+    |   ...
+    |-- solarwinds_apm
+    |   ...
+    `-- solarwinds_apm.rb
+
+18 directories, 79 files
+```
+
+The `*.debug` file need to be stored in ext/oboe_metal/lib/folder, then start the gdb
+
+The `*.debug` file has to match the exact build of liboboe (e.g. version, system, etc.) to avoid CRC mismatch
+
+### Debug by checking the backtrace after obtain core dump file
+
+#### 1. Check that ruby is debuggable
+
 ```console
 type ruby           # => ruby is hashed (/root/.rbenv/shims/ruby)
 rbenv which ruby    # => /root/.rbenv/versions/3.1.0/bin/ruby
 ```
 
-2. Load the core dump file in gdb
+#### 2. Load the core dump file in gdb
+
 ```console
 gdb /root/.rbenv/versions/3.1.0/bin/ruby core
 (gdb) bt full      # backtrace full trace; investigate the issue from here
