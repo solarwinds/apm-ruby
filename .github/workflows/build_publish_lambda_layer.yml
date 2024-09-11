@@ -101,7 +101,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
-          aws-region: us-east-1
+          aws-region: ${{ matrix.aws_region }}
 
       - if: ${{ inputs.publish-dest == 'production' }}
         uses: aws-actions/configure-aws-credentials@v4
