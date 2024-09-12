@@ -65,7 +65,6 @@ jobs:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda/build/ruby-layer-${{ matrix.arch }}.zip
 
-
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
     needs:
@@ -81,6 +80,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - if: ${{ inputs.publish-dest == 'staging' }}
+        name: use staging credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
+          aws-region: us-east-1
+
+      - if: ${{ inputs.publish-dest == 'production' }}
+        name: use production credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_PROD }}
+          aws-region: us-east-1
+
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
@@ -91,7 +104,10 @@ jobs:
         run: |
           APM_VERSION=$(grep "gem 'solarwinds_apm'" lambda/otel/layer/Gemfile | awk -F"'" '{print $4}')
           APM_VERSION="${APM_VERSION//./_}"
-          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+          LAYER_NAME=solarwinds-apm-ruby-${{ matrix.arch }}-$APM_VERSION
+          LATEST_VERSION=$(aws lambda list-layer-versions --layer-name $LAYER_NAME | jq -r '.LayerVersions | max_by(.Version) | .Version')
+          NEXT_LATEST_VERSION=$(( $LATEST_VERSION + 1))
+          echo "LAYER_VERSION=$NEXT_LATEST_VERSION" >> $GITHUB_ENV
 
       - name: Scan build artifact on the Portal ${{ matrix.arch }}
         id: rl-scan
@@ -101,12 +117,12 @@ jobs:
 
         uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
         with:
-          artifact-to-scan: fileb://ruby-layer-${{ matrix.arch }}.zip
+          artifact-to-scan: ./lambda/ruby-layer-${{ matrix.arch }}.zip
           rl-verbose: true
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
-          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ steps.build-apm-ruby-ci-reverse-lab.outputs.gem_version }}
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.LAYER_VERSION }}
           rl-submit-only: true
 
       - name: report the scan status
