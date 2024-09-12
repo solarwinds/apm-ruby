@@ -38,6 +38,8 @@ Rake::TestTask.new do |t|
   end
 end
 
+################ Docker Task ################
+
 desc "Run an official docker ruby image with the specified tag. The test suite is launched if
 runtests is set to true, else a shell session is started for interactive test runs. The platform
 argument can be used to override the image architecture if multi-platform is supported.
@@ -71,29 +73,37 @@ desc 'Start ubuntu docker container for testing and debugging.'
 task docker_dev: [:docker_down] do
   cmd = "docker compose run --service-ports \
   --name ruby_sw_apm_ubuntu_development ruby_sw_apm_ubuntu_development"
-  Dir.chdir('test') do
-    sh cmd do |ok, res|
-      puts "ok: #{ok}, #{res.inspect}"
-    end
-  end
+  docker_cmd_execute(cmd)
 end
 
-desc 'Start ubuntu docker container for testing and debugging.'
+desc 'Continue the docker container created last time'
+task :docker_con do
+  cmd = "docker container start ruby_sw_apm_ubuntu_development &&
+          docker exec -it ruby_sw_apm_ubuntu_development /bin/bash"
+  docker_cmd_execute(cmd)
+end
+
+desc 'Build the ubuntu docker container without cache'
 task :docker_build do
   cmd = 'docker compose build --no-cache'
-  Dir.chdir('test') do
-    sh cmd do |ok, res|
-      puts "ok: #{ok}, #{res.inspect}"
-    end
-  end
+  docker_cmd_execute(cmd)
 end
 
 desc 'Stop all containers that were started for testing and debugging'
 task :docker_down do
+  cmd = 'docker compose down -v --remove-orphans'
+  docker_cmd_execute(cmd)
+end
+
+def docker_cmd_execute(cmd)
   Dir.chdir('test') do
-    sh 'docker compose down -v --remove-orphans'
+    sh cmd do |ok, res|
+      puts "ok: #{ok}, #{res.inspect}"
+    end
   end
 end
+
+################ Build Gem Task ################
 
 desc 'alias for fetch_oboe_file_from_staging'
 task :fetch do

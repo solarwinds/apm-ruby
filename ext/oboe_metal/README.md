@@ -17,10 +17,10 @@ rbenv which ruby    # => /home/wsh/.rbenv/versions/2.6.3/bin/ruby
 
 ## add debug info when compiling solarwinds_apm
 
-add this line to extconf.rb to turn off optimization
+enable `OBOE_DEBUG` to `true` to turn off optimization and enable debug information
 
-```ruby
-CONFIG["optflags"] = "-O0"
+```sh
+export OBOE_DEBUG=true
 ```
 
 ## start ruby app with gdb
@@ -86,7 +86,9 @@ export OBOE_DEV=true    # optional: if you want to install the nightly build lib
 
 gem install solarwinds_apm
 ```
+
 Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
+
 #### 2. Check the core dump size is not constrained
 
 ```console
