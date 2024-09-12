@@ -139,7 +139,6 @@ if success
     $LDFLAGS << " #{ENV.fetch('LDFLAGS', nil)} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib' -lrt"
     $CXXFLAGS += ' -std=c++11 '
 
-    # ____ include debug info, comment out when not debugging
     # OBOE_DEBUG need to be enabled before downloading and installing the gem
     if ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
       CONFIG['debugflags'] = '-ggdb3 '
