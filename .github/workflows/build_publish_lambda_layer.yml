@@ -96,12 +96,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - if: ${{ inputs.publish-dest == 'staging' }}
+        name: use staging credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
           aws-region: ${{ matrix.aws_region }}
 
       - if: ${{ inputs.publish-dest == 'production' }}
+        name: use production credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_PROD }}
