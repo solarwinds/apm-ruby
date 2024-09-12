@@ -99,7 +99,7 @@ ulimit -c unlimited       # have to set this for unlimited core dump file size w
 
 Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
 
-In ubuntu, if disable the apport by `service apport stop`, the core dump file will be stored in the current directory and named as `core`
+In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
 
 #### 4. Gather the `*.debug` file for oboe symbol
 
