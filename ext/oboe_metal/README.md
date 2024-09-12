@@ -86,7 +86,7 @@ export OBOE_DEV=true    # optional: if you want to install the nightly build lib
 
 gem install solarwinds_apm
 ```
-
+Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
 #### 2. Check the core dump size is not constrained
 
 ```console
