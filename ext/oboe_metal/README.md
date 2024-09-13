@@ -66,7 +66,11 @@ Some inspiring examples here:
 
 <https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86>
 
-## Debug the c-code with core dump
+<!-- markdownlint-disable MD025 -->
+
+# Debug the c-code with core dump
+
+<!-- markdownlint-enable MD025 -->
 
 If the core dump is produced, it's easier to check the backtrace with it in gdb
 
@@ -76,9 +80,9 @@ For example, `(core dumped)` indicate the crash file is dumped
 ./start.sh: line 37:    65 Segmentation fault      (core dumped) ...
 ```
 
-### Prepare
+## Prepare
 
-#### 1. Install solarwinds_apm with debug symbol on
+### 1. Install solarwinds_apm with debug symbol on
 
 ```console
 export OBOE_DEBUG=true  # enable debug flag when compiling; and also download *.debug into lib/ when create the gem for ease of use
@@ -89,19 +93,19 @@ gem install solarwinds_apm
 
 Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
 
-#### 2. Check the core dump size is not constrained
+### 2. Check the core dump size is not constrained
 
 ```console
 ulimit -c unlimited       # have to set this for unlimited core dump file size without trimmed error message
 ```
 
-#### 3. Check if the crash report program is configured correctly
+### 3. Check if the crash report program is configured correctly
 
 Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
 
 In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
 
-#### 4. Gather the `*.debug` file for oboe symbol
+### 4. Gather the `*.debug` file for oboe symbol
 
 Assume the gem has following file structure
 
@@ -135,16 +139,18 @@ The `*.debug` file need to be stored in ext/oboe_metal/lib/folder, then start th
 
 The `*.debug` file has to match the exact build of liboboe (e.g. version, system, etc.) to avoid CRC mismatch
 
-### Debug by checking the backtrace after obtain core dump file
+## Debug by checking the backtrace after obtain core dump file
 
-#### 1. Check that ruby is debuggable
+### 1. Check that ruby is debuggable
+
+Ensure that `ruby.h` is present by verifying the existence of the Ruby development library (e.g., `ruby-dev`).
 
 ```console
 type ruby           # => ruby is hashed (/root/.rbenv/shims/ruby)
 rbenv which ruby    # => /root/.rbenv/versions/3.1.0/bin/ruby
 ```
 
-#### 2. Load the core dump file in gdb
+### 2. Load the core dump file in gdb
 
 ```console
 gdb /root/.rbenv/versions/3.1.0/bin/ruby core
