@@ -105,7 +105,6 @@ jobs:
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
           rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.SOLARWINDS_APM_VERSION }}
-          rl-submit-only: true
 
       - name: report the scan status
         if: success() || failure()
@@ -143,7 +142,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: configure AWS credential
+      - name: configure AWS ${{ inputs.publish-dest }} credential
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ inputs.publish-dest == 'production' && secrets.LAMBDA_PUBLISHER_ARN_PROD || inputs.publish-dest == 'staging' && secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
