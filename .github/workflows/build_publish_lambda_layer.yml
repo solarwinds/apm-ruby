@@ -80,20 +80,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - if: ${{ inputs.publish-dest == 'staging' }}
-        name: use staging credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
-          aws-region: us-east-1
-
-      - if: ${{ inputs.publish-dest == 'production' }}
-        name: use production credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_PROD }}
-          aws-region: us-east-1
-
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
@@ -103,11 +89,7 @@ jobs:
       - name: extract current solarwinds_apm version
         run: |
           APM_VERSION=$(grep "gem 'solarwinds_apm'" lambda/otel/layer/Gemfile | awk -F"'" '{print $4}')
-          APM_VERSION="${APM_VERSION//./_}"
-          LAYER_NAME=solarwinds-apm-ruby-${{ matrix.arch }}-$APM_VERSION
-          LATEST_VERSION=$(aws lambda list-layer-versions --layer-name $LAYER_NAME | jq -r '.LayerVersions | max_by(.Version) | .Version')
-          NEXT_LATEST_VERSION=$(( $LATEST_VERSION + 1))
-          echo "LAYER_VERSION=$NEXT_LATEST_VERSION" >> $GITHUB_ENV
+          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
 
       - name: Scan build artifact on the Portal ${{ matrix.arch }}
         id: rl-scan
@@ -122,7 +104,7 @@ jobs:
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
-          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.LAYER_VERSION }}
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.SOLARWINDS_APM_VERSION }}
           rl-submit-only: true
 
       - name: report the scan status
@@ -161,18 +143,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - if: ${{ inputs.publish-dest == 'staging' }}
-        name: use staging credentials
+      - name: configure AWS credential
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
-          aws-region: ${{ matrix.aws_region }}
-
-      - if: ${{ inputs.publish-dest == 'production' }}
-        name: use production credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN_PROD }}
+          role-to-assume: ${{ inputs.publish-dest == 'production' && secrets.LAMBDA_PUBLISHER_ARN_PROD || inputs.publish-dest == 'staging' && secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
           aws-region: ${{ matrix.aws_region }}
 
       - name: extract layer zip from artifacts
