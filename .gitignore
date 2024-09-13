@@ -47,6 +47,7 @@ appoptics.com
 test/clib/Makefile
 *.so
 *.o
+ext/oboe_metal/extconf_local.rb
 
 # test script
 install_gem.sh
