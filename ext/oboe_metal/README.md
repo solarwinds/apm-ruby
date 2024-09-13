@@ -82,7 +82,19 @@ For example, `(core dumped)` indicate the crash file is dumped
 
 ## Prepare
 
-### 1. Install solarwinds_apm with debug symbol on
+### 1. Check the core dump size is not constrained
+
+```console
+ulimit -c unlimited       # have to set this for unlimited core dump file size without trimmed error message
+```
+
+### 2. Check if the crash report program is configured correctly
+
+Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
+
+In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
+
+### 3. Install solarwinds_apm with debug symbol on
 
 ```console
 export OBOE_DEBUG=true  # enable debug flag when compiling; and also download *.debug into lib/ when create the gem for ease of use
@@ -92,18 +104,6 @@ gem install solarwinds_apm
 ```
 
 Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
-
-### 2. Check the core dump size is not constrained
-
-```console
-ulimit -c unlimited       # have to set this for unlimited core dump file size without trimmed error message
-```
-
-### 3. Check if the crash report program is configured correctly
-
-Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
-
-In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
 
 ### 4. Gather the `*.debug` file for oboe symbol
 
