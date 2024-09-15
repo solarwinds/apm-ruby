@@ -47,7 +47,6 @@ appoptics.com
 test/clib/Makefile
 *.so
 *.o
-*.so.debug
 ext/oboe_metal/extconf_local.rb
 
 # test script

@@ -15,6 +15,15 @@ on:
           - RubyGem
           - Local
 
+      publish-dest:
+        required: true
+        description: 'Publish destination, one of: staging, production'
+        type: choice
+        default: 'staging'
+        options:
+          - staging
+          - production
+
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
@@ -24,7 +33,6 @@ jobs:
   # act -j build_layer --container-architecture linux/arm64
   build_layer:
     strategy:
-      fail-fast: false
       matrix:
         arch:
           - x86_64
@@ -57,25 +65,87 @@ jobs:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda/build/ruby-layer-${{ matrix.arch }}.zip
 
-  # extract the built layer from artifacts, then publish it based on region
-  publish_layer:
+  # extract the built layer from artifacts, then scan it with reverselab
+  reverselab_scan_layer:
     needs:
       - build_layer
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        arch:
+          - x86_64
+          - arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: extract layer zip from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ruby-layer-${{ matrix.arch }}.zip
+          path: lambda
+
+      - name: extract current solarwinds_apm version
+        run: |
+          APM_VERSION=$(grep "gem 'solarwinds_apm'" lambda/otel/layer/Gemfile | awk -F"'" '{print $4}')
+          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+
+      - name: Scan build artifact on the Portal ${{ matrix.arch }}
+        id: rl-scan
+
+        env:
+          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
+
+        uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
+        with:
+          artifact-to-scan: ./lambda/ruby-layer-${{ matrix.arch }}.zip
+          rl-verbose: true
+          rl-portal-server: solarwinds
+          rl-portal-org: SolarWinds
+          rl-portal-group: SaaS-Agents-SWO
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.SOLARWINDS_APM_VERSION }}
+
+      - name: report the scan status
+        if: success() || failure()
+        run: |
+          echo "The status is: '${{ steps.rl-scan.outputs.status }}'"
+          echo "The description is: '${{ steps.rl-scan.outputs.description }}'"
+
+  # extract the built layer from artifacts, then publish it based on region
+  publish_layer:
+    needs:
+      - build_layer
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
         aws_region: 
+          - ap-northeast-1
+          - ap-northeast-2
+          - ap-south-1
+          - ap-southeast-1
+          - ap-southeast-2
+          - ca-central-1
+          - eu-central-1
+          - eu-north-1
+          - eu-west-1
+          - eu-west-2
+          - eu-west-3
+          - sa-east-1
           - us-east-1
+          - us-east-2
+          - us-west-1
+          - us-west-2
         arch:
           - x86_64
           - arm64
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: configure AWS ${{ inputs.publish-dest }} credential
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.LAMBDA_PUBLISHER_ARN }}
+          role-to-assume: ${{ inputs.publish-dest == 'production' && secrets.LAMBDA_PUBLISHER_ARN_PROD || inputs.publish-dest == 'staging' && secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
           aws-region: ${{ matrix.aws_region }}
 
       - name: extract layer zip from artifacts
