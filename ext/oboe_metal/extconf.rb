@@ -18,12 +18,17 @@ CONFIG['warnflags'] = CONFIG['warnflags'].gsub('-Wdeclaration-after-statement', 
 init_mkmf(CONFIG)
 
 ext_dir = __dir__
+oboe_debug = ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
+non_production = ENV['OBOE_DEV'].to_s.casecmp('true').zero? || ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
 
-# Set the mkmf lib paths so we have no issues linking to
-# the SolarWindsAPM libs.
 swo_lib_dir = File.join(ext_dir, 'lib')
 version     = File.read(File.join(ext_dir, 'src', 'VERSION')).strip
-if ENV['OBOE_DEV'].to_s.casecmp('true').zero?
+
+# OBOE_DEBUG has the highest priorities over oboe environment
+if oboe_debug
+  swo_path = "https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/#{version}/relwithdebinfo"
+  puts 'Fetching c-lib from STAGING DEBUG Build'
+elsif ENV['OBOE_DEV'].to_s.casecmp('true').zero?
   swo_path = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly'
   puts 'Fetching c-lib from DEVELOPMENT Build'
 elsif ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
@@ -64,19 +69,15 @@ clib = File.join(swo_lib_dir, swo_clib)
 
 retries = 3
 success = false
-
-# sha256 always from prod, so no matching for stg or nightly build
-# so ignore the sha comparsion when fetching from development and staging build
-if ENV['OBOE_DEV'].to_s.casecmp('true').zero? || ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
-  success = true
-  retries = 0
-end
-
 while retries.positive?
   begin
     IO.copy_stream(URI.parse(swo_item).open, clib)
     clib_checksum = Digest::SHA256.file(clib).hexdigest
-    checksum      =  File.read(swo_checksum_file).strip
+    checksum      = File.read(swo_checksum_file).strip
+
+    # sha256 always from prod, so no matching for stg or nightly build or debug mode
+    # so ignore the sha comparsion when fetching from development and staging build
+    checksum = clib_checksum if non_production || oboe_debug
 
     # unfortunately these messages only show if the install command is run
     # with the `--verbose` flag
@@ -126,7 +127,7 @@ if success
     $CFLAGS << " #{ENV.fetch('CFLAGS', nil)}"
 
     # -pg option is used for generating profiling information with gprof
-    $CPPFLAGS << if ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
+    $CPPFLAGS << if oboe_debug
                    " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11  -gdwarf-2 -I$$ORIGIN/../ext/oboe_metal/src"
                  else
                    " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11 -I$$ORIGIN/../ext/oboe_metal/src"
@@ -140,7 +141,7 @@ if success
     $CXXFLAGS += ' -std=c++11 '
 
     # OBOE_DEBUG need to be enabled before downloading and installing the gem
-    if ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
+    if oboe_debug
       CONFIG['debugflags'] = '-ggdb3 '
       CONFIG['optflags'] = '-O0'
     end

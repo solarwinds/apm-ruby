@@ -94,50 +94,18 @@ Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://
 
 In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
 
-### 3. Install solarwinds_apm with debug symbol on
+### 3. Install solarwinds_apm with comprehensive debug information
+
+Set the environment variable `OBOE_DEBUG` to `true` that download the special version of liboboe.
+
+This liboboe is compiled with RelWithDebInfo flag on, which include the debug symbol and other debug information.
 
 ```console
-export OBOE_DEBUG=true  # enable debug flag when compiling; and also download *.debug into lib/ when create the gem for ease of use
-export OBOE_DEV=true    # optional: if you want to install the nightly build liboboe
-
+export OBOE_DEBUG=true
 gem install solarwinds_apm
 ```
 
 Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
-
-### 4. Gather the `*.debug` file for oboe symbol
-
-Assume the gem has following file structure
-
-```console
-root@docker:~/.rbenv/versions/3.1.0/lib/ruby/gems/3.1.0/gems/solarwinds_apm-6.0.6# tree .
-|-- ext
-|   `-- oboe_metal
-|       |-- init_solarwinds_apm.o
-|       |-- lib
-|       |   |-- liboboe-1.0-aarch64.so
-|       |   |-- liboboe-1.0.so.0 -> liboboe-1.0-aarch64.so
-|       |   `-- liboboe.so -> liboboe-1.0-aarch64.so
-|       |-- libsolarwinds_apm.so
-|       |-- oboe_api.o
-|       |-- oboe_swig_wrap.o
-|       `-- src
-|           |-- ...
-`-- lib
-    |-- libsolarwinds_apm.so
-    |-- oboe_metal.rb
-    |-- rails
-    |   ...
-    |-- solarwinds_apm
-    |   ...
-    `-- solarwinds_apm.rb
-
-18 directories, 79 files
-```
-
-The `*.debug` file need to be stored in ext/oboe_metal/lib/folder, then start the gdb
-
-The `*.debug` file has to match the exact build of liboboe (e.g. version, system, etc.) to avoid CRC mismatch
 
 ## Debug by checking the backtrace after obtain core dump file
 
