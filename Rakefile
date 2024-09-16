@@ -33,6 +33,7 @@ Rake::TestTask.new do |t|
                    FileList['test/solarwinds_apm/*_test.rb'] +
                    FileList['test/opentelemetry/*_test.rb'] +
                    FileList['test/noop/*_test.rb'] +
+                   FileList['test/ext/*_test.rb'] +
                    FileList['test/support/*_test.rb'] -
                    FileList['test/support/swomarginalia/*_test.rb']
   end

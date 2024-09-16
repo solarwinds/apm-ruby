@@ -359,3 +359,42 @@ def clean_old_setting
   ENV.delete('OTEL_TRACES_EXPORTER')
   ENV.delete('SW_APM_ENABLED')
 end
+
+# For mkmf test case
+def capture_stdout_with_pipe
+  original_stderr = $stdout
+  read_io, write_io = IO.pipe
+
+  # Redirect stderr to write_io (the writing end of the pipe)
+  $stdout = write_io
+  begin
+    yield  # Run the code block that generates stderr output
+  ensure
+    $stdout = original_stderr  # Restore the original stderr
+    write_io.close  # Close the writing end of the pipe to stop sending data
+  end
+
+  captured_output = read_io.read
+  read_io.close
+  captured_output
+end
+
+def stub_for_mkmf_test
+  IO.stub(:copy_stream, nil) do
+    URI.stub(:parse, URI.parse('https://github.com')) do
+      URI::HTTPS.stub(:open, nil) do
+        File.stub(:symlink, nil) do
+          File.stub(:read, 'fake_read') do
+            MakeMakefile.stub(:have_library, true) do
+              MakeMakefile.stub(:create_makefile, true) do
+                capture_stdout_with_pipe do
+                  load 'ext/oboe_metal/extconf.rb'
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end

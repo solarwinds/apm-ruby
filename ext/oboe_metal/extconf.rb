@@ -85,6 +85,7 @@ while retries.positive?
       success = true
       retries = 0
     else
+      puts "Checksum Verification Fail" # this is mainly for testing
       warn '== ERROR ================================================================='
       warn 'Checksum Verification failed for the c-extension of the solarwinds_apm gem'
       warn 'Installation cannot continue'
@@ -92,7 +93,7 @@ while retries.positive?
       warn "Checksum calculated from lib: #{clib_checksum}"
       warn 'Contact technicalsupport@solarwinds.com if the problem persists'
       warn '=========================================================================='
-      exit 1
+      retries = 0
     end
   rescue StandardError => e
     File.write(clib, '')

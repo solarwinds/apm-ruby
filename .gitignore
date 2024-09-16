@@ -48,6 +48,7 @@ test/clib/Makefile
 *.so
 *.o
 ext/oboe_metal/extconf_local.rb
+Makefile
 
 # test script
 install_gem.sh
