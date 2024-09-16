@@ -26,8 +26,8 @@ version     = File.read(File.join(ext_dir, 'src', 'VERSION')).strip
 
 # OBOE_DEBUG has the highest priorities over oboe environment
 if oboe_debug
-  swo_path = "https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/#{version}/relwithdebinfo"
-  puts 'Fetching c-lib from STAGING DEBUG Build'
+  swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version, 'relwithdebinfo')
+  puts 'Fetching c-lib from PRODUCTION DEBUG Build'
 elsif ENV['OBOE_DEV'].to_s.casecmp('true').zero?
   swo_path = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly'
   puts 'Fetching c-lib from DEVELOPMENT Build'

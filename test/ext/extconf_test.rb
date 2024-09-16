@@ -19,14 +19,14 @@ describe 'extconf test' do
   it 'simple_extconf_test_with_OBOE_DEBUG' do
     ENV['OBOE_DEBUG'] = 'true'
     output = stub_for_mkmf_test
-    assert_includes output, 'Fetching c-lib from STAGING DEBUG Build'
+    assert_includes output, 'Fetching c-lib from PRODUCTION DEBUG Build'
   end
 
   it 'OBOE_DEBUG_surpass_other_env' do
     ENV['OBOE_DEBUG'] = 'true'
     ENV['OBOE_STAGING'] = 'true'
     output = stub_for_mkmf_test
-    assert_includes output, 'Fetching c-lib from STAGING DEBUG Build'
+    assert_includes output, 'Fetching c-lib from PRODUCTION DEBUG Build'
   end
 
   it 'simple_extconf_test_with_OBOE_STAGING' do
