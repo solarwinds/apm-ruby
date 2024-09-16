@@ -362,16 +362,16 @@ end
 
 # For mkmf test case
 def capture_stdout_with_pipe
-  original_stderr = $stdout
+  original_stdout = $stdout
   read_io, write_io = IO.pipe
 
   # Redirect stderr to write_io (the writing end of the pipe)
   $stdout = write_io
   begin
-    yield  # Run the code block that generates stderr output
+    yield # Run the code block that generates stderr output
   ensure
-    $stdout = original_stderr  # Restore the original stderr
-    write_io.close  # Close the writing end of the pipe to stop sending data
+    $stdout = original_stdout # Restore the original stderr
+    write_io.close # Close the writing end of the pipe to stop sending data
   end
 
   captured_output = read_io.read
