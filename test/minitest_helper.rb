@@ -384,9 +384,9 @@ def stub_for_mkmf_test
     URI.stub(:parse, URI.parse('https://github.com')) do
       URI::HTTPS.stub(:open, nil) do
         File.stub(:symlink, nil) do
-          File.stub(:read, 'fake_read') do
-            MakeMakefile.stub(:have_library, true) do
-              MakeMakefile.stub(:create_makefile, true) do
+          MakeMakefile.stub(:have_library, true) do
+            MakeMakefile.stub(:create_makefile, true) do
+              File.stub(:read, '1.2.3') do
                 capture_stdout_with_pipe do
                   load 'ext/oboe_metal/extconf.rb'
                 end
