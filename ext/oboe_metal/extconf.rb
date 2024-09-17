@@ -18,22 +18,25 @@ CONFIG['warnflags'] = CONFIG['warnflags'].gsub('-Wdeclaration-after-statement', 
 init_mkmf(CONFIG)
 
 ext_dir = __dir__
+oboe_debug = ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
+non_production = ENV['OBOE_DEV'].to_s.casecmp('true').zero? || ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
 
-# Set the mkmf lib paths so we have no issues linking to
-# the SolarWindsAPM libs.
 swo_lib_dir = File.join(ext_dir, 'lib')
-swo_include = File.join(ext_dir, 'src')
+version     = File.read(File.join(ext_dir, 'src', 'VERSION')).strip
 
-# Download the appropriate liboboe from Staging or Production
-version = File.read(File.join(swo_include, 'VERSION')).strip
-if ENV['OBOE_DEV'].to_s.casecmp('true').zero?
+# OBOE_DEBUG has the highest priorities over oboe environment
+if oboe_debug
+  swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version, 'relwithdebinfo')
+  puts 'Fetching c-lib from PRODUCTION DEBUG Build'
+elsif ENV['OBOE_DEV'].to_s.casecmp('true').zero?
   swo_path = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly'
   puts 'Fetching c-lib from DEVELOPMENT Build'
 elsif ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
   swo_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
-  puts 'Fetching c-lib from STAGING'
+  puts 'Fetching c-lib from STAGING Build'
 else
   swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version)
+  puts 'Fetching c-lib from PRODUCTION Build'
 end
 
 swo_arch = 'x86_64'
@@ -70,14 +73,18 @@ while retries.positive?
   begin
     IO.copy_stream(URI.parse(swo_item).open, clib)
     clib_checksum = Digest::SHA256.file(clib).hexdigest
-    checksum      =  File.read(swo_checksum_file).strip
+    checksum      = File.read(swo_checksum_file).strip
+
+    # sha256 always from prod, so no matching for stg or nightly build or debug mode
+    # so ignore the sha comparsion when fetching from development and staging build
+    checksum = clib_checksum if non_production || oboe_debug
 
     # unfortunately these messages only show if the install command is run
     # with the `--verbose` flag
     if clib_checksum == checksum
       success = true
-      retries = 0
     else
+      puts 'Checksum Verification Fail' # this is mainly for testing
       warn '== ERROR ================================================================='
       warn 'Checksum Verification failed for the c-extension of the solarwinds_apm gem'
       warn 'Installation cannot continue'
@@ -85,8 +92,8 @@ while retries.positive?
       warn "Checksum calculated from lib: #{clib_checksum}"
       warn 'Contact technicalsupport@solarwinds.com if the problem persists'
       warn '=========================================================================='
-      exit 1
     end
+    retries = 0
   rescue StandardError => e
     File.write(clib, '')
     retries -= 1
@@ -118,22 +125,26 @@ if success
     $libs = append_library($libs, 'stdc++')
 
     $CFLAGS << " #{ENV.fetch('CFLAGS', nil)}"
-    # $CPPFLAGS << " #{ENV['CPPFLAGS']} -std=c++11"
-    # TODO for debugging: -pg -gdwarf-2, remove for production
-    # -pg does not work on alpine https://www.openwall.com/lists/musl/2014/11/05/2
-    $CPPFLAGS << " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11  -gdwarf-2 -I$$ORIGIN/../ext/oboe_metal/include -I$$ORIGIN/../ext/oboe_metal/src"
-    # $CPPFLAGS << " #{ENV['CPPFLAGS']} -std=c++11 -I$$ORIGIN/../ext/oboe_metal/include"
+
+    # -pg option is used for generating profiling information with gprof
+    $CPPFLAGS << if oboe_debug
+                   " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11  -gdwarf-2 -I$$ORIGIN/../ext/oboe_metal/src"
+                 else
+                   " #{ENV.fetch('CPPFLAGS', nil)} -std=c++11 -I$$ORIGIN/../ext/oboe_metal/src"
+                 end
+
     $LIBS << " #{ENV.fetch('LIBS', nil)}"
 
-    # use "z,defs" to see what happens during linking
-    # $LDFLAGS << " #{ENV['LDFLAGS']} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib,-z,defs'  -lrt"
+    # -lrt option is used when linking programs with the GNU Compiler Collection (GCC) to
+    # include the POSIX real-time extensions library, librt.
     $LDFLAGS << " #{ENV.fetch('LDFLAGS', nil)} '-Wl,-rpath=$$ORIGIN/../ext/oboe_metal/lib' -lrt"
     $CXXFLAGS += ' -std=c++11 '
 
-    # ____ include debug info, comment out when not debugging
-    # ____ -pg -> profiling info for gprof
-    CONFIG['debugflags'] = '-ggdb3 '
-    CONFIG['optflags'] = '-O0'
+    # OBOE_DEBUG need to be enabled before downloading and installing the gem
+    if oboe_debug
+      CONFIG['debugflags'] = '-ggdb3 '
+      CONFIG['optflags'] = '-O0'
+    end
 
     create_makefile('libsolarwinds_apm', 'src')
   else

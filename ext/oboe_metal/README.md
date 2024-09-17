@@ -17,10 +17,10 @@ rbenv which ruby    # => /home/wsh/.rbenv/versions/2.6.3/bin/ruby
 
 ## add debug info when compiling solarwinds_apm
 
-add this line to extconf.rb to turn off optimization
+enable `OBOE_DEBUG` to `true` to turn off optimization and enable debug information
 
-```ruby
-CONFIG["optflags"] = "-O0"
+```sh
+export OBOE_DEBUG=true
 ```
 
 ## start ruby app with gdb
@@ -65,3 +65,62 @@ Some inspiring examples here:
 <https://jvns.ca/blog/2016/06/12/a-weird-system-call-process-vm-readv/>
 
 <https://medium.com/@zanker/finding-a-ruby-bug-with-gdb-56d6b321bc86>
+
+<!-- markdownlint-disable MD025 -->
+
+# Debug the c-code with core dump
+
+<!-- markdownlint-enable MD025 -->
+
+If the core dump is produced, it's easier to check the backtrace with it in gdb
+
+For example, `(core dumped)` indicate the crash file is dumped
+
+```console
+./start.sh: line 37:    65 Segmentation fault      (core dumped) ...
+```
+
+## Prepare
+
+### 1. Check the core dump size is not constrained
+
+```console
+ulimit -c unlimited       # have to set this for unlimited core dump file size without trimmed error message
+```
+
+### 2. Check if the crash report program is configured correctly
+
+Ubuntu use [apport](https://wiki.ubuntu.com/Apport); Debian use [kdump](https://mudongliang.github.io/2018/07/02/debian-enable-kernel-dump.html)
+
+In ubuntu, if apport is disabled via `service apport stop`, the core dump file will be stored in the current directory and named `core`. If apport is enabled, find the crash file (typically under `/var/crash`) and extract the CoreDump file from it using `apport-unpack <filename>.crash <destination>`.
+
+### 3. Install solarwinds_apm with comprehensive debug information
+
+Set the environment variable `OBOE_DEBUG` to `true` that download the special version of liboboe.
+
+This liboboe is compiled with RelWithDebInfo flag on, which include the debug symbol and other debug information.
+
+```console
+export OBOE_DEBUG=true
+gem install solarwinds_apm
+```
+
+Reproduce the crash using this version of solarwinds_apm which provides extended debug information in the coredump.
+
+## Debug by checking the backtrace after obtain core dump file
+
+### 1. Check that ruby is debuggable
+
+Ensure that `ruby.h` is present by verifying the existence of the Ruby development library (e.g., `ruby-dev`).
+
+```console
+type ruby           # => ruby is hashed (/root/.rbenv/shims/ruby)
+rbenv which ruby    # => /root/.rbenv/versions/3.1.0/bin/ruby
+```
+
+### 2. Load the core dump file in gdb
+
+```console
+gdb /root/.rbenv/versions/3.1.0/bin/ruby core
+(gdb) bt full      # backtrace full trace; investigate the issue from here
+```
