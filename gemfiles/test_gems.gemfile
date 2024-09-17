@@ -37,4 +37,5 @@ group :development, :test do
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
   gem 'opentelemetry-exporter-otlp'
+  gem 'opentelemetry-metrics-sdk'
 end

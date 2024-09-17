@@ -70,10 +70,11 @@ module SolarWindsAPM
           'sw.transaction' => calculate_lambda_transaction_name(span)
         }
 
-        http_status_code = get_http_status_code(span)
-        meter_attrs['http.status_code'] = http_status_code if http_status_code != 0
-        meter_attrs['http.method'] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
-
+        if span_http?(span)
+          http_status_code = get_http_status_code(span)
+          meter_attrs['http.status_code'] = http_status_code if http_status_code != 0
+          meter_attrs['http.method'] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
+        end
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] meter_attrs: #{meter_attrs.inspect}" }
         meter_attrs
       end
