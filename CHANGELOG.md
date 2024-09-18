@@ -5,6 +5,31 @@ For the latest release info, see here:
 
 Dates in this file are in the format MM/DD/YYYY.
 
+## solarwinds_apm 6.1.0 (09/18/2024)
+
+This release includes the following features:
+
+* NH-85975: update lambda layer log
+* Lambda response mag
+* NH-86570: add swomarginalia support to rails 7~7.1 regard to format
+* Lambda build with checkout
+* Loosen token validation
+* NH-88760: add markdown lint and link
+* NH-65373: add SW_APM_TRANSACTION_NAME to configuration.md
+* Reference upstream docs on instrumentation env vars
+* NH-85973 NH-89212 instrument function handler dependencies
+* NH-89340: add ci/cd for reverse lab scan
+* NH-89715 update trace attribute otel.status to otel.status_code
+* NH-89340 remove json dependency
+* NH-89212 use upstream exporter
+* NH-89983: remove doc/ from lambda build; fix logging
+* NH-90728: update workflow for both stg and prod lambda
+* NH-90728 show whether publishing to staging or production
+* NH-89340: add scan as part of build and publish lambda layer
+* NH-89406: improve control for building debug version of the extension and added documentation
+* Bump DavidAnson/markdownlint-cli2-action from 16 to 17
+* NH-91517 only set response time HTTP attrs for HTTP server entry spans
+
 ## solarwinds_apm 6.0.2 (06/27/2024)
 
 This release includes the following features:
