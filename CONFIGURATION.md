@@ -10,29 +10,6 @@ Configuration can be set several ways, with the following precedence:
 
 `environment variable > programmatic > configuration file > default`
 
-Many OpenTelemetry instrumenter configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumenter](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note that [environment varables](#instrumentation-1) can be used to simply disable an instrumentation and set basic instrumentation options.
-
-## Programmatic Configuration
-
-> [!IMPORTANT]
-> this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
-
-### Instrumentation Programmatic Configuration
-
-Below is an example that disables Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes:
-
-```ruby
-# note auto-configure must be disabled, e.g.
-# export SW_APM_AUTO_CONFIGURE=false
-
-require 'solarwinds_apm'
-
-SolarWindsAPM::OTelConfig.initialize_with_config do |config|
-  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
-  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
-end
-```
-
 ## Environment Variables
 
 Settings specific to `solarwinds_apm` are prefixed by `SW_APM_` and described in the [Reference](#reference) section. Standard OpenTelemetry environment variables that impact this library's functionality are noted below.
@@ -75,7 +52,7 @@ export OTEL_SERVICE_NAME=bar
 ruby application.rb
 ```
 
-### Instrumentation Environment Variables
+### Instrumentation Libraries
 
 You can use OpenTelemetry Ruby instrumentation environment variables to [disable](https://opentelemetry.io/docs/languages/ruby/libraries/#overriding-configuration-for-specific-instrumentation-libraries-with-environment-variables) or [configure](https://opentelemetry.io/docs/languages/ruby/libraries/#configuring-specific-instrumentation-libraries-with-environment-variables) certain instrumentation, see the [OpenTelemetry Docs](https://opentelemetry.io/docs/languages/ruby/libraries/#use-instrumentation-libraries) for details.
 
@@ -91,6 +68,26 @@ or in your initialization step:
 ```ruby
 ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED'] = 'false'
 ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
+```
+## Programmatic Configuration
+
+Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
+
+> [!IMPORTANT]
+> this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
+
+Below is an example that disables Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes:
+
+```ruby
+# note auto-configure must be disabled, e.g.
+# export SW_APM_AUTO_CONFIGURE=false
+
+require 'solarwinds_apm'
+
+SolarWindsAPM::OTelConfig.initialize_with_config do |config|
+  config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
+  config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
+end
 ```
 
 ## Configuration File
