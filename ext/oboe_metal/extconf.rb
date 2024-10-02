@@ -18,7 +18,6 @@ CONFIG['warnflags'] = CONFIG['warnflags'].gsub('-Wdeclaration-after-statement', 
 init_mkmf(CONFIG)
 
 ext_dir = __dir__
-ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
 oboe_env = ENV.fetch('OBOE_ENV', nil)
 non_production = %w[dev stg].include? oboe_env.to_s
 
