@@ -18,26 +18,32 @@ CONFIG['warnflags'] = CONFIG['warnflags'].gsub('-Wdeclaration-after-statement', 
 init_mkmf(CONFIG)
 
 ext_dir = __dir__
-oboe_debug = ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
-non_production = ENV['OBOE_DEV'].to_s.casecmp('true').zero? || ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
+oboe_env = ENV.fetch('OBOE_ENV', nil)
+non_production = %w[dev stg].include? oboe_env.to_s
 
 swo_lib_dir = File.join(ext_dir, 'lib')
 version     = File.read(File.join(ext_dir, 'src', 'VERSION')).strip
 
-# OBOE_DEBUG has the highest priorities over oboe environment
-if oboe_debug
-  swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version, 'relwithdebinfo')
-  puts 'Fetching c-lib from PRODUCTION DEBUG Build'
-elsif ENV['OBOE_DEV'].to_s.casecmp('true').zero?
+case oboe_env
+when 'dev'
   swo_path = 'https://solarwinds-apm-staging.s3.us-west-2.amazonaws.com/apm/c-lib/nightly'
   puts 'Fetching c-lib from DEVELOPMENT Build'
-elsif ENV['OBOE_STAGING'].to_s.casecmp('true').zero?
+when 'stg'
   swo_path = File.join('https://agent-binaries.global.st-ssp.solarwinds.com/apm/c-lib/', version)
   puts 'Fetching c-lib from STAGING Build'
 else
   swo_path = File.join('https://agent-binaries.cloud.solarwinds.com/apm/c-lib/', version)
   puts 'Fetching c-lib from PRODUCTION Build'
 end
+
+oboe_debug = ENV['OBOE_DEBUG'].to_s.casecmp('true').zero?
+
+if oboe_debug
+  swo_path = File.join(swo_path, 'relwithdebinfo')
+  puts "Fetching DEBUG Build based on #{oboe_env.to_s.empty? ? 'prod' : oboe_env}"
+end
+
+puts "final swo_path: #{swo_path}"
 
 swo_arch = 'x86_64'
 system_arch = `uname -m` # for mac, the command is `uname` # "Darwin\n"; try `uname -a`
