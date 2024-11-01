@@ -111,6 +111,9 @@ module SolarWindsAPM
         ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING.dig(log_level, :otel)
       end
 
+      # for dbo, traceparent injection as comments
+      require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
+
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       validate_propagator(::OpenTelemetry.propagation.instance_variable_get(:@propagators))
@@ -126,6 +129,13 @@ module SolarWindsAPM
 
       # configure sampler afterwards
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
+
+      if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
+        SolarWindsAPM.logger.info '==================================================================='
+        SolarWindsAPM.logger.info "\e[1mSolarWindsAPM manual initialization was successful.\e[0m"
+        SolarWindsAPM.logger.info '==================================================================='
+      end
+
       nil
     end
 

@@ -18,17 +18,3 @@ require_relative 'support/txn_name_manager'
 require_relative 'support/utils'
 require_relative 'support/x_trace_options'
 require_relative 'support/support_report'
-
-if SolarWindsAPM::Config[:tag_sql]
-  if defined?(Rails)
-    if Rails.version < '7'
-      require_relative 'support/swomarginalia/railtie'
-    else
-      require_relative 'support/swomarginalia/comment'
-      require_relative 'support/swomarginalia/formatter' if Rails.version <= '7.1'
-    end
-  elsif defined?(ActiveRecord)
-    require_relative 'support/swomarginalia/load_swomarginalia'
-    SolarWindsAPM::SWOMarginalia::LoadSWOMarginalia.insert
-  end
-end

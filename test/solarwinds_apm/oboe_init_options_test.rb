@@ -371,6 +371,24 @@ describe 'OboeInitOptions' do
     _(sanitized_uri).must_equal 'google.ca.appoptics'
   end
 
+  it 'return_original_uri_for_java_collector' do
+    uri = 'java-collector:12224'
+    sanitized_uri = SolarWindsAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal 'java-collector:12224'
+
+    uri = 'java-collector:1'
+    sanitized_uri = SolarWindsAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal 'java-collector:1'
+
+    uri = 'java-collector'
+    sanitized_uri = SolarWindsAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal 'java-collector'
+
+    uri = 'java-collector:regexregex'
+    sanitized_uri = SolarWindsAPM::OboeInitOptions.instance.send(:sanitize_collector_uri, uri)
+    _(sanitized_uri).must_equal ''
+  end
+
   it 'test_when_otel_service_name_exist' do
     ENV['SW_APM_REPORTER'] = 'ssl'
     ENV['OTEL_SERVICE_NAME'] = 'abcdef'

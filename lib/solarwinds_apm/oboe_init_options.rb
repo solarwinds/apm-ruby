@@ -176,8 +176,14 @@ module SolarWindsAPM
       (allowed_uri.include? ENV.fetch('SW_APM_COLLECTOR', nil))
     end
 
+    def java_collector?(uri)
+      java_collector_regex = /java-collector:\d+/
+      uri.match?(java_collector_regex)
+    end
+
     def sanitize_collector_uri(uri)
       return uri if uri.nil? || uri.empty?
+      return uri if java_collector?(uri)
 
       begin
         sanitized_uri = ::URI.parse("http://#{uri}").host
