@@ -5,3 +5,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 require_relative 'tag_sql/sw_mysql2_patch'
+require_relative 'tag_sql/sw_pg_patch'
