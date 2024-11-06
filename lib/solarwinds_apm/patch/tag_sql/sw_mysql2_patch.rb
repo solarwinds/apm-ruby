@@ -20,9 +20,7 @@ module SolarWindsAPM
             annotated_traceparent = "traceparent='#{AnnotateTraceparent.generate_traceparent}'"
 
             current_span = ::OpenTelemetry::Trace.current_span
-            attributes_dup = current_span.attributes.dup
-            attributes_dup['sw.query_tag'] = "/*#{annotated_traceparent}*/"
-            current_span.instance_variable_set(:@attributes, attributes_dup.freeze)
+            current_span.add_attributes({ 'sw.query_tag' => "/*#{annotated_traceparent}*/" })
 
             annotated_sql = "#{sql} /*#{annotated_traceparent}*/"
           end
