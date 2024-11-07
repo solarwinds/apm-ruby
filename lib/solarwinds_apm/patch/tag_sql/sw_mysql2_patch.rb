@@ -4,25 +4,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'annotate_traceparent'
-
 module SolarWindsAPM
   module Patch
     module TagSql
       module SWOMysql2Patch
         def query(sql, options = {})
-          traceparent = AnnotateTraceparent.generate_traceparent
+          current_span = ::OpenTelemetry::Trace.current_span
+
           annotated_sql = ''
-
-          if traceparent.empty?
-            annotated_sql = sql
+          if current_span.context.trace_flags.sampled?
+            traceparent = SolarWindsAPM::Utils.traceparent_from_context(current_span.context)
+            annotated_traceparent = "/*traceparent='#{traceparent}'*/"
+            current_span.add_attributes({ 'sw.query_tag' => annotated_traceparent })
+            annotated_sql = "#{sql} #{annotated_traceparent}"
           else
-            annotated_traceparent = "traceparent='#{AnnotateTraceparent.generate_traceparent}'"
-
-            current_span = ::OpenTelemetry::Trace.current_span
-            current_span.add_attributes({ 'sw.query_tag' => "/*#{annotated_traceparent}*/" })
-
-            annotated_sql = "#{sql} /*#{annotated_traceparent}*/"
+            annotated_sql = sql
           end
 
           super(annotated_sql, options)
