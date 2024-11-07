@@ -28,7 +28,7 @@ module SolarWindsAPM
   end
 end
 
-# need to prepend before mysql2 instrumentation
-# so they will call this query function before
-# reach to original query function
+# need to prepend before mysql2 instrumentation prepend the original function
+# after entire process, the call sequence will be:
+# upstream instrumentation -> our patch -> original function
 Mysql2::Client.prepend(SolarWindsAPM::Patch::TagSql::SWOMysql2Patch) if defined?(Mysql2::Client)
