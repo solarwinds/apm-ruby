@@ -398,3 +398,18 @@ def stub_for_mkmf_test
     end
   end
 end
+
+# For dbo patching test
+module Mysql2
+  class Client
+    attr_reader :query_options
+
+    def initialize(_opts = {})
+      @query_options = {}
+    end
+
+    def query(sql, _options = {})
+      sql
+    end
+  end
+end
