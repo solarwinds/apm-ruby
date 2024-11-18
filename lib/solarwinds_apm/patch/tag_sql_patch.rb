@@ -6,16 +6,4 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-module SolarWindsAPM
-  ##
-  # The current version of the gem. Used mainly by
-  # solarwinds_apm.gemspec during gem build process
-  module Version
-    MAJOR  = 6 # breaking,
-    MINOR  = 1 # feature,
-    PATCH  = 3 # fix => BFF
-    PRE    = nil
-
-    STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')
-  end
-end
+require_relative 'tag_sql/sw_mysql2_patch'

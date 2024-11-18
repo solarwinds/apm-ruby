@@ -11,6 +11,12 @@
 # -g gemfile - restrict the tests to the ones associated with this gemfile (path from gem-root)
 #
 
+check_status() {
+  status=$?
+  [[ $status -gt $exit_status ]] && exit_status=$status
+  [[ $status -ne 0 ]] && echo "!!! Test suite failed for $check_file_name with Ruby $ruby_version !!!"
+}
+
 gemfiles=(
   "gemfiles/unit.gemfile"
   "gemfiles/rails_6x.gemfile"
@@ -61,9 +67,8 @@ for gemfile in "${gemfiles[@]}" ; do
   fi
   # and here we are finally running the tests!!!
   BUNDLE_GEMFILE=$gemfile bundle exec rake test
-  status=$?
-  [[ $status -gt $exit_status ]] && exit_status=$status
-  [[ $status -ne 0 ]] && echo "!!! Test suite failed for $gemfile with Ruby $ruby_version !!!"
+  check_file_name=$gemfile
+  check_status
 done
 
 # explicitly test for solarwinds initialization
@@ -72,6 +77,14 @@ if ! BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle update; then
   exit_status=1
   continue
 fi
+
+# for dbo patch test
+PATCH_TEST_FILE=$(find test/patch/*_test.rb -type f)
+for file in $PATCH_TEST_FILE; do
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
+  check_file_name=$file
+  check_status
+done
 
 # create fake libsolarwinds_apm.so for testing
 cd test/clib
@@ -83,11 +96,9 @@ echo "Fake libsolarwinds_apm.so created"
 NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
 for ((i = 1; i <= $NUMBER_FILE; i++)); do
   BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
-  status=$?
-  [[ $status -gt $exit_status ]] && exit_status=$status
-  [[ $status -ne 0 ]] && echo "!!! Test suite failed for init_${i}_test.rb with Ruby $ruby_version !!!"
+  check_file_name=init_${i}_test.rb
+  check_status
 done
-
 
 echo ""
 echo "--- SUMMARY ------------------------------"

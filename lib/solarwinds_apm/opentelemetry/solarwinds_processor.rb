@@ -30,7 +30,7 @@ module SolarWindsAPM
       #  started span.
       def on_start(span, parent_context)
         SolarWindsAPM.logger.debug do
-          "[#{self.class}/#{__method__}] processor on_start span: #{span.inspect}, parent_context: #{parent_context.inspect}"
+          "[#{self.class}/#{__method__}] processor on_start span: #{span.to_span_data.inspect}, parent_context: #{parent_context.inspect}"
         end
 
         return if non_entry_span(parent_context: parent_context)
@@ -47,7 +47,7 @@ module SolarWindsAPM
       #
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
 
         return if non_entry_span(span: span)
 

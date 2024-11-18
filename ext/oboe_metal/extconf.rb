@@ -126,7 +126,7 @@ if success
   dir_config('oboe', 'src', 'lib')
 
   # create Makefile
-  if have_library('oboe', 'oboe_config_get_revision', 'oboe.h')
+  if have_library('oboe')
     $libs = append_library($libs, 'oboe')
     $libs = append_library($libs, 'stdc++')
 
