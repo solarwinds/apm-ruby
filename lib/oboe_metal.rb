@@ -14,7 +14,7 @@ module SolarWindsAPM
   @loaded    = false
   @reporter  = nil
   @oboe_api  = nil
-  @init_sent  = false
+  @init_sent = false
 
   class << self
     attr_accessor :reporter, :loaded, :oboe_api, :init_sent
@@ -39,7 +39,7 @@ module SolarWindsAPM
         options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
         SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
         SolarWindsAPM.loaded = true
-        report_init if options[22] == 0 # report init at beginning if no after fork enabled
+        report_init if (options[22]).zero? # report init at beginning if no after fork enabled
       rescue StandardError => e
         warn e.message
         SolarWindsAPM.loaded = false
