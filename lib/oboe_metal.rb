@@ -52,7 +52,6 @@ module SolarWindsAPM
       # Send the report for the given event
       #
       def send_report(evt, with_system_timestamp: true)
-        report_init
         SolarWindsAPM.reporter.sendReport(evt, with_system_timestamp)
       end
 
