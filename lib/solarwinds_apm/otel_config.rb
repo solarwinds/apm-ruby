@@ -91,6 +91,50 @@ module SolarWindsAPM
       disable_agent(reason: 'Missing tracecontext propagator.') unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
+    def self.setup_otlp_metrics
+
+      # determine the correct endpoint
+      otlp_metrics_endpoint = ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] || ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] || ''
+
+      if otlp_metrics_endpoint.empty?
+        if ENV['SW_APM_COLLECTOR'].nil?
+          otlp_metrics_endpoint = SolarWindsAPM::Constants::SW_OTEL_ENDPOINT
+        else
+          if SolarWindsAPM::Constants::APPOPTICS_ENDPOINT.include?(ENV['SW_APM_COLLECTOR'])
+            SolarWindsAPM.logger.warn { 'Endpoint is appoptics. Appoptics does not support otlp metrics export. No custom metrics will be exported.' }
+          else
+            otlp_metrics_endpoint = ENV['SW_APM_COLLECTOR'] == SolarWindsAPM::Constants::SW_APM_ENDPOINT ?
+                                                                SolarWindsAPM::Constants::SW_OTEL_ENDPOINT : SolarWindsAPM::Constants::SW_OTEL_ENDPOINT_STG
+          end
+        end
+      end
+
+      ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] = otlp_metrics_endpoint
+
+      token, service_name = ENV['SW_APM_SERVICE_KEY'].split(':')
+      bearer_token = "authorization=Bearer #{token}"
+
+      otlp_metrics_header = ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] || ENV['OTEL_EXPORTER_OTLP_HEADERS'] || ''
+      metrics_service_name = service_name || ENV['OTEL_SERVICE_NAME'] || ''
+
+      ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] = bearer_token if otlp_metrics_header.empty?
+
+      # mTLS?
+      SolarWindsAPM.logger.warn do {
+        "Final endpoint: #{otlp_metrics_endpoint}; final masked bearer_token: #{mask_token(token)}"
+      }
+
+      # resource attributes for otlp metrics
+      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.data.module=apm,service.name=#{ENV['OTEL_SERVICE_NAME']}," + ENV['OTEL_RESOURCE_ATTRIBUTES']
+    end
+
+    def self.mask_token(token)
+      first_two = token[0, 23]
+      last_two = token[-2, 2]
+      masked = '*' * (token.length - 25)
+      "#{first_two}#{masked}#{last_two}"
+    end
+
     def self.initialize
       unless defined?(::OpenTelemetry::SDK::Configurator)
         disable_agent(reason: 'missing OpenTelemetry::SDK::Configurator; opentelemetry seems not loaded.')
@@ -113,6 +157,8 @@ module SolarWindsAPM
 
       # for dbo, traceparent injection as comments
       require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
+
+      setup_otlp_metrics if ENV['SW_APM_EXPORT_METRICS_ENABLED'].to_s == 'true'
 
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
