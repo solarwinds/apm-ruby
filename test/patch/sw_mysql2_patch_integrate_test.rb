@@ -10,7 +10,6 @@ require './lib/solarwinds_apm/support/txn_name_manager'
 require './lib/solarwinds_apm/otel_config'
 require './lib/solarwinds_apm/api'
 require './lib/solarwinds_apm/support'
-require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/oboe_init_options'
 
 # rubocop:disable Naming/MethodName

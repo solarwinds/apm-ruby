@@ -21,6 +21,7 @@ require 'bson'
 
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
+require './lib/solarwinds_apm/constants'
 
 # simplecov coverage information
 require 'simplecov'

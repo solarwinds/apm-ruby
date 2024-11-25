@@ -32,5 +32,9 @@ module SolarWindsAPM
     INTL_SWO_OTEL_STATUS             = 'otel.status_code'
     INTL_SWO_OTEL_STATUS_DESCRIPTION = 'otel.status_description'
     INTERNAL_TRIGGERED_TRACE         = 'TriggeredTrace'
+
+    APPOPTICS_ENDPOINT               = ['collector.appoptics.com', 'collector-stg.appoptics.com', 'collector.appoptics.com:443', 'collector-stg.appoptics.com:443'].freeze
+    SW_OTEL_METRICS_ENDPOINT         = 'https://otel.collector.na-01.solarwinds.com:443/v1/metrics'
+    SW_APM_ENDPOINT                  = 'apm.collector.cloud.solarwinds.com'
   end
 end

@@ -170,10 +170,7 @@ module SolarWindsAPM
     end
 
     def appoptics_collector?
-      allowed_uri = ['collector.appoptics.com', 'collector-stg.appoptics.com',
-                     'collector.appoptics.com:443', 'collector-stg.appoptics.com:443']
-
-      (allowed_uri.include? ENV.fetch('SW_APM_COLLECTOR', nil))
+      (SolarWindsAPM::Constants::APPOPTICS_ENDPOINT.include? ENV.fetch('SW_APM_COLLECTOR', nil))
     end
 
     def java_collector?(uri)
