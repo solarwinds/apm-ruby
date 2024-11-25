@@ -154,7 +154,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 
 ### OpenTelemetry Metrics Export with Custom Metrics
 
-If user want to export the opentelemetry metrics through opentelemetry otlp protocol, user can do it directly after require `solarwinds_apm`. Since we don't provide the default metrics exporter, user needs to install `opentelemetry-exporter-otlp-metrics`.
+If user want to export the opentelemetry metrics through opentelemetry otlp protocol to solarwinds observability, user can do it directly after require `solarwinds_apm`. Since we don't provide the default metrics exporter, user needs to install `opentelemetry-exporter-otlp-metrics`. However, `solarwinds_apm` agent is not responsible to decide when to export. User need to export by themselves (e.g. `OpenTelemetry.meter_provider.metric_readers.each { |reader| reader.pull if reader.respond_to?(:pull) }` or use [PeriodicMetricReader](https://github.com/open-telemetry/opentelemetry-ruby/blob/main/metrics_sdk/lib/opentelemetry/sdk/metrics/export/periodic_metric_reader.rb) to export with desired time interval.
 
 Required setting:
 
