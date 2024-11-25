@@ -98,4 +98,110 @@ describe 'Loading Opentelemetry Test' do
       _(OpenTelemetry.logger.level).must_equal 4
     end
   end
+
+  describe 'test_otlp_metrics_custom_metrics' do
+    it 'test_mask_token_with_71' do
+      token = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      _(SolarWindsAPM::OTelConfig.mask_token(token)).must_equal 'aa*******************************************************************aa'
+    end
+
+    it 'test_mask_token_with_2' do
+      token = 'aa'
+      _(SolarWindsAPM::OTelConfig.mask_token(token)).must_equal '**'
+    end
+
+    describe 'test_determine_setup_otlp_metrics' do
+      before do
+        ENV.delete('SW_APM_EXPORT_METRICS_ENABLED')
+        ENV.delete('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT')
+        ENV.delete('OTEL_EXPORTER_OTLP_ENDPOINT')
+        ENV.delete('SW_APM_COLLECTOR')
+      end
+
+      it 'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT_present_ignore_other_options' do
+        # ENV['SW_APM_EXPORT_METRICS_ENABLED'] = 'true'
+        ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] = 'http://fake-uri:8181/v1/metrics'
+        ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://fake-again-uri:8181'
+        ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com'
+
+        SolarWindsAPM::OTelConfig.determine_otlp_metrics_endpoint
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'http://fake-uri:8181/v1/metrics'
+      end
+
+      it 'OTEL_EXPORTER_OTLP_ENDPOINT_present_ignore_other_options' do
+        ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://fake-again-uri:8181'
+        ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com'
+
+        SolarWindsAPM::OTelConfig.determine_otlp_metrics_endpoint
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://fake-again-uri:8181'
+      end
+
+      it 'SW_APM_COLLECTOR_present_with_appoptics' do
+        ENV['SW_APM_COLLECTOR'] = 'collector.appoptics.com'
+
+        SolarWindsAPM::OTelConfig.determine_otlp_metrics_endpoint
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal nil
+      end
+
+      it 'SW_APM_COLLECTOR_present_with_nil' do
+        ENV['SW_APM_COLLECTOR'] = nil
+
+        SolarWindsAPM::OTelConfig.determine_otlp_metrics_endpoint
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.solarwinds.com:443/v1/metrics'
+      end
+
+      it 'SW_APM_COLLECTOR_present_with_any_kind_url_will_use_default_endpoint' do
+        ENV['SW_APM_COLLECTOR'] = 'apm.so-fake.cloud.solarwinds.com'
+
+        SolarWindsAPM::OTelConfig.determine_otlp_metrics_endpoint
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.solarwinds.com:443/v1/metrics'
+      end
+    end
+
+    describe 'test_setup_otlp_metrics' do
+      before do
+        ENV.delete('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT')
+        ENV.delete('OTEL_EXPORTER_OTLP_METRICS_HEADERS')
+        ENV.delete('OTEL_EXPORTER_OTLP_HEADERS')
+        ENV.delete('SW_APM_SERVICE_KEY')
+        ENV.delete('OTEL_RESOURCE_ATTRIBUTES')
+        ENV.delete('OTEL_SERVICE_NAME')
+      end
+
+      it 'SW_APM_SERVICE_KEY_present_without_headers_defined' do
+        ENV['SW_APM_SERVICE_KEY'] = 'so_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_key:so_name'
+
+        SolarWindsAPM::OTelConfig.setup_otlp_metrics
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_HEADERS', nil)).must_equal 'authorization=Bearer so_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_key'
+        _(ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)).must_equal 'sw.data.module=apm,service.name=so_name'
+      end
+
+      it 'SW_APM_SERVICE_KEY_present_with_OTEL_EXPORTER_OTLP_METRICS_HEADERS_defined' do
+        ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] = 'sample_fake_headers'
+        ENV['SW_APM_SERVICE_KEY'] = 'so_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_key:so_name'
+
+        SolarWindsAPM::OTelConfig.setup_otlp_metrics
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_HEADERS', nil)).must_equal 'sample_fake_headers'
+        _(ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)).must_equal 'sw.data.module=apm,service.name=so_name'
+      end
+
+      it 'SW_APM_SERVICE_KEY_present_with_OTEL_EXPORTER_OTLP_HEADERS_defined' do
+        ENV['OTEL_EXPORTER_OTLP_HEADERS'] = 'sample_fake_again_headers'
+        ENV['SW_APM_SERVICE_KEY'] = 'so_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_keyso_key:so_name'
+
+        SolarWindsAPM::OTelConfig.setup_otlp_metrics
+
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)).must_equal 'sample_fake_again_headers'
+        _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_HEADERS', nil)).must_equal nil
+        _(ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)).must_equal 'sw.data.module=apm,service.name=so_name'
+      end
+    end
+  end
 end

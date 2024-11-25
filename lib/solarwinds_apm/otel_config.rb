@@ -91,9 +91,8 @@ module SolarWindsAPM
       disable_agent(reason: 'Missing tracecontext propagator.') unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
-    # determine the correct endpoint
-    # if have either OTEL_EXPORTER_OTLP_METRICS_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT, use it
-    # else, determine if the collector is nil or appoptics
+    # use the default OTEL_EXPORTER_OTLP_METRICS_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT if exist
+    # otherwise, use default SW_OTEL_METRICS_ENDPOINT if the collector is not appoptics
     def self.determine_otlp_metrics_endpoint
       return unless ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_ENDPOINT'].to_s.empty?
 
@@ -111,32 +110,29 @@ module SolarWindsAPM
     def self.setup_otlp_metrics
       determine_otlp_metrics_endpoint
 
-      # determine the headers
+      token, service_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
+
       # if no explicit define the headers, use the composed headers from SW_APM_SERVICE_KEY
-      return unless ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty?
+      if ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty?
 
-      key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
-
-      if key_name.length < 2
-        SolarWindsAPM.logger.error { 'No valid SW_APM_SERVICE_KEY present for OTLP_METRICS_HEADERS.' }
-      else
-        token = key_name[0]
-        service_name = key_name[1]
+        if token.nil?
+          SolarWindsAPM.logger.error { 'No valid SW_APM_SERVICE_KEY present for OTLP_METRICS_HEADERS.' }
+          return
+        end
 
         ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] = "authorization=Bearer #{token}"
-        ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.data.module=apm,service.name=#{service_name || ENV['OTEL_SERVICE_NAME'] || ''}" + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
-
-        SolarWindsAPM.logger.warn do
-          "OTLP metrics masked headers: #{mask_token(token)}; resource attributes: #{ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)}."
-        end
+        SolarWindsAPM.logger.warn { "OTLP metrics masked headers: authorization=Bearer #{mask_token(token)}" }
       end
+
+      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.data.module=apm,service.name=#{service_name || ENV['OTEL_SERVICE_NAME'] || ''}" + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
+      SolarWindsAPM.logger.warn { "OTLP metrics resource attributes: #{ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)}." }
     end
 
     def self.mask_token(token)
-      first_two = token[0, 23]
-      last_two = token[-2, 2]
-      masked = '*' * (token.length - 25)
-      "#{first_two}#{masked}#{last_two}"
+      token = token.to_s
+      return '*' * token.length if token.length <= 4
+
+      "#{token[0, 2]}#{'*' * (token.length - 4)}#{token[-2, 2]}"
     end
 
     def self.initialize
