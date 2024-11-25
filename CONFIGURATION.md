@@ -112,26 +112,27 @@ The configuration file should be Ruby code that sets key/values in the hash expo
 
 ## Reference
 
-Environment Variable | Config File Key | Description | Default
--------------------- | --------------- | ----------- | -------
-`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
-`SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
-`SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
-`SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
-`SW_APM_EC2_METADATA_TIMEOUT` | `:ec2_metadata_timeout` | Timeout for AWS IMDS metadata retrieval in milliseconds. | 1000
-`SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
-`SW_APM_LOG_FILEPATH` | N/A | Configure the log file path for the C extension, e.g. `export SW_APM_LOG_FILEPATH=/path/file_path.log`. If set, messages from the C extension are written to the specified file instead of stderr.  | None
-`SW_APM_PROXY` | `:http_proxy` | Configure an HTTP proxy through which the library connects to the collector. | None
-`SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None
-`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#tag-query-with-trace-context) for details.| `false`
-`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
-`SW_APM_TRUSTEDPATH` | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
-`SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
-`SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
-N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
-N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
-N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
-N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None
+Environment Variable | Option | Config File Key | Description | Default
+-------------------- | ------ | --------------- | ----------- | -------
+`SW_APM_SERVICE_KEY` | required | `:service_key` | API token and service name in the form of `token:service_name`. | None
+`SW_APM_AUTO_CONFIGURE` | optional | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
+`SW_APM_COLLECTOR` | optional | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
+`SW_APM_CONFIG_RUBY` | optional | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
+`SW_APM_DEBUG_LEVEL` | optional | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
+`SW_APM_EC2_METADATA_TIMEOUT` | optional | `:ec2_metadata_timeout` | Timeout for AWS IMDS metadata retrieval in milliseconds. | 1000
+`SW_APM_ENABLED` | optional | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
+`SW_APM_LOG_FILEPATH` | optional | N/A | Configure the log file path for the C extension, e.g. `export SW_APM_LOG_FILEPATH=/path/file_path.log`. If set, messages from the C extension are written to the specified file instead of stderr.  | None
+`SW_APM_PROXY` | optional | `:http_proxy` | Configure an HTTP proxy through which the library connects to the collector. | None
+`SW_APM_TAG_SQL` | optional | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#tag-query-with-trace-context) for details.| `false`
+`SW_APM_TRIGGER_TRACING_MODE` | optional | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
+`SW_APM_TRUSTEDPATH` | optional | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
+`SW_APM_LAMBDA_PRELOAD_DEPS` | optional | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
+`SW_APM_TRANSACTION_NAME` | optional | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
+`SW_APM_EXPORT_METRICS_ENABLED` | optional | N/A | Enable the custom metrics to export to swo backend through otlp metrics protocol | `false`
+N/A | optional | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
+N/A | optional | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
+N/A | optional | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
+N/A | optional | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None
 
 ### Transaction Filtering
 
@@ -149,6 +150,48 @@ SolarWindsAPM::Config[:transaction_settings] = [
     tracing: :disabled
   }
 ]
+```
+
+### OpenTelemetry Metrics Export with Custom Metrics
+
+If user want to export the opentelemetry metrics through opentelemetry otlp protocol, user can do it directly after require `solarwinds_apm`. Since we don't provide the default metrics exporter, user needs to install `opentelemetry-exporter-otlp-metrics`.
+
+Required setting:
+
+```console
+export SW_APM_EXPORT_METRICS_ENABLED='true' # enable the metrics
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT='your desired endpoint'
+export OTEL_EXPORTER_OTLP_METRICS_HEADERS='headers should include authentication e.g. authorization=Bearer ***'
+```
+
+Without setting `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_HEADERS`, `solarwinds_apm` will provide the default value. These value will export metrics to solarwinds apm production.
+
+```console
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: https://otel.collector.na-01.solarwinds.com:443/v1/metrics
+OTEL_EXPORTER_OTLP_METRICS_HEADERS: authorization=Bearer <SW_APM_SERVICE_KEY (without service name)>
+```
+
+Example:
+
+```ruby
+require 'opentelemetry-exporter-otlp-metrics'
+require 'solarwinds_apm'
+
+# initialize the metrics exporter
+otlp_metric_exporter = OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new
+
+# add metrics exporter to meter_provider
+OpenTelemetry.meter_provider.add_metric_reader(otlp_metric_exporter)
+
+# initialize meter
+meter = OpenTelemetry.meter_provider.meter("SAMPLE_METER_NAME")
+
+# create a new metrics instrument
+histogram = meter.create_histogram('sample_histogram', unit: 'smidgen', description: 'desscription')
+
+histogram.record(123, attributes: {'foo' => 'bar'})
+
+# you should see the metrics in swo backend
 ```
 
 ### Tag Query with Trace Context
