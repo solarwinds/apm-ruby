@@ -91,41 +91,45 @@ module SolarWindsAPM
       disable_agent(reason: 'Missing tracecontext propagator.') unless ([::OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator, ::OpenTelemetry::Baggage::Propagation::TextMapPropagator] - propagators.map(&:class)).empty?
     end
 
-    def self.setup_otlp_metrics
+    # determine the correct endpoint
+    # if have either OTEL_EXPORTER_OTLP_METRICS_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT, use it
+    # else, determine if the collector is nil or appoptics
+    def self.determine_otlp_metrics_endpoint
+      return unless ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_ENDPOINT'].to_s.empty?
 
-      # determine the correct endpoint
-      otlp_metrics_endpoint = ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] || ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] || ''
-
-      if otlp_metrics_endpoint.empty?
-        if ENV['SW_APM_COLLECTOR'].nil?
-          otlp_metrics_endpoint = SolarWindsAPM::Constants::SW_OTEL_ENDPOINT
-        else
-          if SolarWindsAPM::Constants::APPOPTICS_ENDPOINT.include?(ENV['SW_APM_COLLECTOR'])
-            SolarWindsAPM.logger.warn { 'Endpoint is appoptics. Appoptics does not support otlp metrics export. No custom metrics will be exported.' }
-          else
-            otlp_metrics_endpoint = ENV['SW_APM_COLLECTOR'] == SolarWindsAPM::Constants::SW_APM_ENDPOINT ?
-                                                                SolarWindsAPM::Constants::SW_OTEL_ENDPOINT : SolarWindsAPM::Constants::SW_OTEL_ENDPOINT_STG
-          end
-        end
+      if SolarWindsAPM::Constants::APPOPTICS_ENDPOINT.include?(ENV['SW_APM_COLLECTOR'])
+        SolarWindsAPM.logger.warn { 'Endpoint is AppOptics. AppOptics does not support OTLP metrics export. No custom metrics will be exported.' }
+      else
+        # SW_OTEL_METRICS_ENDPOINT is the default endpoint for production
+        # for staging, just use OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+        ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] = SolarWindsAPM::Constants::SW_OTEL_METRICS_ENDPOINT
       end
 
-      ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] = otlp_metrics_endpoint
+      SolarWindsAPM.logger.warn { "OTLP metrics endpoint: #{ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] || ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] || 'No valid endpoint'}." }
+    end
 
-      token, service_name = ENV['SW_APM_SERVICE_KEY'].split(':')
-      bearer_token = "authorization=Bearer #{token}"
+    def self.setup_otlp_metrics
+      determine_otlp_metrics_endpoint
 
-      otlp_metrics_header = ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] || ENV['OTEL_EXPORTER_OTLP_HEADERS'] || ''
-      metrics_service_name = service_name || ENV['OTEL_SERVICE_NAME'] || ''
+      # determine the headers
+      # if no explicit define the headers, use the composed headers from SW_APM_SERVICE_KEY
+      return unless ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty?
 
-      ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] = bearer_token if otlp_metrics_header.empty?
+      key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
 
-      # mTLS?
-      SolarWindsAPM.logger.warn do {
-        "Final endpoint: #{otlp_metrics_endpoint}; final masked bearer_token: #{mask_token(token)}"
-      }
+      if key_name.length < 2
+        SolarWindsAPM.logger.error { 'No valid SW_APM_SERVICE_KEY present for OTLP_METRICS_HEADERS.' }
+      else
+        token = key_name[0]
+        service_name = key_name[1]
 
-      # resource attributes for otlp metrics
-      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.data.module=apm,service.name=#{ENV['OTEL_SERVICE_NAME']}," + ENV['OTEL_RESOURCE_ATTRIBUTES']
+        ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS'] = "authorization=Bearer #{token}"
+        ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.data.module=apm,service.name=#{service_name || ENV['OTEL_SERVICE_NAME'] || ''}" + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
+
+        SolarWindsAPM.logger.warn do
+          "OTLP metrics masked headers: #{mask_token(token)}; resource attributes: #{ENV.fetch('OTEL_RESOURCE_ATTRIBUTES', nil)}."
+        end
+      end
     end
 
     def self.mask_token(token)

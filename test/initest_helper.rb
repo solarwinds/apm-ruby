@@ -8,6 +8,7 @@ require 'minitest/autorun'
 require 'minitest/spec'
 require 'minitest/reporters'
 require './lib/solarwinds_apm/logger'
+require './lib/solarwinds_apm/constants'
 
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
 

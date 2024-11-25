@@ -10,7 +10,6 @@ require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/support/txn_name_manager'
 require './lib/solarwinds_apm/oboe_init_options'
 require './lib/solarwinds_apm/config'
-require './lib/solarwinds_apm/constants'
 
 describe 'SolarWindsExporterTest' do
   before do
