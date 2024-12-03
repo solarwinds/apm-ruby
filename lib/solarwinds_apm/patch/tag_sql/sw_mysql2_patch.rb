@@ -6,23 +6,14 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
+require_relative 'swo_dbo_utils'
+
 module SolarWindsAPM
   module Patch
     module TagSql
       module SWOMysql2Patch
         def query(sql, options = {})
-          current_span = ::OpenTelemetry::Trace.current_span
-
-          annotated_sql = ''
-          if current_span.context.trace_flags.sampled?
-            traceparent = SolarWindsAPM::Utils.traceparent_from_context(current_span.context)
-            annotated_traceparent = "/*traceparent='#{traceparent}'*/"
-            current_span.add_attributes({ 'sw.query_tag' => annotated_traceparent })
-            annotated_sql = "#{sql} #{annotated_traceparent}"
-          else
-            annotated_sql = sql
-          end
-
+          annotated_sql = ::SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql(sql)
           super(annotated_sql, options)
         end
       end
