@@ -217,4 +217,4 @@ end
 
 Explanation:
 
-* Since Resque forks a new process for each task, the `solarwinds_apm` gem creates a new reporter for each forked process, which requires some time to become ready. The [`after_fork` hook](https://github.com/resque/resque/blob/master/docs/HOOKS.md) ensures that `liboboe`/`solarwinds_apm` is ready before making instrumentation decisions.
+* Since Resque forks a new process for each task, `solarwinds_apm` needs a certain amount of time to complete initialization at the start of each child process [before it is ready to trace](https://github.com/solarwinds/apm-ruby/blob/main/README.md#check-if-solarwinds_apm-is-ready). This `solarwinds_ready?` check in the [`after_fork` hook](https://github.com/resque/resque/blob/master/docs/HOOKS.md) ensures the library is ready for instrumentation to collect metrics and sample for traces.
