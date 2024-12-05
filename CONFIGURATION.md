@@ -203,14 +203,19 @@ Explanation:
 * `SW_APM_ENABLE_AFTER_FORK`: This option delays initialization of the library's C extension and gRPC-based reporter from the start of the parent worker process to the start of the child process, which is crucial to avoid issues associated with gRPC's weak support of forking and cleanup.
 * `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`).
 
-Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`:
+Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
 
 ```ruby
 require 'resque'
 
 Resque.after_fork do
+  time_remaining = 8
   while !SolarWindsAPM::API.solarwinds_ready?(1_000)
-    puts "Waiting"
+    if time_remaining.zero?
+      puts "SolarWindsAPM is not ready, this job will not be traced."
+      break
+    end
+    time_remaining -= 1
   end
 end
 ```

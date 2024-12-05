@@ -32,6 +32,7 @@ describe 'Oboe Metal Test' do
       SolarWindsAPM.init_sent = false
       SolarWindsAPM::Reporter.send(:report_init, :rack)
       assert_includes log_output.string, 'Init message has been sent.'
+      _(SolarWindsAPM.init_sent).must_equal true
     end
 
     it 'test_reporter_start' do
@@ -40,6 +41,7 @@ describe 'Oboe Metal Test' do
       SolarWindsAPM.init_sent = false
       SolarWindsAPM::Reporter.start
       assert_includes log_output.string, 'Init message has been sent.'
+      _(SolarWindsAPM.init_sent).must_equal true
     end
 
     it 'test_build_swo_init_report_with_error' do
