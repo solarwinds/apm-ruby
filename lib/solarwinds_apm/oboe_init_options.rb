@@ -67,7 +67,7 @@ module SolarWindsAPM
       @metric_format = determine_the_metric_model
       # log type (0 = stderr; 1 = stdout; 2 = file; 3 = null; 4 = disabled; default = 0)
       @log_type = determine_oboe_log_type
-      # after fork enablement (0 = no after fork, only pre-fork; 1 = after fork enabled; default = 0)
+      # after fork enablement (0 = disable; 1 = enabled, parent process will not init oboe but fork child process will init oboe; default = 0)
       @after_fork = determine_oboe_after_fork
     end
 
