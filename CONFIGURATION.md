@@ -209,13 +209,8 @@ Additionally, you need to configure the Resque initializer in your Rails applica
 require 'resque'
 
 Resque.after_fork do
-  time_remaining = 8
-  while !SolarWindsAPM::API.solarwinds_ready?(1_000)
-    if time_remaining.zero?
-      puts "SolarWindsAPM is not ready, this job will not be traced."
-      break
-    end
-    time_remaining -= 1
+  unless SolarWindsAPM::API.solarwinds_ready?(8_000)
+    puts "SolarWindsAPM is not ready, this job will not be traced."
   end
 end
 ```
