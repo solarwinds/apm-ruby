@@ -71,8 +71,8 @@ module SolarWindsAPM
       # layer.
       #
       def report_init(layer = :rack) # :nodoc:
-        # Don't send __Init in test or if SolarWindsAPM
-        # isn't fully loaded (e.g. missing c-extension)
+        # Don't send __Init in test or if SolarWindsAPM isn't fully loaded (e.g. missing c-extension)
+        # or if already sent (e.g. SolarWindsAPM.init_sent = true)
         return if SolarWindsAPM.init_sent
         return unless SolarWindsAPM.loaded
 

@@ -51,8 +51,6 @@ module SolarWindsAPM
 
         return if non_entry_span(span: span)
 
-        SolarWindsAPM::Reporter.send(:report_init) # This only happens if after_fork enabled
-
         span_time  = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
         domain     = nil
         has_error  = error?(span)
