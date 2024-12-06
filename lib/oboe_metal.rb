@@ -14,9 +14,10 @@ module SolarWindsAPM
   @loaded    = false
   @reporter  = nil
   @oboe_api  = nil
+  @init_sent = false
 
   class << self
-    attr_accessor :reporter, :loaded, :oboe_api
+    attr_accessor :reporter, :loaded, :oboe_api, :init_sent
 
     def sample_rate(rate)
       return unless SolarWindsAPM.loaded
@@ -38,7 +39,7 @@ module SolarWindsAPM
         options = SolarWindsAPM::OboeInitOptions.instance.array_for_oboe # creates an array with the options in the right order
         SolarWindsAPM.reporter = Oboe_metal::Reporter.new(*options)
         SolarWindsAPM.loaded = true
-        report_init
+        report_init if (options[22]).zero? # report init at beginning if no after fork enabled
       rescue StandardError => e
         warn e.message
         SolarWindsAPM.loaded = false
@@ -70,12 +71,15 @@ module SolarWindsAPM
       # layer.
       #
       def report_init(layer = :rack) # :nodoc:
-        # Don't send __Init in test or if SolarWindsAPM
-        # isn't fully loaded (e.g. missing c-extension)
+        # Don't send __Init in test or if SolarWindsAPM isn't fully loaded (e.g. missing c-extension)
+        # or if already sent (e.g. SolarWindsAPM.init_sent = true)
+        return if SolarWindsAPM.init_sent
         return unless SolarWindsAPM.loaded
 
         platform_info = build_swo_init_report
         log_init(layer, platform_info)
+
+        SolarWindsAPM.init_sent = true
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Init message has been sent." }
       end
 

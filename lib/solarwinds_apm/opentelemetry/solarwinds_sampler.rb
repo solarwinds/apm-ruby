@@ -55,6 +55,8 @@ module SolarWindsAPM
                                         attributes: #{attributes}"
         end
 
+        SolarWindsAPM::Reporter.send(:report_init) # This only happens if after_fork enabled
+
         parent_span_context = ::OpenTelemetry::Trace.current_span(parent_context).context
         xtraceoptions       = ::SolarWindsAPM::XTraceOptions.new(parent_context)
         SolarWindsAPM.logger.debug do
