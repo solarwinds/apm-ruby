@@ -1,10 +1,20 @@
-FROM public.ecr.aws/sam/build-ruby3.2:latest
+FROM amazonlinux:latest
 
 ARG BUNDLE_RUBYGEMS__PKG__GITHUB__COM
 ENV LAMBDA_TASK_ROOT=/fake_lambda_task_root/
 
 RUN mkdir /build
 COPY . /build
+
+# install ruby 3.2
+RUN yum update && yum install -y ruby-devel gcc-c++ make tar openssl-devel git zlib-devel
+RUN git clone https://github.com/rbenv/rbenv.git ~/.rbenv \
+        && git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build \
+        && git clone https://github.com/rbenv/rbenv-default-gems.git ~/.rbenv/plugins/rbenv-default-gems \
+        && echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.profile \
+        && echo 'eval "$(rbenv init -)"' >> ~/.profile \
+        && echo 'eval "$(rbenv init -)"' >> ~/.bashrc \
+        && echo 'bundler' > ~/.rbenv/default-gems
 
 WORKDIR /build/layer
 RUN bundle config set --local path 'ruby'
