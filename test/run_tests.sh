@@ -19,7 +19,6 @@ check_status() {
 
 gemfiles=(
   "gemfiles/unit.gemfile"
-  "gemfiles/rails_6x.gemfile"
 )
 
 ##
@@ -82,7 +81,7 @@ fi
 PATCH_TEST_FILE=$(find test/patch/*_test.rb -type f)
 for file in $PATCH_TEST_FILE; do
   check_file_name=$file
-  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile DBO_PATCH_TEST=1 bundle exec ruby -I test $file
   check_status
 done
 

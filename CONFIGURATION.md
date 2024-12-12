@@ -165,24 +165,18 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
 SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
 ```
 
-For Rails < 7 and non-Rails applications, we use a port of [Marginalia](https://github.com/basecamp/marginalia) that patches ActiveRecord to inject the comment.
+#### Limitation
 
-For Rails >= 7, Marginalia is [integrated into ActiveRecord](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html) so enabling this feature should be done through Rails [configuration](https://guides.rubyonrails.org/v7.0/configuring.html#config-active-record-query-log-tags-enabled). For example:
+Currently, tag queries don't support prepared statements. Active Record uses the PostgreSQL adapter (pg) by default to prepare statements. So, when you choose to use PostgreSQL and wish to enable trace context, please set `prepared_statements` to false."
 
-```ruby
-class Application < Rails::Application
-  config.active_record.query_log_tags_enabled = true
-  config.active_record.query_log_tags = [
-    {
-      traceparent: -> {
-        SolarWindsAPM::SWOMarginalia::Comment.traceparent
-      }
-    }
-  ]
-end
+e.g.
+
+```yaml
+development:
+  adapter: postgresql
+  # ...
+  prepared_statements: false
 ```
-
-Note that with Rails >= 7.1 the comment format can be specified via the `config.active_record.query_log_tags_format` option. SolarWinds Observability functionality depends on the default `:sqlcommenter` format, it is not recommended to change this value.
 
 ### Background Jobs
 
