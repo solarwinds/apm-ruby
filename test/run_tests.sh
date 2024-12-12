@@ -66,8 +66,8 @@ for gemfile in "${gemfiles[@]}" ; do
     continue
   fi
   # and here we are finally running the tests!!!
-  BUNDLE_GEMFILE=$gemfile bundle exec rake test
   check_file_name=$gemfile
+  BUNDLE_GEMFILE=$gemfile bundle exec rake test
   check_status
 done
 
@@ -81,8 +81,8 @@ fi
 # for dbo patch test
 PATCH_TEST_FILE=$(find test/patch/*_test.rb -type f)
 for file in $PATCH_TEST_FILE; do
-  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
   check_file_name=$file
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
   check_status
 done
 
@@ -95,8 +95,8 @@ echo "Fake libsolarwinds_apm.so created"
 
 NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
 for ((i = 1; i <= $NUMBER_FILE; i++)); do
-  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
   check_file_name=init_${i}_test.rb
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
   check_status
 done
 
