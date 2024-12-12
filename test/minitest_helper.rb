@@ -54,7 +54,7 @@ if ENV['TEST_RUNS_TO_FILE']
 end
 
 # Print out a headline in with the settings used in the test run
-puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV.fetch('BUNDLE_GEMFILE', nil))} #{ENV.fetch('DBTYPE', nil)} #{ENV.fetch('TEST_PREPARED_STATEMENT', nil)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV.fetch('BUNDLE_GEMFILE', nil))} #{ENV.fetch('DBTYPE', nil)} #{ENV.fetch('TEST_PREPARED_STATEMENT', nil)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n" unless ENV['DBO_PATCH_TEST']
 
 ENV['RACK_ENV'] = 'test'
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
@@ -412,4 +412,31 @@ module Mysql2
       sql
     end
   end
+end
+
+module PG
+  class Connection
+    attr_reader :db, :user, :host, :conninfo_hash
+
+    def initialize
+      @conninfo_hash = {}
+    end
+
+    EXEC_ISH_METHODS = %i[
+      exec
+      query
+      sync_exec
+      async_exec
+      exec_params
+      async_exec_params
+      sync_exec_params
+    ].freeze
+
+    EXEC_ISH_METHODS.each do |method|
+      define_method method do |*args|
+        args[0]
+      end
+    end
+  end
+  VERSION = '999.0.0'
 end

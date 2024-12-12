@@ -4,8 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-require_relative 'swo_dbo_utils'
-
 module SolarWindsAPM
   module Patch
     module TagSql
