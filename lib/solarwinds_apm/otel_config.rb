@@ -24,14 +24,32 @@ module SolarWindsAPM
       SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SolarWindsAPM disabled. No Trace exported. Reason: #{reason}" }
     end
 
+    # for probability, pleaes configure OTEL_TRACES_SAMPLER_ARG
     def self.resolve_sampler
-      sampler_config = { 'trigger_trace' => SolarWindsAPM::Config[:trigger_tracing_mode] }
-      @@config[:sampler] =
-        ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-          root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-          remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
-          remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
-        )
+      case ENV['SWO_APM_SAMPLER']
+      when 'parentbased_traceidratio'
+        sampler =
+          ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+            root: ::OpenTelemetry::SDK::Trace::Samplers.trace_id_ratio_based(Float(ENV.fetch('OTEL_TRACES_SAMPLER_ARG', 1.0))),
+            remote_parent_sampled: ::OpenTelemetry::SDK::Trace::Samplers.trace_id_ratio_based(Float(ENV.fetch('OTEL_TRACES_SAMPLER_ARG', 1.0))),
+            remote_parent_not_sampled: ::OpenTelemetry::SDK::Trace::Samplers.trace_id_ratio_based(Float(ENV.fetch('OTEL_TRACES_SAMPLER_ARG', 1.0)))
+          )
+      when 'traceidratio'
+        sampler = ::OpenTelemetry::SDK::Trace::Samplers.trace_id_ratio_based(Float(ENV.fetch('OTEL_TRACES_SAMPLER_ARG', 1.0)))
+      else
+        # default as swo sampler
+        sampler_config = { 'trigger_trace' => SolarWindsAPM::Config[:trigger_tracing_mode] }
+        sampler =
+          ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+            root: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+            remote_parent_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config),
+            remote_parent_not_sampled: SolarWindsAPM::OpenTelemetry::SolarWindsSampler.new(sampler_config)
+          )
+      end
+
+      @@config[:sampler] = sampler
+
+      nil
     end
 
     #
@@ -127,7 +145,7 @@ module SolarWindsAPM
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:metrics_processor])
       ::OpenTelemetry.tracer_provider.add_span_processor(@@config[:span_processor])
 
-      # configure sampler afterwards
+      # there is no configurable way to use custom sampler, so configure sampler after initialization
       ::OpenTelemetry.tracer_provider.sampler = @@config[:sampler]
 
       if ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
