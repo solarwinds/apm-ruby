@@ -167,7 +167,8 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae453341
 
 #### Limitation
 
-Currently, tag queries don't support prepared statements. Active Record uses the PostgreSQL adapter (pg) by default to prepare statements. So, when you choose to use PostgreSQL and wish to enable trace context, please set `prepared_statements` to false."
+> [!NOTE]  
+> This feature currently does not support prepared statements. Active Record by default enables prepared statements for the PostgreSQL adapter (`postgresql`), to use this feature you can explicitly disable it as shown below. Please evaluate the impact of disabling prepared statements on your system before proceeding.
 
 e.g.
 
