@@ -8,6 +8,9 @@ module SolarWindsAPM
   module Patch
     module TagSql
       module SWOPgPatch
+        # These are all alike in that they will have a SQL
+        # statement as the first parameter, and they are all
+        # non-prepared statement execute.
         EXEC_ISH_METHODS = %i[
           exec
           query
@@ -19,10 +22,10 @@ module SolarWindsAPM
         ].freeze
 
         EXEC_ISH_METHODS.each do |method|
-          define_method method do |*args, &block|
+          define_method method do |*args|
             annotated_sql = ::SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql(args[0])
             args[0] = annotated_sql
-            super(*args, &block)
+            super(*args)
           end
         end
       end
@@ -30,5 +33,6 @@ module SolarWindsAPM
   end
 end
 
-# need to prepend before pg instrumentation
+# need to prepend before pg instrumentation patch itself
+# upstream instrumentation -> our patch -> original function
 PG::Connection.prepend(SolarWindsAPM::Patch::TagSql::SWOPgPatch) if defined?(PG::Connection)

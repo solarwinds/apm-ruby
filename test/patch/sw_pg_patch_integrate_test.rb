@@ -50,7 +50,7 @@ describe 'pg patch integrate test' do
 
     pg_client = PG::Connection.new
 
-    args = ['SELECT * FROM ABC;', 'a1']
+    args = ['SELECT * FROM ABC;']
 
     sql = pg_client.query(*args)
     finished_spans = exporter.finished_spans
