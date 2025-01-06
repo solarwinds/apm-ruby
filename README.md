@@ -122,3 +122,44 @@ The metrics submitted are aggregated by metric name and tag(s), then sent every 
 SolarWindsAPM::API.increment_metric('loop.iteration')
 SolarWindsAPM::API.summary_metric('sleep.time', 5000)
 ```
+
+#### Instrument on custom function
+
+To instrument a custom function outside the default scope in [opentelemetry-ruby-contrib](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation), use the `add_tracer` function in solarwinds_apm.
+
+For example, if you want to instrument class function `create_session` inside application controller
+
+```ruby
+class SessionsController < ApplicationController
+  include SolarWindsAPM::API::Tracer
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    create_session(user)
+  end
+
+  def create_session(user)
+  end
+  add_tracer :create_session
+end
+```
+
+For example, if you want to instrument instance function `create_session` inside application controller
+
+```ruby
+class SessionsController < ApplicationController
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    SessionsController.create_session(user)
+  end
+
+  def self.create_session(user)
+  end
+
+  class << self
+    include SolarWindsAPM::API::Tracer
+    add_tracer :create_session
+  end
+end
+```
