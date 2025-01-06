@@ -62,6 +62,16 @@ describe 'pg patch integrate test' do
     pg_dbo_integration_verification(sql, finished_spans)
     exporter.reset
 
+    # test block in pg
+    block_sql = nil
+    pg_client.exec(*args) do |sql|
+      block_sql = sql
+    end
+
+    finished_spans = exporter.finished_spans
+    pg_dbo_integration_verification(block_sql, finished_spans)
+    exporter.reset
+
     sql = pg_client.sync_exec(*args)
     finished_spans = exporter.finished_spans
     pg_dbo_integration_verification(sql, finished_spans)
