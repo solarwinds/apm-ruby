@@ -8,6 +8,7 @@ module SolarWindsAPM
   module Patch
     module TagSql
       module SWOPgPatch
+        # We target operations covered by the upstream pg instrumentation.
         # These are all alike in that they will have a SQL
         # statement as the first parameter, and they are all
         # non-prepared statement execute.
