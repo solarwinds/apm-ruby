@@ -64,8 +64,8 @@ describe 'pg patch integrate test' do
 
     # test block in pg
     block_sql = nil
-    pg_client.exec(*args) do |sql|
-      block_sql = sql
+    pg_client.exec(*args) do |result|
+      block_sql = result
     end
 
     finished_spans = exporter.finished_spans
