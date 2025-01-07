@@ -86,7 +86,7 @@ end
 add_tracer :method_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
 ```
 
-For example, if you want to instrument class function or instance function `create_session` inside application controller
+For example, if you want to instrument class or instance method `create_session` inside an application controller:
 
 ```ruby
 class SessionsController < ApplicationController
