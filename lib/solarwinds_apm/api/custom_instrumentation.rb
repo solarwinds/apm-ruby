@@ -14,6 +14,37 @@ module SolarWindsAPM
       end
 
       module ClassMethods
+        # Helper function to instrument custom function
+        #
+        # `add_tracer` can add a custom span to the specified instance or class method that is already defined.
+        # It requires the custom span name and optionally takes the span kind and additional attributes
+        # in hash format.
+        #
+        # === Argument:
+        #
+        # * +method_name+ - (String) A non-empty string that match the function name that need to be instrumented
+        # * +span_name+ - (String, optional, default = method_name) A non-empty string that define the span name (default to method_name)
+        # * +options+ - (Hash, optional, default = {}) A hash with desired attributes
+        #
+        # === Example:
+        #
+        #   class DogfoodsController < ApplicationController
+        #
+        #     def create
+        #       @dogfood = Dogfood.new(params.permit(:brand, :name))
+        #       @dogfood.save
+        #       custom_function
+        #     end
+        #
+        #     def custom_function
+        #     end
+        #     add_tracer :custom_function, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
+        #
+        #   end
+        #
+        # === Returns:
+        # * nil
+        #
         def add_tracer(method_name, span_name = nil, options = {})
           span_name = name.nil? ? "#{to_s.split(':').last&.tr('>', '')}/#{__method__}" : "#{name}/#{__method__}" if span_name.nil?
 
