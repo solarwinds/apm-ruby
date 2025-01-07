@@ -19,7 +19,6 @@ check_status() {
 
 gemfiles=(
   "gemfiles/unit.gemfile"
-  "gemfiles/rails_6x.gemfile"
 )
 
 ##

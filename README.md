@@ -64,9 +64,11 @@ Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`
 
 Several convenience and vendor-specific APIs are availabe to an application where `solarwinds_apm` has been loaded, below is a quick overview of the features provided. The full reference can be found at the [RubyDoc page for this gem](https://rubydoc.info/github/solarwinds/apm-ruby).
 
-#### Convenience Method for in_span
+#### Convenience Method: `in_span` and `add_tracer`
 
-This method acquires the correct `Tracer` so a new span can be created in a single call, below is a simple Rails controller example:
+`in_span` acquires the correct `Tracer` so a new span can be created in a single call.
+
+For example, below is a simple Rails controller
 
 ```ruby
 class StaticController < ApplicationController
@@ -74,6 +76,39 @@ class StaticController < ApplicationController
     SolarWindsAPM::API.in_span('custom_span') do |span|
       # do things
     end
+  end
+end
+```
+
+`add_tracer` can add a custom span to the specified instance or class method that is already defined. `add_tracer` allow to set custom span name, span kind and additional attributes in hash format
+
+```ruby
+add_tracer :function_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
+```
+
+For example, if you want to instrument class function or instance function `create_session` inside application controller
+
+```ruby
+class SessionsController < ApplicationController
+  include SolarWindsAPM::API::Tracer
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    create_session(user)
+  end
+
+  # instrument class function create_session
+  def create_session(user)
+  end
+  add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
+
+  # instrument instance function self.create_session
+  def self.create_session(user)
+  end
+
+  class << self
+    include SolarWindsAPM::API::Tracer
+    add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
   end
 end
 ```
@@ -121,45 +156,4 @@ The metrics submitted are aggregated by metric name and tag(s), then sent every 
 ```ruby
 SolarWindsAPM::API.increment_metric('loop.iteration')
 SolarWindsAPM::API.summary_metric('sleep.time', 5000)
-```
-
-#### Instrument on custom function
-
-To instrument a custom function outside the default scope in [opentelemetry-ruby-contrib](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation), use the `add_tracer` function in solarwinds_apm.
-
-For example, if you want to instrument class function `create_session` inside application controller
-
-```ruby
-class SessionsController < ApplicationController
-  include SolarWindsAPM::API::Tracer
-
-  def create
-    user = User.find_by(email: params[:session][:email].downcase)
-    create_session(user)
-  end
-
-  def create_session(user)
-  end
-  add_tracer :create_session
-end
-```
-
-For example, if you want to instrument instance function `create_session` inside application controller
-
-```ruby
-class SessionsController < ApplicationController
-
-  def create
-    user = User.find_by(email: params[:session][:email].downcase)
-    SessionsController.create_session(user)
-  end
-
-  def self.create_session(user)
-  end
-
-  class << self
-    include SolarWindsAPM::API::Tracer
-    add_tracer :create_session
-  end
-end
 ```
