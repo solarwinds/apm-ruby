@@ -68,7 +68,7 @@ Several convenience and vendor-specific APIs are availabe to an application wher
 
 `in_span` acquires the correct `Tracer` so a new span can be created in a single call.
 
-For example, below is a simple Rails controller
+For example, using it in a Rails controller:
 
 ```ruby
 class StaticController < ApplicationController
