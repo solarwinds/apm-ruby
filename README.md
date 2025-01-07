@@ -97,15 +97,16 @@ class SessionsController < ApplicationController
     create_session(user)
   end
 
-  # instrument class function create_session
   def create_session(user)
   end
-  add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
 
-  # instrument instance function self.create_session
   def self.create_session(user)
   end
 
+  # instrument instance method create_session
+  add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
+
+  # instrument class method create_session
   class << self
     include SolarWindsAPM::API::Tracer
     add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
