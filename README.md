@@ -83,7 +83,7 @@ end
 `add_tracer` can add a custom span to the specified instance or class method that is already defined. It requires the custom span name and optionally takes the span kind and additional attributes in hash format:
 
 ```ruby
-add_tracer :function_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
+add_tracer :method_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
 ```
 
 For example, if you want to instrument class function or instance function `create_session` inside application controller
