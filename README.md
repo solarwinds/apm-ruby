@@ -80,7 +80,7 @@ class StaticController < ApplicationController
 end
 ```
 
-`add_tracer` can add a custom span to the specified instance or class method that is already defined. It requires the custom span name and optionally takes the span kind and additional attributes in hash format:
+`add_tracer` can add a custom span to the specified instance or class method that is already defined. It can optionally set the span kind and additional attributes provided in hash format:
 
 ```ruby
 add_tracer :method_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
