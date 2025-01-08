@@ -88,6 +88,7 @@ add_tracer :method_name, 'custom_span_name', { attributes: { 'any' => 'attribute
 
 For example, if you want to instrument class or instance method `create_session` inside an application controller:
 
+To instrument instance method
 ```ruby
 class SessionsController < ApplicationController
   include SolarWindsAPM::API::Tracer
@@ -100,11 +101,21 @@ class SessionsController < ApplicationController
   def create_session(user)
   end
 
-  def self.create_session(user)
-  end
-
   # instrument instance method create_session
   add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
+end
+```
+
+To instrument class method
+```ruby
+class SessionsController < ApplicationController
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    create_session(user)
+  end
+
+  def self.create_session(user)
+  end
 
   # instrument class method create_session
   class << self
