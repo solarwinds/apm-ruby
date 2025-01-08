@@ -42,7 +42,7 @@ module SolarWindsAPM
         #     add_tracer :custom_method, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
         #
         #   end
-        # 
+        #
         #   class DogfoodsController < ApplicationController
         #     def create
         #       @dogfood = Dogfood.new(params.permit(:brand, :name))
