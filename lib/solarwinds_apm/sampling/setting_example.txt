@@ -1,0 +1,1 @@
+{"value"=>1000000, "flags"=>"SAMPLE_START,SAMPLE_THROUGH_ALWAYS,SAMPLE_BUCKET_ENABLED,TRIGGER_TRACE", "timestamp"=>1738523568, "ttl"=>120, "arguments"=>{"BucketCapacity"=>2, "BucketRate"=>1, "TriggerRelaxedBucketCapacity"=>20, "TriggerRelaxedBucketRate"=>1, "TriggerStrictBucketCapacity"=>6, "TriggerStrictBucketRate"=>0.1, "SignatureKey"=>"0sftj1EYX7JJp01DblJwkccYCIZ91fbU"}}
