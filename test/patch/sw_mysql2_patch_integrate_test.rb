@@ -12,6 +12,7 @@ require './lib/solarwinds_apm/api'
 require './lib/solarwinds_apm/support'
 require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/oboe_init_options'
+require './lib/solarwinds_apm/patch/tag_sql/sw_dbo_utils'
 
 # rubocop:disable Naming/MethodName
 module SolarWindsAPM
@@ -21,8 +22,8 @@ module SolarWindsAPM
 end
 # rubocop:enable Naming/MethodName
 
-describe 'mysql2 patch test' do
-  puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+describe 'mysql2 patch integrate test' do
+  puts "\n\033[1m=== TEST RUN MYSQL2 PATCH TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
   let(:sdk) { OpenTelemetry::SDK }
   let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }

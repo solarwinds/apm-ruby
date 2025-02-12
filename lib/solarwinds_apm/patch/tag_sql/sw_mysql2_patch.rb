@@ -11,18 +11,7 @@ module SolarWindsAPM
     module TagSql
       module SWOMysql2Patch
         def query(sql, options = {})
-          current_span = ::OpenTelemetry::Trace.current_span
-
-          annotated_sql = ''
-          if current_span.context.trace_flags.sampled?
-            traceparent = SolarWindsAPM::Utils.traceparent_from_context(current_span.context)
-            annotated_traceparent = "/*traceparent='#{traceparent}'*/"
-            current_span.add_attributes({ 'sw.query_tag' => annotated_traceparent })
-            annotated_sql = "#{sql} #{annotated_traceparent}"
-          else
-            annotated_sql = sql
-          end
-
+          annotated_sql = ::SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql(sql)
           super(annotated_sql, options)
         end
       end

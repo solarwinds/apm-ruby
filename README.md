@@ -64,9 +64,11 @@ Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`
 
 Several convenience and vendor-specific APIs are availabe to an application where `solarwinds_apm` has been loaded, below is a quick overview of the features provided. The full reference can be found at the [RubyDoc page for this gem](https://rubydoc.info/github/solarwinds/apm-ruby).
 
-#### Convenience Method for in_span
+#### Convenience Method: `in_span` and `add_tracer`
 
-This method acquires the correct `Tracer` so a new span can be created in a single call, below is a simple Rails controller example:
+`in_span` acquires the correct `Tracer` so a new span can be created in a single call.
+
+For example, using it in a Rails controller:
 
 ```ruby
 class StaticController < ApplicationController
@@ -74,6 +76,51 @@ class StaticController < ApplicationController
     SolarWindsAPM::API.in_span('custom_span') do |span|
       # do things
     end
+  end
+end
+```
+
+`add_tracer` can add a custom span to the specified instance or class method that is already defined. It can optionally set the span kind and additional attributes provided in hash format:
+
+```ruby
+add_tracer :method_name, 'custom_span_name', { attributes: { 'any' => 'attributes' }, kind: :span_kind }
+```
+
+For example, if you want to instrument class or instance method `create_session` inside an application controller:
+
+To instrument instance method
+```ruby
+class SessionsController < ApplicationController
+  include SolarWindsAPM::API::Tracer
+
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    create_session(user)
+  end
+
+  def create_session(user)
+  end
+
+  # instrument instance method create_session
+  add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
+end
+```
+
+To instrument class method
+```ruby
+class SessionsController < ApplicationController
+  def create
+    user = User.find_by(email: params[:session][:email].downcase)
+    create_session(user)
+  end
+
+  def self.create_session(user)
+  end
+
+  # instrument class method create_session
+  class << self
+    include SolarWindsAPM::API::Tracer
+    add_tracer :create_session, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :consumer }
   end
 end
 ```

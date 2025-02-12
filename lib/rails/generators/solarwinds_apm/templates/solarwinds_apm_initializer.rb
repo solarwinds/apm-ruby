@@ -169,9 +169,5 @@ if defined?(SolarWindsAPM::Config)
   # Example:
   #   SELECT `posts`.* FROM `posts` /*traceparent=00-a448f096d441e167d12ebd32a927c1a5-a29655a47e430119-01*/
   #
-  # This option can add a small overhead for prepared statements since the traceparent value is unique per execution.
-  # This feature uses marginalia, see its caveat and possible workaround
-  # https://github.com/basecamp/marginalia/blob/master/README.md#prepared-statements
-  #
   SolarWindsAPM::Config[:tag_sql] = false
 end
