@@ -14,27 +14,26 @@ class TokenBucket
 
   attr_reader :capacity, :rate, :interval, :tokens
 
-  # use self. to enforce setter restriction
   def initialize(token_bucket_settings)
-    self.capacity = token_bucket_settings.capacity || 0
-    self.rate = token_bucket_settings.rate || 0
-    self.interval = token_bucket_settings.interval || MAX_INTERVAL
-    self.tokens = @capacity
+    @capacity = token_bucket_settings.capacity || 0
+    @rate = token_bucket_settings.rate || 0
+    @interval = token_bucket_settings.interval || MAX_INTERVAL
+    @tokens = @capacity
     @timer = nil
   end
 
   # used call from update_settings e.g. bucket.update(bucket_settings)
-  def update(token_bucket_settings)
-    if token_bucket_settings.capacity
-      difference = token_bucket_settings.capacity - @capacity
-      self.capacity = token_bucket_settings.capacity
-      self.tokens += difference
+  def update(settings)
+    if settings[:capacity]
+      difference = settings[:capacity] - @capacity
+      @capacity = settings[:capacity]
+      @tokens += difference
     end
 
-    self.rate = token_bucket_settings.rate if token_bucket_settings.rate
+    @rate = settings[:rate] if settings[:rate]
 
-    if token_bucket_settings.interval
-      self.interval = token_bucket_settings.interval
+    if settings[:interval]
+      @interval = settings[:interval]
       if running
         stop
         start
@@ -63,7 +62,7 @@ class TokenBucket
   # @return [Boolean] Whether there were enough tokens
   def consume(n = 1)
     if @tokens >= n
-      self.tokens -= n
+      @tokens -= n
       true
     else
       false
@@ -98,6 +97,6 @@ class TokenBucket
   private
 
   def task
-    self.tokens += @rate
+    @tokens += @rate
   end
 end

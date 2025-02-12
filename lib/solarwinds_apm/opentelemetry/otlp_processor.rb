@@ -40,9 +40,14 @@ module SolarWindsAPM
         return if non_entry_span(span: span)
 
         record_request_metrics(span)
-        record_sampling_metrics
 
-        ::OpenTelemetry.meter_provider.metric_readers.each(&:pull)
+        # record_sampling_metrics
+
+        # pull should work on any instrument from oboe_sampler
+        ::OpenTelemetry.meter_provider.metric_readers.each do |reader|
+          reader.pull if reader.respond_to? :pull
+        end
+
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
@@ -52,8 +57,11 @@ module SolarWindsAPM
 
       # Create two meters for sampling and request count
       def init_meters
+        # {
+        #   'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
+        #   'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+        # }
         {
-          'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
           'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
         }
       end
@@ -85,16 +93,17 @@ module SolarWindsAPM
 
       def init_metrics
         request_meter = @meters['sw.apm.request.metrics']
-        sampling_meter = @meters['sw.apm.sampling.metrics']
+        # sampling_meter = @meters['sw.apm.sampling.metrics']
 
         metrics = {}
         metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
-        metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
-        metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
-        metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
-        metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
-        metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
-        metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
+
+        # metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
+        # metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
+        # metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
+        # metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
+        # metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
+        # metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
         metrics
       end
 

@@ -55,6 +55,7 @@ install_gem.sh
 push_to_packgecloud.sh
 push_to_github.sh
 sample_start.rb
+chatgpt.rb
 
 # github action
 .github/.DS_Store
@@ -64,6 +65,7 @@ sample_start.rb
 test/.DS_Store
 test/support/*.db
 *.db
+gem_test/
 
 # rubocop
 rubocop.sarif

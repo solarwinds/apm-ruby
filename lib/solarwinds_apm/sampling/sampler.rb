@@ -6,13 +6,6 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# HttpSampler extends Sampler extends OboeSampler extends OtelSampler
-# JsonSampler extends Sampler extends OboeSampler extends OtelSampler
-# HttpSampler get the settings info by url fetch on ./v1/settings/${this.#service}/${await this.#hostname}`
-# 	it get const parsed = this.updateSettings(unparsed) # updateSettings is from Sampler
-#   localSettings is for current sampler configuration
-#   http const parsed = this.updateSettings(unparsed) -> super.updateSettings(parsed) -> bucket.update(parsed)
-
 class Sampler < OboeSampler
 
   RUBY_SEM_CON = ::OpenTelemetry::SemanticConventions::Trace
@@ -30,7 +23,7 @@ class Sampler < OboeSampler
 
   # tracing_mode is getting from SolarWindsAPM::Config
   def initialize(config, logger)
-    @logger = logger
+    super(logger)
     @tracing_mode = config[:tracing_mode] ? :always : :never if config.key?(:tracing_mode)
     @trigger_mode = config[:trigger_trace_enabled]
     @transaction_settings = config[:transaction_settings]
@@ -44,6 +37,7 @@ class Sampler < OboeSampler
   end
 
   def local_settings(_context, _trace_id, span_name, span_kind, attributes, _links)
+    # This settings should use struct LocalSettings
     settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
     return settings if @transaction_settings.nil? || @transaction_settings.empty?
     

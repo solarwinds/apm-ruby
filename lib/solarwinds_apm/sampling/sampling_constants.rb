@@ -21,42 +21,39 @@ TraceOptionsResponse = Struct.new(
 )
 
 module Auth
-  OK = "ok"
-  BAD_TIMESTAMP = "bad-timestamp"
-  BAD_SIGNATURE = "bad-signature"
-  NO_SIGNATURE_KEY = "no-signature-key"
+  OK = 'ok'
+  BAD_TIMESTAMP = 'bad-timestamp'
+  BAD_SIGNATURE = 'bad-signature'
+  NO_SIGNATURE_KEY = 'no-signature-key'
 end
 
 module TriggerTrace
-  OK = "ok"
-  NOT_REQUESTED = "not-requested"
-  IGNORED = "ignored"
-  TRACING_DISABLED = "tracing-disabled"
-  TRIGGER_TRACING_DISABLED = "trigger-tracing-disabled"
-  RATE_EXCEEDED = "rate-exceeded"
-  SETTINGS_NOT_AVAILABLE = "settings-not-available"
+  OK = 'ok'
+  NOT_REQUESTED = 'not-requested'
+  IGNORED = 'ignored'
+  TRACING_DISABLED = 'tracing-disabled'
+  TRIGGER_TRACING_DISABLED = 'trigger-tracing-disabled'
+  RATE_EXCEEDED = 'rate-exceeded'
+  SETTINGS_NOT_AVAILABLE = 'settings-not-available'
 end
 
 Settings = Struct.new(:sample_rate,
                       :sample_source,
                       :flags,
-                      :buckets,
+                      :buckets,           # BucketSettings
                       :signature_key,
                       :timestamp,
                       :ttl)
 
 LocalSettings = Struct.new(:tracing_mode, # TracingMode
-                           :trigger_mode  # Boolean
-                          )
+                           :trigger_mode) # Boolean
 
-BucketSettings = Struct.new(:capacity,    # Number
-                            :rate         # Number
-                           )
+BucketSettings = Struct.new(:capacity, # Number
+                            :rate) # Number
 
 TokenBucketSettings = Struct.new(:capacity,    # Number
                                  :rate,        # Number
-                                 :interval     # Number
-                                )
+                                 :interval) # Number
 
 module SampleSource
   LOCAL_DEFAULT = 2
@@ -78,9 +75,9 @@ module TracingMode
 end
 
 module BucketType
-  DEFAULT = ""
-  TRIGGER_RELAXED = "TriggerRelaxed"
-  TRIGGER_STRICT = "TriggerStrict"
+  DEFAULT = ''
+  TRIGGER_RELAXED = 'TriggerRelaxed'
+  TRIGGER_STRICT = 'TriggerStrict'
 end
 
 module SpanType
@@ -89,11 +86,11 @@ module SpanType
   LOCAL = 'local'
 
   def self.span_type(parent_span)
-    parent_span_context = parent_span.span_context
+    parent_span_context = parent_span.context
 
     if parent_span_context.nil? || parent_span_context != ::OpenTelemetry::Trace::SpanContext::INVALID
       ROOT
-    elsif parent_span_context.is_remote
+    elsif parent_span_context.remote?
       ENTRY
     else
       LOCAL
@@ -105,9 +102,6 @@ SampleState = Struct.new(:decision,     # SamplingDecision
                          :attributes,   # Attributes
                          :params,       # SampleParams
                          :settings,     # Settings
-                         :trace_state,   # String
-                         :headers,      # RequestHeaders
-                         :trace_options  # TraceOptions & { response: TraceOptionsResponse })
-                        )
-
-
+                         :trace_state, # String
+                         :headers, # RequestHeaders
+                         :trace_options) # TraceOptions & { response: TraceOptionsResponse })

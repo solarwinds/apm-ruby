@@ -62,9 +62,11 @@ begin
           require 'solarwinds_apm/opentelemetry'
           require 'solarwinds_apm/patch'
           require 'solarwinds_apm/otel_config'
+          require 'solarwinds_apm/otel_native_config'
 
           if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
-            SolarWindsAPM::OTelConfig.initialize
+            # SolarWindsAPM::OTelConfig.initialize
+            SolarWindsAPM::OTelNativeConfig.initialize
           elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
             SolarWindsAPM.logger.warn '=============================================================='
             SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'

@@ -11,12 +11,15 @@ class JsonSampler < Sampler
   DEFAULT_PATH = File.join(Dir.tmpdir, "solarwinds-apm-settings.json")
 
   def initialize(config, path = nil)
-    super(config, component_logger(self.class))
+    super(config, SolarWindsAPM.logger)
+
     @path = path || DEFAULT_PATH
     @expiry = Time.now.to_i
     loop_check
   end
 
+  # only json sampler will need to check if the settings.json file
+  # updated or not from collector extention
   def should_sample(*params)
     loop_check
     super(*params)

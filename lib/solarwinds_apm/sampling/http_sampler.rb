@@ -6,8 +6,7 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-class HttpSampler < OboeSampler
-
+class HttpSampler < Sampler
   REQUEST_TIMEOUT = 10 * 1000 # 10s
   RETRY_INITIAL_TIMEOUT = 500 # 500ms
   RETRY_MAX_TIMEOUT = 60 * 1000 # 60s
@@ -16,13 +15,14 @@ class HttpSampler < OboeSampler
 
   # we don't need hostname as it's for separating browser and local env
   def initialize(config)
+    super(config, SolarWindsAPM.logger)
+
     @url = config[:collector]
     @service = URI.encode_www_form_component(config[:service]) # service name "Hello world" -> "Hello%20world"
     @headers = config[:headers]
 
     @hostname = hostname
-
-    @logger = SolarWindsAPM.logger
+    @setting_url = URI.join(@url, "./v1/settings/#{@service}/#{@hostname}")
 
     @retry = 0
     @retry_timeout = RETRY_INITIAL_TIMEOUT
@@ -44,21 +44,19 @@ class HttpSampler < OboeSampler
     response = nil
 
     thread = Thread.new do
-      begin
-        Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-          request = Net::HTTP::Get.new(uri)
-          request["Authorization"] = @headers
+      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+        request = Net::HTTP::Get.new(uri)
+        request['Authorization'] = @headers
 
-          response = http.request(request)
-        end
-      rescue StandardError => e
-        @logger.debug { "Error during request: #{e.message}" }
+        response = http.request(request)
       end
+    rescue StandardError => e
+      @logger.debug { "Error during request: #{e.message}" }
     end
 
     begin
       Timeout.timeout(timeout_seconds || REQUEST_TIMEOUT) do
-        thread.join 
+        thread.join
       end
     rescue Timeout::Error
       @logger.debug { "Request timed out after #{timeout_seconds} seconds" }
@@ -75,47 +73,44 @@ class HttpSampler < OboeSampler
 
   def retry_request
     @retry += 1
-    @retry_timeout = @retry_timeout * MULTIPLIER
-    timeout = @retry < RETRY_MAX_ATTEMPTS && @retry_timeout < RETRY_MAX_TIMEOUT
+    @retry_timeout *= MULTIPLIER
+    should_timeout = @retry < RETRY_MAX_ATTEMPTS && @retry_timeout < RETRY_MAX_TIMEOUT
 
-    if timeout
-      @logger.debug { "Retrying in #{(timeout / 1000.0).round(1)}s" }
-      sleep(timeout / 1000.0)
+    if should_timeout
+      @logger.debug { "Retrying in #{(@retry_timeout / 1000.0).round(1)}s" }
+      sleep(@retry_timeout / 1000.0)
       settings_request(timeout = @retry_timeout)
     else
-      @logger.warn { "Reached max retry attempts for sampling settings retrieval. Tracing will remain disabled." }
+      @logger.warn { 'Reached max retry attempts for sampling settings retrieval. Tracing will remain disabled.' }
     end
   end
 
   # a endless loop within a thread (non-blocking)
   # it won't affect then call HttpSampler.should_sample (since it only update bucket settings)
   def settings_request(timeout = nil)
-    begin
-      url = URI.join(@url, "./v1/settings/#{@service}/#{@hostname}")
-      @logger.debug { "Retrieving sampling settings from #{url}" }
+    
+    @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
 
-      response = nil
-      response = fetch_with_timeout(url)
-      parsed = JSON.parse(response.body)
+    response = fetch_with_timeout(@setting_url)
+    parsed = JSON.parse(response.body)
 
-      @logger.debug { "parsed settings in json: #{parsed.inspect}" }
+    @logger.debug { "parsed settings in json: #{parsed.inspect}" }
 
-      if !update_settings(parsed)
-        @logger.warn { "Retrieved sampling settings are invalid. Ensure proper configuration." }
-        retry_request
-      end
-
-      reset_retry
-
-      # this is pretty arbitrary but the goal is to update the settings
-      # before the previous ones expire with some time to spare
-      expiry = (parsed['timestamp'] + parsed['ttl']) * 1000
-      timeout = expiry - REQUEST_TIMEOUT * MULTIPLIER - Time.now.to_i * 1000
-      sleep([0, timeout / 1000.0].max)
-      settings_request
-    rescue => e
-      @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available."}
+    unless update_settings(parsed)
+      @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
       retry_request
     end
+
+    reset_retry
+
+    # this is pretty arbitrary but the goal is to update the settings
+    # before the previous ones expire with some time to spare
+    expiry = (parsed['timestamp'] + parsed['ttl']) * 1000
+    timeout = expiry - (REQUEST_TIMEOUT * MULTIPLIER) - (Time.now.to_i * 1000)
+    sleep([0, timeout / 1000.0].max)
+    settings_request
+  rescue StandardError => e
+    @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
+    retry_request
   end
 end
