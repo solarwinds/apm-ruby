@@ -55,15 +55,20 @@ class OboeSampler
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {})
     end
 
-    sample_state = SampleState.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                   attributes: attributes,
-                                   params: params,
-                                   settings: get_settings(params),
-                                   tracestate: parent_span.span_context.trace_state['sw'], # get tracestate with sw=xxxx
-                                   headers: request_headers(params))
 
-    @counters[:request_count].add(1, {})
 
+    sample_state = SampleState.new(OTEL_SAMPLING_DECISION::DROP,
+                                   attributes,
+                                   params,
+                                   get_settings(params),
+                                   parent_span.context.tracestate['sw'], # get tracestate with sw=xxxx
+                                   request_headers(params),
+                                   nil)
+    @logger.debug { "sample_state at start of sampling: #{sample_state.inspect}" }
+
+    @counters[:request_count].add(1)
+
+    # adding trigger trace attributes to sample_state attribute as part of decision
     if sample_state.headers['X-Trace-Options']
       # this parse_trace_options is the function from trace_options file
 
@@ -82,7 +87,7 @@ class OboeSampler
           sample_state.trace_options[:timestamp]
         )
 
-        # If the request has an invalid signature, we always short circuit
+        # If the request has an invalid signature, drop the trace
         if sample_state.trace_options[:response][:auth] != Auth::OK # Auth::OK is a string from trace_options.rb: 'ok'
           @logger.debug { 'X-Trace-Options-Signature invalid; tracing disabled' }
           handle_response_headers(sample_state)
@@ -92,7 +97,7 @@ class OboeSampler
       end
 
       unless sample_state.trace_options[:trigger_trace]
-        sample_state.trace_options[:response][:trigger_trace] = TriggerTrace::NOT_REQUESTED # TriggerTrace::NOT_REQUESTED is a string from trace_options.rb: 'not-requested'
+        sample_state.trace_options[:response][:trigger_trace] = TriggerTrace::NOT_REQUESTED # 'not-requested'
       end
 
       # Apply span attributes
@@ -109,7 +114,7 @@ class OboeSampler
     unless sample_state.settings
       @logger.debug { 'settings unavailable; sampling disabled' }
 
-      if sample_state.trace_options.trigger_trace
+      if sample_state.trace_options&.trigger_trace
         @logger.debug { 'trigger trace requested but unavailable' }
         sample_state.trace_options[:response][:trigger_trace] = TriggerTrace::SETTINGS_NOT_AVAILABLE # TriggerTrace::NOT_REQUESTED is a string from trace_options.rb
       end
@@ -121,6 +126,8 @@ class OboeSampler
                                       attributes: sample_state.attributes)
     end
 
+    # decide which sampling algo to use and,
+    # add sampling attribute to decision attributes
     # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
     if sample_state.trace_state && TRACESTATE_REGEXP.match?(sample_state.trace_state)
 
@@ -128,7 +135,7 @@ class OboeSampler
       parent_based_algo(sample_state)
 
     elsif sample_state.settings.flags & Flags::SAMPLE_START != 0
-      if sample_state.trace_options.trigger_trace
+      if sample_state.trace_options&.trigger_trace
         @logger.debug { 'trigger trace requested' }
         trigger_trace_algo(sample_state)
       else
@@ -179,8 +186,8 @@ class OboeSampler
       if sampled
         @logger.debug { 'parent is sampled; record and sample' }
 
-        @counters[:trace_count].add(1, {})
-        @counters[:through_trace_count].add(1, {}) # ruby metrics only add incremented value and attributes
+        @counters[:trace_count].add(1)
+        @counters[:through_trace_count].add(1) # ruby metrics only add incremented value and attributes
 
         sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
       else
@@ -223,8 +230,8 @@ class OboeSampler
         @logger.debug { 'sufficient capacity; record and sample' }
 
         # this.#counters.triggeredTraceCount.add(1, {}, context) # need to check js counter api
-        @counters[:triggered_trace_count].add(1, {})
-        @counters[:trace_count].add(1, {})
+        @counters[:triggered_trace_count].add(1)
+        @counters[:trace_count].add(1)
 
         sample_state.trace_options.response.trigger_trace = TriggerTrace::OK
         sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
@@ -244,7 +251,7 @@ class OboeSampler
     sample_state.attributes[SAMPLE_RATE_ATTRIBUTE] = dice.rate
     sample_state.attributes[SAMPLE_SOURCE_ATTRIBUTE] = sample_state.settings.sample_source
 
-    @counters[:sample_count].add(1, {})
+    @counters[:sample_count].add(1)
 
     if dice.roll
       @logger.debug { 'dice roll success; checking capacity' }
@@ -256,13 +263,13 @@ class OboeSampler
       if bucket.consume
         @logger.debug { 'sufficient capacity; record and sample' }
 
-        @counters[:trace_count].add(1, {})
+        @counters[:trace_count].add(1)
 
         ssample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
       else
         @logger.debug { 'insufficient capacity; record only' }
 
-        @counters[:token_bucket_exhaustion_count].add(1, {})
+        @counters[:token_bucket_exhaustion_count].add(1)
 
         ssample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
       end
@@ -273,7 +280,7 @@ class OboeSampler
   end
 
   def disabled_algo(sample_state)
-    if sample_state.trace_options.trigger_trace
+    if sample_state.trace_options&.trigger_trace
       @logger.debug { 'trigger trace requested but tracing disabled' }
       sample_state.trace_options.response.trigger_trace = TriggerTrace.TRACING_DISABLED
     end
@@ -293,16 +300,15 @@ class OboeSampler
     @settings = settings
 
     @buckets.each do |type, bucket|
-      # token_bucket_setting get updated from hash settings
       bucket.update(@settings[:buckets][type]) if @settings[:buckets][type]
     end
   end
 
   def handle_response_headers(sample_state)
     headers = {}
-    stringified_trace_options = TraceOptions.stringify_trace_options_response(sample_state.trace_options.response)
 
-    if sample_state.trace_options.response
+    if sample_state.trace_options&.response
+      stringified_trace_options = TraceOptions.stringify_trace_options_response(sample_state.trace_options.response)
       headers['X-Trace-Options-Response'] = stringified_trace_options
     end
 

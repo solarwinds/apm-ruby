@@ -15,7 +15,7 @@ class TraceOptions
   CUSTOM_KEY_REGEX = /^custom-[^\s]+$/
 
 	def self.parse_trace_options(header, logger)
-    trace_options = TriggerTraceOptions.new(custom: {}, ignored: [])
+    trace_options = TriggerTraceOptions.new(nil,nil,nil,{},[])
 
     kvs = header.split(";").map { |kv| k, *vs = kv.split("=").map(&:strip); [k, vs.any? ? vs.join("=") : nil] }
                 .filter { |k, _| !k.empty? }

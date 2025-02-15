@@ -88,7 +88,7 @@ module SpanType
   def self.span_type(parent_span)
     parent_span_context = parent_span.context
 
-    if parent_span_context.nil? || parent_span_context != ::OpenTelemetry::Trace::SpanContext::INVALID
+    if parent_span_context.nil? || parent_span_context == ::OpenTelemetry::Trace::SpanContext::INVALID
       ROOT
     elsif parent_span_context.remote?
       ENTRY

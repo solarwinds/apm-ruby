@@ -28,22 +28,31 @@ class Sampler < OboeSampler
     @trigger_mode = config[:trigger_trace_enabled]
     @transaction_settings = config[:transaction_settings]
     @ready = false
-    @header_storage = nil
+    @header_storage = {}
+    wait_until_ready
   end
 
   # I don't think we need wait_until_ready when fetching the setting directly from http
-  def wait_until_ready(timeout)
-    true
+  # wait for getting the first settings
+  def wait_until_ready(timeout = 10)
+    Timeout.timeout(timeout) do
+      settings_ready
+    end
+  end
+
+  def settings_ready
+    while true
+      break if !@settings.empty?
+    end
   end
 
   def local_settings(_context, _trace_id, span_name, span_kind, attributes, _links)
-    # This settings should use struct LocalSettings
     settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
     return settings if @transaction_settings.nil? || @transaction_settings.empty?
-    
+
     http_metadata = http_span_metadata(span_kind, attributes)
     identifier = http_metadata[:http] ? http_metadata[:url] : "#{span_kind}:#{span_name}"
-    
+
     # matcher is transaction regex
     @transaction_settings.each do |setting|
       if setting[:matcher].call(identifier)
@@ -54,8 +63,33 @@ class Sampler < OboeSampler
     settings
   end
 
-  def request_headers(context)
-    @header_storage[context].fetch(:request, {})
+  # if context have sw-related value, it should be stored in context
+  # named sw_xtraceoptions in header propagator
+  # original x_trace_options will parse headers in the class, apm-js separate the task
+  # apm-js will make headers as hash
+  def request_headers(params)
+    parent_context = params[:parent_context]
+
+    # @header_storage[context].fetch(:request, {})
+    header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
+    signature = obtain_sw_value(parent_context, 'sw_signature')
+    @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
+
+    {
+      'X-Trace-Options': header,
+      'X-Trace-Options-Signature': signature
+    }
+  end
+
+  def obtain_sw_value(context, type)
+    sw_value = nil
+    instance_variable = context&.instance_variable_get('@entries')
+    instance_variable&.each do |key, value|
+      next unless key.instance_of?(::String)
+
+      sw_value = value if key == type
+    end
+    sw_value
   end
 
   def set_response_headers(headers, context)
