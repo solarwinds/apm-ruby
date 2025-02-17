@@ -88,11 +88,11 @@ class HttpSampler < Sampler
   # a endless loop within a thread (non-blocking)
   # it won't affect then call HttpSampler.should_sample (since it only update bucket settings)
   def settings_request(timeout = nil)
-    
+
     @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
 
     response = fetch_with_timeout(@setting_url)
-    parsed = JSON.parse(response.body)
+    parsed = response.nil? ? nil : JSON.parse(response.body)
 
     @logger.debug { "parsed settings in json: #{parsed.inspect}" }
 

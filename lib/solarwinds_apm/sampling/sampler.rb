@@ -24,15 +24,13 @@ class Sampler < OboeSampler
   # tracing_mode is getting from SolarWindsAPM::Config
   def initialize(config, logger)
     super(logger)
-    @tracing_mode = config[:tracing_mode] ? :always : :never if config.key?(:tracing_mode)
+    @tracing_mode = config[:tracing_mode] ? ::TracingMode::ALWAYS : ::TracingMode::NEVER if config.key?(:tracing_mode)
     @trigger_mode = config[:trigger_trace_enabled]
     @transaction_settings = config[:transaction_settings]
     @ready = false
     @header_storage = {}
-    wait_until_ready
   end
 
-  # I don't think we need wait_until_ready when fetching the setting directly from http
   # wait for getting the first settings
   def wait_until_ready(timeout = 10)
     Timeout.timeout(timeout) do
@@ -46,20 +44,21 @@ class Sampler < OboeSampler
     end
   end
 
-  def local_settings(_context, _trace_id, span_name, span_kind, attributes, _links)
+  def local_settings(params)
+    puts "params: #{params.inspect}"
+    _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
     settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
     return settings if @transaction_settings.nil? || @transaction_settings.empty?
 
+    @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
     http_metadata = http_span_metadata(span_kind, attributes)
-    identifier = http_metadata[:http] ? http_metadata[:url] : "#{span_kind}:#{span_name}"
+    @logger.debug { "http_metadata: #{http_metadata.inspect}"}
 
-    # matcher is transaction regex
-    @transaction_settings.each do |setting|
-      if setting[:matcher].call(identifier)
-        settings[:tracing_mode] = setting[:tracing] ? :always : :never
-        break
-      end
-    end
+    # below is for filter out unwanted transaction
+    trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
+    tracing_mode   = trans_settings.calculate_trace_mode == 1 ? ::TracingMode::ALWAYS : ::TracingMode::NEVER
+
+    settings[:tracing_mode] = tracing_mode
     settings
   end
 
@@ -114,7 +113,8 @@ class Sampler < OboeSampler
   end
 
   def http_span_metadata(kind, attributes)
-    return { http: false } unless kind == SpanKind.server &&
+    puts "kind: #{kind}"
+    return { http: false } unless kind == ::OpenTelemetry::Trace::SpanKind::SERVER &&
       (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
 
     method_ = (attributes[ATTR_HTTP_REQUEST_METHOD] || attributes[ATTR_HTTP_METHOD]).to_s
@@ -124,7 +124,7 @@ class Sampler < OboeSampler
     path = (attributes[ATTR_URL_PATH] || attributes[ATTR_HTTP_TARGET]).to_s
     url = "#{scheme}://#{hostname}#{path}"
 
-    {
+    http_metadata = {
       http: true,
       method: method_,
       status: status,
@@ -133,6 +133,9 @@ class Sampler < OboeSampler
       path: path,
       url: url
     }
+
+    @logger.debug { "Retrieved http metadata: #{http_metadata.inspect}"}
+    http_metadata
   end
 
   # tested - can run
@@ -151,10 +154,10 @@ class Sampler < OboeSampler
 
     flags = Flags::OK
     flag_map = {
-      "OVERRIDE" => :override,
-      "SAMPLE_START" => :sample_start,
-      "SAMPLE_THROUGH_ALWAYS" => :sample_through_always,
-      "TRIGGER_TRACE" => :triggered_trace
+      "OVERRIDE" => ::Flags::OVERRIDE,
+      "SAMPLE_START" => ::Flags::SAMPLE_START,
+      "SAMPLE_THROUGH_ALWAYS" => ::Flags::SAMPLE_THROUGH_ALWAYS,
+      "TRIGGER_TRACE" => ::Flags::TRIGGERED_TRACE,
     }
 
     flag = nil
@@ -187,7 +190,7 @@ class Sampler < OboeSampler
     warning = unparsed['warning'] if unparsed['warning'].is_a?(String)
 
     {
-      sample_source: :remote,
+      sample_source: SampleSource::REMOTE,
       sample_rate: sample_rate,
       flags: flags,
       timestamp: timestamp,

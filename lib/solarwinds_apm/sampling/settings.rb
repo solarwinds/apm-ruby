@@ -8,15 +8,15 @@
 
 module SamplingSettings
   def self.merge(remote, local)
-    flags = local.tracing_mode || remote.flags
+    flags = local[:tracing_mode] || remote[:flags]
 
-    local.trigger_mode ? flags |= Flags::TRIGGERED_TRACE : flags &= ~Flags::TRIGGERED_TRACE
+    local[:trigger_mode] ? flags |= ::Flags::TRIGGERED_TRACE : flags &= ~::Flags::TRIGGERED_TRACE
 
-    if (remote.flags & Flags::OVERRIDE) != 0
-      flags &= remote.flags
-      flags |= Flags::OVERRIDE
+    if (remote[:flags] & ::Flags::OVERRIDE) != 0
+      flags &= remote[:flags]
+      flags |= ::Flags::OVERRIDE
     end
 
-    remote.dup.tap { |merged| merged.flags = flags }
+    remote.dup.tap { |merged| merged[:flags] = flags }
   end
 end

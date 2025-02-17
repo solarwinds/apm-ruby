@@ -40,10 +40,13 @@ class OboeSampler
   def should_sample?(params)
     _, parent_context, _, _, _, attributes = params.values
 
+    parent_span_context = ::OpenTelemetry::Trace.current_span(parent_context)
     parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
     type = SpanType.span_type(parent_span)
 
     @logger.debug { "span type is #{type}" }
+
+    return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {}) if ignore_get_settings(attributes)
 
     # For local spans, we always trust the parent
     # ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision,
@@ -54,8 +57,6 @@ class OboeSampler
 
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {})
     end
-
-
 
     sample_state = SampleState.new(OTEL_SAMPLING_DECISION::DROP,
                                    attributes,
@@ -134,7 +135,7 @@ class OboeSampler
       @logger.debug { 'context is valid for parent-based sampling' }
       parent_based_algo(sample_state)
 
-    elsif sample_state.settings.flags & Flags::SAMPLE_START != 0
+    elsif (sample_state.settings[:flags] & ::Flags::SAMPLE_START) != 0
       if sample_state.trace_options&.trigger_trace
         @logger.debug { 'trigger trace requested' }
         trigger_trace_algo(sample_state)
@@ -147,7 +148,7 @@ class OboeSampler
       disabled_algo(sample_state)
     end
 
-    @logger.debug { "final sampling state: #{s}" }
+    @logger.debug { "final sampling state: #{sample_state.inspect}" }
 
     handle_response_headers(sample_state)
 
@@ -247,9 +248,9 @@ class OboeSampler
   def dice_roll_algo(sample_state)
     sample_state.params.first
 
-    dice = Dice.new(rate: sample_state.settings.sample_rate, scale: DICE_SCALE)
+    dice = Dice.new(rate: sample_state.settings[:sample_rate], scale: DICE_SCALE)
     sample_state.attributes[SAMPLE_RATE_ATTRIBUTE] = dice.rate
-    sample_state.attributes[SAMPLE_SOURCE_ATTRIBUTE] = sample_state.settings.sample_source
+    sample_state.attributes[SAMPLE_SOURCE_ATTRIBUTE] = sample_state.settings[:sample_source]
 
     @counters[:sample_count].add(1)
 
@@ -265,17 +266,17 @@ class OboeSampler
 
         @counters[:trace_count].add(1)
 
-        ssample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
+        sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
       else
         @logger.debug { 'insufficient capacity; record only' }
 
         @counters[:token_bucket_exhaustion_count].add(1)
 
-        ssample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
+        sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
       end
     else
       @logger.debug { 'dice roll failure; record only' }
-      ssample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
+      sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
     end
   end
 
@@ -329,5 +330,15 @@ class OboeSampler
     sampling_setting = SamplingSettings.merge(@settings, local_settings(params))
     @logger.debug { "sampling_setting: #{sampling_setting.inspect}" }
     sampling_setting
+  end
+
+  # return drop when get settings or exporter export is called (they both use net/http)
+  def ignore_get_settings(attributes)
+    http_target = attributes['http.target'] || ''
+    net_peer_name = attributes['net.peer.name'] || ''
+    http_target_regex = %r{^/v1/settings/[\w-]+/[a-f0-9]+$}
+    net_peer_name_regex = %r{^apm\.collector\.(?:[a-z0-9-]+\.)*solarwinds\.com$}
+    @logger.debug { "ignore get settings: #{net_peer_name}#{http_target}" }
+    net_peer_name_regex.match?(net_peer_name) ? true : false
   end
 end
