@@ -44,11 +44,14 @@ class HttpSampler < Sampler
     response = nil
 
     thread = Thread.new do
-      Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
-        request = Net::HTTP::Get.new(uri)
-        request['Authorization'] = @headers
+      # disable tracing the get settings
+      ::OpenTelemetry::Common::Utilities.untraced do
+        Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+          request = Net::HTTP::Get.new(uri)
+          request['Authorization'] = @headers
 
-        response = http.request(request)
+          response = http.request(request)
+        end
       end
     rescue StandardError => e
       @logger.debug { "Error during request: #{e.message}" }

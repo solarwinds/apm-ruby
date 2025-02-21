@@ -22,6 +22,8 @@ class OboeSampler
   OTEL_SAMPLING_DECISION = ::OpenTelemetry::SDK::Trace::Samplers::Decision
   OTEL_SAMPLING_RESULT = ::OpenTelemetry::SDK::Trace::Samplers::Result
 
+  DEFAULT_TRACESTATE = ::OpenTelemetry::Trace::Tracestate::DEFAULT
+
   def initialize(logger)
     @logger = logger
     @counters = ::Metrics::Counter.new
@@ -46,16 +48,14 @@ class OboeSampler
 
     @logger.debug { "span type is #{type}" }
 
-    return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {}) if ignore_get_settings(attributes)
-
     # For local spans, we always trust the parent
     # ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision,
     #                                                   attributes: new_attributes,
     #                                                   tracestate: new_trace_state)
     if type == SpanType::LOCAL
-      return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLED, tracestate: {}) if parent_span.context.trace_flags.sampled?
+      return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLED, tracestate: DEFAULT_TRACESTATE) if parent_span.context.trace_flags.sampled?
 
-      return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {})
+      return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: DEFAULT_TRACESTATE)
     end
 
     sample_state = SampleState.new(OTEL_SAMPLING_DECISION::DROP,
@@ -93,7 +93,7 @@ class OboeSampler
           @logger.debug { 'X-Trace-Options-Signature invalid; tracing disabled' }
           handle_response_headers(sample_state)
 
-          return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: {})
+          return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: DEFAULT_TRACESTATE)
         end
       end
 
@@ -123,7 +123,7 @@ class OboeSampler
       handle_response_headers(sample_state)
 
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                      tracestate: {},
+                                      tracestate: DEFAULT_TRACESTATE,
                                       attributes: sample_state.attributes)
     end
 
@@ -153,7 +153,7 @@ class OboeSampler
     handle_response_headers(sample_state)
 
     return OTEL_SAMPLING_RESULT.new(decision: sample_state.decision,
-                                    tracestate: {},
+                                    tracestate: DEFAULT_TRACESTATE,
                                     attributes: sample_state.attributes)
   end
 

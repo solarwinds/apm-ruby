@@ -15,19 +15,32 @@ require 'solarwinds_apm/sampling'
 module SolarWindsAPM
   # OTelLambdaConfig module
   module OTelNativeConfig
+
+    @@config           = {}
+    @@config_map       = {}
+    @@agent_enabled    = true
+
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
 
       ENV['OTEL_TRACES_EXPORTER'] = ENV['OTEL_TRACES_EXPORTER'].to_s.split(',').tap { |e| e << 'otlp' unless e.include?('otlp') }.join(',')
       ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV.fetch('OTEL_SERVICE_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
 
-      ::OpenTelemetry::SDK.configure(&:use_all)
+      resolve_solarwinds_propagator
+      resolve_response_propagator
+
+      # for dbo, traceparent injection as comments
+      require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
+
+      ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 
       # register metrics_exporter to meter_provider
       ::OpenTelemetry.meter_provider.add_metric_reader(::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new)
+
+      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
 
       # append our processors
       ::OpenTelemetry.tracer_provider.add_span_processor(SolarWindsAPM::OpenTelemetry::OTLPProcessor.new)
@@ -50,6 +63,29 @@ module SolarWindsAPM
       )
 
       nil
+    end
+
+    def self.resolve_response_propagator
+      response_propagator  = SolarWindsAPM::OpenTelemetry::SolarWindsResponsePropagator::TextMapPropagator.new
+      rack_setting         = @@config_map['OpenTelemetry::Instrumentation::Rack']
+
+      if rack_setting
+        if rack_setting[:response_propagators].instance_of?(Array)
+          rack_setting[:response_propagators].append(response_propagator)
+        elsif rack_setting[:response_propagators].nil?
+          rack_setting[:response_propagators] = [response_propagator]
+        else
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Rack response propagator resolve failed. Provided type #{rack_setting[:response_propagators].class}, please provide Array e.g. [#{rack_setting[:response_propagators]}]"
+          end
+        end
+      else
+        @@config_map['OpenTelemetry::Instrumentation::Rack'] = { response_propagators: [response_propagator] }
+      end
+    end
+
+    def self.resolve_solarwinds_propagator
+      @@config[:propagators] = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
     end
   end
 end
