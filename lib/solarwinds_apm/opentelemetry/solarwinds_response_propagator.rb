@@ -75,6 +75,7 @@ module SolarWindsAPM
           sanitized = '' if sanitized.nil?
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED,
                                      SolarWindsAPM::Constants::INTL_SWO_EQUALS)
+          sanitized = sanitized.gsub(':', SolarWindsAPM::Constants::INTL_SWO_EQUALS)
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
                                      SolarWindsAPM::Constants::INTL_SWO_COMMA)
           SolarWindsAPM.logger.debug do

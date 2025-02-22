@@ -28,7 +28,6 @@ class Sampler < OboeSampler
     @trigger_mode = config[:trigger_trace_enabled]
     @transaction_settings = config[:transaction_settings]
     @ready = false
-    @header_storage = {}
   end
 
   # wait for getting the first settings
@@ -69,14 +68,13 @@ class Sampler < OboeSampler
   def request_headers(params)
     parent_context = params[:parent_context]
 
-    # @header_storage[context].fetch(:request, {})
     header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
     signature = obtain_sw_value(parent_context, 'sw_signature')
     @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
 
     {
-      'X-Trace-Options': header,
-      'X-Trace-Options-Signature': signature
+      'X-Trace-Options' => header,
+      'X-Trace-Options-Signature' => signature
     }
   end
 
@@ -89,11 +87,6 @@ class Sampler < OboeSampler
       sw_value = value if key == type
     end
     sw_value
-  end
-
-  def set_response_headers(headers, context)
-    storage = @header_storage[context]
-    storage[:response].merge!(headers) if storage
   end
 
   def update_settings(settings)

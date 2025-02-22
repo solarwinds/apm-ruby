@@ -13,10 +13,9 @@ require 'solarwinds_apm/opentelemetry'
 require 'solarwinds_apm/sampling'
 
 module SolarWindsAPM
-  # OTelLambdaConfig module
+  # OTelNativeConfig module
   module OTelNativeConfig
 
-    @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = true
 
@@ -26,28 +25,29 @@ module SolarWindsAPM
       ENV['OTEL_TRACES_EXPORTER'] = ENV['OTEL_TRACES_EXPORTER'].to_s.split(',').tap { |e| e << 'otlp' unless e.include?('otlp') }.join(',')
       ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV.fetch('OTEL_SERVICE_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
 
-      resolve_solarwinds_propagator
+      # add response propagator to rack instrumentation
       resolve_response_propagator
 
-      # for dbo, traceparent injection as comments
+      # dbo: traceparent injection as sql comments
       require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
 
+      # sdk config will initialize trace and metrics exporter
+      # any setup on endpoint for metrics and trace exporter should happen here
+      # also set to exporter to console for testing purpose
       ::OpenTelemetry::SDK.configure { |c| c.use_all(@@config_map) }
 
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 
-      # register metrics_exporter to meter_provider
-      ::OpenTelemetry.meter_provider.add_metric_reader(::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new)
-
-      ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(@@config[:propagators])
-
-      # append our processors
+      # add sw metrics processors (only record respone_time)
       ::OpenTelemetry.tracer_provider.add_span_processor(SolarWindsAPM::OpenTelemetry::OTLPProcessor.new)
 
       service_key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(":")
 
       # no need to send init msg for otlp proto
+      # need to consider endpoint for get setting and endpoint for otlp exporters
+      # current implementation only use OTEL env for endpoint
+      #             -> need to come up with logic to drive from SW_APM_COLLECTOR
       sampler_config = {
         :collector => "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com')}:443",
         :service => service_key_name[1],
@@ -82,10 +82,6 @@ module SolarWindsAPM
       else
         @@config_map['OpenTelemetry::Instrumentation::Rack'] = { response_propagators: [response_propagator] }
       end
-    end
-
-    def self.resolve_solarwinds_propagator
-      @@config[:propagators] = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
     end
   end
 end

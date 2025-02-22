@@ -11,7 +11,8 @@ TriggerTraceOptions = Struct.new(
   :timestamp,
   :sw_keys,
   :custom,      # Hash
-  :ignored      # Array
+  :ignored,     # Array
+  :response     # TraceOptionsResponse
 )
 
 TraceOptionsResponse = Struct.new(
@@ -76,8 +77,10 @@ end
 
 module BucketType
   DEFAULT = ''
-  TRIGGER_RELAXED = 'TriggerRelaxed'
-  TRIGGER_STRICT = 'TriggerStrict'
+  # TRIGGER_RELAXED = 'TriggerRelaxed'
+  TRIGGER_RELAXED = 'trigger_relaxed'
+  # TRIGGER_STRICT = 'TriggerStrict'
+  TRIGGER_STRICT = 'trigger_strict'
 end
 
 module SpanType

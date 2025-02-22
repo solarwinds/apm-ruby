@@ -189,6 +189,7 @@ module SolarWindsAPM
         end
 
         # for setting up the xtrace_options_response
+        # sw_xtraceoptions_response_key => xtrace_options_response
         if xtraceoptions&.options
           trace_state = trace_state.set_value(XTraceOptions.sw_xtraceoptions_response_key.to_s,
                                               create_xtraceoptions_response_value(liboboe_decision,

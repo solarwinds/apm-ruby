@@ -14,8 +14,8 @@ class TraceOptions
 
   CUSTOM_KEY_REGEX = /^custom-[^\s]+$/
 
-	def self.parse_trace_options(header, logger)
-    trace_options = TriggerTraceOptions.new(nil,nil,nil,{},[])
+  def self.parse_trace_options(header, logger)
+    trace_options = TriggerTraceOptions.new(nil,nil,nil,{},[], TraceOptionsResponse.new(nil,nil,nil))
 
     kvs = header.split(";").map { |kv| k, *vs = kv.split("=").map(&:strip); [k, vs.any? ? vs.join("=") : nil] }
                 .filter { |k, _| !k.empty? }
@@ -65,22 +65,23 @@ class TraceOptions
   end
 
   # combine the array to string separate by ;
+  # tracestate doesn't accept value with k=v, here we use k:v
   def self.stringify_trace_options_response(trace_options_response)
+    return if trace_options_response.nil?
+
     kvs = {
       auth: trace_options_response.auth,
       "trigger-trace": trace_options_response.trigger_trace,
       ignored: trace_options_response.ignored&.join(","),
     }
-    kvs.compact.map { |k, v| "#{k}=#{v}" }.join(";")
+    kvs.compact.map { |k, v| "#{k}:#{v}" }.join(";")
   end
 
   def self.validate_signature(header, signature, key, timestamp)
     return Auth::NO_SIGNATURE_KEY unless key
     return Auth::BAD_TIMESTAMP unless timestamp && (Time.now.to_i - timestamp).abs <= 5 * 60
-    
+
     digest = OpenSSL::HMAC.hexdigest("SHA1", key, header)
     signature == digest ? Auth::OK : Auth::BAD_SIGNATURE
   end
 end
-
-
