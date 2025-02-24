@@ -35,13 +35,9 @@ module SolarWindsAPM
       # @param [Span] span the {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
-
-        # return if span is non-entry span
         return if non_entry_span(span: span)
 
         record_request_metrics(span)
-
-        # record_sampling_metrics
 
         # pull should work on any instrument from oboe_sampler
         ::OpenTelemetry.meter_provider.metric_readers.each do |reader|

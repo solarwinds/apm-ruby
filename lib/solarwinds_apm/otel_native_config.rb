@@ -58,8 +58,11 @@ module SolarWindsAPM
       }
 
       # configure sampler afterwards
+      http_sampler = HttpSampler.new(sampler_config)
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-        root: HttpSampler.new(sampler_config)
+        root: http_sampler,
+        remote_parent_sampled: http_sampler,
+        remote_parent_not_sampled: http_sampler
       )
 
       nil

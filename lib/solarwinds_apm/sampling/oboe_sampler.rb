@@ -8,7 +8,8 @@
 
 class OboeSampler
   SW_KEYS_ATTRIBUTE = 'SWKeys'
-  PARENT_ID_ATTRIBUTE = 'sw.tracestate_parent_id'
+  # SW_TRACESTATE_CAPTURE_KEY  = 'sw.w3c.tracestate'
+  PARENT_ID_ATTRIBUTE = 'sw.tracestate_parent_id' # used in parent_base_algo
   SAMPLE_RATE_ATTRIBUTE = 'SampleRate'
   SAMPLE_SOURCE_ATTRIBUTE = 'SampleSource'
   BUCKET_CAPACITY_ATTRIBUTE = 'BucketCapacity'
@@ -41,6 +42,7 @@ class OboeSampler
   # params: {:trace_id=>, :parent_context=>, :links=>, :name=>, :kind=>, :attributes=>}
   # propagator -> processor -> sampler
   def should_sample?(params)
+    @logger.debug { "should_sample? params: #{params.inspect}" }
     _, parent_context, _, _, _, attributes = params.values
 
     parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
@@ -49,35 +51,12 @@ class OboeSampler
     @logger.debug { "[#{self.class}/#{__method__}] span type is #{type}" }
 
     # For local spans, we always trust the parent
-    # ::OpenTelemetry::SDK::Trace::Samplers::Result.new(decision: otel_decision,
-    #                                                   attributes: new_attributes,
-    #                                                   tracestate: new_trace_state)
     if type == SpanType::LOCAL
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, tracestate: DEFAULT_TRACESTATE) if parent_span.context.trace_flags.sampled?
 
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: DEFAULT_TRACESTATE)
     end
 
-    # SampleState = Struct.new(:decision,     # SamplingDecision
-    #                      :attributes,       # Attributes
-    #                      :params,           # SampleParams
-    #                      :settings,         # Settings
-    #                      :trace_state,      # String
-    #                      :headers,          # RequestHeaders
-    #                      :trace_options)    # TraceOptions & { response: TraceOptionsResponse })
-    # TriggerTraceOptions = Struct.new(
-    #   :trigger_trace,
-    #   :timestamp,
-    #   :sw_keys,
-    #   :custom,      # Hash
-    #   :ignored,     # Array
-    #    :response    # TraceOptionsResponse
-    # )
-    # TraceOptionsResponse = Struct.new(
-    #   :auth,           # Auth
-    #   :trigger_trace,  # TriggerTrace
-    #   :ignored         # String
-    # )
     sample_state = SampleState.new(OTEL_SAMPLING_DECISION::DROP,
                                    attributes,
                                    params,
@@ -90,10 +69,9 @@ class OboeSampler
 
     @counters[:request_count].add(1)
 
-    puts "sample_state.headers: #{sample_state.headers.inspect}"
+    # puts "sample_state.headers: #{sample_state.headers.inspect}"
     # adding trigger trace attributes to sample_state attribute as part of decision
     if sample_state.headers['X-Trace-Options']
-      # this parse_trace_options is the function from trace_options file
 
       # TraceOptions.parse_trace_options return TriggerTraceOptions
       sample_state.trace_options = TraceOptions.parse_trace_options(sample_state.headers['X-Trace-Options'], @logger)
@@ -124,7 +102,7 @@ class OboeSampler
         sample_state.trace_options.response.trigger_trace = TriggerTrace::NOT_REQUESTED # 'not-requested'
       end
 
-      # Apply span attributes
+      # Apply trace options to span attributes
       sample_state.attributes[SW_KEYS_ATTRIBUTE] = sample_state.trace_options[:sw_keys] if sample_state.trace_options[:sw_keys]
 
       sample_state.trace_options.custom.each do |k, v|
@@ -140,18 +118,16 @@ class OboeSampler
 
       if sample_state.trace_options&.trigger_trace
         @logger.debug { 'trigger trace requested but unavailable' }
-        sample_state.trace_options.response.trigger_trace = TriggerTrace::SETTINGS_NOT_AVAILABLE # TriggerTrace::NOT_REQUESTED is a string from trace_options.rb
+        sample_state.trace_options.response.trigger_trace = TriggerTrace::SETTINGS_NOT_AVAILABLE # 'settings-not-available'
       end
 
       xtracestate = generate_new_tracestate(parent_span, sample_state)
 
       return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                      tracestate: xtracestate,
-                                      attributes: sample_state.attributes)
+                                      tracestate: xtracestate)
     end
 
-    # decide which sampling algo to use and,
-    # add sampling attribute to decision attributes
+    # Decide which sampling algo to use and add sampling attribute to decision attributes
     # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
     if sample_state.trace_state && TRACESTATE_REGEXP.match?(sample_state.trace_state)
 
@@ -173,8 +149,10 @@ class OboeSampler
 
     @logger.debug { "final sampling state: #{sample_state.inspect}" }
 
-    # handle_response_headers(sample_state, parent_span)
     xtracestate = generate_new_tracestate(parent_span, sample_state)
+
+    # if need to set 'sw.w3c.tracestate' to attributes
+    sample_state.attributes['sw.w3c.tracestate'] = ::SolarWindsAPM::Utils.trace_state_header(xtracestate)
 
     puts "xtracestate: #{xtracestate.inspect}"
     return OTEL_SAMPLING_RESULT.new(decision: sample_state.decision,
@@ -184,16 +162,14 @@ class OboeSampler
 
   def parent_based_algo(sample_state)
     # original js code: const [context] = s.params
-    # but this context is used for metrics e.g. this.#counters.throughTraceCount.add(1, {}, context)
-    # I think that's for metrics attributes? need to verify
-    # sample_state.params.first
+    # the context is used for metrics e.g. this.#counters.throughTraceCount.add(1, {}, context)
 
     # compare the parent_id
     sample_state.attributes[PARENT_ID_ATTRIBUTE] = sample_state.trace_state[0, 16]
 
-    if sample_state.trace_options.trigger_trace # need to implement trace_options
+    if sample_state.trace_options&.trigger_trace # need to implement trace_options
       @logger.debug { 'trigger trace requested but ignored' }
-      sample_state.trace_options.response.trigger_trace = TriggerTrace::IGNORED
+      sample_state.trace_options.response.trigger_trace = TriggerTrace::IGNORED # 'ignored'
     end
 
     if sample_state.settings[:flags].nobits?(Flags::SAMPLE_THROUGH_ALWAYS)
@@ -232,7 +208,7 @@ class OboeSampler
     if sample_state.settings[:flags].nobits?(Flags::TRIGGERED_TRACE)
       @logger.debug { 'TRIGGERED_TRACE unset; record only' }
 
-      sample_state.trace_options.response.trigger_trace = TriggerTrace::TRIGGER_TRACING_DISABLED
+      sample_state.trace_options.response.trigger_trace = TriggerTrace::TRIGGER_TRACING_DISABLED # 'trigger-tracing-disabled'
       sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
     else
       @logger.debug { 'TRIGGERED_TRACE set; trigger tracing' }
@@ -257,8 +233,6 @@ class OboeSampler
 
       if bucket.consume
         @logger.debug { 'sufficient capacity; record and sample' }
-
-        # this.#counters.triggeredTraceCount.add(1, {}, context) # need to check js counter api
         @counters[:triggered_trace_count].add(1)
         @counters[:trace_count].add(1)
 
@@ -346,9 +320,10 @@ class OboeSampler
     end
 
     stringified_trace_options = TraceOptions.stringify_trace_options_response(sample_state.trace_options&.response)
-    @logger.debug { "[#{self.class}/#{__method__}] stringified_trace_options: #{stringified_trace_options}"}
+    @logger.debug { "[#{self.class}/#{__method__}] stringified_trace_options: #{stringified_trace_options}" }
 
     trace_state = trace_state.set_value('xtrace_options_response', stringified_trace_options)
+    @logger.debug { "[#{self.class}/#{__method__}] new trace_state: #{trace_state.inspect}" }
     trace_state
   end
 
