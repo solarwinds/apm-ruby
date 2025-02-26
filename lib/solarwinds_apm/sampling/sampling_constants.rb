@@ -18,7 +18,7 @@ TriggerTraceOptions = Struct.new(
 TraceOptionsResponse = Struct.new(
   :auth,           # Auth
   :trigger_trace,  # TriggerTrace
-  :ignored         # String
+  :ignored         # Array
 )
 
 module Auth
@@ -89,9 +89,9 @@ module SpanType
   LOCAL = 'local'
 
   def self.span_type(parent_span)
-    parent_span_context = parent_span.context
-
+    parent_span_context = parent_span&.context
     if parent_span_context.nil? || parent_span_context == ::OpenTelemetry::Trace::SpanContext::INVALID
+      # parent_span.parent_span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
       ROOT
     elsif parent_span_context.remote?
       ENTRY

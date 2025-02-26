@@ -8,95 +8,97 @@
 
 # Bucket is used to consume that determine if capacity is enough
 # capacity is updated through update_settings
-class TokenBucket
-  # Maximum value of a signed 32-bit integer
-  MAX_INTERVAL = 2**31 - 1
+module SolarWindsAPM
+  class TokenBucket
+    # Maximum value of a signed 32-bit integer
+    MAX_INTERVAL = 2**31 - 1
 
-  attr_reader :capacity, :rate, :interval, :tokens
+    attr_reader :capacity, :rate, :interval, :tokens
 
-  def initialize(token_bucket_settings)
-    @capacity = token_bucket_settings.capacity || 0
-    @rate = token_bucket_settings.rate || 0
-    @interval = token_bucket_settings.interval || MAX_INTERVAL
-    @tokens = @capacity
-    @timer = nil
-  end
-
-  # used call from update_settings e.g. bucket.update(bucket_settings)
-  def update(settings)
-    if settings[:capacity]
-      difference = settings[:capacity] - @capacity
-      @capacity = settings[:capacity]
-      @tokens += difference
+    def initialize(token_bucket_settings)
+      @capacity = token_bucket_settings.capacity || 0
+      @rate = token_bucket_settings.rate || 0
+      @interval = token_bucket_settings.interval || MAX_INTERVAL
+      @tokens = @capacity
+      @timer = nil
     end
 
-    @rate = settings[:rate] if settings[:rate]
+    # used call from update_settings e.g. bucket.update(bucket_settings)
+    def update(settings)
+      if settings[:capacity]
+        difference = settings[:capacity] - @capacity
+        @capacity = settings[:capacity]
+        @tokens += difference
+      end
 
-    if settings[:interval]
-      @interval = settings[:interval]
-      if running
-        stop
-        start
+      @rate = settings[:rate] if settings[:rate]
+
+      if settings[:interval]
+        @interval = settings[:interval]
+        if running
+          stop
+          start
+        end
       end
     end
-  end
 
-  def capacity=(n)
-    @capacity = [0,n].max
-  end
-
-  def rate=(n)
-    @rate = [0,n].max
-  end
-
-  def interval=(n)
-    @interval = [0, [MAX_INTERVAL, n].min].max
-  end
-
-  def tokens=(n)
-    @tokens = [0, [@capacity, n].min].max
-  end
-
-  # Attempts to consume tokens from the bucket
-  # @param n [Integer] Number of tokens to consume
-  # @return [Boolean] Whether there were enough tokens
-  def consume(n = 1)
-    if @tokens >= n
-      @tokens -= n
-      true
-    else
-      false
+    def capacity=(n)
+      @capacity = [0,n].max
     end
-  end
 
-  # Starts replenishing the bucket
-  def start
-    return if running
+    def rate=(n)
+      @rate = [0,n].max
+    end
 
-    @timer = Thread.new do
-      loop do
-        task
-        sleep(@interval / 1000.0)
+    def interval=(n)
+      @interval = [0, [MAX_INTERVAL, n].min].max
+    end
+
+    def tokens=(n)
+      @tokens = [0, [@capacity, n].min].max
+    end
+
+    # Attempts to consume tokens from the bucket
+    # @param n [Integer] Number of tokens to consume
+    # @return [Boolean] Whether there were enough tokens
+    def consume(n = 1)
+      if @tokens >= n
+        @tokens -= n
+        true
+      else
+        false
       end
     end
-  end
 
-  # Stops replenishing the bucket
-  def stop
-    return unless running
+    # Starts replenishing the bucket
+    def start
+      return if running
 
-    @timer.kill
-    @timer = nil
-  end
+      @timer = Thread.new do
+        loop do
+          task
+          sleep(@interval / 1000.0)
+        end
+      end
+    end
 
-  # Whether the bucket is actively being replenished
-  def running
-    !@timer.nil?
-  end
+    # Stops replenishing the bucket
+    def stop
+      return unless running
 
-  private
+      @timer.kill
+      @timer = nil
+    end
 
-  def task
-    @tokens += @rate
+    # Whether the bucket is actively being replenished
+    def running
+      !@timer.nil?
+    end
+
+    private
+
+    def task
+      @tokens += @rate
+    end
   end
 end

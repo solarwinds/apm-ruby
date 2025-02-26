@@ -7,26 +7,28 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 # Dice is used in oboe_sampler diceRollAlgo
-class Dice
-  attr_reader :rate, :scale
+module SolarWindsAPM
+  class Dice
+    attr_reader :rate, :scale
 
-  def initialize(settings)
-    @scale = settings[:scale]
-    @rate = settings[:rate] || 0
-  end
+    def initialize(settings)
+      @scale = settings[:scale]
+      @rate = settings[:rate] || 0
+    end
 
-  def update(settings)
-    @scale = settings[:scale] if settings[:scale]
-    @rate = settings[:rate] if settings[:rate]
-  end
+    def update(settings)
+      @scale = settings[:scale] if settings[:scale]
+      @rate = settings[:rate] if settings[:rate]
+    end
 
-  # return Boolean
-  def roll
-    (rand * @scale) < @rate
-  end
+    # return Boolean
+    def roll
+      (rand * @scale) < @rate
+    end
 
-  def rate=(n)
-    # Math.max(0, Math.min(this.#scale, n))
-    @rate = [0, [@scale, n].min].max
+    def rate=(n)
+      # Math.max(0, Math.min(this.#scale, n))
+      @rate = [0, [@scale, n].min].max
+    end
   end
 end

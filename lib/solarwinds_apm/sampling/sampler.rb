@@ -44,7 +44,6 @@ class Sampler < OboeSampler
   end
 
   def local_settings(params)
-    puts "params: #{params.inspect}"
     _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
     settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
     return settings if @transaction_settings.nil? || @transaction_settings.empty?
