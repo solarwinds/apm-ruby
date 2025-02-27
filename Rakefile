@@ -297,12 +297,13 @@ task :build_gem do
   gemname = Dir['solarwinds_apm*.gem'].first
   FileUtils.mv(gemname, 'builds/')
 
+  built_gem = Dir['builds/solarwinds_apm*.gem']
+
   puts "\n=== last 5 built gems ===\n"
-  puts Dir['builds/solarwinds_apm*.gem']
+  puts built_gem
 
   puts "\n=== SHA256 ===\n"
-  result = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
-  system("shasum -a256 #{result.strip}")
+  system("shasum -a256 #{built_gem.first}")
 
   puts "\n=== Finished ===\n"
 end
@@ -314,7 +315,7 @@ def find_or_build_gem(version)
   gem_to_push = nil
   if gems.empty?
     Rake::Task['build_gem'].execute
-    gem_to_push = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
+    gem_to_push = Dir['builds/solarwinds_apm*.gem'].first
   else
     gem_to_push = gems.first
   end
