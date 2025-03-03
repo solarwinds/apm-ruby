@@ -18,6 +18,7 @@ require_relative 'sampling/settings'
 require_relative 'sampling/token_bucket'
 require_relative 'sampling/trace_options'
 require_relative 'sampling/metrics'
+require_relative 'sampling/instrumentation_scope'
 
 # HttpSampler/JsonSampler < Sampler < OboeSampler
 require_relative 'sampling/oboe_sampler'

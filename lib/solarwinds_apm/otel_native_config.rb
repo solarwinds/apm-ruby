@@ -16,6 +16,7 @@ module SolarWindsAPM
   # OTelNativeConfig module
   module OTelNativeConfig
 
+    @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = true
 
@@ -40,7 +41,10 @@ module SolarWindsAPM
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 
       # add sw metrics processors (only record respone_time)
-      ::OpenTelemetry.tracer_provider.add_span_processor(SolarWindsAPM::OpenTelemetry::OTLPProcessor.new)
+      txn_manager = TxnNameManager.new
+      otlp_processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
+      @@config[:metrics_processor] = otlp_processor
+      ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
 
       service_key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(":")
 
@@ -66,6 +70,10 @@ module SolarWindsAPM
       )
 
       nil
+    end
+
+    def self.[](key)
+      @@config[key.to_sym]
     end
 
     def self.resolve_response_propagator

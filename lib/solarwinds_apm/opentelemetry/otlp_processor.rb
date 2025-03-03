@@ -12,13 +12,13 @@ module SolarWindsAPM
     class OTLPProcessor < SolarWindsProcessor
       attr_accessor :description
 
-      def initialize
-        super(nil)
+      def initialize(txn_manager)
+        super(txn_manager)
         @meters  = init_meters
         @metrics = init_metrics
       end
 
-      # @param [Span] span the {Span} that just started.
+      # @param [Span] span the (mutable) {Span} that just started.
       # @param [Context] parent_context the
       #  started span.
       def on_start(span, parent_context)
@@ -26,13 +26,17 @@ module SolarWindsAPM
 
         return if non_entry_span(parent_context: parent_context)
 
+        trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
+        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}") if @txn_manager
         span.add_attributes(span_attributes(span))
         span.add_attributes({ 'sw.is_entry_span' => true })
+        scope_attribute = SolarWindsAPM::InstrumentationScope.gather_instrumented_framework(span)
+        span.add_attributes(scope_attribute) if !scope_attribute.nil?
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
-      # @param [Span] span the {Span} that just ended.
+      # @param [Span] span the (immutable) {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
         return if non_entry_span(span: span)
@@ -44,6 +48,13 @@ module SolarWindsAPM
           reader.pull if reader.respond_to? :pull
         end
 
+        transaction_name = calculate_transaction_names(span)
+        if span.context.trace_flags.sampled?
+          @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] =
+            transaction_name
+        end
+        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
+
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
@@ -53,10 +64,6 @@ module SolarWindsAPM
 
       # Create two meters for sampling and request count
       def init_meters
-        # {
-        #   'sw.apm.sampling.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics'),
-        #   'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
-        # }
         {
           'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
         }
@@ -88,19 +95,9 @@ module SolarWindsAPM
       end
 
       def init_metrics
-        request_meter = @meters['sw.apm.request.metrics']
-        # sampling_meter = @meters['sw.apm.sampling.metrics']
-
-        metrics = {}
-        metrics[:response_time] = request_meter.create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
-
-        # metrics[:tracecount]    = sampling_meter.create_counter('trace.service.tracecount')
-        # metrics[:samplecount]   = sampling_meter.create_counter('trace.service.samplecount')
-        # metrics[:request_count] = sampling_meter.create_counter('trace.service.request_count')
-        # metrics[:toex_count]    = sampling_meter.create_counter('trace.service.tokenbucket_exhaustion_count')
-        # metrics[:through_count] = sampling_meter.create_counter('trace.service.through_trace_count')
-        # metrics[:tt_count]      = sampling_meter.create_counter('trace.service.triggered_trace_count')
-        metrics
+        {
+          :response_time => @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
+        }
       end
 
       def record_request_metrics(span)
