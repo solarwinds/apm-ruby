@@ -281,8 +281,10 @@ desc 'Build the gem c extension ...'
 task cfc: %i[clean fetch compile]
 
 desc 'Build gem locally for testing'
-task :build_gem do
-  puts "\n=== building for MRI ===\n"
+task :build_gem, [:env] do |_t, args|
+  env = args['env'] || 'prod'
+
+  puts "\n=== building for MRI from #{env} ===\n"
   FileUtils.mkdir_p('builds') if Dir['builds'].empty?
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
 
@@ -291,7 +293,7 @@ task :build_gem do
 
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
-  Rake::Task['fetch_oboe_file'].invoke('prod')
+  Rake::Task['fetch_oboe_file'].invoke(env)
   system('gem build solarwinds_apm.gemspec')
 
   gemname = Dir['solarwinds_apm*.gem'].first

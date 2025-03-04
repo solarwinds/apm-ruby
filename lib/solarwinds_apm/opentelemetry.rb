@@ -8,6 +8,7 @@
 
 require 'opentelemetry/sdk'
 require 'opentelemetry/instrumentation/all'
+require 'opentelemetry-metrics-sdk'
 
 # TODO: in future, it should add opentelemetry-metrics-sdk and require it here
 

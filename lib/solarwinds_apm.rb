@@ -20,6 +20,7 @@ begin
 
   begin
     if RUBY_PLATFORM.include?('linux')
+      require 'solarwinds_apm/constants'
       require 'solarwinds_apm/config'
       require 'solarwinds_apm/oboe_init_options' # setup oboe reporter options
       if !SolarWindsAPM::OboeInitOptions.instance.service_key_ok? && !SolarWindsAPM::OboeInitOptions.instance.lambda_env
@@ -56,7 +57,6 @@ begin
         SolarWindsAPM::Reporter.start # start the reporter, any issue will be logged
 
         if SolarWindsAPM.loaded
-          require 'solarwinds_apm/constants'
           require 'solarwinds_apm/api'
           require 'solarwinds_apm/support'
           require 'solarwinds_apm/opentelemetry'
