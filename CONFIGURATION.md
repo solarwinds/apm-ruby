@@ -168,16 +168,7 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae453341
 #### Limitation
 
 > [!NOTE]  
-> This feature currently does not support prepared statements. Active Record by default enables prepared statements for the PostgreSQL adapter (`postgresql`), to use this feature you can explicitly disable it as shown below. Please evaluate the impact of disabling prepared statements on your system before proceeding.
-
-e.g.
-
-```yaml
-development:
-  adapter: postgresql
-  # ...
-  prepared_statements: false
-```
+> This feature currently does not support prepared statements. For `mysql2` the `query` operation is supported, for `pg` the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 ### Background Jobs
 
