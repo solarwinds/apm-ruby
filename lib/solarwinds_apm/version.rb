@@ -13,7 +13,7 @@ module SolarWindsAPM
   module Version
     MAJOR  = 6 # breaking,
     MINOR  = 1 # feature,
-    PATCH  = 3 # fix => BFF
+    PATCH  = 2 # fix => BFF
     PRE    = nil
 
     STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')

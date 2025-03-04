@@ -25,17 +25,13 @@ Rake::TestTask.new do |t|
   gem_file = ENV['BUNDLE_GEMFILE']&.split('/')&.last
 
   case gem_file
-  when 'rails_6x.gemfile'
-    t.test_files = FileList['test/support/swomarginalia/*_test.rb']
-
   when 'unit.gemfile'
     t.test_files = FileList['test/api/*_test.rb'] +
                    FileList['test/solarwinds_apm/*_test.rb'] +
                    FileList['test/opentelemetry/*_test.rb'] +
                    FileList['test/noop/*_test.rb'] +
                    FileList['test/ext/*_test.rb'] +
-                   FileList['test/support/*_test.rb'] -
-                   FileList['test/support/swomarginalia/*_test.rb']
+                   FileList['test/support/*_test.rb']
   end
 end
 
@@ -285,8 +281,10 @@ desc 'Build the gem c extension ...'
 task cfc: %i[clean fetch compile]
 
 desc 'Build gem locally for testing'
-task :build_gem do
-  puts "\n=== building for MRI ===\n"
+task :build_gem, [:env] do |_t, args|
+  env = args['env'] || 'prod'
+
+  puts "\n=== building for MRI from #{env} ===\n"
   FileUtils.mkdir_p('builds') if Dir['builds'].empty?
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
 
@@ -295,18 +293,19 @@ task :build_gem do
 
   puts "\n=== clean & compile & build ===\n"
   Rake::Task['distclean'].execute
-  Rake::Task['fetch_oboe_file'].invoke('prod')
+  Rake::Task['fetch_oboe_file'].invoke(env)
   system('gem build solarwinds_apm.gemspec')
 
   gemname = Dir['solarwinds_apm*.gem'].first
   FileUtils.mv(gemname, 'builds/')
 
+  built_gem = Dir['builds/solarwinds_apm*.gem']
+
   puts "\n=== last 5 built gems ===\n"
-  puts Dir['builds/solarwinds_apm*.gem']
+  puts built_gem
 
   puts "\n=== SHA256 ===\n"
-  result = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
-  system("shasum -a256 #{result.strip}")
+  system("shasum -a256 #{built_gem.first}")
 
   puts "\n=== Finished ===\n"
 end
@@ -318,7 +317,7 @@ def find_or_build_gem(version)
   gem_to_push = nil
   if gems.empty?
     Rake::Task['build_gem'].execute
-    gem_to_push = `ls -dt1 builds/solarwinds_apm-[^pre]*.gem | head -1`
+    gem_to_push = Dir['builds/solarwinds_apm*.gem'].first
   else
     gem_to_push = gems.first
   end

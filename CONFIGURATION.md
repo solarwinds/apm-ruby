@@ -69,6 +69,7 @@ or in your initialization step:
 ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED'] = 'false'
 ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 ```
+
 ## Programmatic Configuration
 
 Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
@@ -128,6 +129,7 @@ Environment Variable | Option | Config File Key | Description | Default
 `SW_APM_TRUSTEDPATH` | optional | N/A | The library uses the host system's default trusted CA certificates to verify the TLS connection to the collector. To override the default, define the trusted certificate path configuration option with an absolute path to a specific trusted certificate file in PEM format. | None
 `SW_APM_LAMBDA_PRELOAD_DEPS` | optional | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
 `SW_APM_TRANSACTION_NAME` | optional | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
+`SW_APM_ENABLE_AFTER_FORK` | optional | N/A | For background job systems (e.g. resque) that fork child processes as jobs are received. This option delays the library initialization to the start of the child process, to avoid issues associated with gRPC's weak support of forking and cleanup. | false
 `SW_APM_EXPORT_METRICS_ENABLED` | optional | N/A | Enable the custom metrics to export to swo backend through otlp metrics protocol | `false`
 N/A | optional | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
 N/A | optional | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
@@ -206,21 +208,51 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
 SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
 ```
 
-For Rails < 7 and non-Rails applications, we use a port of [Marginalia](https://github.com/basecamp/marginalia) that patches ActiveRecord to inject the comment.
+#### Limitation
 
-For Rails >= 7, Marginalia is [integrated into ActiveRecord](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html) so enabling this feature should be done through Rails [configuration](https://guides.rubyonrails.org/v7.0/configuring.html#config-active-record-query-log-tags-enabled). For example:
+> [!NOTE]  
+> This feature currently does not support prepared statements. Active Record by default enables prepared statements for the PostgreSQL adapter (`postgresql`), to use this feature you can explicitly disable it as shown below. Please evaluate the impact of disabling prepared statements on your system before proceeding.
+
+e.g.
+
+```yaml
+development:
+  adapter: postgresql
+  # ...
+  prepared_statements: false
+```
+
+### Background Jobs
+
+#### Resque
+
+[Resque](https://github.com/resque/resque) is a Redis-backed library for creating background jobs, queuing them on multiple queues, and processing them later.
+
+When starting the Resque worker, it is necessary to set two options: `SW_APM_ENABLE_AFTER_FORK=true` and `RUN_AT_EXIT_HOOKS=1`.
+
+For example:
+
+```console
+SW_APM_ENABLE_AFTER_FORK=true RUN_AT_EXIT_HOOKS=1 QUEUE=${QUEUE_NAME} ${EXTRA_OPTIONS} bundle exec rake resque:work
+```
+
+Explanation:
+
+* `SW_APM_ENABLE_AFTER_FORK`: This option delays initialization of the library's C extension and gRPC-based reporter from the start of the parent worker process to the start of the child process, which is crucial to avoid issues associated with gRPC's weak support of forking and cleanup.
+* `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`).
+
+Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
 
 ```ruby
-class Application < Rails::Application
-  config.active_record.query_log_tags_enabled = true
-  config.active_record.query_log_tags = [
-    {
-      traceparent: -> {
-        SolarWindsAPM::SWOMarginalia::Comment.traceparent
-      }
-    }
-  ]
+require 'resque'
+
+Resque.after_fork do
+  unless SolarWindsAPM::API.solarwinds_ready?(8_000)
+    puts "SolarWindsAPM is not ready, this job will not be traced."
+  end
 end
 ```
 
-Note that with Rails >= 7.1 the comment format can be specified via the `config.active_record.query_log_tags_format` option. SolarWinds Observability functionality depends on the default `:sqlcommenter` format, it is not recommended to change this value.
+Explanation:
+
+* Since Resque forks a new process for each task, `solarwinds_apm` needs a certain amount of time to complete initialization at the start of each child process [before it is ready to trace](https://github.com/solarwinds/apm-ruby/blob/main/README.md#check-if-solarwinds_apm-is-ready). This `solarwinds_ready?` check in the [`after_fork` hook](https://github.com/resque/resque/blob/master/docs/HOOKS.md) ensures the library is ready for instrumentation to collect metrics and sample for traces.
