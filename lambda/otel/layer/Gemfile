@@ -6,6 +6,6 @@ source 'https://rubygems.org'
 # source 'https://rubygems.pkg.github.com/solarwinds' do
 # end
 
-gem 'opentelemetry-exporter-otlp', '0.29.1'
-gem 'opentelemetry-exporter-otlp-metrics', '0.2.1'
-gem 'solarwinds_apm', '6.1.1'
+gem 'opentelemetry-exporter-otlp', '0.30.0'
+gem 'opentelemetry-exporter-otlp-metrics', '0.4.0'
+gem 'solarwinds_apm', '6.1.2'
