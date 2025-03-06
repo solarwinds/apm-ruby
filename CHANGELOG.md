@@ -5,14 +5,14 @@ For the latest release info, see here:
 
 Dates in this file are in the format MM/DD/YYYY.
 
-## solarwinds_apm 6.1.2 (02/28/2025)
+## solarwinds_apm 6.1.3 (02/28/2025)
 
 This release includes the following features:
 
 * `add_tracer` helper function for custom instrumentation on specific function
 * Added dbo integration for PostgreSQL (without prepared statement)
 
-## solarwinds_apm 6.1.1 (12/09/2024)
+## solarwinds_apm 6.1.2 (12/09/2024)
 
 This release includes the following features:
 
