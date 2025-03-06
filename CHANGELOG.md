@@ -20,7 +20,7 @@ This release includes the following features:
 * Removed the marginalia support on query commenting
 * Added the support of after fork on forked process
 
-## solarwinds_apm 6.1.0 (12/09/2024)
+## solarwinds_apm 6.1.0 (09/18/2024)
 
 This release includes the following features:
 
