@@ -12,10 +12,15 @@ module SolarWindsAPM
     class OTLPProcessor < SolarWindsProcessor
       attr_accessor :description
 
+      SW_TRANSACTION_NAME = 'sw.transaction'
+      SW_IS_ENTRY_SPAN    = 'sw.is_entry_span'
+      SW_IS_ERROR         = 'sw.is_error'
+
       def initialize(txn_manager)
         super(txn_manager)
         @meters  = init_meters
         @metrics = init_metrics
+        @mutex = Mutex.new
       end
 
       # @param [Span] span the (mutable) {Span} that just started.
@@ -29,7 +34,7 @@ module SolarWindsAPM
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}") if @txn_manager
         span.add_attributes(span_attributes(span))
-        span.add_attributes({ 'sw.is_entry_span' => true })
+        span.add_attributes({ SW_IS_ENTRY_SPAN => true })
         scope_attribute = SolarWindsAPM::InstrumentationScope.gather_instrumented_framework(span)
         span.add_attributes(scope_attribute) if !scope_attribute.nil?
       rescue StandardError => e
@@ -49,9 +54,10 @@ module SolarWindsAPM
         end
 
         transaction_name = calculate_transaction_names(span)
-        if span.context.trace_flags.sampled?
-          @txn_manager["#{span.context.hex_trace_id}-#{span.context.hex_span_id}"] =
-            transaction_name
+        @mutex.synchronize do
+          mutable_attributes = span.attributes.dup
+          mutable_attributes[SW_TRANSACTION_NAME] = transaction_name
+          span.instance_variable_set(:@attributes, mutable_attributes.freeze)
         end
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
 
@@ -70,15 +76,15 @@ module SolarWindsAPM
       end
 
       def span_attributes(span)
-        span_attrs = { 'sw.transaction' => calculate_lambda_transaction_name(span) }
+        span_attrs = { SW_TRANSACTION_NAME => calculate_lambda_transaction_name(span) }
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_attrs: #{span_attrs.inspect}" }
         span_attrs
       end
 
       def meter_attributes(span)
         meter_attrs = {
-          'sw.is_error' => error?(span) == 1,
-          'sw.transaction' => calculate_lambda_transaction_name(span)
+          SW_IS_ERROR => error?(span) == 1,
+          SW_TRANSACTION_NAME => calculate_lambda_transaction_name(span)
         }
 
         if span_http?(span)
