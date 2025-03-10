@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  publish_to_github_package:
     name: Build + Publish to Github Package
     runs-on: ubuntu-latest
 
@@ -47,3 +47,51 @@ jobs:
           bundle exec rake push_gem_to_github_package[${{ steps.version.outputs.gem_version }}]
         env:
           GITHUB_SECRET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem
+          path: builds/solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem
+
+  # extract the built layer from artifacts, then scan it with reverselab
+  reverselab_scan_gem:
+    needs:
+      - publish_to_github_package
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: extract current solarwinds_apm version
+        id: extract
+        run: |
+          APM_VERSION=$(ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING')
+          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+
+      - name: extract layer zip from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
+          path: builds
+
+      - name: Scan build artifact on the Portal
+        id: rl-scan
+        env:
+          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
+        uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
+        with:
+          artifact-to-scan: builds/solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
+          rl-verbose: true
+          rl-portal-server: solarwinds
+          rl-portal-org: SolarWinds
+          rl-portal-group: SaaS-Agents-SWO
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-stg@${{ env.SOLARWINDS_APM_VERSION }}
+
+      - name: report the scan status
+        if: success() || failure()
+        run: |
+          echo "The status is: '${{ steps.rl-scan.outputs.status }}'"
+          echo "The description is: '${{ steps.rl-scan.outputs.description }}'"
