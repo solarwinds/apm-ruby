@@ -71,7 +71,7 @@ module Flags
 end
 
 module TracingMode
-  ALWAYS = Flags::SAMPLE_START || Flags::SAMPLE_THROUGH_ALWAYS
+  ALWAYS = Flags::SAMPLE_START | Flags::SAMPLE_THROUGH_ALWAYS
   NEVER = 0x0
 end
 

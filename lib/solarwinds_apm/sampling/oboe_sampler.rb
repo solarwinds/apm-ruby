@@ -22,9 +22,8 @@ module SolarWindsAPM
     DICE_SCALE = 1_000_000
 
     OTEL_SAMPLING_DECISION = ::OpenTelemetry::SDK::Trace::Samplers::Decision
-    OTEL_SAMPLING_RESULT = ::OpenTelemetry::SDK::Trace::Samplers::Result
-
-    DEFAULT_TRACESTATE = ::OpenTelemetry::Trace::Tracestate::DEFAULT
+    OTEL_SAMPLING_RESULT   = ::OpenTelemetry::SDK::Trace::Samplers::Result
+    DEFAULT_TRACESTATE     = ::OpenTelemetry::Trace::Tracestate::DEFAULT
 
     def initialize(logger)
       @logger = logger
@@ -84,8 +83,8 @@ module SolarWindsAPM
 
           # this validate_signature is the function from trace_options file
           sample_state.trace_options.response.auth = TraceOptions.validate_signature(
-            sample_state.header['X-Trace-Options'],
-            sample_state.header['X-Trace-Options-Signature'],
+            sample_state.headers['X-Trace-Options'],
+            sample_state.headers['X-Trace-Options-Signature'],
             sample_state.settings['signature_key'],
             sample_state.trace_options.timestamp
           )
@@ -186,7 +185,7 @@ module SolarWindsAPM
         @logger.debug { 'SAMPLE_THROUGH_ALWAYS is set; parent-based sampling' }
 
         flags = sample_state.trace_state[-2, 2].to_i(16)
-        sampled = flags & OpenTelemetry::Trace::TraceFlags::SAMPLED != 0
+        sampled = flags & (OpenTelemetry::Trace::TraceFlags::SAMPLED.sampled? ? 1 : 0)
 
         if sampled
           @logger.debug { 'parent is sampled; record and sample' }
@@ -247,7 +246,7 @@ module SolarWindsAPM
     end
 
     def dice_roll_algo(sample_state)
-      dice = Dice.new(rate: sample_state.settings[:sample_rate], scale: DICE_SCALE)
+      dice = SolarWindsAPM::Dice.new(rate: sample_state.settings[:sample_rate], scale: DICE_SCALE)
       sample_state.attributes[SAMPLE_RATE_ATTRIBUTE] = dice.rate
       sample_state.attributes[SAMPLE_SOURCE_ATTRIBUTE] = sample_state.settings[:sample_source]
 
@@ -283,10 +282,10 @@ module SolarWindsAPM
     def disabled_algo(sample_state)
       if sample_state.trace_options&.trigger_trace
         @logger.debug { 'trigger trace requested but tracing disabled' }
-        sample_state.trace_options.response.trigger_trace = TriggerTrace.TRACING_DISABLED
+        sample_state.trace_options.response.trigger_trace = TriggerTrace::TRACING_DISABLED
       end
 
-      if sample_state.settings[:flags].nobits?(Flags.SAMPLE_THROUGH_ALWAYS)
+      if sample_state.settings[:flags].nobits?(Flags::SAMPLE_THROUGH_ALWAYS)
         @logger.debug { "SAMPLE_THROUGH_ALWAYS is unset; don't record" }
         sample_state.decision = OTEL_SAMPLING_DECISION::DROP
       else

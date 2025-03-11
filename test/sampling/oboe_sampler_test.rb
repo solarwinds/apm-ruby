@@ -12,6 +12,9 @@ require './lib/solarwinds_apm/sampling/token_bucket'
 require './lib/solarwinds_apm/sampling/metrics'
 require './lib/solarwinds_apm/sampling/trace_options'
 require './lib/solarwinds_apm/sampling/oboe_sampler'
+require './lib/solarwinds_apm/sampling/settings'
+require './lib/solarwinds_apm/support/utils'
+require './lib/solarwinds_apm/sampling/dice'
 require 'securerandom'
 require 'openssl'
 
@@ -124,9 +127,13 @@ class TestSampler < SolarWindsAPM::OboeSampler
     update_settings(options[:settings]) if options[:settings]
   end
 
-  def local_settings
-    # { tracing_mode: true, trigger_mode: false }
+  # return { tracing_mode:, trigger_mode: }
+  def local_settings(params)
     @local_settings
+  end
+
+  def request_headers(params)
+    @request_headers
   end
 end
 
@@ -150,7 +157,7 @@ describe "OboeSampler" do
           timestamp: (Time.now.to_i),
           ttl: 10
         },
-        local_settings: { triggerMode: false },
+        local_settings: { tracing_mode: false },
         request_headers: {}
       )
 
@@ -173,7 +180,7 @@ describe "OboeSampler" do
           timestamp: (Time.now.to_i),
           ttl: 10
         },
-        local_settings: { triggerMode: false },
+        local_settings: { tracing_mode: false },
         request_headers: {}
       )
 
@@ -186,6 +193,813 @@ describe "OboeSampler" do
       check_counters(@metric_exporter, [])
     end
   end
+
+  describe "invalid X-Trace-Options-Signature" do
+    it "rejects missing signature key" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SampleSource::REMOTE,
+          flags: Flags::SAMPLE_START | Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 10,
+        },
+        local_settings: { trigger_mode: true },
+        request_headers: make_request_headers(
+          trigger_trace: true,
+          signature: true,
+          kvs: { "custom-key" => "value" }
+        )
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+
+      sample = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+      assert_nil sample.attributes
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=no-signature-key"
+
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+
+    it "rejects bad timestamp" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SampleSource::REMOTE,
+          flags: Flags::SAMPLE_START | Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {},
+          signature_key: "key".b,
+          timestamp: Time.now.to_i,
+          ttl: 10,
+        },
+        local_settings: { trigger_mode: true },
+        request_headers: make_request_headers(
+          trigger_trace: true,
+          signature: "bad-timestamp",
+          signature_key: "key".b,
+          kvs: { "custom-key" => "value" }
+        )
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+
+      sample = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+      assert_nil sample.attributes
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=bad-timestamp"
+
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+
+    it "rejects bad signature" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SampleSource::REMOTE,
+          flags: Flags::SAMPLE_START | Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {},
+          signature_key: "key1".b,
+          timestamp: Time.now.to_i,
+          ttl: 10,
+        },
+        local_settings: { trigger_mode: true },
+        request_headers: make_request_headers(
+          trigger_trace: true,
+          signature: true,
+          signature_key: "key2".b,
+          kvs: { "custom-key" => "value" }
+        )
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+
+      sample = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+      assert_nil sample.attributes
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=bad-signature"
+
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+  end
+
+  describe "missing settings" do
+    it "doesn't sample" do
+      sampler = TestSampler.new(
+        settings: false,
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+
+    it "expires after ttl" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {},
+          timestamp: Time.now.to_i - 60,
+          ttl: 10,
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      parent = make_span(remote: true, sw: true, sampled: true)
+      params = make_sample_params(parent: parent)
+
+      sleep(0.01) # Simulating setTimeout(10)
+      sample = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+
+    it "respects X-Trace-Options keys and values" do
+      sampler = TestSampler.new(
+        settings: false,
+        local_settings: { trigger_mode: false },
+        request_headers: make_request_headers(
+          kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
+        )
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+      assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+    end
+
+    it "ignores trigger-trace" do
+      sampler = TestSampler.new(
+        settings: false,
+        local_settings: { trigger_mode: true },
+        request_headers: make_request_headers(
+          trigger_trace: true,
+          kvs: { "custom-key" => "value", "invalid-key" => "value" }
+        )
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+      assert_includes sample.attributes, { "custom-key" => "value" }
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=settings-not-available"
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+    end
+  end
+
+  describe "ENTRY span with valid sw context" do
+    describe "X-Trace-Options" do
+      it "respects keys and values" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_THROUGH_ALWAYS,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: make_request_headers(
+            kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
+          )
+        )
+
+        parent = make_span(remote: true, sw: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+      end
+
+      it "ignores trigger-trace" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_THROUGH_ALWAYS,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: true },
+          request_headers: make_request_headers(
+            trigger_trace: true,
+            kvs: { "custom-key" => "value", "invalid-key" => "value" }
+          )
+        )
+
+        parent = make_span(remote: true, sw: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_includes sample.attributes, { "custom-key" => "value" }
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ignored"
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+      end
+    end
+
+    describe "SAMPLE_THROUGH_ALWAYS set" do
+      before do
+        @sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_THROUGH_ALWAYS,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: {}
+        )
+      end
+
+      it "respects parent sampled" do
+        parent = make_span(remote: true, sw: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = @sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+        assert_includes sample.attributes, { "sw.tracestate_parent_id" => parent.context.span_id }
+
+        check_counters([
+          "trace.service.request_count",
+          "trace.service.tracecount",
+          "trace.service.through_trace_count",
+        ])
+      end
+
+      it "respects parent not sampled" do
+        parent = make_span(remote: true, sw: true, sampled: false)
+        params = make_sample_params(parent: parent)
+
+        sample = @sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+        assert_includes sample.attributes, { "sw.tracestate_parent_id" => parent.context.span_id }
+
+        check_counters(@metric_exporter,["trace.service.request_count"])
+      end
+    end
+
+    describe "SAMPLE_THROUGH_ALWAYS unset" do
+      it "records but does not sample when SAMPLE_START set" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_START,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: {}
+        )
+
+        parent = make_span(remote: true, sw: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+
+        check_counters(@metric_exporter,["trace.service.request_count"])
+      end
+
+      it "does not record or sample when SAMPLE_START unset" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: 0x0,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: {}
+        )
+
+        parent = make_span(remote: true, sw: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+
+        check_counters(@metric_exporter,["trace.service.request_count"])
+      end
+    end
+  end
+
+  describe "trigger-trace requested" do
+    describe "TRIGGERED_TRACE set" do
+      describe "unsigned" do
+        it "records and samples when there is capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 10, rate: 5 },
+                "TriggerRelaxed" => { capacity: 0, rate: 0 },
+              },
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "SWKeys" => "sw-values",
+            "BucketCapacity" => 10,
+            "BucketRate" => 5,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+
+          check_counters([
+            "trace.service.request_count",
+            "trace.service.tracecount",
+            "trace.service.triggered_trace_count",
+          ])
+        end
+
+        it "records but doesn't sample when there is no capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 0, rate: 0 },
+                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+              },
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "invalid-key" => "value" }
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "BucketCapacity" => 0,
+            "BucketRate" => 0,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=rate-exceeded"
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+
+          check_counters(@metric_exporter,["trace.service.request_count"])
+        end
+      end
+
+      describe "signed" do
+        it "records and samples when there is capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 0, rate: 0 },
+                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+              },
+              signature_key: "key",
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" },
+              signature: true,
+              signature_key: "key"
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "SWKeys" => "sw-values",
+            "BucketCapacity" => 20,
+            "BucketRate" => 10,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=ok"
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+
+          check_counters([
+            "trace.service.request_count",
+            "trace.service.tracecount",
+            "trace.service.triggered_trace_count",
+          ])
+        end
+      end
+    end
+
+    describe "TRIGGERED_TRACE unset" do
+      it "records but does not sample when TRIGGERED_TRACE is unset" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_START,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: make_request_headers(
+            trigger_trace: true,
+            kvs: { "custom-key" => "value", "invalid-key" => "value" }
+          )
+        )
+
+        parent = make_span(remote: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+        assert_includes sample.attributes, { "custom-key" => "value" }
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=trigger-tracing-disabled"
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+
+        check_counters(@metric_exporter,["trace.service.request_count"])
+      end
+    end
+  end
+
+  describe "trigger-trace requested" do
+    describe "TRIGGERED_TRACE set" do
+      describe "unsigned" do
+        it "records and samples when there is capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 10, rate: 5 },
+                "TriggerRelaxed" => { capacity: 0, rate: 0 },
+              },
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "SWKeys" => "sw-values",
+            "BucketCapacity" => 10,
+            "BucketRate" => 5,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+
+          check_counters([
+            "trace.service.request_count",
+            "trace.service.tracecount",
+            "trace.service.triggered_trace_count",
+          ])
+        end
+
+        it "records but doesn't sample when there is no capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 0, rate: 0 },
+                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+              },
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "invalid-key" => "value" }
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "BucketCapacity" => 0,
+            "BucketRate" => 0,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=rate-exceeded"
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+
+          check_counters(@metric_exporter,["trace.service.request_count"])
+        end
+      end
+
+      describe "signed" do
+        it "records and samples when there is capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                "TriggerStrict" => { capacity: 0, rate: 0 },
+                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+              },
+              signature_key: "key",
+              timestamp: Time.now.to_i,
+              ttl: 10,
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" },
+              signature: true,
+              signature_key: "key"
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+          assert_includes sample.attributes, {
+            "custom-key" => "value",
+            "SWKeys" => "sw-values",
+            "BucketCapacity" => 20,
+            "BucketRate" => 10,
+          }
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=ok"
+          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+
+          check_counters([
+            "trace.service.request_count",
+            "trace.service.tracecount",
+            "trace.service.triggered_trace_count",
+          ])
+        end
+      end
+    end
+
+    describe "TRIGGERED_TRACE unset" do
+      it "records but does not sample when TRIGGERED_TRACE is unset" do
+        sampler = TestSampler.new(
+          settings: {
+            sample_rate: 0,
+            sample_source: SampleSource::LOCAL_DEFAULT,
+            flags: Flags::SAMPLE_START,
+            buckets: {},
+            timestamp: Time.now.to_i,
+            ttl: 10,
+          },
+          local_settings: { trigger_mode: false },
+          request_headers: make_request_headers(
+            trigger_trace: true,
+            kvs: { "custom-key" => "value", "invalid-key" => "value" }
+          )
+        )
+
+        parent = make_span(remote: true, sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = sampler.should_sample?(params)
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+        assert_includes sample.attributes, { "custom-key" => "value" }
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=trigger-tracing-disabled"
+        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+
+        check_counters(@metric_exporter,["trace.service.request_count"])
+      end
+    end
+  end
+
+
+  describe "dice roll" do
+    it "respects X-Trace-Options keys and values" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: Flags::SAMPLE_START,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: make_request_headers(kvs: { "custom-key" => "value", "sw-keys" => "sw-values" })
+      )
+
+      parent = make_span(remote: true, sampled: false)
+      params = make_sample_params(parent: parent)
+      sample = sampler.should_sample?(params)
+
+      assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+    end
+
+    it "records and samples when dice success and sufficient capacity" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SampleSource::REMOTE,
+          flags: Flags::SAMPLE_START,
+          buckets: { BucketType::DEFAULT => { capacity: 10, rate: 5 } },
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+      assert_includes sample.attributes, {
+        SampleRate: 1_000_000,
+        SampleSource: 6,
+        BucketCapacity: 10,
+        BucketRate: 5
+      }
+
+      check_counters(@metric_exporter,["trace.service.request_count", "trace.service.samplecount", "trace.service.tracecount"])
+    end
+
+    it "records but doesn't sample when dice success but insufficient capacity" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SampleSource::REMOTE,
+          flags: Flags::SAMPLE_START,
+          buckets: { BucketType::DEFAULT => { capacity: 0, rate: 0 } },
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+      assert_includes sample.attributes, {
+        SampleRate: 1_000_000,
+        SampleSource: 6,
+        BucketCapacity: 0,
+        BucketRate: 0
+      }
+
+      check_counters(@metric_exporter,["trace.service.request_count", "trace.service.samplecount", "trace.service.tokenbucket_exhaustion_count"])
+    end
+
+    it "records but doesn't sample when dice failure" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: Flags::SAMPLE_START,
+          buckets: { BucketType::DEFAULT => { capacity: 10, rate: 5 } },
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      params = make_sample_params(parent: false)
+      sample = sampler.should_sample?(params)
+
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+      assert_includes sample.attributes, { SampleRate: 0, SampleSource: 2 }
+      refute sample.attributes.key?(:BucketCapacity)
+      refute sample.attributes.key?(:BucketRate)
+
+      check_counters(@metric_exporter,["trace.service.request_count", "trace.service.samplecount"])
+    end
+  end
+
+  describe "SAMPLE_START unset" do
+    it "ignores trigger-trace" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: 0x0,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: true },
+        request_headers: make_request_headers(
+          trigger_trace: true,
+          kvs: { "custom-key" => "value", "invalid-key" => "value" }
+        )
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+      sample = sampler.should_sample?(params)
+
+      assert_includes sample.attributes, { "custom-key" => "value" }
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=tracing-disabled"
+      assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+    end
+
+    it "records when SAMPLE_THROUGH_ALWAYS set" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+      sample = sampler.should_sample?(params)
+
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+
+    it "doesn't record when SAMPLE_THROUGH_ALWAYS unset" do
+      sampler = TestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SampleSource::LOCAL_DEFAULT,
+          flags: 0x0,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 10
+        },
+        local_settings: { trigger_mode: false },
+        request_headers: {}
+      )
+
+      parent = make_span(remote: true, sampled: true)
+      params = make_sample_params(parent: parent)
+      sample = sampler.should_sample?(params)
+
+      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
+      check_counters(@metric_exporter,["trace.service.request_count"])
+    end
+  end
+
 end
 
 describe 'SolarWindsAPM OboeSampler Test' do

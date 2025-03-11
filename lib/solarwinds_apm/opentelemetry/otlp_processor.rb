@@ -20,7 +20,6 @@ module SolarWindsAPM
         super(txn_manager)
         @meters  = init_meters
         @metrics = init_metrics
-        @mutex = Mutex.new
       end
 
       # @param [Span] span the (mutable) {Span} that just started.
@@ -41,6 +40,12 @@ module SolarWindsAPM
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
+      def on_finishing(span)
+        transaction_name = calculate_transaction_names(span)
+        span.set_attribute(SW_TRANSACTION_NAME, transaction_name)
+        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
+      end
+
       # @param [Span] span the (immutable) {Span} that just ended.
       def on_finish(span)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
@@ -52,14 +57,6 @@ module SolarWindsAPM
         ::OpenTelemetry.meter_provider.metric_readers.each do |reader|
           reader.pull if reader.respond_to? :pull
         end
-
-        transaction_name = calculate_transaction_names(span)
-        @mutex.synchronize do
-          mutable_attributes = span.attributes.dup
-          mutable_attributes[SW_TRANSACTION_NAME] = transaction_name
-          span.instance_variable_set(:@attributes, mutable_attributes.freeze)
-        end
-        @txn_manager.delete_root_context_h(span.context.hex_trace_id)
 
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e

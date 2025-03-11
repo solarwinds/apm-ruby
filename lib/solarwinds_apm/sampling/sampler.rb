@@ -106,7 +106,6 @@ module SolarWindsAPM
     end
 
     def http_span_metadata(kind, attributes)
-      puts "kind: #{kind}"
       return { http: false } unless kind == ::OpenTelemetry::Trace::SpanKind::SERVER &&
         (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
 
