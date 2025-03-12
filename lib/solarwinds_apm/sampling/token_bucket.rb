@@ -25,6 +25,10 @@ module SolarWindsAPM
 
     # used call from update_settings e.g. bucket.update(bucket_settings)
     def update(settings)
+      settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_token_bucket_settings(settings)
+    end
+
+    def update_from_hash(settings)
       if settings[:capacity]
         difference = settings[:capacity] - @capacity
         self.capacity = settings[:capacity]
@@ -35,6 +39,24 @@ module SolarWindsAPM
 
       if settings[:interval]
         self.interval = settings[:interval]
+        if running
+          stop
+          start
+        end
+      end
+    end
+
+    def update_from_token_bucket_settings(settings)
+      if settings.capacity
+        difference = settings.capacity - @capacity
+        self.capacity = settings.capacity
+        self.tokens = @tokens + difference
+      end
+
+      self.rate = settings.rate if settings.rate
+
+      if settings.interval
+        self.interval = settings.interval
         if running
           stop
           start

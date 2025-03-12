@@ -143,6 +143,7 @@ end
 
 describe "OboeSampler" do
   TEST_OTEL_SAMPLING_DECISION = ::OpenTelemetry::SDK::Trace::Samplers::Decision
+  BUCKET_INTERVAL = 1000
 
   before do
     OpenTelemetry::SDK.configure
@@ -463,6 +464,34 @@ describe "OboeSampler" do
 
         check_counters(@metric_exporter,["trace.service.request_count"])
       end
+
+      it "respects sw sampled over w3c not sampled" do
+        parent = make_span(remote: true, sw: "inverse", sampled: false)
+        params = make_sample_params(parent: parent)
+
+        sample = @sampler.should_sample?(params)
+
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
+        assert_equal sample.attributes, { "sw.tracestate_parent_id" => parent.context.hex_span_id }
+
+        check_counters(@metric_exporter, [
+          "trace.service.request_count",
+          "trace.service.tracecount",
+          "trace.service.through_trace_count"
+        ])
+      end
+
+      it "respects sw not sampled over w3c sampled" do
+        parent = make_span(remote: true, sw: "inverse", sampled: true)
+        params = make_sample_params(parent: parent)
+
+        sample = @sampler.should_sample?(params)
+
+        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+        assert_equal sample.attributes, { "sw.tracestate_parent_id" => parent.context.hex_span_id }
+
+        check_counters(@metric_exporter, ["trace.service.request_count"])
+      end
     end
 
     describe "SAMPLE_THROUGH_ALWAYS unset" do
@@ -514,6 +543,7 @@ describe "OboeSampler" do
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /trigger-trace\ requested/
   describe "trigger-trace requested" do
     describe "TRIGGERED_TRACE set" do
       describe "unsigned" do
@@ -524,8 +554,8 @@ describe "OboeSampler" do
               sample_source: SampleSource::LOCAL_DEFAULT,
               flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
               buckets: {
-                "TriggerStrict" => { capacity: 10, rate: 5 },
-                "TriggerRelaxed" => { capacity: 0, rate: 0 },
+                BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(10, 5, BUCKET_INTERVAL)),
+                BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(0, 0, BUCKET_INTERVAL))
               },
               timestamp: Time.now.to_i,
               ttl: 10,
@@ -536,21 +566,20 @@ describe "OboeSampler" do
               kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
             )
           )
-
           parent = make_span(remote: true, sampled: true)
           params = make_sample_params(parent: parent)
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "SWKeys" => "sw-values",
-            "BucketCapacity" => 10,
-            "BucketRate" => 5,
-          }
+
+          _(sample.attributes['custom-key']).must_equal 'value'
+          _(sample.attributes['SWKeys']).must_equal 'sw-values'
+          _(sample.attributes['BucketCapacity']).must_equal 10
+          _(sample.attributes['BucketRate']).must_equal 5
+
           assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
-          check_counters([
+          check_counters(@metric_exporter, [
             "trace.service.request_count",
             "trace.service.tracecount",
             "trace.service.triggered_trace_count",
@@ -564,8 +593,8 @@ describe "OboeSampler" do
               sample_source: SampleSource::LOCAL_DEFAULT,
               flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
               buckets: {
-                "TriggerStrict" => { capacity: 0, rate: 0 },
-                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+                BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(0, 0, BUCKET_INTERVAL)),
+                BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(20, 10, BUCKET_INTERVAL))
               },
               timestamp: Time.now.to_i,
               ttl: 10,
@@ -582,11 +611,11 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "BucketCapacity" => 0,
-            "BucketRate" => 0,
-          }
+
+          _(sample.attributes['custom-key']).must_equal 'value'
+          _(sample.attributes['BucketCapacity']).must_equal 0
+          _(sample.attributes['BucketRate']).must_equal 0
+
           assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:rate-exceeded"
           assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
 
@@ -602,8 +631,8 @@ describe "OboeSampler" do
               sample_source: SampleSource::LOCAL_DEFAULT,
               flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
               buckets: {
-                "TriggerStrict" => { capacity: 0, rate: 0 },
-                "TriggerRelaxed" => { capacity: 20, rate: 10 },
+                BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(0, 0, BUCKET_INTERVAL)),
+                BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(20, 10, BUCKET_INTERVAL))
               },
               signature_key: "key",
               timestamp: Time.now.to_i,
@@ -623,20 +652,60 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "SWKeys" => "sw-values",
-            "BucketCapacity" => 20,
-            "BucketRate" => 10,
-          }
+
+          _(sample.attributes['custom-key']).must_equal 'value'
+          _(sample.attributes['SWKeys']).must_equal 'sw-values'
+          _(sample.attributes['BucketCapacity']).must_equal 20
+          _(sample.attributes['BucketRate']).must_equal 10
+
           assert_includes sample.tracestate['xtrace_options_response'], "auth:ok"
           assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
-          check_counters([
+          check_counters(@metric_exporter, [
             "trace.service.request_count",
             "trace.service.tracecount",
             "trace.service.triggered_trace_count",
           ])
+        end
+
+        it "records but doesn't sample when there is no capacity" do
+          sampler = TestSampler.new(
+            settings: {
+              sample_rate: 0,
+              sample_source: SampleSource::LOCAL_DEFAULT,
+              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
+              buckets: {
+                BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(10, 5, BUCKET_INTERVAL)),
+                BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(0, 0, BUCKET_INTERVAL))
+              },
+              signature_key: "key",
+              timestamp: Time.now.to_i,
+              ttl: 10
+            },
+            local_settings: { trigger_mode: true },
+            request_headers: make_request_headers(
+              trigger_trace: true,
+              kvs: { "custom-key" => "value", "invalid-key" => "value" },
+              signature: true,
+              signature_key: "key"
+            )
+          )
+
+          parent = make_span(remote: true, sampled: true)
+          params = make_sample_params(parent: parent)
+
+          sample = sampler.should_sample?(params)
+          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
+
+          _(sample.attributes['custom-key']).must_equal 'value'
+          _(sample.attributes['BucketCapacity']).must_equal 0
+          _(sample.attributes['BucketRate']).must_equal 0
+
+          assert_includes sample.tracestate['xtrace_options_response'], "auth:ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:rate-exceeded"
+          assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
+
+          check_counters(@metric_exporter, ["trace.service.request_count"])
         end
       end
     end
@@ -673,166 +742,7 @@ describe "OboeSampler" do
     end
   end
 
-  describe "trigger-trace requested" do
-    describe "TRIGGERED_TRACE set" do
-      describe "unsigned" do
-        it "records and samples when there is capacity" do
-          sampler = TestSampler.new(
-            settings: {
-              sample_rate: 0,
-              sample_source: SampleSource::LOCAL_DEFAULT,
-              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
-              buckets: {
-                "TriggerStrict" => { capacity: 10, rate: 5 },
-                "TriggerRelaxed" => { capacity: 0, rate: 0 },
-              },
-              timestamp: Time.now.to_i,
-              ttl: 10,
-            },
-            local_settings: { trigger_mode: true },
-            request_headers: make_request_headers(
-              trigger_trace: true,
-              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" }
-            )
-          )
-
-          parent = make_span(remote: true, sampled: true)
-          params = make_sample_params(parent: parent)
-
-          sample = sampler.should_sample?(params)
-          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "SWKeys" => "sw-values",
-            "BucketCapacity" => 10,
-            "BucketRate" => 5,
-          }
-          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
-
-          check_counters([
-            "trace.service.request_count",
-            "trace.service.tracecount",
-            "trace.service.triggered_trace_count",
-          ])
-        end
-
-        it "records but doesn't sample when there is no capacity" do
-          sampler = TestSampler.new(
-            settings: {
-              sample_rate: 0,
-              sample_source: SampleSource::LOCAL_DEFAULT,
-              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
-              buckets: {
-                "TriggerStrict" => { capacity: 0, rate: 0 },
-                "TriggerRelaxed" => { capacity: 20, rate: 10 },
-              },
-              timestamp: Time.now.to_i,
-              ttl: 10,
-            },
-            local_settings: { trigger_mode: true },
-            request_headers: make_request_headers(
-              trigger_trace: true,
-              kvs: { "custom-key" => "value", "invalid-key" => "value" }
-            )
-          )
-
-          parent = make_span(remote: true, sampled: true)
-          params = make_sample_params(parent: parent)
-
-          sample = sampler.should_sample?(params)
-          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "BucketCapacity" => 0,
-            "BucketRate" => 0,
-          }
-          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:rate-exceeded"
-          assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
-
-          check_counters(@metric_exporter,["trace.service.request_count"])
-        end
-      end
-
-      describe "signed" do
-        it "records and samples when there is capacity" do
-          sampler = TestSampler.new(
-            settings: {
-              sample_rate: 0,
-              sample_source: SampleSource::LOCAL_DEFAULT,
-              flags: Flags::SAMPLE_START | Flags::TRIGGERED_TRACE,
-              buckets: {
-                "TriggerStrict" => { capacity: 0, rate: 0 },
-                "TriggerRelaxed" => { capacity: 20, rate: 10 },
-              },
-              signature_key: "key",
-              timestamp: Time.now.to_i,
-              ttl: 10,
-            },
-            local_settings: { trigger_mode: true },
-            request_headers: make_request_headers(
-              trigger_trace: true,
-              kvs: { "custom-key" => "value", "sw-keys" => "sw-values" },
-              signature: true,
-              signature_key: "key"
-            )
-          )
-
-          parent = make_span(remote: true, sampled: true)
-          params = make_sample_params(parent: parent)
-
-          sample = sampler.should_sample?(params)
-          assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_equal sample.attributes, {
-            "custom-key" => "value",
-            "SWKeys" => "sw-values",
-            "BucketCapacity" => 20,
-            "BucketRate" => 10,
-          }
-          assert_includes sample.tracestate['xtrace_options_response'], "auth:ok"
-          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
-
-          check_counters([
-            "trace.service.request_count",
-            "trace.service.tracecount",
-            "trace.service.triggered_trace_count",
-          ])
-        end
-      end
-    end
-
-    describe "TRIGGERED_TRACE unset" do
-      it "records but does not sample when TRIGGERED_TRACE is unset" do
-        sampler = TestSampler.new(
-          settings: {
-            sample_rate: 0,
-            sample_source: SampleSource::LOCAL_DEFAULT,
-            flags: Flags::SAMPLE_START,
-            buckets: {},
-            timestamp: Time.now.to_i,
-            ttl: 10,
-          },
-          local_settings: { trigger_mode: false },
-          request_headers: make_request_headers(
-            trigger_trace: true,
-            kvs: { "custom-key" => "value", "invalid-key" => "value" }
-          )
-        )
-
-        parent = make_span(remote: true, sampled: true)
-        params = make_sample_params(parent: parent)
-
-        sample = sampler.should_sample?(params)
-        assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-        assert_equal sample.attributes, { "custom-key" => "value" }
-        assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:trigger-tracing-disabled"
-        assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
-
-        check_counters(@metric_exporter,["trace.service.request_count"])
-      end
-    end
-  end
-
-
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /dice\ roll/
   describe "dice roll" do
     it "respects X-Trace-Options keys and values" do
       sampler = TestSampler.new(
@@ -851,8 +761,10 @@ describe "OboeSampler" do
       parent = make_span(remote: true, sampled: false)
       params = make_sample_params(parent: parent)
       sample = sampler.should_sample?(params)
+      
+      _(sample.attributes['custom-key']).must_equal 'value'
+      _(sample.attributes['SWKeys']).must_equal 'sw-values'
 
-      assert_equal sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
       assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:not-requested"
     end
 
@@ -874,12 +786,11 @@ describe "OboeSampler" do
       sample = sampler.should_sample?(params)
 
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-      assert_includes sample.attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 5
-      }
+
+      _(sample.attributes['SampleRate']).must_equal 1_000_000
+      _(sample.attributes['SampleSource']).must_equal 6
+      _(sample.attributes['BucketCapacity']).must_equal 10
+      _(sample.attributes['BucketRate']).must_equal 5
 
       check_counters(@metric_exporter,["trace.service.request_count", "trace.service.samplecount", "trace.service.tracecount"])
     end
@@ -902,12 +813,11 @@ describe "OboeSampler" do
       sample = sampler.should_sample?(params)
 
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-      assert_equal sample.attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 0,
-        BucketRate: 0
-      }
+
+      _(sample.attributes['SampleRate']).must_equal 1_000_000
+      _(sample.attributes['SampleSource']).must_equal 6
+      _(sample.attributes['BucketCapacity']).must_equal 0
+      _(sample.attributes['BucketRate']).must_equal 0
 
       check_counters(@metric_exporter,["trace.service.request_count", "trace.service.samplecount", "trace.service.tokenbucket_exhaustion_count"])
     end
@@ -930,7 +840,10 @@ describe "OboeSampler" do
       sample = sampler.should_sample?(params)
 
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-      assert_includes sample.attributes, { SampleRate: 0, SampleSource: 2 }
+
+      _(sample.attributes['SampleRate']).must_equal 0
+      _(sample.attributes['SampleSource']).must_equal 2
+
       refute sample.attributes.key?(:BucketCapacity)
       refute sample.attributes.key?(:BucketRate)
 
@@ -938,6 +851,7 @@ describe "OboeSampler" do
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /SAMPLE_START\ unset/
   describe "SAMPLE_START unset" do
     it "ignores trigger-trace" do
       sampler = TestSampler.new(
@@ -960,7 +874,8 @@ describe "OboeSampler" do
       params = make_sample_params(parent: parent)
       sample = sampler.should_sample?(params)
 
-      assert_equal sample.attributes, { "custom-key" => "value" }
+      _(sample.attributes['custom-key']).must_equal 'value'
+
       assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:tracing-disabled"
       assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
     end
