@@ -36,13 +36,13 @@ module SolarWindsAPM
             trace_options.ignored << [k, v]
             next
           end
-          ts = v.to_f
-          unless ts.to_i == ts
+
+          unless numeric_integer?(v)
             logger.debug { "invalid trace option for timestamp, should be an integer" }
             trace_options.ignored << [k, v]
             next
           end
-          trace_options.timestamp = ts.to_i
+          trace_options.timestamp = v.to_i
         when SW_KEYS_KEY
           if v.nil? || trace_options.sw_keys
             logger.debug { "invalid trace option for sw keys" }
@@ -63,6 +63,10 @@ module SolarWindsAPM
       end
 
       trace_options
+    end
+
+    def self.numeric_integer?(str)
+      true if Integer(str) rescue false
     end
 
     # combine the array to string separate by ;

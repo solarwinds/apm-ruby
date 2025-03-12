@@ -4,8 +4,6 @@
 # All rights reserved.
 
 # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/token_bucket_test.rb
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/token_bucket_test.rb -n /replenish/
-
 require 'minitest_helper'
 require './lib/solarwinds_apm/sampling/sampling_constants'
 require './lib/solarwinds_apm/sampling/token_bucket'
@@ -41,7 +39,7 @@ describe 'SolarWindsAPM::TokenBucket' do
     bucket.start
     sleep(0.1)
     bucket.stop
-    puts "bucket: #{bucket.inspect}; #{bucket.consume(4)}"
+    # puts "bucket: #{bucket.inspect}; #{bucket.consume(4)}"
     refute bucket.consume(4)
   end
 

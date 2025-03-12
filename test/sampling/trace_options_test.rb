@@ -4,6 +4,7 @@
 # All rights reserved.
 
 # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/trace_options_test.rb
+# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/trace_options_test.rb -n /timestamp\ invalid/
 
 require 'minitest_helper'
 require './lib/solarwinds_apm/sampling/sampling_constants'

@@ -16,10 +16,10 @@ module SolarWindsAPM
     attr_reader :capacity, :rate, :interval, :tokens
 
     def initialize(token_bucket_settings)
-      @capacity = token_bucket_settings.capacity || 0
-      @rate = token_bucket_settings.rate || 0
-      @interval = token_bucket_settings.interval || MAX_INTERVAL
-      @tokens = @capacity
+      self.capacity = token_bucket_settings.capacity || 0
+      self.rate = token_bucket_settings.rate || 0
+      self.interval = token_bucket_settings.interval || MAX_INTERVAL
+      self.tokens = @capacity
       @timer = nil
     end
 
@@ -27,14 +27,14 @@ module SolarWindsAPM
     def update(settings)
       if settings[:capacity]
         difference = settings[:capacity] - @capacity
-        @capacity = settings[:capacity]
-        @tokens += difference
+        self.capacity = settings[:capacity]
+        self.tokens = @tokens + difference
       end
 
-      @rate = settings[:rate] if settings[:rate]
+      self.rate = settings[:rate] if settings[:rate]
 
       if settings[:interval]
-        @interval = settings[:interval]
+        self.interval = settings[:interval]
         if running
           stop
           start
@@ -63,7 +63,7 @@ module SolarWindsAPM
     # @return [Boolean] Whether there were enough tokens
     def consume(n = 1)
       if @tokens >= n
-        @tokens -= n
+        self.tokens = @tokens - n
         true
       else
         false
@@ -98,7 +98,7 @@ module SolarWindsAPM
     private
 
     def task
-      @tokens += @rate
+      self.tokens = self.tokens + @rate
     end
   end
 end

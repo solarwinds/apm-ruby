@@ -21,8 +21,8 @@ require 'openssl'
 def make_span(options={})
   object = {
     name: options[:name] || 'span',
-    trace_id: options[:trace_id] || SecureRandom.hex(16), # Random.bytes(16)
-    id: options[:id] || SecureRandom.hex(8), # Random.bytes(8)
+    trace_id: options[:trace_id] || Random.bytes(16),
+    id: options[:id] || Random.bytes(8),
     remote: options[:remote],
     sampled: options[:sampled] || true
   }
@@ -91,7 +91,7 @@ def make_sample_params(options = {})
 
   # start_span(name, with_parent: nil, attributes: nil, links: nil, start_timestamp: nil, kind: nil)
   trace_context = parent ? OpenTelemetry::Trace.context_with_span(parent) : OpenTelemetry::Context::ROOT
-  trace_id = parent ? parent.context.trace_id : SecureRandom.hex(16)
+  trace_id = parent ? parent.context.trace_id : Random.bytes(16)
 
   {
     trace_id: trace_id,
@@ -146,6 +146,7 @@ describe "OboeSampler" do
     OpenTelemetry.meter_provider.add_metric_reader(@metric_exporter)
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /LOCAL\ span/
   describe "LOCAL span" do
     it "respects parent sampled" do
       sampler = TestSampler.new(
@@ -1002,6 +1003,7 @@ describe "OboeSampler" do
 
 end
 
+# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /spanType/
 describe 'SolarWindsAPM OboeSampler Test' do
   describe "spanType" do
     it "identifies no parent as ROOT" do

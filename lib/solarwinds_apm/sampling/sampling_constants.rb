@@ -88,16 +88,33 @@ module SpanType
   ENTRY = 'entry'
   LOCAL = 'local'
 
+  VALID_TRACEID_REGEX = /^[0-9a-f]{32}$/i.freeze
+  VALID_SPANID_REGEX = /^[0-9a-f]{16}$/i.freeze
+
+  INVALID_SPANID = '0000000000000000'
+  INVALID_TRACEID = '00000000000000000000000000000000'
+
   def self.span_type(parent_span)
     parent_span_context = parent_span&.context
-    if parent_span_context.nil? || parent_span_context == ::OpenTelemetry::Trace::SpanContext::INVALID
-      # parent_span.parent_span_id == ::OpenTelemetry::Trace::INVALID_SPAN_ID
+    if parent_span_context.nil? || !is_span_context_valid?(parent_span_context)
       ROOT
     elsif parent_span_context.remote?
       ENTRY
     else
       LOCAL
     end
+  end
+
+  def self.valid_trace_id?(trace_id)
+    !!(trace_id =~ VALID_TRACEID_REGEX) && trace_id != INVALID_TRACEID
+  end
+
+  def self.valid_span_id?(span_id)
+    !!(span_id =~ VALID_SPANID_REGEX) && span_id != INVALID_SPANID
+  end
+
+  def self.is_span_context_valid?(span_context)
+    valid_trace_id?(span_context.hex_trace_id) && valid_span_id?(span_context.hex_span_id)
   end
 end
 
