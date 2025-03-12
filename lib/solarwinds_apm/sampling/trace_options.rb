@@ -13,14 +13,14 @@ module SolarWindsAPM
     TIMESTAMP_KEY = "ts"
     SW_KEYS_KEY = "sw-keys"
 
-    CUSTOM_KEY_REGEX = /^custom-[^\s]+$/
+    CUSTOM_KEY_REGEX = /^custom-[^\s]*$/
 
     def self.parse_trace_options(header, logger)
       trace_options = TriggerTraceOptions.new(nil,nil,nil,{},[], TraceOptionsResponse.new(nil,nil,[]))
 
       kvs = header.split(";").map { |kv| k, *vs = kv.split("=").map(&:strip); [k, vs.any? ? vs.join("=") : nil] }
                   .filter { |k, _| !(k.nil? || k.empty?) }
-
+      puts "kvs: #{kvs}"
       kvs.each do |k, v|
         case k
         when TRIGGER_TRACE_KEY

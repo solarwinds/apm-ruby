@@ -18,14 +18,19 @@ require './lib/solarwinds_apm/sampling/dice'
 require 'securerandom'
 require 'openssl'
 
+ENV['OTEL_METRICS_EXPORTER'] = 'none'
+
 def make_span(options={})
   object = {
     name: options[:name] || 'span',
     trace_id: options[:trace_id] || Random.bytes(16),
     id: options[:id] || Random.bytes(8),
     remote: options[:remote],
-    sampled: options[:sampled] || true
+    sampled: options[:sampled] == true ? true : false
   }
+
+  hex_trace_id = object[:trace_id].unpack1("H*")
+  hex_span_id  = object[:id].unpack1("H*")
 
   if options[:sw] == 'inverse'
     sw_flags = object[:sampled] ? '00' : '01'
@@ -37,7 +42,7 @@ def make_span(options={})
                                                        trace_id: object[:trace_id],
                                                        remote: object[:remote],
                                                        trace_flags: object[:sampled] ? OpenTelemetry::Trace::TraceFlags::SAMPLED : OpenTelemetry::Trace::TraceFlags::DEFAULT,
-                                                       tracestate: options[:sw].nil? ? OpenTelemetry::Trace::Tracestate::DEFAULT : OpenTelemetry::Trace::Tracestate::from_string("sw=#{object[:id]}-#{sw_flags}")
+                                                       tracestate: options[:sw] == true ? OpenTelemetry::Trace::Tracestate::from_string("sw=#{hex_span_id}-#{sw_flags}") : OpenTelemetry::Trace::Tracestate::DEFAULT
                                                        )
   OpenTelemetry::SDK::Trace::Span.new(span_context,
                                       OpenTelemetry::Context.empty,
@@ -84,8 +89,7 @@ def make_sample_params(options = {})
   name_ = options.fetch(:name, "child span")
   kind = options.fetch(:kind, OpenTelemetry::Trace::SpanKind::INTERNAL)
 
-  tracer = OpenTelemetry.tracer_provider.tracer('')
-
+  # tracer = OpenTelemetry.tracer_provider.tracer('')
   # function setSpan(context: Context, span: Span)
   # trace.setSpan(ROOT_CONTEXT, object.parent)
 
@@ -146,7 +150,6 @@ describe "OboeSampler" do
     OpenTelemetry.meter_provider.add_metric_reader(@metric_exporter)
   end
 
-  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /LOCAL\ span/
   describe "LOCAL span" do
     it "respects parent sampled" do
       sampler = TestSampler.new(
@@ -162,7 +165,7 @@ describe "OboeSampler" do
         request_headers: {}
       )
 
-      parent = make_span(remote: false, sampled: true)
+      parent = make_span(options={remote: false, sampled: true})
       params = make_sample_params(parent: parent)
 
       sample = sampler.should_sample?(params)
@@ -185,7 +188,7 @@ describe "OboeSampler" do
         request_headers: {}
       )
 
-      parent = make_span(remote: false, sampled: false)
+      parent = make_span(options={remote: false, sampled: false})
       params = make_sample_params(parent: parent)
 
       sample = sampler.should_sample?(params)
@@ -195,6 +198,7 @@ describe "OboeSampler" do
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /invalid\ X-Trace-Options-Signature/
   describe "invalid X-Trace-Options-Signature" do
     it "rejects missing signature key" do
       sampler = TestSampler.new(
@@ -214,17 +218,18 @@ describe "OboeSampler" do
         )
       )
 
-      parent = make_span(remote: true, sampled: true)
+      parent = make_span(options={remote: true, sampled: true})
       params = make_sample_params(parent: parent)
 
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
-      assert_nil sample.attributes
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=no-signature-key"
+      assert_empty sample.attributes
+      assert_includes sample.tracestate["xtrace_options_response"], "auth:no-signature-key"
 
       check_counters(@metric_exporter,["trace.service.request_count"])
     end
 
+    # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /rejects\ bad\ timestamp/
     it "rejects bad timestamp" do
       sampler = TestSampler.new(
         settings: {
@@ -245,17 +250,18 @@ describe "OboeSampler" do
         )
       )
 
-      parent = make_span(remote: true, sampled: true)
+      parent = make_span(options={remote: true, sampled: true})
       params = make_sample_params(parent: parent)
 
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
-      assert_nil sample.attributes
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=bad-timestamp"
+      assert_empty sample.attributes
+      assert_includes sample.tracestate["xtrace_options_response"], "auth:bad-timestamp"
 
       check_counters(@metric_exporter,["trace.service.request_count"])
     end
 
+    # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /rejects\ bad\ signature/
     it "rejects bad signature" do
       sampler = TestSampler.new(
         settings: {
@@ -276,18 +282,19 @@ describe "OboeSampler" do
         )
       )
 
-      parent = make_span(remote: true, sampled: true)
+      parent = make_span(options={remote: true, sampled: true})
       params = make_sample_params(parent: parent)
 
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
-      assert_nil sample.attributes
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=bad-signature"
+      assert_empty sample.attributes
+      assert_includes sample.tracestate["xtrace_options_response"], "auth:bad-signature"
 
       check_counters(@metric_exporter,["trace.service.request_count"])
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /missing\ settings/
   describe "missing settings" do
     it "doesn't sample" do
       sampler = TestSampler.new(
@@ -338,8 +345,8 @@ describe "OboeSampler" do
 
       params = make_sample_params(parent: false)
       sample = sampler.should_sample?(params)
-      assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+      assert_equal sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
+      assert_includes sample.tracestate["xtrace_options_response"], "trigger-trace:not-requested"
     end
 
     it "ignores trigger-trace" do
@@ -354,12 +361,13 @@ describe "OboeSampler" do
 
       params = make_sample_params(parent: false)
       sample = sampler.should_sample?(params)
-      assert_includes sample.attributes, { "custom-key" => "value" }
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=settings-not-available"
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+      assert_equal sample.attributes, { "custom-key" => "value" }
+      assert_includes sample.tracestate["xtrace_options_response"], "trigger-trace:settings-not-available"
+      assert_includes sample.tracestate["xtrace_options_response"], "ignored:invalid-key"
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /ENTRY\ span\ with\ valid\ sw\ context/
   describe "ENTRY span with valid sw context" do
     describe "X-Trace-Options" do
       it "respects keys and values" do
@@ -382,8 +390,9 @@ describe "OboeSampler" do
         params = make_sample_params(parent: parent)
 
         sample = sampler.should_sample?(params)
-        assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+        _(sample.attributes['custom-key']).must_equal 'value'
+        _(sample.attributes['SWKeys']).must_equal 'sw-values'
+        assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:not-requested"
       end
 
       it "ignores trigger-trace" do
@@ -407,9 +416,9 @@ describe "OboeSampler" do
         params = make_sample_params(parent: parent)
 
         sample = sampler.should_sample?(params)
-        assert_includes sample.attributes, { "custom-key" => "value" }
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ignored"
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+        _(sample.attributes['custom-key']).must_equal 'value'
+        assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ignored"
+        assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
       end
     end
 
@@ -435,9 +444,9 @@ describe "OboeSampler" do
 
         sample = @sampler.should_sample?(params)
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-        assert_includes sample.attributes, { "sw.tracestate_parent_id" => parent.context.span_id }
+        assert_equal sample.attributes, { "sw.tracestate_parent_id" => parent.context.hex_span_id }
 
-        check_counters([
+        check_counters(@metric_exporter,[
           "trace.service.request_count",
           "trace.service.tracecount",
           "trace.service.through_trace_count",
@@ -450,7 +459,7 @@ describe "OboeSampler" do
 
         sample = @sampler.should_sample?(params)
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-        assert_includes sample.attributes, { "sw.tracestate_parent_id" => parent.context.span_id }
+        assert_equal sample.attributes, { "sw.tracestate_parent_id" => parent.context.hex_span_id }
 
         check_counters(@metric_exporter,["trace.service.request_count"])
       end
@@ -533,13 +542,13 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "SWKeys" => "sw-values",
             "BucketCapacity" => 10,
             "BucketRate" => 5,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
           check_counters([
             "trace.service.request_count",
@@ -573,13 +582,13 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "BucketCapacity" => 0,
             "BucketRate" => 0,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=rate-exceeded"
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:rate-exceeded"
+          assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
 
           check_counters(@metric_exporter,["trace.service.request_count"])
         end
@@ -614,14 +623,14 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "SWKeys" => "sw-values",
             "BucketCapacity" => 20,
             "BucketRate" => 10,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=ok"
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "auth:ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
           check_counters([
             "trace.service.request_count",
@@ -655,9 +664,9 @@ describe "OboeSampler" do
 
         sample = sampler.should_sample?(params)
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-        assert_includes sample.attributes, { "custom-key" => "value" }
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=trigger-tracing-disabled"
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+        assert_equal sample.attributes, { "custom-key" => "value" }
+        assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:trigger-tracing-disabled"
+        assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
 
         check_counters(@metric_exporter,["trace.service.request_count"])
       end
@@ -692,13 +701,13 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "SWKeys" => "sw-values",
             "BucketCapacity" => 10,
             "BucketRate" => 5,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
           check_counters([
             "trace.service.request_count",
@@ -732,13 +741,13 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "BucketCapacity" => 0,
             "BucketRate" => 0,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=rate-exceeded"
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:rate-exceeded"
+          assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
 
           check_counters(@metric_exporter,["trace.service.request_count"])
         end
@@ -773,14 +782,14 @@ describe "OboeSampler" do
 
           sample = sampler.should_sample?(params)
           assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, sample.instance_variable_get(:@decision)
-          assert_includes sample.attributes, {
+          assert_equal sample.attributes, {
             "custom-key" => "value",
             "SWKeys" => "sw-values",
             "BucketCapacity" => 20,
             "BucketRate" => 10,
           }
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "auth=ok"
-          assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "auth:ok"
+          assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:ok"
 
           check_counters([
             "trace.service.request_count",
@@ -814,9 +823,9 @@ describe "OboeSampler" do
 
         sample = sampler.should_sample?(params)
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-        assert_includes sample.attributes, { "custom-key" => "value" }
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=trigger-tracing-disabled"
-        assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+        assert_equal sample.attributes, { "custom-key" => "value" }
+        assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:trigger-tracing-disabled"
+        assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
 
         check_counters(@metric_exporter,["trace.service.request_count"])
       end
@@ -843,8 +852,8 @@ describe "OboeSampler" do
       params = make_sample_params(parent: parent)
       sample = sampler.should_sample?(params)
 
-      assert_includes sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=not-requested"
+      assert_equal sample.attributes, { "custom-key" => "value", "SWKeys" => "sw-values" }
+      assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:not-requested"
     end
 
     it "records and samples when dice success and sufficient capacity" do
@@ -893,7 +902,7 @@ describe "OboeSampler" do
       sample = sampler.should_sample?(params)
 
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
-      assert_includes sample.attributes, {
+      assert_equal sample.attributes, {
         SampleRate: 1_000_000,
         SampleSource: 6,
         BucketCapacity: 0,
@@ -951,9 +960,9 @@ describe "OboeSampler" do
       params = make_sample_params(parent: parent)
       sample = sampler.should_sample?(params)
 
-      assert_includes sample.attributes, { "custom-key" => "value" }
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "trigger-trace=tracing-disabled"
-      assert_includes sampler.response_headers["X-Trace-Options-Response"], "ignored=invalid-key"
+      assert_equal sample.attributes, { "custom-key" => "value" }
+      assert_includes sample.tracestate['xtrace_options_response'], "trigger-trace:tracing-disabled"
+      assert_includes sample.tracestate['xtrace_options_response'], "ignored:invalid-key"
     end
 
     it "records when SAMPLE_THROUGH_ALWAYS set" do

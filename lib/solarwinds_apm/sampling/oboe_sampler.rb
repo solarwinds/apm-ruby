@@ -69,7 +69,6 @@ module SolarWindsAPM
 
       @counters[:request_count].add(1)
 
-      # puts "sample_state.headers: #{sample_state.headers.inspect}"
       # adding trigger trace attributes to sample_state attribute as part of decision
       if sample_state.headers['X-Trace-Options']
 
@@ -85,7 +84,7 @@ module SolarWindsAPM
           sample_state.trace_options.response.auth = TraceOptions.validate_signature(
             sample_state.headers['X-Trace-Options'],
             sample_state.headers['X-Trace-Options-Signature'],
-            sample_state.settings['signature_key'],
+            sample_state.settings[:signature_key],
             sample_state.trace_options.timestamp
           )
 
@@ -94,7 +93,7 @@ module SolarWindsAPM
             @logger.debug { 'X-Trace-Options-Signature invalid; tracing disabled' }
 
             xtracestate = generate_new_tracestate(parent_span, sample_state)
-            return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: xtracestate)
+            return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: xtracestate, attributes: sample_state.attributes)
           end
         end
 
@@ -124,13 +123,13 @@ module SolarWindsAPM
         xtracestate = generate_new_tracestate(parent_span, sample_state)
 
         return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                        tracestate: xtracestate)
+                                        tracestate: xtracestate,
+                                        attributes: sample_state.attributes)
       end
 
       # Decide which sampling algo to use and add sampling attribute to decision attributes
       # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
       if sample_state.trace_state && TRACESTATE_REGEXP.match?(sample_state.trace_state)
-
         @logger.debug { 'context is valid for parent-based sampling' }
         parent_based_algo(sample_state)
 
@@ -152,7 +151,7 @@ module SolarWindsAPM
       xtracestate = generate_new_tracestate(parent_span, sample_state)
 
       # if need to set 'sw.w3c.tracestate' to attributes
-      sample_state.attributes['sw.w3c.tracestate'] = ::SolarWindsAPM::Utils.trace_state_header(xtracestate)
+      # sample_state.attributes['sw.w3c.tracestate'] = ::SolarWindsAPM::Utils.trace_state_header(xtracestate)
 
       OTEL_SAMPLING_RESULT.new(decision: sample_state.decision,
                                tracestate: xtracestate,
@@ -187,17 +186,17 @@ module SolarWindsAPM
         flags = sample_state.trace_state[-2, 2].to_i(16)
         sampled = flags & (OpenTelemetry::Trace::TraceFlags::SAMPLED.sampled? ? 1 : 0)
 
-        if sampled
+        if sampled.zero?
+          @logger.debug { 'parent is not sampled; record only' }
+
+          sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
+        else
           @logger.debug { 'parent is sampled; record and sample' }
 
           @counters[:trace_count].add(1)
           @counters[:through_trace_count].add(1) # ruby metrics only add incremented value and attributes
 
           sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
-        else
-          @logger.debug { 'parent is not sampled; record only' }
-
-          sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
         end
       end
     end
