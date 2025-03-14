@@ -39,4 +39,5 @@ group :development, :test do
   gem 'opentelemetry-exporter-otlp'
   gem 'opentelemetry-metrics-sdk'
   gem 'opentelemetry-exporter-otlp-metrics'
+  gem 'opentelemetry-test-helpers'
 end

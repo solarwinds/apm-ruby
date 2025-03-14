@@ -7,32 +7,43 @@
 require 'minitest_helper'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp-metrics'
+require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
+require './lib/solarwinds_apm/support/transaction_settings'
+require './lib/solarwinds_apm/config'
+
 
 class TestSampler < SolarWindsAPM::Sampler
-  attr_accessor :response_headers, :local_settings, :request_headers
+  attr_accessor :response_headers #, :local_settings #, :request_headers
 
   def initialize(options)
-    super(options, Logger.new($STDOUT))
-    @local_settings = options[:local_settings]
-    @request_headers = options[:request_headers]
+    super(options[:local_settings], Logger.new($STDOUT, level: Logger::DEBUG))
+    # @local_settings = options[:local_settings]
+    # @request_headers = options[:request_headers]
     @response_headers = nil
 
     update_settings(options[:settings]) if options[:settings]
   end
 
   # return { tracing_mode:, trigger_mode: }
-  def local_settings(params)
-    @local_settings
-  end
+  # def local_settings(params)
+  #   @local_settings
+  # end
 
-  def request_headers(params)
-    @request_headers
-  end
+  # def request_headers(params)
+  #   @request_headers
+  # end
+end
+
+class TestCounter
+  def add(value); end
 end
 
 module DisableCounter
   def initialize; end
+  def [](key)
+    TestCounter.new
+  end
 end
 
 SolarWindsAPM::Metrics::Counter.prepend(DisableCounter)
@@ -50,6 +61,7 @@ describe 'SamplerTest' do
   ATTR_NET_HOST_NAME = ::OpenTelemetry::SemanticConventions::Trace::NET_HOST_NAME
   ATTR_HTTP_TARGET = ::OpenTelemetry::SemanticConventions::Trace::HTTP_TARGET
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /httpSpanMetadata.name/
   describe 'httpSpanMetadata.name' do
     before do
       @sampler = TestSampler.new({})
@@ -130,36 +142,37 @@ describe 'SamplerTest' do
     end
   end
 
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /parseSettings.name/
   describe 'parseSettings.name' do
     before do
       @sampler = TestSampler.new({})
     end
 
     it "correctly parses JSON settings" do
-      timestamp = (Time.now.to_f * 1000).round / 1000
+      timestamp = Time.now.to_i
 
       json = {
-        flags: "SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE,OVERRIDE",
-        value: 500_000,
-        arguments: {
-          BucketCapacity: 0.2,
-          BucketRate: 0.1,
-          TriggerRelaxedBucketCapacity: 20,
-          TriggerRelaxedBucketRate: 10,
-          TriggerStrictBucketCapacity: 2,
-          TriggerStrictBucketRate: 1,
-          SignatureKey: "key"
+        'flags' => "SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE,OVERRIDE",
+        'value' => 500_000,
+        'arguments' => {
+          'BucketCapacity' => 0.2,
+          'BucketRate' => 0.1,
+          'TriggerRelaxedBucketCapacity' => 20,
+          'TriggerRelaxedBucketRate' => 10,
+          'TriggerStrictBucketCapacity' => 2,
+          'TriggerStrictBucketRate' => 1,
+          'SignatureKey' => "key"
         },
-        timestamp: timestamp,
-        ttl: 120,
-        warning: "warning"
+        'timestamp' => timestamp,
+        'ttl' => 120,
+        'warning' => "warning"
       }
 
       setting = @sampler.parse_settings(json)
 
       expected_output = {
-        sampleRate: 500_000,
-        sampleSource: SampleSource::REMOTE,
+        sample_rate: 500_000,
+        sample_source: SampleSource::REMOTE,
         flags: Flags::SAMPLE_START |
                Flags::SAMPLE_THROUGH_ALWAYS |
                Flags::TRIGGERED_TRACE |
@@ -178,7 +191,7 @@ describe 'SamplerTest' do
             rate: 1
           }
         },
-        signatureKey: "key",
+        signature_key: "key",
         timestamp: timestamp,
         ttl: 120,
         warning: "warning"
@@ -190,207 +203,223 @@ describe 'SamplerTest' do
 
   def settings(enabled: nil, signature_key: nil)
     {
-      value: 1_000_000,
-      flags: enabled ? "SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE" : "",
-      arguments: {
-        BucketCapacity: 10,
-        BucketRate: 1,
-        TriggerRelaxedBucketCapacity: 100,
-        TriggerRelaxedBucketRate: 10,
-        TriggerStrictBucketCapacity: 1,
-        TriggerStrictBucketRate: 0.1,
-        SignatureKey: signature_key&.force_encoding("UTF-8"),
+      'value' => 1_000_000,
+      'flags' => enabled ? "SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE" : "",
+      'arguments' => {
+        'BucketCapacity' => 10,
+        'BucketRate' => 1,
+        'TriggerRelaxedBucketCapacity' => 100,
+        'TriggerRelaxedBucketRate' => 10,
+        'TriggerStrictBucketCapacity' => 1,
+        'TriggerStrictBucketRate' => 0.1,
+        'SignatureKey' => signature_key&.force_encoding("UTF-8"),
       },
-      timestamp: Time.now.to_i,
-      ttl: 60,
+      'timestamp' => Time.now.to_i,
+      'ttl' => 60,
     }
   end
 
-  def options(trigger_trace: nil, tracing_mode: nil, tranasction_settings: nil, enabled: nil, signature_key: nil)
+  def local_settings(trigger_trace: nil, tracing_mode: nil, transaction_settings: nil)
     {
       tracing_mode: tracing_mode,
       trigger_trace_enabled: trigger_trace,
-      tranasction_settings: tranasction_settings,
-      settings: settings(enabled: enabled, signature_key: signature_key)
+      transaction_settings: transaction_settings,
     }
   end
 
+  def replace_sampler(sampler)
+    ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+      root: sampler,
+      remote_parent_sampled: sampler,
+      remote_parent_not_sampled: sampler
+    )
+  end
+
+  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /Sampler.name/
   describe "Sampler.name" do
     let(:tracer) { ::OpenTelemetry.tracer_provider.tracer("test") }
+
+    before do
+      ENV['OTEL_TRACES_EXPORTER'] ='none'
+      ::OpenTelemetry::SDK.configure
+      @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+      ::OpenTelemetry.tracer_provider.add_span_processor(::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter))
+    end
+
+    after do
+      OpenTelemetry::TestHelpers.reset_opentelemetry
+      @memory_exporter.reset
+    end
+
     it "respects enabled settings when no config or transaction settings" do
-      # sampler = TestSampler.new(
-      #   options(trigger_trace: false),
-      #   settings(enabled: true)
-      # )
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false), settings: settings(enabled: true)})
 
-      # options: {tracing_mode, trigger_trace_enabled, transaction_setting}
-      # settings: {BucketCapacity, etc.}
-      sampler = TestSampler.new(options(trigger_trace: false, enabled: true))
-
-      # otel.reset(trace: { sampler: sampler })
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
-        assert span.recording?
+        _(span.recording?).must_equal true
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        'SampleRate' => 1_000_000,
+        'SampleSource' => 6,
+        'BucketCapacity' => 10,
+        'BucketRate' => 1
       }
     end
 
     it "respects disabled settings when no config or transaction settings" do
-      sampler = TestSampler.new(options(trigger_trace: true))
-      # otel.reset(trace: { sampler: sampler })
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false), enabled: false})
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
 
-      # spans = otel.spans
-      # assert_empty spans
+      spans = @memory_exporter.finished_spans
+      assert_equal 0, spans.length
     end
 
     it "respects enabled config when no transaction settings" do
-      sampler = TestSampler.new(
-        options(tracing_mode: true, trigger_trace: true)
-      )
-      # otel.reset(trace: { sampler: sampler })
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: true, tracing_mode: true), settings: settings(enabled: false)})
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
         assert span.recording?
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
     it "respects disabled config when no transaction settings" do
-      sampler = TestSampler.new(
-        options(tracing_mode: false, trigger_trace: false)
-      )
-      # otel.reset(trace: { sampler: sampler })
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false, tracing_mode: false)})
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
 
-      # spans = otel.spans
-      # assert_empty spans
+      spans = @memory_exporter.finished_spans
+      assert_equal 0, spans.length
     end
 
     it "respects enabled matching transaction setting" do
       sampler = TestSampler.new(
-        options(tracing_mode: false, trigger_trace: false, tranasction_settings: [{ tracing: true, matcher: -> { true } }])
-      )
-      # otel.reset(trace: { sampler: sampler })
+        {
+          local_settings: local_settings(trigger_trace: false, tracing_mode: false, transaction_settings: [
+            { tracing: true, matcher: -> { true } }
+          ]),
+          settings: settings(enabled: false)
+        })
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
         assert span.recording?
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
     it "respects disabled matching transaction setting" do
-      sampler = TestSampler.new(
-        options(tracing_mode: true, trigger_trace: true, tranasction_settings: [{ tracing: false, matcher: -> { true } }])
-      )
-      # otel.reset(trace: { sampler: sampler })
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: true, tracing_mode: true, transaction_settings: [{ tracing: false, matcher: -> { true } }])})
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
 
-      # spans = otel.spans
-      # assert_empty spans
+      spans = @memory_exporter.finished_spans
+      assert_equal 0, spans.length
     end
 
     it "respects first matching transaction setting" do
       sampler = TestSampler.new(
-        options(tracing_mode: false, trigger_trace: false, tranasction_settings: [
+        {local_settings: local_settings(trigger_trace: false, tracing_mode: false, transaction_settings: [
           { tracing: true, matcher: -> { true } },
           { tracing: false, matcher: -> { true } }
-        ])
-      )
-      # otel.reset(trace: { sampler: sampler })
+        ]),
+        settings: settings(enabled: false)
+      })
+
+      replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
-        assert span.recording?
-        span.finish
+        _(span.recording?).must_equal true
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
     it "matches non-http spans properly" do
       sampler = TestSampler.new(
-        options(
-          tracing_mode: false,
-          trigger_trace: false,
-          tranasction_settings: [
-            { tracing: true, matcher: ->(name) { name == "CLIENT:test" } }
-          ]
-        )
-      )
-      # otel.reset(trace: { sampler: sampler })
+      {
+        local_settings: local_settings(tracing_mode: false, trigger_trace: false, transaction_settings: [
+          { tracing: true, matcher: ->(name) { name == "CLIENT:test" } }
+        ]),
+        settings: settings(enabled: false)
+      })
+
+      replace_sampler(sampler)
 
       tracer.in_span("test", kind: ::OpenTelemetry::Trace::SpanKind::CLIENT) do |span|
         assert span.recording?
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
     it "matches http spans properly" do
       sampler = TestSampler.new(
-        options(
-          tracing_mode: false,
-          trigger_trace: false,
-          tranasction_settings: [
-            { tracing: true, matcher: ->(name) { name == "http://localhost/test" } }
-          ]
-        )
-      )
-      # otel.reset(trace: { sampler: sampler })
+      {
+        local_settings: local_settings(tracing_mode: false, trigger_trace: false, transaction_settings: [
+          { tracing: true, matcher: ->(name) { name == "http://localhost/test" } }
+        ]),
+        settings: settings(enabled: false)
+      })
+
+      replace_sampler(sampler)
 
       tracer.in_span(
         "test",
@@ -406,27 +435,30 @@ describe 'SamplerTest' do
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        ATTR_HTTP_REQUEST_METHOD => "GET",
+        ATTR_URL_SCHEME => "http",
+        ATTR_SERVER_ADDRESS => "localhost",
+        ATTR_URL_PATH => "/test",
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
     it "matches deprecated http spans properly" do
       sampler = TestSampler.new(
-        options(
-          tracing_mode: false,
-          trigger_trace: false,
-          tranasction_settings: [
-            { tracing: true, matcher: ->(name) { name == "http://localhost/test" } }
-          ]
-        )
-      )
-      # otel.reset(trace: { sampler: sampler })
+      {
+        local_settings: local_settings(tracing_mode: false, trigger_trace: false, transaction_settings: [
+          { tracing: true, matcher: ->(name) { name == "http://localhost/test" } }
+        ]),
+        settings: settings(enabled: false)
+      })
+
+      replace_sampler(sampler)
 
       tracer.in_span(
         "test",
@@ -442,55 +474,50 @@ describe 'SamplerTest' do
         span.finish
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        SampleRate: 1_000_000,
-        SampleSource: 6,
-        BucketCapacity: 10,
-        BucketRate: 1
+      assert_equal spans[0].attributes, {
+        ATTR_HTTP_METHOD =>"GET",
+        ATTR_HTTP_SCHEME =>"http",
+        ATTR_NET_HOST_NAME =>"localhost",
+        ATTR_HTTP_TARGET =>"/test",
+        "SampleRate" => 1_000_000,
+        "SampleSource" => 6,
+        "BucketCapacity" => 10,
+        "BucketRate" => 1
       }
     end
 
-    # it "picks up trigger-trace" do
-    #   sampler = TestSampler.new(
-    #     options(trigger_trace: true)
-    #   )
-    #   # otel.reset(trace: { sampler: sampler })
+    it "picks up trigger-trace" do
+      sampler = TestSampler.new(
+      {
+        local_settings: local_settings(trigger_trace: true),
+        settings: settings(enabled: true)
+      })
 
-    #   # current_context = ::OpenTelemetry::Context.current
-    #   # ctx = ::OpenTelemetry::Context.new(current_context, {
-    #   #   request: { "X-Trace-Options" => "trigger-trace" },
-    #   #   response: {}
-    #   # })
+      replace_sampler(sampler)
 
-    #   # const ctx = HEADERS_STORAGE.set(context.active(), {
-    #   #   request: { "X-Trace-Options": "trigger-trace" },
-    #   #   response: {},
-    #   # })
+      # current_context = ::OpenTelemetry::Context.current
+      ctx = ::OpenTelemetry::Context.new({
+        "request" => { "X-Trace-Options" => "trigger-trace" },
+        "response" => {}
+      })
 
-    #   # context.with(ctx, () => {
-    #   #   trace.getTracer("test").startActiveSpan("test", (span) => {
-    #   #     expect(span.isRecording()).to.be.true
-    #   #     span.end()
-    #   #   })
-    #   # })
+      ::OpenTelemetry::Context.with_current(ctx) do
+        tracer.in_span("test") do |span|
+          assert span.recording?
+          span.finish
+        end
+      end
 
-    #   context.with(ctx) do
-    #     tracer.in_span("test") do |span|
-    #       assert span.recording?
-    #       span.finish
-    #     end
-    #   end
+      # spans = otel.spans
+      assert_equal 1, spans.length
+      assert_includes spans[0].attributes, {
+        "BucketCapacity" => 1,
+        "BucketRate" => 0.1
+      }
 
-    #   # spans = otel.spans
-    #   assert_equal 1, spans.length
-    #   assert_includes spans[0].attributes, {
-    #     BucketCapacity: 1,
-    #     BucketRate: 0.1
-    #   }
-
-    #   assert_includes HEADERS_STORAGE.get(ctx)&.response, "X-Trace-Options-Response"
-    # end
+      assert_includes HEADERS_STORAGE.get(ctx)&.response, "X-Trace-Options-Response"
+    end
   end
 end

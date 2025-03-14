@@ -45,16 +45,18 @@ module SolarWindsAPM
     end
 
     def local_settings(params)
+      puts "Current @transaction_settings: #{@transaction_settings.inspect}"
       _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
       settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
       return settings if @transaction_settings.nil? || @transaction_settings.empty?
 
+      # puts "Current @transaction_settings: #{@transaction_settings.inspect}"
       @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
       http_metadata = http_span_metadata(span_kind, attributes)
       @logger.debug { "http_metadata: #{http_metadata.inspect}"}
 
       # below is for filter out unwanted transaction
-      trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
+      trans_settings = ::SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
       tracing_mode   = trans_settings.calculate_trace_mode == 1 ? ::TracingMode::ALWAYS : ::TracingMode::NEVER
 
       settings[:tracing_mode] = tracing_mode
@@ -144,17 +146,17 @@ module SolarWindsAPM
 
       return unless unparsed['flags'].is_a?(String)
 
-      flags = Flags::OK
-      flag_map = {
-        "OVERRIDE" => ::Flags::OVERRIDE,
-        "SAMPLE_START" => ::Flags::SAMPLE_START,
-        "SAMPLE_THROUGH_ALWAYS" => ::Flags::SAMPLE_THROUGH_ALWAYS,
-        "TRIGGER_TRACE" => ::Flags::TRIGGERED_TRACE,
-      }
+      flags = unparsed['flags'].split(",").reduce(Flags::OK) do |flags, f|
+        flag = {
+          "OVERRIDE" => Flags::OVERRIDE,
+          "SAMPLE_START" => Flags::SAMPLE_START,
+          "SAMPLE_THROUGH_ALWAYS" => Flags::SAMPLE_THROUGH_ALWAYS,
+          "TRIGGER_TRACE" => Flags::TRIGGERED_TRACE
+        }[f]
 
-      flag = nil
-      unparsed['flags'].split(',').each { |f| flag = flag_map[f] }
-      flags = flag if flag
+        flags |= flag if flag
+        flags
+      end
 
       buckets = {}
       signature_key = nil
@@ -175,7 +177,7 @@ module SolarWindsAPM
         end
 
         if args['SignatureKey'].is_a?(String)
-          signature_key = args['SignatureKey'].bytes
+          signature_key = args['SignatureKey']
         end
       end
 

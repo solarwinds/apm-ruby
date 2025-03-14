@@ -21,9 +21,9 @@ module SolarWindsAPM
 
     # only json sampler will need to check if the settings.json file
     # updated or not from collector extention
-    def should_sample(*params)
+    def should_sample?(params)
       loop_check
-      super(*params)
+      super(params)
     end
 
     private
@@ -46,7 +46,8 @@ module SolarWindsAPM
       end
 
       parsed = update_settings(unparsed.first)
-      @expiry = (parsed['timestamp'] + parsed['ttl']) * 1000 if parsed
+      @logger.debug { "Updated_setting: #{parsed}" }
+      @expiry = (parsed[:timestamp] + parsed[:ttl].to_i) * 1000 if parsed
     end
   end
 end

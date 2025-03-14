@@ -8,12 +8,33 @@
 require 'minitest_helper'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp-metrics'
+require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
 
 describe 'JsonSampler Test' do
-  def setup
-    @sampler = SolarWindsAPM::JsonSampler.new({})
-    @temp_path = './solarwinds-apm-settings.json'
+  let(:tracer) { ::OpenTelemetry.tracer_provider.tracer("test") }
+
+  before do
+    @temp_path = '/tmp/solarwinds-apm-settings.json'
+
+    ENV['OTEL_TRACES_EXPORTER'] ='none'
+    ::OpenTelemetry::SDK.configure
+
+    @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+    ::OpenTelemetry.tracer_provider.add_span_processor(::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter))
+  end
+
+  after do
+    OpenTelemetry::TestHelpers.reset_opentelemetry
+    @memory_exporter.reset
+  end
+
+  def replace_sampler(sampler)
+    ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+      root: sampler,
+      remote_parent_sampled: sampler,
+      remote_parent_not_sampled: sampler
+    )
   end
 
   describe "valid file" do
@@ -30,18 +51,19 @@ describe 'JsonSampler Test' do
     end
 
     it "samples created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      sampler = SolarWindsAPM::JsonSampler.new({}, path = '/tmp/solarwinds-apm-settings.json')
+      sleep(0.1)
+      replace_sampler(sampler)
+
       tracer.in_span("test") do |span|
         assert span.recording?
         span.finish
       end
-      
-      # span = otel.spans.first
+
+      span = @memory_exporter.finished_spans[0]
+
       refute_nil span
-      assert_includes span.attributes.keys, :SampleRate
-      assert_includes span.attributes.keys, :SampleSource
-      assert_includes span.attributes.keys, :BucketCapacity
-      assert_includes span.attributes.keys, :BucketRate
+      assert_equal span.attributes.keys, ['SampleRate','SampleSource', 'BucketCapacity', 'BucketRate']
     end
   end
 
@@ -51,13 +73,17 @@ describe 'JsonSampler Test' do
     end
 
     it "does not sample created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+
+      sampler = SolarWindsAPM::JsonSampler.new({}, path = '/tmp/solarwinds-apm-settings.json')
+      replace_sampler(sampler)
+
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
       
-      # assert_empty otel.spans
+      spans = @memory_exporter.finished_spans
+      assert_empty spans
     end
   end
 
@@ -67,13 +93,16 @@ describe 'JsonSampler Test' do
     end
 
     it "does not sample created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      sampler = SolarWindsAPM::JsonSampler.new({}, path = '/tmp/solarwinds-apm-settings.json')
+      replace_sampler(sampler)
+
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
-      
-      # assert_empty otel.spans
+
+      spans = @memory_exporter.finished_spans
+      assert_empty spans
     end
   end
 
@@ -91,13 +120,16 @@ describe 'JsonSampler Test' do
     end
 
     it "does not sample created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      sampler = SolarWindsAPM::JsonSampler.new({}, path = '/tmp/solarwinds-apm-settings.json')
+      replace_sampler(sampler)
+
       tracer.in_span("test") do |span|
         refute span.recording?
         span.finish
       end
       
-      # assert_empty otel.spans
+      spans = @memory_exporter.finished_spans
+      assert_empty spans
     end
 
     it "samples created span after reading new settings" do
@@ -111,18 +143,17 @@ describe 'JsonSampler Test' do
         }
       ]))
       
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      sampler = SolarWindsAPM::JsonSampler.new({}, path = '/tmp/solarwinds-apm-settings.json')
+      replace_sampler(sampler)
+
       tracer.in_span("test") do |span|
         assert span.recording?
         span.finish
       end
       
-      # span = otel.spans.first
+      span = @memory_exporter.finished_spans[0]
       refute_nil span
-      assert_includes span.attributes.keys, :SampleRate
-      assert_includes span.attributes.keys, :SampleSource
-      assert_includes span.attributes.keys, :BucketCapacity
-      assert_includes span.attributes.keys, :BucketRate
+      assert_equal span.attributes.keys, ['SampleRate','SampleSource', 'BucketCapacity', 'BucketRate']
     end
   end
 end
