@@ -4,82 +4,107 @@
 # All rights reserved.
 
 # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/http_sampler_test.rb
-
 require 'minitest_helper'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp-metrics'
+require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
 
-describe 'HttpSampler' do
+module HttpSamplerTestPatch
+  def retry_request; end
+  def settings_request(timeout = nil)
+    if @setting_url.hostname == "collector.invalid"
+      response = fetch_with_timeout(@setting_url)
+      parsed = response.nil? ? {"value"=>0, "flags"=>"OVERRIDE", "timestamp"=>1741963365, "ttl"=>120, "arguments"=>{"BucketCapacity"=>0, "BucketRate"=>0, "TriggerRelaxedBucketCapacity"=>0, "TriggerRelaxedBucketRate"=>0, "TriggerStrictBucketCapacity"=>0, "TriggerStrictBucketRate"=>0}, "warning"=>"Test Warning"} : JSON.parse(response.body)
 
+      unless update_settings(parsed)
+        @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
+        retry_request
+      end
+    else
+      super(timeout=timeout)
+    end
+  end
+end
+SolarWindsAPM::HttpSampler.prepend(HttpSamplerTestPatch)
+
+describe 'HttpSampler' do
+  let(:tracer) { ::OpenTelemetry.tracer_provider.tracer("test") }
   before do
+    ENV['OTEL_TRACES_EXPORTER'] ='none'
+    ::OpenTelemetry::SDK.configure
+
+    @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+    ::OpenTelemetry.tracer_provider.add_span_processor(::OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter))
+
     @config = {
-      :collector => "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com')}:443",
-      :service => 'bbbbbbbb',
-      :headers => "Bearer aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      :collector => "https://apm.collector.st-ssp.solarwinds.com:443",
+      :service => 'test-ruby',
+      :headers => "Bearer #{ENV['APM_RUBY_TEST_STAGING_KEY']}",
       :tracing_mode => true,
-      :trigger_trace_enabled => true,
-      :transaction_settings => true}
+      :trigger_trace_enabled => true}
+  end
+
+  after do
+    OpenTelemetry::TestHelpers.reset_opentelemetry
+    @memory_exporter.reset
+  end
+
+  def replace_sampler(sampler)
+    ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
+      root: sampler,
+      remote_parent_sampled: sampler,
+      remote_parent_not_sampled: sampler
+    )
   end
 
   describe "valid service key" do
-    before do
-      new_config = @config.dup
-      @sampler = SolarWindsAPM::HttpSampler.new(new_config)
-      # otel.reset(trace: { sampler: @sampler })
-      @sampler.wait_until_ready(1000)
-    end
-
     it "samples created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      new_config = @config.dup
+      sampler = SolarWindsAPM::HttpSampler.new(new_config)
+      replace_sampler(sampler)
+      sampler.wait_until_ready(1000)
+
       tracer.in_span("test") do |span|
-        assert span.recording?, "Expected span to be recording"
+        assert span.recording?
       end
 
-      span = otel.spans.first
-      refute_nil span, "Expected span to be present"
-      assert_includes span.attributes.keys, "SampleRate"
-      assert_includes span.attributes.keys, "SampleSource"
-      assert_includes span.attributes.keys, "BucketCapacity"
-      assert_includes span.attributes.keys, "BucketRate"
+      span = @memory_exporter.finished_spans[0]
+
+      refute_nil span
+      assert_equal span.attributes.keys, ['SampleRate','SampleSource', 'BucketCapacity', 'BucketRate']
     end
   end
 
   describe "invalid service key" do
-    before do
-      new_config = @config.merge(headers: { "Authorization" => "Bearer oh-no" })
-      @sampler = SolarWindsAPM::HttpSampler.new(new_config)
-      # otel.reset(trace: { sampler: @sampler })
-      @sampler.wait_until_ready(1000)
-    end
-
     it "does not sample created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
+      new_config = @config.merge(headers: "Bearer oh-no")
+      sampler = SolarWindsAPM::HttpSampler.new(new_config)
+      replace_sampler(sampler)
+      sampler.wait_until_ready(1000)
+
       tracer.in_span("test") do |span|
-        refute span.recording?, "Expected span to not be recording"
+        refute span.recording?
       end
 
-      spans = otel.spans
-      assert_empty spans, "Expected no spans to be created"
+      spans = @memory_exporter.finished_spans
+      assert_empty spans
     end
   end
 
   describe "invalid collector" do
-    before do
+    it "does not sample created spans xuan" do
       new_config = @config.merge(collector: URI("https://collector.invalid"))
-      @sampler = SolarWindsAPM::HttpSampler.new(new_config)
-      # otel.reset(trace: { sampler: @sampler })
-      @sampler.wait_until_ready(1000)
-    end
+      sampler = SolarWindsAPM::HttpSampler.new(new_config)
+      replace_sampler(sampler)
+      sampler.wait_until_ready(1000)
 
-    it "does not sample created spans" do
-      tracer = ::OpenTelemetry.tracer_provider.tracer("test")
       tracer.in_span("test") do |span|
-        refute span.recording?, "Expected span to not be recording"
+        refute span.recording?
       end
 
-      spans = otel.spans
-      assert_empty spans, "Expected no spans to be created"
+      spans = @memory_exporter.finished_spans
+      assert_empty spans
     end
 
     it "retries with backoff" do

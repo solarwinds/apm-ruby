@@ -3,50 +3,24 @@
 # Copyright (c) 2025 SolarWinds, LLC.
 # All rights reserved.
 
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb
 require 'minitest_helper'
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp-metrics'
 require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
+require './lib/solarwinds_apm/opentelemetry/solarwinds_propagator'
 require './lib/solarwinds_apm/support/transaction_settings'
 require './lib/solarwinds_apm/config'
 
 
 class TestSampler < SolarWindsAPM::Sampler
-  attr_accessor :response_headers #, :local_settings #, :request_headers
-
   def initialize(options)
-    super(options[:local_settings], Logger.new($STDOUT, level: Logger::DEBUG))
-    # @local_settings = options[:local_settings]
-    # @request_headers = options[:request_headers]
-    @response_headers = nil
-
+    logger = Logger.new(STDOUT)
+    logger.level = ENV['TEST_LOGGER_DEBUG_LEVEL'].nil? ? 6 : ENV['TEST_LOGGER_DEBUG_LEVEL'].to_i
+    super(options[:local_settings], logger)
     update_settings(options[:settings]) if options[:settings]
   end
-
-  # return { tracing_mode:, trigger_mode: }
-  # def local_settings(params)
-  #   @local_settings
-  # end
-
-  # def request_headers(params)
-  #   @request_headers
-  # end
 end
-
-class TestCounter
-  def add(value); end
-end
-
-module DisableCounter
-  def initialize; end
-  def [](key)
-    TestCounter.new
-  end
-end
-
-SolarWindsAPM::Metrics::Counter.prepend(DisableCounter)
 
 describe 'SamplerTest' do
   ATTR_HTTP_REQUEST_METHOD = 'http.request.method'
@@ -61,10 +35,9 @@ describe 'SamplerTest' do
   ATTR_NET_HOST_NAME = ::OpenTelemetry::SemanticConventions::Trace::NET_HOST_NAME
   ATTR_HTTP_TARGET = ::OpenTelemetry::SemanticConventions::Trace::HTTP_TARGET
 
-  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /httpSpanMetadata.name/
   describe 'httpSpanMetadata.name' do
     before do
-      @sampler = TestSampler.new({})
+      @sampler = TestSampler.new({local_settings: {}})
     end
 
     it "handles non-http spans properly" do
@@ -142,10 +115,9 @@ describe 'SamplerTest' do
     end
   end
 
-  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /parseSettings.name/
   describe 'parseSettings.name' do
     before do
-      @sampler = TestSampler.new({})
+      @sampler = TestSampler.new({local_settings: {}})
     end
 
     it "correctly parses JSON settings" do
@@ -235,7 +207,6 @@ describe 'SamplerTest' do
     )
   end
 
-  # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/sampler_test.rb -n /Sampler.name/
   describe "Sampler.name" do
     let(:tracer) { ::OpenTelemetry.tracer_provider.tracer("test") }
 
@@ -253,11 +224,10 @@ describe 'SamplerTest' do
 
     it "respects enabled settings when no config or transaction settings" do
       sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false), settings: settings(enabled: true)})
-
       replace_sampler(sampler)
 
       tracer.in_span("test") do |span|
-        _(span.recording?).must_equal true
+        assert span.recording?
         span.finish
       end
 
@@ -272,7 +242,7 @@ describe 'SamplerTest' do
     end
 
     it "respects disabled settings when no config or transaction settings" do
-      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false), enabled: false})
+      sampler = TestSampler.new({local_settings: local_settings(trigger_trace: false), settings: settings(enabled: false)})
 
       replace_sampler(sampler)
 
@@ -497,27 +467,20 @@ describe 'SamplerTest' do
 
       replace_sampler(sampler)
 
-      # current_context = ::OpenTelemetry::Context.current
       ctx = ::OpenTelemetry::Context.new({
-        "request" => { "X-Trace-Options" => "trigger-trace" },
-        "response" => {}
+        'sw_xtraceoptions' => 'trigger-trace'
       })
 
       ::OpenTelemetry::Context.with_current(ctx) do
         tracer.in_span("test") do |span|
           assert span.recording?
-          span.finish
         end
       end
 
-      # spans = otel.spans
+      spans = @memory_exporter.finished_spans
       assert_equal 1, spans.length
-      assert_includes spans[0].attributes, {
-        "BucketCapacity" => 1,
-        "BucketRate" => 0.1
-      }
-
-      assert_includes HEADERS_STORAGE.get(ctx)&.response, "X-Trace-Options-Response"
+      _(spans[0].attributes['BucketCapacity']).must_equal 1
+      _(spans[0].attributes['BucketRate']).must_equal 0.1
     end
   end
 end

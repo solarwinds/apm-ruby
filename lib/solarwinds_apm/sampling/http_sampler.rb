@@ -8,9 +8,9 @@
 
 module SolarWindsAPM
   class HttpSampler < Sampler
-    REQUEST_TIMEOUT = 10 * 1000 # 10s
-    RETRY_INITIAL_TIMEOUT = 500 # 500ms
-    RETRY_MAX_TIMEOUT = 60 * 1000 # 60s
+    REQUEST_TIMEOUT = 10 # 10s
+    RETRY_INITIAL_TIMEOUT = 0.5 # 500ms
+    RETRY_MAX_TIMEOUT = 60 # 60s
     RETRY_MAX_ATTEMPTS = 20
     MULTIPLIER = 1.5
 
@@ -81,8 +81,8 @@ module SolarWindsAPM
       should_timeout = @retry < RETRY_MAX_ATTEMPTS && @retry_timeout < RETRY_MAX_TIMEOUT
 
       if should_timeout
-        @logger.debug { "Retrying in #{(@retry_timeout / 1000.0).round(1)}s" }
-        sleep(@retry_timeout / 1000.0)
+        @logger.debug { "Retrying in #{@retry_timeout.round(1)}s" }
+        sleep(@retry_timeout)
         settings_request(timeout = @retry_timeout)
       else
         @logger.warn { 'Reached max retry attempts for sampling settings retrieval. Tracing will remain disabled.' }
@@ -109,9 +109,10 @@ module SolarWindsAPM
 
       # this is pretty arbitrary but the goal is to update the settings
       # before the previous ones expire with some time to spare
-      expiry = (parsed['timestamp'] + parsed['ttl']) * 1000
-      timeout = expiry - (REQUEST_TIMEOUT * MULTIPLIER) - (Time.now.to_i * 1000)
-      sleep([0, timeout / 1000.0].max)
+      parsed = {} if parsed.nil?
+      expiry = (parsed['timestamp'].to_i + parsed['ttl'].to_i)
+      timeout = expiry - (REQUEST_TIMEOUT * MULTIPLIER) - (Time.now.to_i)
+      sleep([0, timeout].max)
       settings_request
     rescue StandardError => e
       @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }

@@ -17,7 +17,7 @@ module SolarWindsAPM
       def finish(end_timestamp: nil)
         @mutex.synchronize do
           if @ended
-            OpenTelemetry.logger.warn('Calling finish on an ended Span.')
+            ::OpenTelemetry.logger.warn('Calling finish on an ended Span.')
             return self
           end
         end

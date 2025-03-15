@@ -4,7 +4,6 @@
 # All rights reserved.
 
 # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb
-
 require 'minitest_helper'
 require 'opentelemetry-metrics-sdk'
 require './lib/solarwinds_apm/sampling/sampling_constants'
@@ -42,7 +41,7 @@ def make_span(options={})
                                                        trace_id: object[:trace_id],
                                                        remote: object[:remote],
                                                        trace_flags: object[:sampled] ? OpenTelemetry::Trace::TraceFlags::SAMPLED : OpenTelemetry::Trace::TraceFlags::DEFAULT,
-                                                       tracestate: options[:sw] == true ? OpenTelemetry::Trace::Tracestate::from_string("sw=#{hex_span_id}-#{sw_flags}") : OpenTelemetry::Trace::Tracestate::DEFAULT
+                                                       tracestate: options[:sw] ? OpenTelemetry::Trace::Tracestate::from_string("sw=#{hex_span_id}-#{sw_flags}") : OpenTelemetry::Trace::Tracestate::DEFAULT
                                                        )
   OpenTelemetry::SDK::Trace::Span.new(span_context,
                                       OpenTelemetry::Context.empty,
@@ -119,7 +118,7 @@ def check_counters(metric_exporter, counters=[])
   end
 end
 
-class TestSampler < SolarWindsAPM::OboeSampler
+class OboeTestSampler < SolarWindsAPM::OboeSampler
   attr_accessor :response_headers, :local_settings, :request_headers
 
   def initialize(options)
@@ -153,7 +152,7 @@ describe "OboeSampler" do
 
   describe "LOCAL span" do
     it "respects parent sampled" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -176,7 +175,7 @@ describe "OboeSampler" do
     end
 
     it "respects parent not sampled" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -202,7 +201,7 @@ describe "OboeSampler" do
   # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /invalid\ X-Trace-Options-Signature/
   describe "invalid X-Trace-Options-Signature" do
     it "rejects missing signature key" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 1_000_000,
           sample_source: SampleSource::REMOTE,
@@ -232,7 +231,7 @@ describe "OboeSampler" do
 
     # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /rejects\ bad\ timestamp/
     it "rejects bad timestamp" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 1_000_000,
           sample_source: SampleSource::REMOTE,
@@ -264,7 +263,7 @@ describe "OboeSampler" do
 
     # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /rejects\ bad\ signature/
     it "rejects bad signature" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 1_000_000,
           sample_source: SampleSource::REMOTE,
@@ -298,7 +297,7 @@ describe "OboeSampler" do
   # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /missing\ settings/
   describe "missing settings" do
     it "doesn't sample" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: false,
         local_settings: { trigger_mode: false },
         request_headers: {}
@@ -312,7 +311,7 @@ describe "OboeSampler" do
     end
 
     it "expires after ttl" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -336,7 +335,7 @@ describe "OboeSampler" do
     end
 
     it "respects X-Trace-Options keys and values" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: false,
         local_settings: { trigger_mode: false },
         request_headers: make_request_headers(
@@ -351,7 +350,7 @@ describe "OboeSampler" do
     end
 
     it "ignores trigger-trace" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: false,
         local_settings: { trigger_mode: true },
         request_headers: make_request_headers(
@@ -372,7 +371,7 @@ describe "OboeSampler" do
   describe "ENTRY span with valid sw context" do
     describe "X-Trace-Options" do
       it "respects keys and values" do
-        sampler = TestSampler.new(
+        sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -397,7 +396,7 @@ describe "OboeSampler" do
       end
 
       it "ignores trigger-trace" do
-        sampler = TestSampler.new(
+        sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -425,7 +424,7 @@ describe "OboeSampler" do
 
     describe "SAMPLE_THROUGH_ALWAYS set" do
       before do
-        @sampler = TestSampler.new(
+        @sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -486,7 +485,6 @@ describe "OboeSampler" do
         params = make_sample_params(parent: parent)
 
         sample = @sampler.should_sample?(params)
-
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
         assert_equal sample.attributes, { "sw.tracestate_parent_id" => parent.context.hex_span_id }
 
@@ -496,7 +494,7 @@ describe "OboeSampler" do
 
     describe "SAMPLE_THROUGH_ALWAYS unset" do
       it "records but does not sample when SAMPLE_START set" do
-        sampler = TestSampler.new(
+        sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -519,7 +517,7 @@ describe "OboeSampler" do
       end
 
       it "does not record or sample when SAMPLE_START unset" do
-        sampler = TestSampler.new(
+        sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -548,7 +546,7 @@ describe "OboeSampler" do
     describe "TRIGGERED_TRACE set" do
       describe "unsigned" do
         it "records and samples when there is capacity" do
-          sampler = TestSampler.new(
+          sampler = OboeTestSampler.new(
             settings: {
               sample_rate: 0,
               sample_source: SampleSource::LOCAL_DEFAULT,
@@ -587,7 +585,7 @@ describe "OboeSampler" do
         end
 
         it "records but doesn't sample when there is no capacity" do
-          sampler = TestSampler.new(
+          sampler = OboeTestSampler.new(
             settings: {
               sample_rate: 0,
               sample_source: SampleSource::LOCAL_DEFAULT,
@@ -625,7 +623,7 @@ describe "OboeSampler" do
 
       describe "signed" do
         it "records and samples when there is capacity" do
-          sampler = TestSampler.new(
+          sampler = OboeTestSampler.new(
             settings: {
               sample_rate: 0,
               sample_source: SampleSource::LOCAL_DEFAULT,
@@ -669,7 +667,7 @@ describe "OboeSampler" do
         end
 
         it "records but doesn't sample when there is no capacity" do
-          sampler = TestSampler.new(
+          sampler = OboeTestSampler.new(
             settings: {
               sample_rate: 0,
               sample_source: SampleSource::LOCAL_DEFAULT,
@@ -712,7 +710,7 @@ describe "OboeSampler" do
 
     describe "TRIGGERED_TRACE unset" do
       it "records but does not sample when TRIGGERED_TRACE is unset" do
-        sampler = TestSampler.new(
+        sampler = OboeTestSampler.new(
           settings: {
             sample_rate: 0,
             sample_source: SampleSource::LOCAL_DEFAULT,
@@ -745,7 +743,7 @@ describe "OboeSampler" do
   # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /dice\ roll/
   describe "dice roll" do
     it "respects X-Trace-Options keys and values" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -769,7 +767,7 @@ describe "OboeSampler" do
     end
 
     it "records and samples when dice success and sufficient capacity" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 1_000_000,
           sample_source: SampleSource::REMOTE,
@@ -796,7 +794,7 @@ describe "OboeSampler" do
     end
 
     it "records but doesn't sample when dice success but insufficient capacity" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 1_000_000,
           sample_source: SampleSource::REMOTE,
@@ -823,7 +821,7 @@ describe "OboeSampler" do
     end
 
     it "records but doesn't sample when dice failure" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -854,7 +852,7 @@ describe "OboeSampler" do
   # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /SAMPLE_START\ unset/
   describe "SAMPLE_START unset" do
     it "ignores trigger-trace" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -881,7 +879,7 @@ describe "OboeSampler" do
     end
 
     it "records when SAMPLE_THROUGH_ALWAYS set" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,
@@ -903,7 +901,7 @@ describe "OboeSampler" do
     end
 
     it "doesn't record when SAMPLE_THROUGH_ALWAYS unset" do
-      sampler = TestSampler.new(
+      sampler = OboeTestSampler.new(
         settings: {
           sample_rate: 0,
           sample_source: SampleSource::LOCAL_DEFAULT,

@@ -20,7 +20,6 @@ module SolarWindsAPM
 
       kvs = header.split(";").map { |kv| k, *vs = kv.split("=").map(&:strip); [k, vs.any? ? vs.join("=") : nil] }
                   .filter { |k, _| !(k.nil? || k.empty?) }
-      puts "kvs: #{kvs}"
       kvs.each do |k, v|
         case k
         when TRIGGER_TRACE_KEY

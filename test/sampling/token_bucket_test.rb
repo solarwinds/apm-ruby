@@ -39,7 +39,6 @@ describe 'SolarWindsAPM::TokenBucket' do
     bucket.start
     sleep(0.1)
     bucket.stop
-    # puts "bucket: #{bucket.inspect}; #{bucket.consume(4)}"
     refute bucket.consume(4)
   end
 

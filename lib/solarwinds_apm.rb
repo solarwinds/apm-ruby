@@ -65,8 +65,7 @@ begin
           require 'solarwinds_apm/otel_native_config'
 
           if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
-            # SolarWindsAPM::OTelConfig.initialize
-            SolarWindsAPM::OTelNativeConfig.initialize
+            SolarWindsAPM::OTelConfig.initialize
           elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
             SolarWindsAPM.logger.warn '=============================================================='
             SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'

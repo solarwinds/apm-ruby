@@ -25,7 +25,7 @@ module SolarWindsAPM
     # tracing_mode is getting from SolarWindsAPM::Config
     def initialize(config, logger)
       super(logger)
-      @tracing_mode = config[:tracing_mode] ? ::TracingMode::ALWAYS : ::TracingMode::NEVER if config.key?(:tracing_mode)
+      @tracing_mode = resolve_tracing_mode(config)
       @trigger_mode = config[:trigger_trace_enabled]
       @transaction_settings = config[:transaction_settings]
       @ready = false
@@ -44,13 +44,17 @@ module SolarWindsAPM
       end
     end
 
+    def resolve_tracing_mode(config)
+      return unless config.key?(:tracing_mode) && !config[:tracing_mode].nil?
+
+      config[:tracing_mode] ? ::TracingMode::ALWAYS : ::TracingMode::NEVER
+    end
+
     def local_settings(params)
-      puts "Current @transaction_settings: #{@transaction_settings.inspect}"
       _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
       settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
       return settings if @transaction_settings.nil? || @transaction_settings.empty?
 
-      # puts "Current @transaction_settings: #{@transaction_settings.inspect}"
       @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
       http_metadata = http_span_metadata(span_kind, attributes)
       @logger.debug { "http_metadata: #{http_metadata.inspect}"}
@@ -69,7 +73,10 @@ module SolarWindsAPM
     # apm-js will make headers as hash
     def request_headers(params)
       parent_context = params[:parent_context]
+      puts "parent_context: #{parent_context.inspect}"
 
+      # header = obtain_sw_value(parent_context, ['sw_xtraceoptions','X-Trace-Options'])
+      # signature = obtain_sw_value(parent_context, ['sw_signature','X-Trace-Options-Signature'])
       header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
       signature = obtain_sw_value(parent_context, 'sw_signature')
       @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
@@ -83,9 +90,11 @@ module SolarWindsAPM
     def obtain_sw_value(context, type)
       sw_value = nil
       instance_variable = context&.instance_variable_get('@entries')
+      puts "instance_variable: #{instance_variable.inspect}"
       instance_variable&.each do |key, value|
         next unless key.instance_of?(::String)
 
+        # sw_value = value if type.include? key
         sw_value = value if key == type
       end
       sw_value
@@ -132,7 +141,6 @@ module SolarWindsAPM
       http_metadata
     end
 
-    # tested - can run
     def parse_settings(unparsed)
       return unless unparsed.is_a?(Hash)
 
@@ -182,6 +190,8 @@ module SolarWindsAPM
       end
 
       warning = unparsed['warning'] if unparsed['warning'].is_a?(String)
+
+      puts "buckets: #{buckets.inspect}"
 
       {
         sample_source: SampleSource::REMOTE,

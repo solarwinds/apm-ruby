@@ -17,7 +17,6 @@ describe 'pg patch test' do
     SolarWindsAPM::OTelConfig.initialize
 
     client_ancestors = PG::Connection.ancestors
-    puts "client_ancestors: #{client_ancestors.inspect}"
     _(client_ancestors[0]).must_equal OpenTelemetry::Instrumentation::PG::Patches::Connection
     _(client_ancestors[1]).must_equal PG::Connection
   end

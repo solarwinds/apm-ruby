@@ -42,7 +42,6 @@ module SolarWindsAPM
     # params: {:trace_id=>, :parent_context=>, :links=>, :name=>, :kind=>, :attributes=>}
     # propagator -> processor -> sampler
     def should_sample?(params)
-      puts "should_sample? params: #{params.inspect}"
       @logger.debug { "should_sample? params: #{params.inspect}" }
       _, parent_context, _, _, _, attributes = params.values
 
@@ -51,7 +50,6 @@ module SolarWindsAPM
 
       @logger.debug { "[#{self.class}/#{__method__}] span type is #{type}" }
 
-      puts "span type: #{type.inspect}"
       # For local spans, we always trust the parent
       if type == SpanType::LOCAL
         return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, tracestate: DEFAULT_TRACESTATE) if parent_span.context.trace_flags.sampled?
@@ -70,8 +68,6 @@ module SolarWindsAPM
       @logger.debug { "[#{self.class}/#{__method__}] sample_state at start: #{sample_state.inspect}" }
 
       @counters[:request_count].add(1)
-
-      puts "sample_state.inspect: #{sample_state.inspect}"
 
       # adding trigger trace attributes to sample_state attribute as part of decision
       if sample_state.headers['X-Trace-Options']
@@ -117,7 +113,6 @@ module SolarWindsAPM
       end
 
       unless sample_state.settings
-        puts "settings unavailable; sampling disabled"
         @logger.debug { 'settings unavailable; sampling disabled' }
 
         if sample_state.trace_options&.trigger_trace
@@ -132,20 +127,18 @@ module SolarWindsAPM
                                         attributes: sample_state.attributes)
       end
 
+      @logger.debug { "[#{self.class}/#{__method__}] sample_state before deciding sampling algo: #{sample_state.inspect}" }
       # Decide which sampling algo to use and add sampling attribute to decision attributes
       # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
       if sample_state.trace_state && TRACESTATE_REGEXP.match?(sample_state.trace_state)
-        puts "context is valid for parent-based sampling"
         @logger.debug { 'context is valid for parent-based sampling' }
         parent_based_algo(sample_state)
 
       elsif sample_state.settings[:flags].anybits?(::Flags::SAMPLE_START)
         if sample_state.trace_options&.trigger_trace
-          puts "trigger trace requested"
           @logger.debug { 'trigger trace requested' }
           trigger_trace_algo(sample_state)
         else
-          puts "defaulting to dice roll"
           @logger.debug { 'defaulting to dice roll' }
           dice_roll_algo(sample_state)
         end
@@ -192,7 +185,7 @@ module SolarWindsAPM
         @logger.debug { 'SAMPLE_THROUGH_ALWAYS is set; parent-based sampling' }
 
         flags = sample_state.trace_state[-2, 2].to_i(16)
-        sampled = flags & (OpenTelemetry::Trace::TraceFlags::SAMPLED.sampled? ? 1 : 0)
+        sampled = flags & (::OpenTelemetry::Trace::TraceFlags::SAMPLED.sampled? ? 1 : 0)
 
         if sampled.zero?
           @logger.debug { 'parent is not sampled; record only' }
@@ -304,7 +297,6 @@ module SolarWindsAPM
     def update_settings(settings)
       return unless settings[:timestamp] > (@settings[:timestamp] || 0)
 
-      puts "oboe_sampler update_settings: #{settings.inspect}"
       @settings = settings
       @buckets.each do |type, bucket|
         bucket.update(@settings[:buckets][type]) if @settings[:buckets][type]
@@ -348,7 +340,6 @@ module SolarWindsAPM
         return
       end
       sampling_setting = SolarWindsAPM::SamplingSettings.merge(@settings, local_settings(params))
-      puts "get_settings: #{sampling_setting}"
       @logger.debug { "sampling_setting: #{sampling_setting.inspect}" }
       sampling_setting
     end
