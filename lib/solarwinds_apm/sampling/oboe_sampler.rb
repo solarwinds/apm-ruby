@@ -29,11 +29,11 @@ module SolarWindsAPM
       @logger = logger
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
-        SolarWindsAPM::BucketType::DEFAULT => 
+        SolarWindsAPM::BucketType::DEFAULT =>
           SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
-        SolarWindsAPM::BucketType::TRIGGER_RELAXED => 
+        SolarWindsAPM::BucketType::TRIGGER_RELAXED =>
           SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
-        SolarWindsAPM::BucketType::TRIGGER_STRICT => 
+        SolarWindsAPM::BucketType::TRIGGER_STRICT =>
           SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL))
       }
       @settings = {} # parsed setting from swo backend

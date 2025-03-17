@@ -58,11 +58,8 @@ module SolarWindsAPM
         @logger.debug { "Error during request: #{e.message}" }
       end
 
-      begin
-        Timeout.timeout(timeout_seconds || REQUEST_TIMEOUT) do
-          thread.join
-        end
-      rescue Timeout::Error
+      thread_join = thread.join(timeout_seconds || REQUEST_TIMEOUT)
+      if thread_join.nil?
         @logger.debug { "Request timed out after #{timeout_seconds} seconds" }
         thread.kill
       end

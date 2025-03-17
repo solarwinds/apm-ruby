@@ -32,9 +32,9 @@ module SolarWindsAPM
 
     # wait for getting the first settings
     def wait_until_ready(timeout = 10)
-      Timeout.timeout(timeout) do
-        settings_ready
-      end
+      thread = Thread.new { settings_ready }
+      thread.join(timeout) || (thread.kill
+                               false)
     end
 
     def settings_ready
