@@ -8,12 +8,11 @@
 
 module SolarWindsAPM
   class Sampler < OboeSampler
-
     RUBY_SEM_CON = ::OpenTelemetry::SemanticConventions::Trace
 
     ATTR_HTTP_REQUEST_METHOD = 'http.request.method'
     ATTR_HTTP_METHOD = RUBY_SEM_CON::HTTP_METHOD
-    ATTR_HTTP_RESPONSE_STATUS_CODE =  'http.response.status_code'
+    ATTR_HTTP_RESPONSE_STATUS_CODE = 'http.response.status_code'
     ATTR_HTTP_STATUS_CODE = RUBY_SEM_CON::HTTP_STATUS_CODE
     ATTR_URL_SCHEME = 'url.scheme'
     ATTR_HTTP_SCHEME = RUBY_SEM_CON::HTTP_SCHEME
@@ -39,15 +38,15 @@ module SolarWindsAPM
     end
 
     def settings_ready
-      while true
-        break if !@settings.empty?
+      loop do
+        break unless @settings.empty?
       end
     end
 
     def resolve_tracing_mode(config)
       return unless config.key?(:tracing_mode) && !config[:tracing_mode].nil?
 
-      config[:tracing_mode] ? ::TracingMode::ALWAYS : ::TracingMode::NEVER
+      config[:tracing_mode] ? TracingMode::ALWAYS : TracingMode::NEVER
     end
 
     def local_settings(params)
@@ -57,11 +56,11 @@ module SolarWindsAPM
 
       @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
       http_metadata = http_span_metadata(span_kind, attributes)
-      @logger.debug { "http_metadata: #{http_metadata.inspect}"}
+      @logger.debug { "http_metadata: #{http_metadata.inspect}" }
 
       # below is for filter out unwanted transaction
       trans_settings = ::SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
-      tracing_mode   = trans_settings.calculate_trace_mode == 1 ? ::TracingMode::ALWAYS : ::TracingMode::NEVER
+      tracing_mode   = trans_settings.calculate_trace_mode == 1 ? TracingMode::ALWAYS : TracingMode::NEVER
 
       settings[:tracing_mode] = tracing_mode
       settings
@@ -73,10 +72,6 @@ module SolarWindsAPM
     # apm-js will make headers as hash
     def request_headers(params)
       parent_context = params[:parent_context]
-      puts "parent_context: #{parent_context.inspect}"
-
-      # header = obtain_sw_value(parent_context, ['sw_xtraceoptions','X-Trace-Options'])
-      # signature = obtain_sw_value(parent_context, ['sw_signature','X-Trace-Options-Signature'])
       header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
       signature = obtain_sw_value(parent_context, 'sw_signature')
       @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
@@ -90,11 +85,9 @@ module SolarWindsAPM
     def obtain_sw_value(context, type)
       sw_value = nil
       instance_variable = context&.instance_variable_get('@entries')
-      puts "instance_variable: #{instance_variable.inspect}"
       instance_variable&.each do |key, value|
         next unless key.instance_of?(::String)
 
-        # sw_value = value if type.include? key
         sw_value = value if key == type
       end
       sw_value
@@ -103,11 +96,11 @@ module SolarWindsAPM
     def update_settings(settings)
       parsed = parse_settings(settings)
       if parsed
-        @logger.debug {"valid settings #{parsed.inspect} from setting #{settings.inspect}"}
+        @logger.debug { "valid settings #{parsed.inspect} from setting #{settings.inspect}" }
 
-        super(parsed)  # call oboe_sampler update_settings function to update the buckets
+        super(parsed) # call oboe_sampler update_settings function to update the buckets
 
-        @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" }  if parsed[:warning]
+        @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" } if parsed[:warning]
 
         parsed
       else
@@ -118,12 +111,12 @@ module SolarWindsAPM
 
     def http_span_metadata(kind, attributes)
       return { http: false } unless kind == ::OpenTelemetry::Trace::SpanKind::SERVER &&
-        (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
+                                    (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
 
       method_ = (attributes[ATTR_HTTP_REQUEST_METHOD] || attributes[ATTR_HTTP_METHOD]).to_s
       status = (attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || attributes[ATTR_HTTP_STATUS_CODE] || 0).to_i
-      scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME] || "http").to_s
-      hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME] || "localhost").to_s
+      scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME] || 'http').to_s
+      hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME] || 'localhost').to_s
       path = (attributes[ATTR_URL_PATH] || attributes[ATTR_HTTP_TARGET]).to_s
       url = "#{scheme}://#{hostname}#{path}"
 
@@ -137,7 +130,7 @@ module SolarWindsAPM
         url: url
       }
 
-      @logger.debug { "Retrieved http metadata: #{http_metadata.inspect}"}
+      @logger.debug { "Retrieved http metadata: #{http_metadata.inspect}" }
       http_metadata
     end
 
@@ -154,16 +147,16 @@ module SolarWindsAPM
 
       return unless unparsed['flags'].is_a?(String)
 
-      flags = unparsed['flags'].split(",").reduce(Flags::OK) do |flags, f|
+      flags = unparsed['flags'].split(',').reduce(Flags::OK) do |final_flag, f|
         flag = {
-          "OVERRIDE" => Flags::OVERRIDE,
-          "SAMPLE_START" => Flags::SAMPLE_START,
-          "SAMPLE_THROUGH_ALWAYS" => Flags::SAMPLE_THROUGH_ALWAYS,
-          "TRIGGER_TRACE" => Flags::TRIGGERED_TRACE
+          'OVERRIDE' => Flags::OVERRIDE,
+          'SAMPLE_START' => Flags::SAMPLE_START,
+          'SAMPLE_THROUGH_ALWAYS' => Flags::SAMPLE_THROUGH_ALWAYS,
+          'TRIGGER_TRACE' => Flags::TRIGGERED_TRACE
         }[f]
 
-        flags |= flag if flag
-        flags
+        final_flag |= flag if flag
+        final_flag
       end
 
       buckets = {}
@@ -172,26 +165,16 @@ module SolarWindsAPM
       if unparsed['arguments'].is_a?(Hash)
         args = unparsed['arguments']
 
-        if args['BucketCapacity'].is_a?(Numeric) && args['BucketRate'].is_a?(Numeric)
-          buckets[BucketType::DEFAULT] = { capacity: args['BucketCapacity'], rate: args['BucketRate'] }
-        end
+        buckets[BucketType::DEFAULT] = { capacity: args['BucketCapacity'], rate: args['BucketRate'] } if args['BucketCapacity'].is_a?(Numeric) && args['BucketRate'].is_a?(Numeric)
 
-        if args['TriggerRelaxedBucketCapacity'].is_a?(Numeric) && args['TriggerRelaxedBucketRate'].is_a?(Numeric)
-          buckets['trigger_relaxed'] = { capacity: args['TriggerRelaxedBucketCapacity'], rate: args['TriggerRelaxedBucketRate'] }
-        end
+        buckets['trigger_relaxed'] = { capacity: args['TriggerRelaxedBucketCapacity'], rate: args['TriggerRelaxedBucketRate'] } if args['TriggerRelaxedBucketCapacity'].is_a?(Numeric) && args['TriggerRelaxedBucketRate'].is_a?(Numeric)
 
-        if args['TriggerStrictBucketCapacity'].is_a?(Numeric) && args['TriggerStrictBucketRate'].is_a?(Numeric)
-          buckets['trigger_strict'] = { capacity: args['TriggerStrictBucketCapacity'], rate: args['TriggerStrictBucketRate'] }
-        end
+        buckets['trigger_strict'] = { capacity: args['TriggerStrictBucketCapacity'], rate: args['TriggerStrictBucketRate'] } if args['TriggerStrictBucketCapacity'].is_a?(Numeric) && args['TriggerStrictBucketRate'].is_a?(Numeric)
 
-        if args['SignatureKey'].is_a?(String)
-          signature_key = args['SignatureKey']
-        end
+        signature_key = args['SignatureKey'] if args['SignatureKey'].is_a?(String)
       end
 
       warning = unparsed['warning'] if unparsed['warning'].is_a?(String)
-
-      puts "buckets: #{buckets.inspect}"
 
       {
         sample_source: SampleSource::REMOTE,

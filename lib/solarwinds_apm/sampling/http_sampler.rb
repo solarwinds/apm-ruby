@@ -83,7 +83,7 @@ module SolarWindsAPM
       if should_timeout
         @logger.debug { "Retrying in #{@retry_timeout.round(1)}s" }
         sleep(@retry_timeout)
-        settings_request(timeout = @retry_timeout)
+        settings_request
       else
         @logger.warn { 'Reached max retry attempts for sampling settings retrieval. Tracing will remain disabled.' }
       end
@@ -91,8 +91,7 @@ module SolarWindsAPM
 
     # a endless loop within a thread (non-blocking)
     # it won't affect then call HttpSampler.should_sample (since it only update bucket settings)
-    def settings_request(timeout = nil)
-
+    def settings_request
       @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
 
       response = fetch_with_timeout(@setting_url)
@@ -111,8 +110,8 @@ module SolarWindsAPM
       # before the previous ones expire with some time to spare
       parsed = {} if parsed.nil?
       expiry = (parsed['timestamp'].to_i + parsed['ttl'].to_i)
-      timeout = expiry - (REQUEST_TIMEOUT * MULTIPLIER) - (Time.now.to_i)
-      sleep([0, timeout].max)
+      expiry_timeout = expiry - (REQUEST_TIMEOUT * MULTIPLIER) - Time.now.to_i
+      sleep([0, expiry_timeout].max)
       settings_request
     rescue StandardError => e
       @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }

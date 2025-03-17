@@ -17,7 +17,7 @@ module SolarWindsAPM
       SW_IS_ERROR         = 'sw.is_error'
 
       def initialize(txn_manager)
-        super(txn_manager)
+        super
         @meters  = init_meters
         @metrics = init_metrics
       end
@@ -31,11 +31,11 @@ module SolarWindsAPM
         return if non_entry_span(parent_context: parent_context)
 
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-        @txn_manager.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}") if @txn_manager
+        @txn_manager&.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
         span.add_attributes(span_attributes(span))
         span.add_attributes({ SW_IS_ENTRY_SPAN => true })
         scope_attribute = SolarWindsAPM::InstrumentationScope.gather_instrumented_framework(span)
-        span.add_attributes(scope_attribute) if !scope_attribute.nil?
+        span.add_attributes(scope_attribute) unless scope_attribute.nil?
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
@@ -99,7 +99,7 @@ module SolarWindsAPM
 
       def init_metrics
         {
-          :response_time => @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
+          response_time: @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request')
         }
       end
 

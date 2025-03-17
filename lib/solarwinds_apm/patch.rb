@@ -11,3 +11,5 @@
 # e.g.
 # require_relative './patch/dummy_patch'
 # OpenTelemetry::Instrumentation::Registry.prepend(SolarWindsAPM::Patch::DummyPatch) if defined? OpenTelemetry::Instrumentation::Registry && OpenTelemetry::Instrumentation::Registry::VERSION <= '0.3.0'
+
+require_relative 'sampling/sampling_patch'

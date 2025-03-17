@@ -1,8 +1,9 @@
+# frozen_string_literal: true
 
 module SolarWindsAPM
   module InstrumentationScope
     @lock = Mutex.new
-    @version_cache = {} #
+    @version_cache = {}
 
     ##
     # add the gem library version to event

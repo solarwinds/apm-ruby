@@ -51,7 +51,6 @@ module SolarWindsAPM
         #   text map setter will be used.
         def inject(carrier, context: ::OpenTelemetry::Context.current,
                    setter: ::OpenTelemetry::Context::Propagation.text_map_setter)
-
           span_context = ::OpenTelemetry::Trace.current_span(context)&.context
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] span_context #{span_context.inspect}" }
           return unless span_context&.valid?

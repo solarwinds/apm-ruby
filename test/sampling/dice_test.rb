@@ -44,7 +44,7 @@ describe 'SolarWindsAPM Dice Test' do
   it 'can be updated' do
     dice = SolarWindsAPM::Dice.new(scale: 100, rate: 100)
     500.times { assert dice.roll }
-    
+
     dice.update(rate: 0)
     500.times { refute dice.roll }
   end

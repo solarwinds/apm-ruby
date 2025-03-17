@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 
 module SolarWindsAPM
   module MetricsExporter
@@ -5,7 +6,8 @@ module SolarWindsAPM
       # do not send metrics if no data_points present
       def export(metrics, timeout: nil)
         return ::OpenTelemetry::SDK::Metrics::Export::SUCCESS unless metrics.any? { |m| m.data_points.any? }
-        super(metrics, timeout: timeout)
+
+        super
       end
     end
   end

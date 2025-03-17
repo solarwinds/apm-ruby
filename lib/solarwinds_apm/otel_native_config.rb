@@ -15,7 +15,6 @@ require 'solarwinds_apm/sampling'
 module SolarWindsAPM
   # OTelNativeConfig module
   module OTelNativeConfig
-
     @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = true
@@ -46,19 +45,19 @@ module SolarWindsAPM
       @@config[:metrics_processor] = otlp_processor
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
 
-      service_key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(":")
+      service_key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
 
       # no need to send init msg for otlp proto
       # need to consider endpoint for get setting and endpoint for otlp exporters
       # current implementation only use OTEL env for endpoint
       #             -> need to come up with logic to drive from SW_APM_COLLECTOR
       sampler_config = {
-        :collector => "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com')}:443",
-        :service => service_key_name[1],
-        :headers => "Bearer #{service_key_name[0]}",
-        :tracing_mode => SolarWindsAPM::Config[:tracing_mode],
-        :trigger_trace_enabled => SolarWindsAPM::Config[:trigger_tracing_mode],
-        :transaction_settings => SolarWindsAPM::Config[:transaction_settings]
+        collector: "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com')}:443",
+        service: service_key_name[1],
+        headers: "Bearer #{service_key_name[0]}",
+        tracing_mode: SolarWindsAPM::Config[:tracing_mode],
+        trigger_trace_enabled: SolarWindsAPM::Config[:trigger_tracing_mode],
+        transaction_settings: SolarWindsAPM::Config[:transaction_settings]
       }
 
       # configure sampler afterwards

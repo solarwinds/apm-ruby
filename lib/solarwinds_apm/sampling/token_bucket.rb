@@ -11,7 +11,7 @@
 module SolarWindsAPM
   class TokenBucket
     # Maximum value of a signed 32-bit integer
-    MAX_INTERVAL = 2**31 - 1
+    MAX_INTERVAL = (2**31) - 1
 
     attr_reader :capacity, :rate, :interval, :tokens
 
@@ -37,13 +37,13 @@ module SolarWindsAPM
 
       self.rate = settings[:rate] if settings[:rate]
 
-      if settings[:interval]
-        self.interval = settings[:interval]
-        if running
-          stop
-          start
-        end
-      end
+      return unless settings[:interval]
+
+      self.interval = settings[:interval]
+      return unless running
+
+      stop
+      start
     end
 
     def update_from_token_bucket_settings(settings)
@@ -55,37 +55,37 @@ module SolarWindsAPM
 
       self.rate = settings.rate if settings.rate
 
-      if settings.interval
-        self.interval = settings.interval
-        if running
-          stop
-          start
-        end
-      end
+      return unless settings.interval
+
+      self.interval = settings.interval
+      return unless running
+
+      stop
+      start
     end
 
-    def capacity=(n)
-      @capacity = [0,n].max
+    def capacity=(capacity)
+      @capacity = [0, capacity].max
     end
 
-    def rate=(n)
-      @rate = [0,n].max
+    def rate=(rate)
+      @rate = [0, rate].max
     end
 
-    def interval=(n)
-      @interval = [0, [MAX_INTERVAL, n].min].max
+    def interval=(interval)
+      @interval = interval.clamp(0, MAX_INTERVAL)
     end
 
-    def tokens=(n)
-      @tokens = [0, [@capacity, n].min].max
+    def tokens=(tokens)
+      @tokens = tokens.clamp(0, @capacity)
     end
 
     # Attempts to consume tokens from the bucket
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
-    def consume(n = 1)
-      if @tokens >= n
-        self.tokens = @tokens - n
+    def consume(token = 1)
+      if @tokens >= token
+        self.tokens = @tokens - token
         true
       else
         false
@@ -120,7 +120,7 @@ module SolarWindsAPM
     private
 
     def task
-      self.tokens = self.tokens + @rate
+      self.tokens = tokens + @rate
     end
   end
 end

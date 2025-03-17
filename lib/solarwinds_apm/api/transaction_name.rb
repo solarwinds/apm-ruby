@@ -38,7 +38,6 @@ module SolarWindsAPM
       # * Boolean
       #
       def set_transaction_name(custom_name = nil)
-
         otel_config = SolarWindsAPM::OTelNativeConfig if defined? SolarWindsAPM::OTelNativeConfig
         otel_config = SolarWindsAPM::OTelConfig if defined? SolarWindsAPM::OTelConfig
 

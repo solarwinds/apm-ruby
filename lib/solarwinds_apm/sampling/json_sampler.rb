@@ -8,8 +8,7 @@
 
 module SolarWindsAPM
   class JsonSampler < Sampler
-
-    DEFAULT_PATH = File.join(Dir.tmpdir, "solarwinds-apm-settings.json")
+    DEFAULT_PATH = File.join(Dir.tmpdir, 'solarwinds-apm-settings.json')
 
     def initialize(config, path = nil)
       super(config, SolarWindsAPM.logger)
@@ -23,7 +22,7 @@ module SolarWindsAPM
     # updated or not from collector extention
     def should_sample?(params)
       loop_check
-      super(params)
+      super
     end
 
     private

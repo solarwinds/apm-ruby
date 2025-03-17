@@ -40,11 +40,11 @@ Gem::Specification.new do |s|
 
   s.extensions = ['ext/oboe_metal/extconf.rb']
 
-  s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
-  s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
-  s.add_dependency('opentelemetry-metrics-sdk', '>= 0.2.0')
   s.add_dependency('opentelemetry-exporter-otlp', '>= 0.29.1')
   s.add_dependency('opentelemetry-exporter-otlp-metrics', '>= 0.3.0')
+  s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
+  s.add_dependency('opentelemetry-metrics-sdk', '>= 0.2.0')
+  s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
 
   s.required_ruby_version = '>= 2.7.0'
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }

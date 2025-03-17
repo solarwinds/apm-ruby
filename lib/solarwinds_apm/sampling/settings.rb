@@ -11,11 +11,11 @@ module SolarWindsAPM
     def self.merge(remote, local)
       flags = local[:tracing_mode] || remote[:flags]
 
-      local[:trigger_mode] ? flags |= ::Flags::TRIGGERED_TRACE : flags &= ~::Flags::TRIGGERED_TRACE
+      local[:trigger_mode] ? flags |= SolarWindsAPM::Flags::TRIGGERED_TRACE : flags &= ~ SolarWindsAPM::Flags::TRIGGERED_TRACE
 
-      if (remote[:flags] & ::Flags::OVERRIDE) != 0
+      if remote[:flags].anybits?(SolarWindsAPM::Flags::OVERRIDE)
         flags &= remote[:flags]
-        flags |= ::Flags::OVERRIDE
+        flags |= SolarWindsAPM::Flags::OVERRIDE
       end
 
       remote.dup.tap { |merged| merged[:flags] = flags }

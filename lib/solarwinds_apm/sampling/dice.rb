@@ -26,9 +26,9 @@ module SolarWindsAPM
       (rand * @scale) < @rate
     end
 
-    def rate=(n)
+    def rate=(rate)
       # Math.max(0, Math.min(this.#scale, n))
-      @rate = [0, [@scale, n].min].max
+      @rate = rate.clamp(0, @scale)
     end
   end
 end

@@ -25,7 +25,7 @@ describe 'otlp processor test' do
     request_metrics           = @processor.instance_variable_get(:@meters)['sw.apm.request.metrics']
     sampling_metrics          = @processor.instance_variable_get(:@meters)['sw.apm.sampling.metrics']
     request_metrics_registry  = request_metrics.instance_variable_get(:@instrument_registry)
-    sampling_metrics_registry = sampling_metrics.instance_variable_get(:@instrument_registry)
+    sampling_metrics.instance_variable_get(:@instrument_registry)
 
     _(@processor.instance_variable_get(:@meters).size).must_equal 1
     _(@processor.instance_variable_get(:@metrics).size).must_equal 1

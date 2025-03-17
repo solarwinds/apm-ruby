@@ -12,15 +12,15 @@ module SolarWindsAPM
       # counter = Counter.new
       # counter[:request_count].update(1)
       def initialize
-        @meter = ::OpenTelemetry.meter_provider.meter("sw.apm.sampling.metrics")
+        @meter = ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics')
 
         @counter = {
-          request_count: @meter.create_counter("trace.service.request_count"),
-          sample_count: @meter.create_counter("trace.service.samplecount"),
-          trace_count: @meter.create_counter("trace.service.tracecount"),
-          through_trace_count: @meter.create_counter("trace.service.through_trace_count"),
-          triggered_trace_count: @meter.create_counter("trace.service.triggered_trace_count"),
-          token_bucket_exhaustion_count: @meter.create_counter("trace.service.tokenbucket_exhaustion_count")
+          request_count: @meter.create_counter('trace.service.request_count'),
+          sample_count: @meter.create_counter('trace.service.samplecount'),
+          trace_count: @meter.create_counter('trace.service.tracecount'),
+          through_trace_count: @meter.create_counter('trace.service.through_trace_count'),
+          triggered_trace_count: @meter.create_counter('trace.service.triggered_trace_count'),
+          token_bucket_exhaustion_count: @meter.create_counter('trace.service.tokenbucket_exhaustion_count')
         }
       end
 

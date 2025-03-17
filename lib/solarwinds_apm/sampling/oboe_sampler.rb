@@ -29,9 +29,12 @@ module SolarWindsAPM
       @logger = logger
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
-        BucketType::DEFAULT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
-        BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
-        BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL))
+        SolarWindsAPM::BucketType::DEFAULT => 
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
+        SolarWindsAPM::BucketType::TRIGGER_RELAXED => 
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
+        SolarWindsAPM::BucketType::TRIGGER_STRICT => 
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL))
       }
       @settings = {} # parsed setting from swo backend
 
@@ -46,12 +49,12 @@ module SolarWindsAPM
       _, parent_context, _, _, _, attributes = params.values
 
       parent_span = ::OpenTelemetry::Trace.current_span(parent_context)
-      type = SpanType.span_type(parent_span)
+      type = SolarWindsAPM::SpanType.span_type(parent_span)
 
       @logger.debug { "[#{self.class}/#{__method__}] span type is #{type}" }
 
       # For local spans, we always trust the parent
-      if type == SpanType::LOCAL
+      if type == SolarWindsAPM::SpanType::LOCAL
         return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, tracestate: DEFAULT_TRACESTATE) if parent_span.context.trace_flags.sampled?
 
         return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP, tracestate: DEFAULT_TRACESTATE)
@@ -134,7 +137,7 @@ module SolarWindsAPM
         @logger.debug { 'context is valid for parent-based sampling' }
         parent_based_algo(sample_state)
 
-      elsif sample_state.settings[:flags].anybits?(::Flags::SAMPLE_START)
+      elsif sample_state.settings[:flags].anybits?(Flags::SAMPLE_START)
         if sample_state.trace_options&.trigger_trace
           @logger.debug { 'trigger trace requested' }
           trigger_trace_algo(sample_state)

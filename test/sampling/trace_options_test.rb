@@ -3,15 +3,12 @@
 # Copyright (c) 2025 SolarWinds, LLC.
 # All rights reserved.
 
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/trace_options_test.rb
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/trace_options_test.rb -n /timestamp\ invalid/
-
 require 'minitest_helper'
 require './lib/solarwinds_apm/sampling/sampling_constants'
 require './lib/solarwinds_apm/sampling/trace_options'
+require 'sampling_test_helper'
 
 describe 'parseTraceOptions' do
-
   let(:logger) { Logger.new($STDOUT) }
 
   it 'no key no value' do
@@ -43,14 +40,13 @@ describe 'parseTraceOptions' do
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     assert_equal({}, result.custom)
-    _(result.ignored).must_equal [['trigger-trace', 'value']]
+    _(result.ignored).must_equal [%w[trigger-trace value]]
   end
-  
+
   it 'trigger trace duplicate' do
     header = 'trigger-trace;trigger-trace'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
-    puts result.inspect
     _(result.trigger_trace).must_equal true
     assert_equal({}, result.custom)
     _(result.ignored).must_equal [['trigger-trace', nil]]
@@ -63,22 +59,22 @@ describe 'parseTraceOptions' do
     assert_equal({}, result.custom)
     _(result.ignored).must_equal [['ts', nil]]
   end
-  
+
   it 'timestamp duplicate' do
     header = 'ts=1234;ts=5678'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     _(result.timestamp).must_equal(1234)
     assert_equal({}, result.custom)
-    _(result.ignored).must_equal [['ts', '5678']]
+    _(result.ignored).must_equal [%w[ts 5678]]
   end
-  
+
   it 'timestamp invalid' do
     header = 'ts=value'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     assert_equal({}, result.custom)
-    _(result.ignored).must_equal [['ts', 'value']]
+    _(result.ignored).must_equal [%w[ts value]]
   end
 
   it 'timestamp float' do
@@ -94,7 +90,7 @@ describe 'parseTraceOptions' do
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     assert_equal({}, result.custom)
-    _(result.timestamp).must_equal 1234567890
+    _(result.timestamp).must_equal 1_234_567_890
     _(result.ignored).must_equal []
   end
 
@@ -112,7 +108,7 @@ describe 'parseTraceOptions' do
 
     assert_equal({}, result.custom)
     _(result.sw_keys).must_equal 'keys1'
-    _(result.ignored).must_equal [['sw-keys', 'keys2']]
+    _(result.ignored).must_equal [%w[sw-keys keys2]]
   end
 
   it 'sw-keys trim' do
@@ -154,7 +150,7 @@ describe 'parseTraceOptions' do
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     _(result.custom['custom-key']).must_equal 'value1'
-    _(result.ignored).must_equal [['custom-key', 'value2']]
+    _(result.ignored).must_equal [%w[custom-key value2]]
   end
 
   it 'custom keys equals in value' do
@@ -168,7 +164,7 @@ describe 'parseTraceOptions' do
   it 'custom keys spaces in key' do
     header = 'custom- key=value;custom-ke y=value'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-    
+
     assert_equal({}, result.custom)
     _(result.ignored).must_equal [['custom- key', 'value'], ['custom-ke y', 'value']]
   end
@@ -176,64 +172,64 @@ describe 'parseTraceOptions' do
   it 'other ignored' do
     header = 'key=value'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-    
+
     assert_equal({}, result.custom)
-    _(result.ignored).must_equal [['key', 'value']]
+    _(result.ignored).must_equal [%w[key value]]
   end
 
-  it "trim everything" do
-    header = "trigger-trace ; custom-something=value; custom-OtherThing = other val ; sw-keys = 029734wr70:9wqj21,0d9j1 ; ts = 12345 ; foo = bar"
+  it 'trim everything' do
+    header = 'trigger-trace ; custom-something=value; custom-OtherThing = other val ; sw-keys = 029734wr70:9wqj21,0d9j1 ; ts = 12345 ; foo = bar'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     _(result.trigger_trace).must_equal true
-    _(result.sw_keys).must_equal "029734wr70:9wqj21,0d9j1"
-    _(result.timestamp).must_equal 12345
+    _(result.sw_keys).must_equal '029734wr70:9wqj21,0d9j1'
+    _(result.timestamp).must_equal 12_345
     _(result.custom['custom-something']).must_equal 'value'
     _(result.custom['custom-OtherThing']).must_equal 'other val'
-    _(result.ignored).must_equal [["foo", "bar"]]
+    _(result.ignored).must_equal [%w[foo bar]]
   end
 
-  it "semi everywhere" do
-    header = ";foo=bar;;;custom-something=value_thing;;sw-keys=02973r70:1b2a3;;;;custom-key=val;ts=12345;;;;;;;trigger-trace;;;"
+  it 'semi everywhere' do
+    header = ';foo=bar;;;custom-something=value_thing;;sw-keys=02973r70:1b2a3;;;;custom-key=val;ts=12345;;;;;;;trigger-trace;;;'
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     _(result.trigger_trace).must_equal true
     _(result.sw_keys).must_equal '02973r70:1b2a3'
-    _(result.timestamp).must_equal 12345
+    _(result.timestamp).must_equal 12_345
     _(result.custom['custom-something']).must_equal 'value_thing'
     _(result.custom['custom-key']).must_equal 'val'
-    _(result.ignored).must_equal [["foo", "bar"]]
+    _(result.ignored).must_equal [%w[foo bar]]
   end
 
-  it "single quotes" do
+  it 'single quotes' do
     header = "trigger-trace;custom-foo='bar;bar';custom-bar=foo"
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
     _(result.trigger_trace).must_equal true
     _(result.custom['custom-foo']).must_equal "'bar"
-    _(result.custom['custom-bar']).must_equal "foo"
+    _(result.custom['custom-bar']).must_equal 'foo'
     _(result.ignored).must_equal [["bar'", nil]]
   end
 
-  it "missing values and semi" do
-    header = ";trigger-trace;custom-something=value_thing;sw-keys=02973r70:9wqj21,0d9j1;1;2;3;4;5;=custom-key=val?;="
+  it 'missing values and semi' do
+    header = ';trigger-trace;custom-something=value_thing;sw-keys=02973r70:9wqj21,0d9j1;1;2;3;4;5;=custom-key=val?;='
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-    
+
     _(result.trigger_trace).must_equal true
     _(result.sw_keys).must_equal '02973r70:9wqj21,0d9j1'
     _(result.custom['custom-something']).must_equal 'value_thing'
-    _(result.ignored).must_equal [["1", nil],["2", nil],["3", nil],["4", nil],["5", nil]]
+    _(result.ignored).must_equal [['1', nil], ['2', nil], ['3', nil], ['4', nil], ['5', nil]]
   end
 end
 
 describe 'stringifyTraceOptionsResponse' do
   it 'basic' do
-    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(TraceOptionsResponse.new(Auth::OK, TriggerTrace::OK, []))
+    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(SolarWindsAPM::TraceOptionsResponse.new(SolarWindsAPM::Auth::OK, SolarWindsAPM::TriggerTrace::OK, []))
     _(result).must_equal('auth:ok;trigger-trace:ok')
   end
-  
+
   it 'ignored values' do
-    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(TraceOptionsResponse.new(Auth::OK, TriggerTrace::TRIGGER_TRACING_DISABLED, ['invalid-key1', 'invalid_key2']))
+    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(SolarWindsAPM::TraceOptionsResponse.new(SolarWindsAPM::Auth::OK, SolarWindsAPM::TriggerTrace::TRIGGER_TRACING_DISABLED, %w[invalid-key1 invalid_key2]))
     _(result).must_equal('auth:ok;trigger-trace:trigger-tracing-disabled;ignored:invalid-key1,invalid_key2')
   end
 end
@@ -241,31 +237,31 @@ end
 describe 'validateSignature' do
   it 'valid signature' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59c', '8mZ98ZnZhhggcsUmdMbS'.b, Time.now.to_i - 60)
-    _(result).must_equal(Auth::OK)
+    _(result).must_equal(SolarWindsAPM::Auth::OK)
   end
-  
+
   it 'invalid signature' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59d', '8mZ98ZnZhhggcsUmdMbS'.b, Time.now.to_i - 60)
-    _(result).must_equal(Auth::BAD_SIGNATURE)
+    _(result).must_equal(SolarWindsAPM::Auth::BAD_SIGNATURE)
   end
-  
+
   it 'missing signature key' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59c', nil, Time.now.to_i - 60)
-    _(result).must_equal(Auth::NO_SIGNATURE_KEY)
+    _(result).must_equal(SolarWindsAPM::Auth::NO_SIGNATURE_KEY)
   end
 
   it 'timestamp past' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59c', '8mZ98ZnZhhggcsUmdMbS'.b, Time.now.to_i - 600)
-    _(result).must_equal(Auth::BAD_TIMESTAMP)
+    _(result).must_equal(SolarWindsAPM::Auth::BAD_TIMESTAMP)
   end
-  
+
   it 'timestamp future' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59c', '8mZ98ZnZhhggcsUmdMbS'.b, Time.now.to_i + 600)
-    _(result).must_equal(Auth::BAD_TIMESTAMP)
+    _(result).must_equal(SolarWindsAPM::Auth::BAD_TIMESTAMP)
   end
-  
+
   it 'missing timestamp' do
     result = SolarWindsAPM::TraceOptions.validate_signature('trigger-trace;pd-keys=lo:se,check-id:123;ts=1564597681', '2c1c398c3e6be898f47f74bf74f035903b48b59c', '8mZ98ZnZhhggcsUmdMbS'.b, nil)
-    _(result).must_equal(Auth::BAD_TIMESTAMP)
+    _(result).must_equal(SolarWindsAPM::Auth::BAD_TIMESTAMP)
   end
 end
