@@ -11,6 +11,9 @@ jobs:
     name: Build + Publish to Github Package
     runs-on: ubuntu-latest
 
+    outputs:
+      apm_ruby_version: ${{ steps.version.outputs.gem_version }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -65,17 +68,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: extract current solarwinds_apm version
-        id: extract
-        run: |
-          APM_VERSION=$(ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING')
-          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
-
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: builds
+        env:
+          SOLARWINDS_APM_VERSION: ${{needs.publish_to_github_package.outputs.apm_ruby_version}}
 
       - name: Scan build artifact on the Portal
         id: rl-scan
@@ -89,6 +88,8 @@ jobs:
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
           rl-package-url: solarwinds-apm-ruby/apm-ruby-stg@${{ env.SOLARWINDS_APM_VERSION }}
+        env:
+          SOLARWINDS_APM_VERSION: ${{needs.publish_to_github_package.outputs.apm_ruby_version}}
 
       - name: report the scan status
         if: success() || failure()
