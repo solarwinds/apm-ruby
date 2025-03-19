@@ -10,6 +10,7 @@ require './lib/solarwinds_apm/otel_config'
 require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/api'
 
+# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/api/set_transaction_name_test.rb
 describe 'SolarWinds Set Transaction Name Test' do
   before do
     @span = create_span
@@ -68,7 +69,7 @@ describe 'SolarWinds Set Transaction Name Test' do
         result = SolarWindsAPM::API.set_transaction_name('abcdf')
         _(result).must_equal true
       end
-      assert_nil(@solarwinds_processor.txn_manager.get('77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018'))
+      _(@solarwinds_processor.txn_manager.get('77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018')).must_equal 'abcdf'
     end
   end
 

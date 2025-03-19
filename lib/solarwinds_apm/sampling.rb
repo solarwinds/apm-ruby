@@ -6,10 +6,22 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# This file is for loading any customized patch for upstream
+require 'json'
+require 'fileutils'
+require 'tempfile'
+require 'uri'
+require 'opentelemetry-sdk'
 
-# e.g.
-# require_relative './patch/dummy_patch'
-# OpenTelemetry::Instrumentation::Registry.prepend(SolarWindsAPM::Patch::DummyPatch) if defined? OpenTelemetry::Instrumentation::Registry && OpenTelemetry::Instrumentation::Registry::VERSION <= '0.3.0'
+require_relative 'sampling/sampling_constants'
+require_relative 'sampling/dice'
+require_relative 'sampling/settings'
+require_relative 'sampling/token_bucket'
+require_relative 'sampling/trace_options'
+require_relative 'sampling/metrics'
+require_relative 'sampling/instrumentation_scope'
 
-require_relative 'sampling/sampling_patch'
+# HttpSampler/JsonSampler < Sampler < OboeSampler
+require_relative 'sampling/oboe_sampler'
+require_relative 'sampling/sampler'
+require_relative 'sampling/http_sampler'
+require_relative 'sampling/json_sampler'

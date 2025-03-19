@@ -6,10 +6,19 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# This file is for loading any customized patch for upstream
+module SolarWindsAPM
+  module SamplingSettings
+    def self.merge(remote, local)
+      flags = local[:tracing_mode] || remote[:flags]
 
-# e.g.
-# require_relative './patch/dummy_patch'
-# OpenTelemetry::Instrumentation::Registry.prepend(SolarWindsAPM::Patch::DummyPatch) if defined? OpenTelemetry::Instrumentation::Registry && OpenTelemetry::Instrumentation::Registry::VERSION <= '0.3.0'
+      local[:trigger_mode] ? flags |= SolarWindsAPM::Flags::TRIGGERED_TRACE : flags &= ~ SolarWindsAPM::Flags::TRIGGERED_TRACE
 
-require_relative 'sampling/sampling_patch'
+      if remote[:flags].anybits?(SolarWindsAPM::Flags::OVERRIDE)
+        flags &= remote[:flags]
+        flags |= SolarWindsAPM::Flags::OVERRIDE
+      end
+
+      remote.dup.tap { |merged| merged[:flags] = flags }
+    end
+  end
+end
