@@ -31,8 +31,7 @@ module SolarWindsAPM
       attributes = ::OpenTelemetry::SDK::Resources::Resource.create({})
       attributes = attributes.merge(detect_uams_client_id)
       attributes = attributes.merge(detect_k8s_atttributes)
-      attributes = attributes.merge(from_upstream_detector)
-      attributes
+      attributes.merge(from_upstream_detector)
     end
 
     def self.detect_uams_client_id
@@ -66,7 +65,6 @@ module SolarWindsAPM
     end
 
     def self.detect_k8s_atttributes
-
       return ::OpenTelemetry::SDK::Resources::Resource.create({}) unless ENV['KUBERNETES_SERVICE_HOST'] && ENV['KUBERNETES_SERVICE_PORT']
 
       resource_attributes = {}
@@ -102,7 +100,7 @@ module SolarWindsAPM
       resource_attributes['k8s.namespace.name'] = namespace
       resource_attributes['k8s.pod.name'] = pod_name
       resource_attributes['k8s.pod.uid'] = pod_uid
-      
+
       resource_attributes.compact!
       ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
     end
@@ -123,11 +121,9 @@ module SolarWindsAPM
     end
 
     def self.require_detector(gem_name)
-      begin
-        require gem_name
-      rescue StandardError => e
-        SolarWindsAPM.logger.warn { "No #{gem_name} found." }
-      end
+      require gem_name
+    rescue StandardError
+      SolarWindsAPM.logger.warn { "No #{gem_name} found." }
     end
   end
 end

@@ -14,28 +14,24 @@ describe 'Resource Detector Test' do
 
     FileUtils.mkdir_p('/var/run/secrets/kubernetes.io/serviceaccount/')
     File.open(SolarWindsAPM::ResourceDetector::K8S_NAMESPACE_PATH, 'w') do |file|
-      file.puts("fake_namespace")
+      file.puts('fake_namespace')
     end
     File.open(SolarWindsAPM::ResourceDetector::K8S_TOKEN_PATH, 'w') do |file|
-      file.puts("fake@token")
+      file.puts('fake@token')
     end
 
-    if File.exist?(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH)
-      original_hostname = File.read(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH).strip!
-    else
-      original_hostname = nil
-    end
+    original_hostname = (File.read(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH).strip! if File.exist?(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH))
 
     File.open(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH, 'w') do |file|
-      file.puts("fake_hostname")
+      file.puts('fake_hostname')
     end
 
     WebMock.disable_net_connect!
     WebMock.enable!
-    WebMock.stub_request(:get, "https://kubernetes.default.svc/api/v1/namespaces/fake_namespace/pods/fake_hostname")
+    WebMock.stub_request(:get, 'https://kubernetes.default.svc/api/v1/namespaces/fake_namespace/pods/fake_hostname')
            .to_return(
              status: 200,
-             body: {"kind"=>"Pod", "metadata"=>{"uid"=>"fake_uid"}}.to_json,
+             body: { 'kind' => 'Pod', 'metadata' => { 'uid' => 'fake_uid' } }.to_json,
              headers: { 'Content-Type' => 'application/json' }
            )
     attributes = SolarWindsAPM::ResourceDetector.detect_k8s_atttributes
@@ -85,7 +81,7 @@ describe 'Resource Detector Test' do
   it 'detect_uams_client_id_from_file' do
     FileUtils.mkdir_p('/opt/solarwinds/uamsclient/var')
     File.open(SolarWindsAPM::ResourceDetector::UAMS_CLIENT_PATH, 'w') do |file|
-      file.puts("fake_uams_client_id")
+      file.puts('fake_uams_client_id')
     end
 
     attributes = SolarWindsAPM::ResourceDetector.detect_uams_client_id
@@ -100,7 +96,7 @@ describe 'Resource Detector Test' do
     WebMock.stub_request(:get, SolarWindsAPM::ResourceDetector::UAMS_CLIENT_URL)
            .to_return(
              status: 200,
-             body: { SolarWindsAPM::ResourceDetector::UAMS_CLIENT_ID_FIELD => "12345", "status" => "active" }.to_json,
+             body: { SolarWindsAPM::ResourceDetector::UAMS_CLIENT_ID_FIELD => '12345', 'status' => 'active' }.to_json,
              headers: { 'Content-Type' => 'application/json' }
            )
 
@@ -109,5 +105,4 @@ describe 'Resource Detector Test' do
     WebMock.reset!
     WebMock.allow_net_connect!
   end
-
 end
