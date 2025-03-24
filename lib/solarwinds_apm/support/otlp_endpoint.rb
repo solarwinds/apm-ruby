@@ -9,7 +9,6 @@
 module SolarWindsAPM
   # OTLPEndPoint
   class OTLPEndPoint
-
     SW_ENDPOINT_REGEX = /^apm\.collector\.([a-z0-9-]+)\.cloud\.solarwinds\.com$/
     OTEL_ENDPOINT_REGEX = %r{^https://otel\.collector\.([a-z0-9-]+)\.cloud\.solarwinds\.com:443(?:/.*)?$}
     OTEL_ENDPOINT_LOCAL_REGEX = %r{\Ahttp://0\.0\.0\.0:(4317|4318)\z}
@@ -36,7 +35,7 @@ module SolarWindsAPM
     def config_otlp_endpoint
       config_service_name
       config_token
-      ['TRACES','METRICS','LOGS'].each { |data_type| configure_otlp_endpoint(data_type) }
+      %w[TRACES METRICS LOGS].each { |data_type| configure_otlp_endpoint(data_type) }
     end
 
     def config_service_name
@@ -45,11 +44,11 @@ module SolarWindsAPM
         hash[key] = value
       end
 
-      unless @lambda_env
-        @service_name = ENV['OTEL_SERVICE_NAME'] || resource_attributes['service.name'] || @service_name || 'None'
-      else
-        @service_name = ENV['OTEL_SERVICE_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || resource_attributes['service.name']
-      end
+      @service_name = if @lambda_env
+                        ENV['OTEL_SERVICE_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || resource_attributes['service.name']
+                      else
+                        ENV['OTEL_SERVICE_NAME'] || resource_attributes['service.name'] || @service_name || 'None'
+                      end
 
       ENV['OTEL_SERVICE_NAME'] = @service_name
     end
@@ -67,24 +66,24 @@ module SolarWindsAPM
 
       if @lambda_env
         # for case 10 and 11, lambda only care about SW_APM_API_TOKEN, not SW_APM_SERVICE_KEY
-        agent_enable = ENV['SW_APM_API_TOKEN'].nil? ? false : true
+        agent_enable = !ENV['SW_APM_API_TOKEN'].nil?
       else
 
-        if ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS']
-          token_type = 'metrics_token'
-        elsif ENV['OTEL_EXPORTER_OTLP_HEADERS']
-          token_type = 'general_token'
-        elsif ENV['SW_APM_SERVICE_KEY']
-          token_type = 'service_key'
-        else
-          token_type = 'invalid'
-        end
+        token_type = if ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS']
+                       'metrics_token'
+                     elsif ENV['OTEL_EXPORTER_OTLP_HEADERS']
+                       'general_token'
+                     elsif ENV['SW_APM_SERVICE_KEY']
+                       'service_key'
+                     else
+                       'invalid'
+                     end
 
         case token_type
         when 'metrics_token' || 'general_token'
           # exporter header is ok, but still need extract it for sampler http get setting
-          headers = token_type == 'general_token' ? ENV['OTEL_EXPORTER_OTLP_HEADERS'] : ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS']
-          @token = headers.gsub("authorization=Bearer ", "")
+          headers = token_type == 'general_token' ? ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil) : ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_HEADERS', nil)
+          @token = headers.gsub('authorization=Bearer ', '')
         when 'service_key'
           if valid?(ENV['SW_APM_SERVICE_KEY'])
             @token, @service_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
@@ -95,18 +94,18 @@ module SolarWindsAPM
           ENV['OTEL_EXPORTER_OTLP_HEADERS'] = "authorization=Bearer #{@token}"
         end
 
-        agent_enable = token_type == 'invalid' ? false : true
+        agent_enable = token_type != 'invalid'
       end
 
       @agent_enable = agent_enable
       agent_enable
     end
 
-    def valid?(service_key)
+    def valid?(_service_key)
       # servicekey checker also works on service name, may need to remove that part
       service_key_checker = SolarWindsAPM::ServiceKeyChecker.new('ssl', false)
       service_key_name = service_key_checker.read_and_validate_service_key
-      service_key_name == '' ? false : true
+      service_key_name != ''
     end
 
     def determine_lambda_env
@@ -135,37 +134,34 @@ module SolarWindsAPM
       # https://otel.collector.cloud.solarwinds.com:443/v1/traces
       # SW_ENDPOINT_REGEX = /^apm\.collector(?:\.[a-z0-9-]+)?\.cloud\.solarwinds\.com$/
 
-      return unless ['TRACES','METRICS','LOGS'].include?(data_type)
+      return unless %w[TRACES METRICS LOGS].include?(data_type)
 
       data_type_upper = data_type.upcase
       data_type = data_type.downcase
-
-      endpoint_type = nil
-      if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"]
-        endpoint_type = "#{data_type}_endpoint"
-      elsif ENV['OTEL_EXPORTER_OTLP_ENDPOINT']
-        endpoint_type = 'general_endpoint'
-      elsif ENV['SW_APM_COLLECTOR'].nil? && !@lambda_env
-        endpoint_type = 'default_nil'
-      elsif ENV['SW_APM_COLLECTOR'].to_s.match?(SW_ENDPOINT_REGEX)
-        endpoint_type = 'apm_proto'
-      else
-        endpoint_type = 'invalid'
-      end
+      endpoint_type = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"]
+                        "#{data_type}_endpoint"
+                      elsif ENV['OTEL_EXPORTER_OTLP_ENDPOINT']
+                        'general_endpoint'
+                      elsif ENV['SW_APM_COLLECTOR'].nil? && !@lambda_env
+                        'default_nil'
+                      elsif ENV['SW_APM_COLLECTOR'].to_s.match?(SW_ENDPOINT_REGEX)
+                        'apm_proto'
+                      else
+                        'invalid'
+                      end
 
       # endpoint = nil
-      sampler_collector_endpoint = nil
       case endpoint_type
       when "#{data_type}_endpoint" || 'general_endpoint'
         # no need to worry about metrics endpoint, just need to make sure the collector endpoint is set for getsetting
-        endpoint = endpoint_type == 'general_endpoint' ? ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] : ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"]
-        
+        endpoint = endpoint_type == 'general_endpoint' ? ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil) : ENV.fetch("OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT", nil)
+
         if endpoint.to_s.match?(OTEL_ENDPOINT_REGEX)
           matches = endpoint.to_s.match(OTEL_ENDPOINT_REGEX)
           region = matches[1]
           sampler_collector_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
           ENV['SW_APM_COLLECTOR'] = sampler_collector_endpoint
-        else
+          # else
           # not the standard otel endpoint, use it directly
           # what to do with collector ?
         end
@@ -180,8 +176,8 @@ module SolarWindsAPM
         # when in testing/staging, we need to set both otlp endpoint and SW_APM_COLLECTOR
         matches = ENV['SW_APM_COLLECTOR'].to_s.match(SW_ENDPOINT_REGEX)
         region = matches[1]
-        apmproto_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub("na-01", region)
-        apmproto_endpoint = apmproto_endpoint.gsub("apm", "otel")
+        apmproto_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
+        apmproto_endpoint = apmproto_endpoint.gsub('apm', 'otel')
         ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"] = "https://#{apmproto_endpoint}:443/v1/#{data_type}"
       end
 

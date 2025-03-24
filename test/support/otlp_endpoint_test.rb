@@ -42,7 +42,7 @@ describe 'OTLP Endpoint Test' do
       _(endpoint.instance_variable_get(:@token)).must_equal '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
       _(endpoint.instance_variable_get(:@service_name)).must_equal 'my_service'
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      _(ENV['OTEL_EXPORTER_OTLP_HEADERS']).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
     end
 
     # 3
@@ -55,7 +55,7 @@ describe 'OTLP Endpoint Test' do
       _(endpoint.instance_variable_get(:@token)).must_equal '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
       _(endpoint.instance_variable_get(:@service_name)).must_equal 'my_service'
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      _(ENV['OTEL_EXPORTER_OTLP_HEADERS']).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
     end
 
     # 4
@@ -104,7 +104,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_HEADERS'])
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     end
 
     # 8
@@ -117,7 +117,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_HEADERS'])
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     end
 
     # 9
@@ -130,7 +130,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_HEADERS'])
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     end
 
     # 10 lambda doesn't care about SW_APM_SERVICE_KEY and OTEL_EXPORTER_OTLP_ENDPOINT
@@ -142,7 +142,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal false
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_HEADERS'])
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     end
 
     it 'SW_APM_API_TOKEN valid inside lambda' do
@@ -153,21 +153,21 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal false
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_HEADERS'])
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     end
   end
 
   describe 'config_endpoint xuan' do
-    let(:endpoint_types) { ['TRACES','METRICS', 'LOGS'] }
+    let(:endpoint_types) { %w[TRACES METRICS LOGS] }
 
     it 'no OTEL ENDPOINT and no SW_APM_COLLECTOR' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_ENDPOINT'])
-      _(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
-      _(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/metrics'
-      _(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/logs'
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil))
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/metrics'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/logs'
     end
 
     it 'OTEL ENDPOINT to local and no SW_APM_COLLECTOR' do
@@ -175,10 +175,10 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      _(ENV['OTEL_EXPORTER_OTLP_ENDPOINT']).must_equal 'http://localhost:4317'
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'])
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'])
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'])
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://localhost:4317'
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil))
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil))
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil))
     end
 
     it 'OTEL ENDPOINT to otel and with SW_APM_COLLECTOR' do
@@ -186,10 +186,10 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_ENDPOINT'])
-      _(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/traces'
-      _(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/metrics'
-      _(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/logs'
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil))
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/traces'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/metrics'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/logs'
     end
 
     it 'OTEL ENDPOINT to local and no SW_APM_COLLECTOR' do
@@ -198,10 +198,10 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      _(ENV['OTEL_EXPORTER_OTLP_ENDPOINT']).must_equal 'http://localhost:4317'
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'])
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'])
-      assert_nil(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'])
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://localhost:4317'
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil))
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil))
+      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil))
     end
 
     # 5
@@ -210,10 +210,10 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      _(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']).must_equal 'http://special.host:4317/v1/metrics'
-      _(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
-      _(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/logs'
-      _(ENV['SW_APM_COLLECTOR']).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'http://special.host:4317/v1/metrics'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/logs'
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
     end
 
     it 'OTEL METRICS ENDPOINT to special and SW_APM_COLLECTOR to special location xuan2' do
@@ -222,10 +222,10 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      _(ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']).must_equal 'http://special.host:4317/v1/metrics'
-      _(ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']).must_equal 'https://otel.collector.eu-01.cloud.solarwinds.com:443/v1/traces'
-      _(ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']).must_equal 'https://otel.collector.eu-01.cloud.solarwinds.com:443/v1/logs'
-      _(ENV['SW_APM_COLLECTOR']).must_equal 'apm.collector.eu-01.cloud.solarwinds.com'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'http://special.host:4317/v1/metrics'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.eu-01.cloud.solarwinds.com:443/v1/traces'
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.eu-01.cloud.solarwinds.com:443/v1/logs'
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.eu-01.cloud.solarwinds.com'
     end
 
     # 7,8 not appliable since SW_APM_LEGACY will not be present here
@@ -247,7 +247,7 @@ describe 'OTLP Endpoint Test' do
       ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my-service'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint.config_service_name
-      
+
       _(endpoint.instance_variable_get(:@service_name)).must_equal 'otel-service-name'
     end
 
@@ -281,5 +281,3 @@ describe 'OTLP Endpoint Test' do
     end
   end
 end
-
-
