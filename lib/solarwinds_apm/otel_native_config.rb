@@ -42,15 +42,14 @@ module SolarWindsAPM
       # add sw metrics processors (only record respone_time)
       txn_manager = TxnNameManager.new
       otlp_processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
+
       @@config[:metrics_processor] = otlp_processor
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
 
       service_key_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
 
       # no need to send init msg for otlp proto
-      # need to consider endpoint for get setting and endpoint for otlp exporters
-      # current implementation only use OTEL env for endpoint
-      #             -> need to come up with logic to drive from SW_APM_COLLECTOR
+      # collector, service and headers are used for http sampler get settings
       sampler_config = {
         collector: "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com')}:443",
         service: service_key_name[1],
@@ -60,12 +59,12 @@ module SolarWindsAPM
         transaction_settings: SolarWindsAPM::Config[:transaction_settings]
       }
 
-      # configure sampler afterwards
-      http_sampler = HttpSampler.new(sampler_config)
+      sampler = SolarWindsAPM::Utils.determine_lambda ? JsonSampler.new(sampler_config) : HttpSampler.new(sampler_config)
+
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
-        root: http_sampler,
-        remote_parent_sampled: http_sampler,
-        remote_parent_not_sampled: http_sampler
+        root: sampler,
+        remote_parent_sampled: sampler,
+        remote_parent_not_sampled: sampler
       )
 
       nil

@@ -45,8 +45,8 @@ module SolarWindsAPM
       end
 
       parsed = update_settings(unparsed.first)
-      @logger.debug { "Updated_setting: #{parsed}" }
-      @expiry = (parsed[:timestamp] + parsed[:ttl].to_i) * 1000 if parsed
+      @logger.debug { "update_settings: #{parsed}" }
+      @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i if parsed
     end
   end
 end
