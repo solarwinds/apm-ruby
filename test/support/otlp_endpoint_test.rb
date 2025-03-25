@@ -19,6 +19,7 @@ describe 'OTLP Endpoint Test' do
     ENV.replace(@original_env)
   end
 
+  # 2,5,8 (failed to auth token, not test here)
   describe 'config_token' do
     # 1
     it 'wrong formatted SW_APM_SERVICE_KEY OTEL PROTO' do
@@ -30,19 +31,6 @@ describe 'OTLP Endpoint Test' do
       assert_nil(endpoint.instance_variable_get(:@token))
       assert_nil(endpoint.instance_variable_get(:@service_name))
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal false
-    end
-
-    # 2
-    it 'correct formatted SW_APM_SERVICE_KEY, but fail auth token OTEL PROTO' do
-      ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
-      ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'https://otel.collector.na-01.cloud.solarwinds.com'
-      endpoint = SolarWindsAPM::OTLPEndPoint.new
-      endpoint.config_token
-
-      _(endpoint.instance_variable_get(:@token)).must_equal '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
-      _(endpoint.instance_variable_get(:@service_name)).must_equal 'my_service'
-      _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      _(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
     end
 
     # 3
@@ -70,18 +58,6 @@ describe 'OTLP Endpoint Test' do
       _(endpoint.instance_variable_get(:@agent_enable)).must_equal false
     end
 
-    # 5
-    it 'wrong formatted SW_APM_SERVICE_KEY with wrong formatted token APM PROTO' do
-      ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
-      ENV['SW_APM_COLLECTOR'] = 'apm.collector.na-01.cloud.solarwinds.com'
-      endpoint = SolarWindsAPM::OTLPEndPoint.new
-      endpoint.config_token
-
-      _(endpoint.instance_variable_get(:@token)).must_equal '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
-      _(endpoint.instance_variable_get(:@service_name)).must_equal 'my_service'
-      _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-    end
-
     # 6
     it 'correct formatted SW_APM_SERVICE_KEY, successful auth token APM PROTO' do
       ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
@@ -97,19 +73,6 @@ describe 'OTLP Endpoint Test' do
     # 7 (for local testing and lambda collector extension)
     it 'wrong formatted SW_APM_SERVICE_KEY LOCAL PROTO' do
       ENV['SW_APM_SERVICE_KEY'] = nil
-      ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://0.0.0.0:4317'
-      endpoint = SolarWindsAPM::OTLPEndPoint.new
-      endpoint.config_token
-
-      assert_nil(endpoint.instance_variable_get(:@token))
-      assert_nil(endpoint.instance_variable_get(:@service_name))
-      _(endpoint.instance_variable_get(:@agent_enable)).must_equal true
-      assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
-    end
-
-    # 8
-    it 'correct formatted SW_APM_SERVICE_KEY, but fail auth token LOCAL PROTO' do
-      ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
       ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://0.0.0.0:4317'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint.config_token

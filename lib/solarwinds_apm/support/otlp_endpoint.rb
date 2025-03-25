@@ -161,9 +161,7 @@ module SolarWindsAPM
           region = matches[1]
           sampler_collector_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
           ENV['SW_APM_COLLECTOR'] = sampler_collector_endpoint
-          # else
-          # not the standard otel endpoint, use it directly
-          # what to do with collector ?
+          # if all special OTEL_ENDPOINT, then SW_APM_COLLECTOR will fall back to default DEFAULT_APMPROTO_ENDPOINT
         end
 
       when 'default_nil'
@@ -172,7 +170,7 @@ module SolarWindsAPM
         ENV['SW_APM_COLLECTOR'] = DEFAULT_APMPROTO_ENDPOINT
 
       when 'apm_proto'
-        # default     => no otlp endpoint but have SW_APM_COLLECTOR, use the endpoint from SW_APM_COLLECTOR
+        # default => no otlp endpoint but have SW_APM_COLLECTOR, use the endpoint from SW_APM_COLLECTOR
         # when in testing/staging, we need to set both otlp endpoint and SW_APM_COLLECTOR
         matches = ENV['SW_APM_COLLECTOR'].to_s.match(SW_ENDPOINT_REGEX)
         region = matches[1]
