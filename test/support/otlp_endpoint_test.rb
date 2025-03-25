@@ -8,7 +8,7 @@ require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support/otlp_endpoint'
 require './lib/solarwinds_apm/support/service_key_checker'
 
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/support/otlp_endpoint_test.rb -n /xuan/
+# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/support/otlp_endpoint_test.rb
 describe 'OTLP Endpoint Test' do
   before do
     @original_env = ENV.to_h.dup
@@ -120,7 +120,7 @@ describe 'OTLP Endpoint Test' do
     end
   end
 
-  describe 'config_endpoint xuan' do
+  describe 'config_endpoint' do
     let(:endpoint_types) { %w[TRACES METRICS LOGS] }
 
     it 'no OTEL ENDPOINT and no SW_APM_COLLECTOR' do
@@ -131,6 +131,7 @@ describe 'OTLP Endpoint Test' do
       _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
       _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/metrics'
       _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/logs'
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
     end
 
     it 'OTEL ENDPOINT to local and no SW_APM_COLLECTOR' do
@@ -142,6 +143,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil))
+      assert_nil(ENV.fetch('SW_APM_COLLECTOR', nil))
     end
 
     it 'OTEL ENDPOINT to otel and with SW_APM_COLLECTOR' do
@@ -153,6 +155,7 @@ describe 'OTLP Endpoint Test' do
       _(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/traces'
       _(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/metrics'
       _(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil)).must_equal 'https://otel.collector.na-02.cloud.solarwinds.com:443/v1/logs'
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-02.cloud.solarwinds.com'
     end
 
     it 'OTEL ENDPOINT to local and no SW_APM_COLLECTOR' do
@@ -165,6 +168,7 @@ describe 'OTLP Endpoint Test' do
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil))
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
     end
 
     # 5
@@ -179,7 +183,7 @@ describe 'OTLP Endpoint Test' do
       _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
     end
 
-    it 'OTEL METRICS ENDPOINT to special and SW_APM_COLLECTOR to special location xuan2' do
+    it 'OTEL METRICS ENDPOINT to special and SW_APM_COLLECTOR to special location' do
       ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT'] = 'http://special.host:4317/v1/metrics'
       ENV['SW_APM_COLLECTOR'] = 'apm.collector.eu-01.cloud.solarwinds.com'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
