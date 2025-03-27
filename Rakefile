@@ -361,11 +361,3 @@ task :rubocop do
   `bundle exec rubocop > rubocop_result.txt`
   exit 1
 end
-
-desc 'Remove all the logs generated from run_test.sh'
-task :cleanup_logs do
-  `rm log/testrun_*`
-  `rm log/test_direct_*`
-  `rm log/postgresql/postgresql-*`
-  puts 'Log cleaned.'
-end

@@ -46,13 +46,25 @@ module SolarWindsAPM
       # * Integer (if integer_response: true)
       #
       def solarwinds_ready?(wait_milliseconds = 3000, integer_response: false)
+        if SolarWindsAPM::OTelConfig[:metrics_processor].nil?
+          # OTelConfig not initialize, use sampler solarwinds_ready from http sampler
+          sampler_solarwinds_ready?(wait_milliseconds)
+        else
+          oboe_solarwinds_ready?(wait_milliseconds, integer_response: integer_response)
+        end
+      end
+
+      def oboe_solarwinds_ready?(wait_milliseconds = 3000, integer_response: false)
         return false unless SolarWindsAPM.loaded
 
         is_ready = SolarWindsAPM::Context.isReady(wait_milliseconds)
+        integer_response ? is_ready : is_ready == 1
+      end
 
-        return is_ready if integer_response
-
-        is_ready == 1
+      def sampler_solarwinds_ready?(wait_milliseconds = 3000)
+        root_sampler = ::OpenTelemetry.tracer_provider.sampler.instance_variable_get(:@root)
+        is_ready = root_sampler.wait_until_ready(wait_milliseconds / 1000)
+        !!is_ready
       end
     end
   end
