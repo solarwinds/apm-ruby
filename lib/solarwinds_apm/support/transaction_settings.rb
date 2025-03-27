@@ -28,6 +28,12 @@ module SolarWindsAPM
 
     private
 
+    # def resolve_config
+    #   config = SolarWindsAPM::Config if defined?(SolarWindsAPM::Config)
+    #   config = SolarWindsAPM::OTelNativeConfig if defined?(SolarWindsAPM::OTelNativeConfig)
+    #   config
+    # end
+
     def tracing_enabled?
       span_layer = "#{@kind}:#{@name}"
 

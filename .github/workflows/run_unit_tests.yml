@@ -40,6 +40,7 @@ jobs:
       SW_APM_SERVICE_KEY: ${{ secrets.DUMMY_SW_APM_SERVICE_KEY }}
       RUBY_VERSION: ${{ matrix.ruby }}
       BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.GITHUB_TOKEN }}
+      APM_RUBY_TEST_STAGING_KEY: ${{ secrets.APM_RUBY_TEST_STAGING_KEY }}
 
     steps:
     - name: Checkout ${{ github.ref }}
