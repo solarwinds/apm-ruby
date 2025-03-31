@@ -89,7 +89,6 @@ module SolarWindsAPM
           cluster = task_metadata['Cluster']
           account_id = get_account_id_from_arn(task_arn)
           region = get_region_from_arn(task_arn)
-          task_metadata['AvailabilityZone']
 
           attribute[::OpenTelemetry::SemanticConventions::Resource::AWS_ECS_CLUSTER_ARN] = cluster.start_with?('arn:') ? cluster : "#{base_arn}:cluster/#{cluster}"
           attribute[::OpenTelemetry::SemanticConventions::Resource::AWS_ECS_LAUNCHTYPE] = task_metadata['LaunchType']
@@ -100,7 +99,7 @@ module SolarWindsAPM
           attribute[::OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID] = account_id
           attribute[::OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION] = region
 
-          attribute[CLOUD_AVAILABILITY_ZONE] = task_metadata['AvailabilityZone']
+          attribute[::OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = task_metadata['AvailabilityZone']
         else
           SolarWindsAPM.logger.warn 'Missing task_metadata from ECS resource detection'
         end

@@ -16,16 +16,6 @@ module SolarWindsAPM
     module Lambda
       module_function
 
-      K8S_SVC_URL = 'kubernetes.default.svc'
-      K8S_TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token'
-      K8S_CERT_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-      AUTH_CONFIGMAP_PATH = '/api/v1/namespaces/kube-system/configmaps/aws-auth'
-      CW_CONFIGMAP_PATH = '/api/v1/namespaces/amazon-cloudwatch/configmaps/cluster-info'
-      CONTAINER_ID_LENGTH = 64
-      DEFAULT_CGROUP_PATH = '/proc/self/cgroup'
-      TIMEOUT_MS = 2000
-      UTF8_UNICODE = 'utf-8'
-
       def detect
         attribute = gather_data
         ::OpenTelemetry::SDK::Resources::Resource.create(attribute)
@@ -53,7 +43,10 @@ module SolarWindsAPM
         }
 
         attributes[::OpenTelemetry::SemanticConventions::Resource::AWS_LOG_GROUP_NAMES] = [log_group_name] if log_group_name
-        attributes[::OpenTelemetry::SemanticConventions::Resource::FAAS_INSTANCE] = log_stream_name if log_stream_name
+        attributes[::OpenTelemetry::SemanticConventions::Resource::FAAS_INSTANCE] = [log_stream_name] if log_stream_name
+
+        attributes.compact!
+        attributes
       end
     end
   end

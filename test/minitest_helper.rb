@@ -22,6 +22,8 @@ require 'bson'
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
 
+require_relative 'support/resource_detector/aws/sample_result'
+
 # simplecov coverage information
 require 'simplecov'
 require 'simplecov-console'

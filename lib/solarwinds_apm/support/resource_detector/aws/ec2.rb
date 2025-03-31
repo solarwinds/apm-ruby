@@ -35,33 +35,29 @@ module SolarWindsAPM
 
         begin
           # Get IMDSv2 token - this will fail quickly if not on EC2
-          token = fetch_token
-          return OpenTelemetry::SDK::Resources::Resource.create({}) if token.nil?
-
-          # Get instance identity document which contains most metadata
-          identity = fetch_identity_document(token)
-          return OpenTelemetry::SDK::Resources::Resource.create({}) if identity.nil?
-
+          # If token is nil, then assume it's IMDSv1 (no token required for metadata)
+          token    = fetch_token
+          identity = fetch_identity_document(token) || {}
           hostname = fetch_hostname(token)
 
           # Set resource attributes from the identity document
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER] = 'aws'
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM] = 'aws_ec2'
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID] = identity['accountId']
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION] = identity['region']
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = identity['availabilityZone']
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER] = 'aws'
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM] = 'aws_ec2'
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::CLOUD_ACCOUNT_ID] = identity['accountId']
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION] = identity['region']
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = identity['availabilityZone']
 
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_ID] = identity['instanceId']
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_TYPE] = identity['instanceType']
-          resource_attributes[OpenTelemetry::SemanticConventions::Resource::HOST_NAME] = hostname
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::HOST_ID] = identity['instanceId']
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::HOST_TYPE] = identity['instanceType']
+          resource_attributes[::OpenTelemetry::SemanticConventions::Resource::HOST_NAME] = hostname
         rescue StandardError => e
-          OpenTelemetry.logger.debug("EC2 resource detection failed: #{e.message}")
-          return OpenTelemetry::SDK::Resources::Resource.create({})
+          SolarWindsAPM.logger.debug("EC2 resource detection failed: #{e.message}")
+          return ::OpenTelemetry::SDK::Resources::Resource.create({})
         end
 
         # Filter out nil or empty values
         resource_attributes.compact!
-        OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
+        ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
       end
 
       private
@@ -129,7 +125,7 @@ module SolarWindsAPM
             http.request(request)
           end
         rescue StandardError => e
-          OpenTelemetry.logger.debug("EC2 metadata service request failed: #{e.message}")
+          SolarWindsAPM.logger.debug("EC2 metadata service request failed: #{e.message}")
           nil
         end
       end

@@ -40,16 +40,12 @@ module SolarWindsAPM
         container_id = resolve_container_id
         cluster_name = get_cluster_name(k8scert)
 
-        if container_id.nil? && cluster_name.nil?
-          {}
-        else
-          {
-            ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER => 'aws',
-            ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM => 'aws_eks',
-            ::OpenTelemetry::SemanticConventions::Resource::K8S_CLUSTER_NAME => cluster_name || nil,
-            ::OpenTelemetry::SemanticConventions::Resource::CONTAINER_ID => container_id || nil
-          }
-        end
+        {
+          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER => 'aws',
+          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM => 'aws_eks',
+          ::OpenTelemetry::SemanticConventions::Resource::K8S_CLUSTER_NAME => cluster_name || nil,
+          ::OpenTelemetry::SemanticConventions::Resource::CONTAINER_ID => container_id || nil
+        }.compact!
       rescue StandardError => e
         SolarWindsAPM.logger.warn "Gather data for AWS EKS resource detector failed: #{e.message}"
         {}
@@ -77,7 +73,7 @@ module SolarWindsAPM
           headers: {
             'Authorization' => k8s_cred_header
           },
-          host: K8S_SVC_URL,
+          hostname: K8S_SVC_URL,
           method: 'GET',
           path: CW_CONFIGMAP_PATH,
           timeout: TIMEOUT_MS / 1000
@@ -127,6 +123,7 @@ module SolarWindsAPM
         http.read_timeout = options[:timeout]
 
         request = Net::HTTP::Get.new(uri)
+
         options[:headers]&.each { |key, value| request[key] = value }
 
         response = nil
