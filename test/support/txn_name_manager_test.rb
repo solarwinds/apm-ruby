@@ -24,15 +24,19 @@ describe 'SolarWindsTXNNameManangerTest.rb' do
 
   it 'test_del' do
     @txn_manager.del('c')
-    _(@txn_manager.get('c')).must_equal nil
+    assert_nil(@txn_manager.get('c'))
   end
 
   it 'test_get' do
-    @txn_manager.get('c').must_equal 'd'
+    _(@txn_manager.get('c')).must_equal 'd'
   end
 
   it 'test_set_get_root_context' do
     @txn_manager.set_root_context_h('key1', 'abcd')
     _(@txn_manager.get_root_context_h('key1')).must_equal 'abcd'
+  end
+
+  it 'transaction_name have thread' do
+    _(@txn_manager.instance_variable_get(:@transaction_name)['d'].class).must_equal Thread
   end
 end

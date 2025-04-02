@@ -31,7 +31,8 @@ Rake::TestTask.new do |t|
                    FileList['test/opentelemetry/*_test.rb'] +
                    FileList['test/noop/*_test.rb'] +
                    FileList['test/ext/*_test.rb'] +
-                   FileList['test/support/*_test.rb']
+                   FileList['test/support/*_test.rb'] +
+                   FileList['test/sampling/*_test.rb']
   end
 end
 
@@ -360,12 +361,4 @@ task :rubocop do
   `bundle exec rubocop --auto-correct-all` if arg2 == 'auto-all'
   `bundle exec rubocop > rubocop_result.txt`
   exit 1
-end
-
-desc 'Remove all the logs generated from run_test.sh'
-task :cleanup_logs do
-  `rm log/testrun_*`
-  `rm log/test_direct_*`
-  `rm log/postgresql/postgresql-*`
-  puts 'Log cleaned.'
 end
