@@ -8,68 +8,48 @@ require 'webmock'
 require './lib/solarwinds_apm/support/resource_detector'
 
 describe 'Resource Detector Test' do
-  it 'detect_k8s_atttributes_with_valid_path' do
+  let(:mount_file) { SolarWindsAPM::ResourceDetector::K8S_MOUNTINFO_FILE }
+  it 'detect_k8s_attributes_with_valid_path' do
     ENV['KUBERNETES_SERVICE_HOST'] = '10.96.0.1'
     ENV['KUBERNETES_SERVICE_PORT'] = '443'
+    # can't modify the /proc/self/mountinfo inside docker, use env for testing
+    ENV['SW_K8S_POD_UID'] = 'b4683374-c415-4136-99bf-7fd72a0aa885'
 
     FileUtils.mkdir_p('/var/run/secrets/kubernetes.io/serviceaccount/')
     File.open(SolarWindsAPM::ResourceDetector::K8S_NAMESPACE_PATH, 'w') do |file|
       file.puts('fake_namespace')
     end
-    File.open(SolarWindsAPM::ResourceDetector::K8S_TOKEN_PATH, 'w') do |file|
-      file.puts('fake@token')
-    end
 
-    original_hostname = (File.read(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH).strip! if File.exist?(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH))
+    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_attributes
+    attributes_hash = attributes.instance_variable_get(:@attributes)
 
-    File.open(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH, 'w') do |file|
-      file.puts('fake_hostname')
-    end
-
-    WebMock.disable_net_connect!
-    WebMock.enable!
-    WebMock.stub_request(:get, 'https://kubernetes.default.svc/api/v1/namespaces/fake_namespace/pods/fake_hostname')
-           .to_return(
-             status: 200,
-             body: { 'kind' => 'Pod', 'metadata' => { 'uid' => 'fake_uid' } }.to_json,
-             headers: { 'Content-Type' => 'application/json' }
-           )
-    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_atttributes
-
-    _(attributes.instance_variable_get(:@attributes)['k8s.namespace.name']).must_equal 'fake_namespace'
-    _(attributes.instance_variable_get(:@attributes)['k8s.pod.name']).must_equal 'fake_hostname'
-    _(attributes.instance_variable_get(:@attributes)['k8s.pod.uid']).must_equal 'fake_uid'
+    _(attributes_hash['k8s.namespace.name']).must_equal 'fake_namespace'
+    _(attributes_hash['k8s.pod.uid']).must_equal 'b4683374-c415-4136-99bf-7fd72a0aa885'
+    assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, attributes_hash['service.instance.id'])
+    assert(attributes_hash['k8s.pod.name'])
 
     File.delete(SolarWindsAPM::ResourceDetector::K8S_NAMESPACE_PATH)
-    File.delete(SolarWindsAPM::ResourceDetector::K8S_TOKEN_PATH)
-    if original_hostname.nil?
-      File.delete(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH)
-    else
-      File.open(SolarWindsAPM::ResourceDetector::K8S_PODNAME_PATH, 'w') do |file|
-        file.puts(original_hostname)
-      end
-    end
 
     ENV.delete('KUBERNETES_SERVICE_HOST')
     ENV.delete('KUBERNETES_SERVICE_PORT')
-    WebMock.reset!
-    WebMock.allow_net_connect!
+    ENV.delete('SW_K8S_POD_UID')
   end
 
-  it 'detect_k8s_atttributes_with_invalid_path' do
+  it 'detect_k8s_attributes_with_invalid_path' do
     ENV['KUBERNETES_SERVICE_HOST'] = '10.96.0.1'
     ENV['KUBERNETES_SERVICE_PORT'] = '443'
 
-    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_atttributes
-    assert_nil(attributes.instance_variable_get(:@attributes)['k8s.pod.uid'])
-    assert_nil(attributes.instance_variable_get(:@attributes)['k8s.namespace.name'])
+    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_attributes
+    attributes_hash = attributes.instance_variable_get(:@attributes)
+
+    assert(attributes_hash['k8s.pod.name'])
 
     ENV.delete('KUBERNETES_SERVICE_HOST')
     ENV.delete('KUBERNETES_SERVICE_PORT')
   end
 
   it 'return_empty_if_not_in_k8s' do
-    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_atttributes
+    attributes = SolarWindsAPM::ResourceDetector.detect_k8s_attributes
     assert_equal(attributes.instance_variable_get(:@attributes), {})
   end
 

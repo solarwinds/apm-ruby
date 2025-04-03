@@ -9,6 +9,8 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require 'socket'
+require 'securerandom'
 
 module SolarWindsAPM
   # ResourceDetector
@@ -21,87 +23,123 @@ module SolarWindsAPM
   module ResourceDetector
     K8S_PODNAME_PATH = '/etc/hostname'
     K8S_NAMESPACE_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/namespace'
-    K8S_TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token'
+    K8S_NAMESPACE_PATH_WIN = 'C:\\var\\run\\secrets\\kubernetes.io\\serviceaccount\\namespace'
+    K8S_MOUNTINFO_FILE = '/proc/self/mountinfo'
+    UID_REGEX = /[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}/i
+
+    SW_K8S_NAMESPACE_ENV = 'SW_K8S_POD_NAMESPACE'
+    SW_K8S_UID_ENV = 'SW_K8S_POD_UID'
+    SW_K8S_NAME_ENV = 'SW_K8S_POD_NAME'
 
     UAMS_CLIENT_PATH = '/opt/solarwinds/uamsclient/var/uamsclientid'
+    UAMS_CLIENT_PATH_WIN = 'C:\\ProgramData\\SolarWinds\\UAMSClient\\uamsclientid'
     UAMS_CLIENT_URL = 'http://127.0.0.1:2113/info/uamsclient'
     UAMS_CLIENT_ID_FIELD = 'uamsclient_id'
 
     def self.detect
       attributes = ::OpenTelemetry::SDK::Resources::Resource.create({})
       attributes = attributes.merge(detect_uams_client_id)
-      attributes = attributes.merge(detect_k8s_atttributes)
+      attributes = attributes.merge(detect_k8s_attributes)
       attributes.merge(from_upstream_detector)
     end
 
     def self.detect_uams_client_id
+      umas_client_final_path = windows? ? UAMS_CLIENT_PATH_WIN : UAMS_CLIENT_PATH
       uams_client_id = nil
-      if File.exist?(UAMS_CLIENT_PATH)
-        uams_client_id = File.read(UAMS_CLIENT_PATH).strip
-      else
-        url = URI(UAMS_CLIENT_URL)
+      begin
+        uams_client_id = File.read(umas_client_final_path).strip
+      rescue StandardError => e
+        SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] umas file retrieve error #{e.message}."
+      end
 
-        response = nil
-        ::OpenTelemetry::Common::Utilities.untraced do
-          http = Net::HTTP.new(url.host, url.port)
-          request = Net::HTTP::Get.new(url)
-          response = http.request(request)
-        end
+      if uams_client_id.nil?
+        begin
+          url = URI(UAMS_CLIENT_URL)
 
-        if response&.code.to_i == 200
+          response = nil
+          ::OpenTelemetry::Common::Utilities.untraced do
+            http = Net::HTTP.new(url.host, url.port)
+            request = Net::HTTP::Get.new(url)
+            response = http.request(request)
+          end
+
+          raise 'Response returned non-200 status code' unless response&.code.to_i == 200
+
           uams_metadata = JSON.parse(response.body)
           uams_client_id = uams_metadata&.fetch(UAMS_CLIENT_ID_FIELD)
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] umas api retrieve error #{e.message}."
         end
       end
 
       resource_attributes = {
-        'sw.uams.client.id' => uams_client_id
+        'sw.uams.client.id' => uams_client_id,
+        'host.id' => uams_client_id
       }
 
+      SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] retrieved resource_attributes: #{resource_attributes.inspect}."
       ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
     rescue StandardError => e
       SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] detect_uams_client_id failed. Error: #{e.message}."
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
-    def self.detect_k8s_atttributes
+    def self.detect_k8s_attributes
       return ::OpenTelemetry::SDK::Resources::Resource.create({}) unless ENV['KUBERNETES_SERVICE_HOST'] && ENV['KUBERNETES_SERVICE_PORT']
 
-      resource_attributes = {}
-      pod_name = File.read(K8S_PODNAME_PATH).strip if File.exist?(K8S_PODNAME_PATH)
-      namespace = File.read(K8S_NAMESPACE_PATH).strip if File.exist?(K8S_NAMESPACE_PATH)
-      pod_uid = nil
-      token = nil
-
-      token = File.read(K8S_TOKEN_PATH).strip if File.exist?(K8S_TOKEN_PATH)
-
-      if token && pod_name && namespace
-        url = URI("https://kubernetes.default.svc/api/v1/namespaces/#{namespace}/pods/#{pod_name}")
-
-        response = nil
-        ::OpenTelemetry::Common::Utilities.untraced do
-          http = Net::HTTP.new(url.host, url.port)
-          http.use_ssl = true
-          http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-
-          request = Net::HTTP::Get.new(url)
-          request['Authorization'] = "Bearer #{token}"
-          request['Accept'] = 'application/json'
-
-          response = http.request(request)
-        end
-
-        if response&.code.to_i == 200
-          pod_metadata = JSON.parse(response.body)
-          pod_uid = pod_metadata&.fetch('metadata')&.fetch('uid')
-        end
+      pod_name = ENV.fetch(SW_K8S_NAME_ENV, nil)
+      if pod_name.nil?
+        pod_name = Socket.gethostname
+      else
+        SolarWindsAPM.logger.debug { "read pod name from env #{pod_name}" }
       end
 
-      resource_attributes['k8s.namespace.name'] = namespace
-      resource_attributes['k8s.pod.name'] = pod_name
-      resource_attributes['k8s.pod.uid'] = pod_uid
+      pod_namespace = ENV.fetch(SW_K8S_NAMESPACE_ENV, nil)
+      if pod_namespace.nil?
+        begin
+          k8s_namspace_final_path = windows? ? K8S_NAMESPACE_PATH_WIN : K8S_NAMESPACE_PATH
+          pod_namespace = File.read(k8s_namspace_final_path).strip
+          SolarWindsAPM.logger.debug { 'read pod namespace from file' }
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "can't read pod namespace #{e.message}" }
+        end
+      else
+        SolarWindsAPM.logger.debug { "read pod namespace from env #{pod_namespace}" }
+      end
+
+      pod_uid = ENV.fetch(SW_K8S_UID_ENV, nil)
+      if pod_uid.nil?
+        begin
+          File.open(K8S_MOUNTINFO_FILE) do |file|
+            file.each_line do |line|
+              fields = line.split
+              next if fields.size < 10
+
+              id, parent_id, _, root = fields
+              next unless safe_integer?(id) && safe_integer?(parent_id)
+              next unless root.include?('kube')
+
+              matches = UID_REGEX.match(root)
+              pod_uid = matches[0] if matches
+              break if pod_uid
+            end
+          end
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "can't read pod uid #{e.message}" }
+        end
+      else
+        SolarWindsAPM.logger.debug { "read pod uid from env #{pod_uid}" }
+      end
+
+      resource_attributes = {
+        ::OpenTelemetry::SemanticConventions::Resource::K8S_NAMESPACE_NAME => pod_namespace,
+        ::OpenTelemetry::SemanticConventions::Resource::K8S_POD_NAME => pod_name,
+        ::OpenTelemetry::SemanticConventions::Resource::K8S_POD_UID => pod_uid,
+        ::OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => random_uuid
+      }
 
       resource_attributes.compact!
+      SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] retrieved resource_attributes: #{resource_attributes.inspect}."
       ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
     end
 
@@ -116,7 +154,6 @@ module SolarWindsAPM
       resource_attributes = resource_attributes.merge(::OpenTelemetry::Resource::Detector::Container.detect) if defined? OpenTelemetry::Resource::Detector::Container
 
       SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] resource_attributes: #{resource_attributes.inspect}" }
-
       resource_attributes
     end
 
@@ -124,6 +161,20 @@ module SolarWindsAPM
       require gem_name
     rescue StandardError
       SolarWindsAPM.logger.warn { "No #{gem_name} found." }
+    end
+
+    def self.safe_integer?(number)
+      min_safe_integer = -((2**53) - 1)
+      max_safe_integer = (2**53) - 1
+      number.is_a?(Integer) && number >= min_safe_integer && number <= max_safe_integer
+    end
+
+    def self.windows?
+      %w[mingw32 cygwin].any? { |platform| RUBY_PLATFORM.include?(platform) }
+    end
+
+    def self.random_uuid
+      SecureRandom.uuid
     end
   end
 end

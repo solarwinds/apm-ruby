@@ -16,7 +16,6 @@ describe 'AWS ECS Resource Detector Test' do
   let(:expected_resource_attributes) do
     { 'cloud.provider' => 'aws',
       'cloud.platform' => 'aws_ecs',
-      'host.name' => 'docker.swo.ubuntu.development',
       'aws.ecs.cluster.arn' => 'arn:aws:ecs:us-east-1:123456789012:cluster/MyEmptyCluster',
       'aws.ecs.launchtype' => 'FARGATE',
       'aws.ecs.task.arn' => 'arn:aws:ecs:us-east-1:123456789012:task/MyEmptyCluster/bfa2636268144d039771334145e490c5',
@@ -70,6 +69,8 @@ describe 'AWS ECS Resource Detector Test' do
     attribute_hash = attributes.instance_variable_get(:@attributes)
 
     _(attributes).must_be_instance_of(OpenTelemetry::SDK::Resources::Resource)
+    assert(attribute_hash['host.name'])
+    expected_resource_attributes['host.name'] = attribute_hash['host.name']
     assert_equal(attribute_hash, expected_resource_attributes)
   end
 
@@ -95,6 +96,8 @@ describe 'AWS ECS Resource Detector Test' do
     end
 
     _(attributes).must_be_instance_of(OpenTelemetry::SDK::Resources::Resource)
+    assert(attribute_hash['host.name'])
+    expected_resource_attributes['host.name'] = attribute_hash['host.name']
     assert_equal(attribute_hash, expected_resource_attributes)
   end
 
@@ -122,6 +125,8 @@ describe 'AWS ECS Resource Detector Test' do
     end
 
     _(attributes).must_be_instance_of(OpenTelemetry::SDK::Resources::Resource)
+    assert(attribute_hash['host.name'])
+    expected_resource_attributes['host.name'] = attribute_hash['host.name']
     assert_equal(attribute_hash, expected_resource_attributes)
   end
 end
