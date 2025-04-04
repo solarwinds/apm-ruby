@@ -12,9 +12,8 @@ require 'json'
 
 module SolarWindsAPM
   module ResourceDetector
-    # EC2
     module EC2
-      extend self
+      module_function
 
       # EC2 metadata service endpoints and constants
       EC2_METADATA_HOST = '169.254.169.254'
@@ -51,7 +50,7 @@ module SolarWindsAPM
           resource_attributes[::OpenTelemetry::SemanticConventions::Resource::HOST_TYPE] = identity['instanceType']
           resource_attributes[::OpenTelemetry::SemanticConventions::Resource::HOST_NAME] = hostname
         rescue StandardError => e
-          SolarWindsAPM.logger.debug("EC2 resource detection failed: #{e.message}")
+          SolarWindsAPM.logger.debug { "EC2 resource detection failed: #{e.message}" }
           return ::OpenTelemetry::SDK::Resources::Resource.create({})
         end
 
@@ -59,8 +58,6 @@ module SolarWindsAPM
         resource_attributes.compact!
         ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
       end
-
-      private
 
       # Fetches an IMDSv2 token from the EC2 metadata service
       #
@@ -125,7 +122,7 @@ module SolarWindsAPM
             http.request(request)
           end
         rescue StandardError => e
-          SolarWindsAPM.logger.debug("EC2 metadata service request failed: #{e.message}")
+          SolarWindsAPM.logger.debug { "EC2 metadata service request failed: #{e.message}" }
           nil
         end
       end

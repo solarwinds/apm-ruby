@@ -37,19 +37,20 @@ module SolarWindsAPM
     UAMS_CLIENT_ID_FIELD = 'uamsclient_id'
 
     def self.detect
-      attributes = ::OpenTelemetry::SDK::Resources::Resource.create({})
+      uuid_attr = { ::OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => random_uuid }
+      attributes = ::OpenTelemetry::SDK::Resources::Resource.create(uuid_attr)
       attributes = attributes.merge(detect_uams_client_id)
       attributes = attributes.merge(detect_k8s_attributes)
       attributes.merge(from_upstream_detector)
     end
 
     def self.detect_uams_client_id
-      umas_client_final_path = windows? ? UAMS_CLIENT_PATH_WIN : UAMS_CLIENT_PATH
+      uams_client_final_path = windows? ? UAMS_CLIENT_PATH_WIN : UAMS_CLIENT_PATH
       uams_client_id = nil
       begin
-        uams_client_id = File.read(umas_client_final_path).strip
+        uams_client_id = File.read(uams_client_final_path).strip
       rescue StandardError => e
-        SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] umas file retrieve error #{e.message}."
+        SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] uams file retrieve error #{e.message}."
       end
 
       if uams_client_id.nil?
@@ -68,7 +69,7 @@ module SolarWindsAPM
           uams_metadata = JSON.parse(response.body)
           uams_client_id = uams_metadata&.fetch(UAMS_CLIENT_ID_FIELD)
         rescue StandardError => e
-          SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] umas api retrieve error #{e.message}."
+          SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] uams api retrieve error #{e.message}."
         end
       end
 
@@ -85,7 +86,10 @@ module SolarWindsAPM
     end
 
     def self.detect_k8s_attributes
-      return ::OpenTelemetry::SDK::Resources::Resource.create({}) unless ENV['KUBERNETES_SERVICE_HOST'] && ENV['KUBERNETES_SERVICE_PORT']
+      unless ENV['KUBERNETES_SERVICE_HOST'] && ENV['KUBERNETES_SERVICE_PORT']
+        SolarWindsAPM.logger.debug { "Can't read environment variable (KUBERNETES_SERVICE_HOST/KUBERNETES_SERVICE_PORT). It's likely not in kubernetes pod environment. No K8S resource detection." }
+        return ::OpenTelemetry::SDK::Resources::Resource.create({})
+      end
 
       pod_name = ENV.fetch(SW_K8S_NAME_ENV, nil)
       if pod_name.nil?
@@ -134,12 +138,11 @@ module SolarWindsAPM
       resource_attributes = {
         ::OpenTelemetry::SemanticConventions::Resource::K8S_NAMESPACE_NAME => pod_namespace,
         ::OpenTelemetry::SemanticConventions::Resource::K8S_POD_NAME => pod_name,
-        ::OpenTelemetry::SemanticConventions::Resource::K8S_POD_UID => pod_uid,
-        ::OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => random_uuid
+        ::OpenTelemetry::SemanticConventions::Resource::K8S_POD_UID => pod_uid
       }
 
       resource_attributes.compact!
-      SolarWindsAPM.logger.debug "#{self.class}/#{__method__}] retrieved resource_attributes: #{resource_attributes.inspect}."
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{resource_attributes.inspect}." }
       ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
     end
 

@@ -25,7 +25,6 @@ describe 'Resource Detector Test' do
 
     _(attributes_hash['k8s.namespace.name']).must_equal 'fake_namespace'
     _(attributes_hash['k8s.pod.uid']).must_equal 'b4683374-c415-4136-99bf-7fd72a0aa885'
-    assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, attributes_hash['service.instance.id'])
     assert(attributes_hash['k8s.pod.name'])
 
     File.delete(SolarWindsAPM::ResourceDetector::K8S_NAMESPACE_PATH)
@@ -56,6 +55,7 @@ describe 'Resource Detector Test' do
   it 'detect_uams_client_id_failed' do
     attributes = SolarWindsAPM::ResourceDetector.detect_uams_client_id
     assert_nil(attributes.instance_variable_get(:@attributes)['sw.uams.client.id'])
+    assert_nil(attributes.instance_variable_get(:@attributes)['host.id'])
   end
 
   it 'detect_uams_client_id_from_file' do
@@ -67,6 +67,7 @@ describe 'Resource Detector Test' do
     attributes = SolarWindsAPM::ResourceDetector.detect_uams_client_id
 
     _(attributes.instance_variable_get(:@attributes)['sw.uams.client.id']).must_equal 'fake_uams_client_id'
+    _(attributes.instance_variable_get(:@attributes)['host.id']).must_equal 'fake_uams_client_id'
     File.delete(SolarWindsAPM::ResourceDetector::UAMS_CLIENT_PATH)
   end
 
@@ -82,7 +83,12 @@ describe 'Resource Detector Test' do
 
     attributes = SolarWindsAPM::ResourceDetector.detect_uams_client_id
     _(attributes.instance_variable_get(:@attributes)['sw.uams.client.id']).must_equal '12345'
+    _(attributes.instance_variable_get(:@attributes)['host.id']).must_equal '12345'
     WebMock.reset!
     WebMock.allow_net_connect!
   end
+
+  # it '' do
+  #   assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, attributes_hash['service.instance.id'])
+  # end
 end

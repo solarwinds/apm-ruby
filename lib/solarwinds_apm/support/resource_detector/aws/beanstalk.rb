@@ -43,7 +43,7 @@ module SolarWindsAPM
           ::OpenTelemetry::SemanticConventions::Resource::SERVICE_INSTANCE_ID => parsed_data['deployment_id']
         }
       rescue StandardError => e
-        SolarWindsAPM.logger.warn "Gather data for AWS Elastic Beanstalk resource detector failed: #{e.message}"
+        SolarWindsAPM.logger.debug { "Gather data for AWS Elastic Beanstalk resource detector failed: #{e.message}" }
         {}
       end
     end

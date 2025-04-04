@@ -23,7 +23,7 @@ module SolarWindsAPM
       def detect
         ecs_instance = ENV['ECS_CONTAINER_METADATA_URI_V4'] || ENV.fetch('ECS_CONTAINER_METADATA_URI', nil)
         unless ecs_instance
-          SolarWindsAPM.logger.warn 'AwsEcsDetector: Process is not on ECS'
+          SolarWindsAPM.logger.debug { 'AwsEcsDetector: Process is not on ECS' }
           return ::OpenTelemetry::SDK::Resources::Resource.create({})
         end
 
@@ -62,7 +62,7 @@ module SolarWindsAPM
             end
           end
         rescue StandardError => e
-          SolarWindsAPM.logger.warn("AwsEcsDetector failed to read container ID: #{e}")
+          SolarWindsAPM.logger.debug { "AwsEcsDetector failed to read container ID: #{e.message}" }
         end
         container_id
       end
@@ -77,7 +77,7 @@ module SolarWindsAPM
             http.request(request)
           end
         rescue StandardError => e
-          OpenTelemetry.logger.debug("ECS metadata service request failed: #{e.message}")
+          OpenTelemetry.logger.debug { "ECS metadata service request failed: #{e.message}" }
           nil
         end
       end
@@ -101,7 +101,7 @@ module SolarWindsAPM
 
           attribute[::OpenTelemetry::SemanticConventions::Resource::CLOUD_AVAILABILITY_ZONE] = task_metadata['AvailabilityZone']
         else
-          SolarWindsAPM.logger.warn 'Missing task_metadata from ECS resource detection'
+          SolarWindsAPM.logger.debug { 'Missing task_metadata from ECS resource detection' }
         end
 
         if container_metadata
@@ -123,10 +123,10 @@ module SolarWindsAPM
             attribute[::OpenTelemetry::SemanticConventions::Resource::AWS_LOG_STREAM_NAMES] = [logs_stream_name]
             attribute[::OpenTelemetry::SemanticConventions::Resource::AWS_LOG_STREAM_ARNS] = [logs_stream_arn]
           else
-            SolarWindsAPM.logger.warn 'Missing log option data in container_metadata from ECS resource detection'
+            SolarWindsAPM.logger.debug { 'Missing log option data in container_metadata from ECS resource detection' }
           end
         else
-          SolarWindsAPM.logger.warn 'Missing container_metadata from ECS resource detection'
+          SolarWindsAPM.logger.debug { 'Missing container_metadata from ECS resource detection' }
         end
 
         attribute.compact!

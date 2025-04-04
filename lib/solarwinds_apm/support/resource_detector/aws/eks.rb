@@ -31,11 +31,11 @@ module SolarWindsAPM
       end
 
       def gather_data
-        raise StandardError unless File.exist?(K8S_TOKEN_PATH) && File.readable?(K8S_TOKEN_PATH)
+        raise StandardError, 'K8S token path missing.' unless File.exist?(K8S_TOKEN_PATH) && File.readable?(K8S_TOKEN_PATH)
 
         k8scert = File.read(K8S_CERT_PATH) if File.exist?(K8S_CERT_PATH) && File.readable?(K8S_CERT_PATH)
 
-        raise StandardError unless eks?(k8scert)
+        raise StandardError, 'Current environment is not in AWS EKS.' unless eks?(k8scert)
 
         container_id = resolve_container_id
         cluster_name = get_cluster_name(k8scert)
@@ -47,7 +47,7 @@ module SolarWindsAPM
           ::OpenTelemetry::SemanticConventions::Resource::CONTAINER_ID => container_id || nil
         }.compact!
       rescue StandardError => e
-        SolarWindsAPM.logger.warn "Gather data for AWS EKS resource detector failed: #{e.message}"
+        SolarWindsAPM.logger.debug { "Gather data for AWS EKS resource detector failed: #{e.message}" }
         {}
       end
 
@@ -62,7 +62,7 @@ module SolarWindsAPM
             end
           end
         rescue StandardError => e
-          SolarWindsAPM.logger.debug "AwsEksDetector failed to read container ID: #{e.message}"
+          SolarWindsAPM.logger.debug { "AwsEksDetector failed to read container ID: #{e.message}" }
         end
         container_id
       end
@@ -84,7 +84,7 @@ module SolarWindsAPM
         begin
           cluster_name = JSON.parse(response).dig('data', 'cluster.name')
         rescue StandardError => e
-          SolarWindsAPM.logger.debug "Cannot get cluster name on EKS: #{e.message}"
+          SolarWindsAPM.logger.debug { "Cannot get cluster name on EKS: #{e.message}" }
         end
 
         cluster_name
@@ -109,7 +109,7 @@ module SolarWindsAPM
         content = File.read(K8S_TOKEN_PATH).strip
         "Bearer #{content}"
       rescue StandardError => e
-        SolarWindsAPM.logger.warn "Unable to read Kubernetes client token: #{e.message}"
+        SolarWindsAPM.logger.debug { "Unable to read Kubernetes client token: #{e.message}" }
         ''
       end
 
@@ -139,7 +139,7 @@ module SolarWindsAPM
 
         response.body
       rescue StandardError => e
-        SolarWindsAPM.logger.warn "Request failed: #{e.message}"
+        SolarWindsAPM.logger.debug { "Request failed: #{e.message}" }
         nil
       end
     end
