@@ -60,17 +60,24 @@ module SolarWindsAPM
       "#{token[0, 2]}#{'*' * (token.length - 4)}#{token[-2, 2]}"
     end
 
-    def config_token
+    def config_token(data_type)
       agent_enable = true
-      return agent_enable if @localhost
+
+      if @localhost
+        # for localhost, only valid SW_APM_SERVICE_KEY can make agent enable
+        @agent_enable = false unless valid?(ENV['SW_APM_SERVICE_KEY'])
+        return
+      end
+
+      data_type_upper = data_type.upcase
+      data_type = data_type.downcase
 
       if @lambda_env
         # for case 10 and 11, lambda only care about SW_APM_API_TOKEN, not SW_APM_SERVICE_KEY
         agent_enable = !ENV['SW_APM_API_TOKEN'].nil?
       else
-
-        token_type = if ENV['OTEL_EXPORTER_OTLP_METRICS_HEADERS']
-                       'metrics_token'
+        token_type = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"]
+                       "#{data_type}_token"
                      elsif ENV['OTEL_EXPORTER_OTLP_HEADERS']
                        'general_token'
                      elsif ENV['SW_APM_SERVICE_KEY']
@@ -80,9 +87,9 @@ module SolarWindsAPM
                      end
 
         case token_type
-        when 'metrics_token' || 'general_token'
+        when "#{data_type}_token" || 'general_token'
           # exporter header is ok, but still need extract it for sampler http get setting
-          headers = token_type == 'general_token' ? ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil) : ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_HEADERS', nil)
+          headers = token_type == 'general_token' ? ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil) : ENV.fetch("OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS", nil)
           @token = headers.gsub('authorization=Bearer ', '')
         when 'service_key'
           if valid?(ENV['SW_APM_SERVICE_KEY'])
@@ -149,6 +156,8 @@ module SolarWindsAPM
                       else
                         'invalid'
                       end
+
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] endpoint_type: #{endpoint_type}" }
 
       # endpoint = nil
       case endpoint_type
