@@ -89,7 +89,7 @@ describe 'OTLP Endpoint Test' do
     end
 
     # 7 (when a non-SWO OTLP endpoint is explicitly configured)
-    it 'wrong formatted SW_APM_SERVICE_KEY NON-SWO OTLP configured xuan' do
+    it 'wrong formatted SW_APM_SERVICE_KEY NON-SWO OTLP configured' do
       ENV['SW_APM_SERVICE_KEY'] = nil
       ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://0.0.0.0:4317'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
@@ -172,12 +172,12 @@ describe 'OTLP Endpoint Test' do
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint_types.each { |data_type| endpoint.configure_otlp_endpoint(data_type) }
 
-      _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://localhost:4317'
-
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil))
       assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_LOGS_ENDPOINT', nil))
-      assert_nil(ENV.fetch('SW_APM_COLLECTOR', nil))
+
+      _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://localhost:4317'
+      _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com'
     end
 
     it 'OTEL ENDPOINT to otel and with SW_APM_COLLECTOR' do
@@ -193,7 +193,7 @@ describe 'OTLP Endpoint Test' do
       _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-02.cloud.solarwinds.com'
     end
 
-    it 'OTEL ENDPOINT to local and no SW_APM_COLLECTOR' do
+    it 'OTEL ENDPOINT to local and with SW_APM_COLLECTOR' do
       ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'http://localhost:4317'
       ENV['SW_APM_COLLECTOR'] = 'apm.collector.na-01.cloud.solarwinds.com'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
@@ -258,7 +258,6 @@ describe 'OTLP Endpoint Test' do
     it 'otel service name set resource attribute set' do
       ENV['OTEL_RESOURCE_ATTRIBUTES'] = 'sw.apm.version=1.1.1,sw.data.module=apm,service.name=otel-autodetected-default'
       ENV['OTEL_SERVICE_NAME'] = 'otel-service-name'
-      ENV['SW_APM_SERVICE_KEY'] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my-service'
       endpoint = SolarWindsAPM::OTLPEndPoint.new
       endpoint.config_service_name
 

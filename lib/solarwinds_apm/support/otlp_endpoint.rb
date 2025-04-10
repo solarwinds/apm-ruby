@@ -63,8 +63,8 @@ module SolarWindsAPM
     def config_token(data_type)
       agent_enable = true
 
-      if @localhost
-        # for localhost, only valid SW_APM_SERVICE_KEY can make agent enable
+      if @localhost && !@lambda_env
+        # for localhost, only valid SW_APM_SERVICE_KEY can make agent enable (except inside lambda case)
         @agent_enable = false unless valid?(ENV['SW_APM_SERVICE_KEY'])
         return
       end
@@ -73,7 +73,7 @@ module SolarWindsAPM
       data_type = data_type.downcase
 
       if @lambda_env
-        # for case 10 and 11, lambda only care about SW_APM_API_TOKEN, not SW_APM_SERVICE_KEY
+        # for case 10 and 11
         agent_enable = !ENV['SW_APM_API_TOKEN'].nil?
       else
         token_type = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"]
@@ -105,7 +105,6 @@ module SolarWindsAPM
       end
 
       @agent_enable = agent_enable
-      agent_enable
     end
 
     def valid?(_service_key)
@@ -127,7 +126,7 @@ module SolarWindsAPM
     # token and endpoint also need to be considered for get settings
     # endpoint is for get settings, populate to OTEL_EXPORTER_OTLP_METRICS_ENDPOINT at the end for otlp related exporter
     # three sources: otlp env variable, sw env variable, sw config file
-
+    #
     # sampler_config = {
     #         collector: "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.na-01.cloud.solarwinds.com')}:443",
     #         service: service_key_name[1],
@@ -145,52 +144,62 @@ module SolarWindsAPM
 
       data_type_upper = data_type.upcase
       data_type = data_type.downcase
-      endpoint_type = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"]
-                        "#{data_type}_endpoint"
-                      elsif ENV['OTEL_EXPORTER_OTLP_ENDPOINT']
-                        'general_endpoint'
-                      elsif ENV['SW_APM_COLLECTOR'].nil? && !@lambda_env
-                        'default_nil'
-                      elsif ENV['SW_APM_COLLECTOR'].to_s.match?(SW_ENDPOINT_REGEX)
-                        'apm_proto'
-                      else
-                        'invalid'
-                      end
+      endpoint_source = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"]
+                          "#{data_type}_endpoint"
+                        elsif ENV['OTEL_EXPORTER_OTLP_ENDPOINT']
+                          'general_endpoint'
+                        elsif ENV['SW_APM_COLLECTOR'].nil? && !@lambda_env
+                          'default_nil'
+                        elsif ENV['SW_APM_COLLECTOR'].to_s.match?(SW_ENDPOINT_REGEX)
+                          'apm_proto'
+                        else
+                          'invalid'
+                        end
 
-      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] endpoint_type: #{endpoint_type}" }
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] endpoint_source: #{endpoint_source}" }
 
-      # endpoint = nil
-      case endpoint_type
-      when "#{data_type}_endpoint" || 'general_endpoint'
-        # no need to worry about metrics endpoint, just need to make sure the collector endpoint is set for getsetting
-        endpoint = endpoint_type == 'general_endpoint' ? ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil) : ENV.fetch("OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT", nil)
+      resolve_otlp_endpoint(endpoint_source, data_type, data_type_upper)
+      resolve_setting_endpoint(endpoint_source, data_type, data_type_upper)
+    end
 
-        if endpoint.to_s.match?(OTEL_ENDPOINT_REGEX)
-          matches = endpoint.to_s.match(OTEL_ENDPOINT_REGEX)
-          region = matches[1]
-          sampler_collector_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
-          ENV['SW_APM_COLLECTOR'] = sampler_collector_endpoint
-          # if all special OTEL_ENDPOINT, then SW_APM_COLLECTOR will fall back to default DEFAULT_APMPROTO_ENDPOINT
-        end
-
-      when 'default_nil'
-        # default_nil => no otlp endpoint or no SW_APM_COLLECTOR, use the default apm proto endpoint
-        ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"] = "#{DEFAULT_OTLP_ENDPOINT}/v1/#{data_type}"
-        ENV['SW_APM_COLLECTOR'] = DEFAULT_APMPROTO_ENDPOINT
-
+    def resolve_otlp_endpoint(endpoint_source, data_type, data_type_upper)
+      case endpoint_source
       when 'apm_proto'
-        # default => no otlp endpoint but have SW_APM_COLLECTOR, use the endpoint from SW_APM_COLLECTOR
-        # when in testing/staging, we need to set both otlp endpoint and SW_APM_COLLECTOR
+        # default => no OTLP endpoint but have SW_APM_COLLECTOR, resolve the OTLP endpoint based on SW_APM_COLLECTOR value
         matches = ENV['SW_APM_COLLECTOR'].to_s.match(SW_ENDPOINT_REGEX)
         region = matches[1]
-        apmproto_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
-        apmproto_endpoint = apmproto_endpoint.gsub('apm', 'otel')
-        ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"] = "https://#{apmproto_endpoint}:443/v1/#{data_type}"
+        resolved_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
+        resolved_endpoint = resolved_endpoint.gsub('apm', 'otel')
+        ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"] = "https://#{resolved_endpoint}:443/v1/#{data_type}"
+      when 'default_nil'
+        # default_nil => no OTLP endpoint and no SW_APM_COLLECTOR, use the fallback values
+        ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"] = "#{DEFAULT_OTLP_ENDPOINT}/v1/#{data_type}"
       end
+    end
 
-      # true means setup ok, false meaning setup failed
-      # lambda use collector extension to export, so no need have valid endpoint_type
-      endpoint_type == 'invalid' && !@lambda_env ? false : true
+    def resolve_setting_endpoint(endpoint_source, data_type, data_type_upper)
+      case endpoint_source
+      when "#{data_type}_endpoint"
+        endpoint = ENV.fetch("OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT", nil)
+        resolve_endpoint_setting(endpoint)
+      when 'general_endpoint'
+        endpoint = ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)
+        resolve_endpoint_setting(endpoint)
+      when 'default_nil'
+        ENV['SW_APM_COLLECTOR'] = DEFAULT_APMPROTO_ENDPOINT
+      end
+    end
+
+    def resolve_endpoint_setting(endpoint)
+      if endpoint.to_s.match?(OTEL_ENDPOINT_REGEX)
+        matches = endpoint.to_s.match(OTEL_ENDPOINT_REGEX)
+        region = matches[1]
+        sampler_collector_endpoint = DEFAULT_APMPROTO_ENDPOINT.gsub('na-01', region)
+        ENV['SW_APM_COLLECTOR'] = sampler_collector_endpoint
+      elsif ENV['SW_APM_COLLECTOR'].to_s.empty?
+        ENV['SW_APM_COLLECTOR'] = DEFAULT_APMPROTO_ENDPOINT
+      end
+      # if all special OTEL_ENDPOINT, then SW_APM_COLLECTOR will fall back to default DEFAULT_APMPROTO_ENDPOINT
     end
   end
 end
