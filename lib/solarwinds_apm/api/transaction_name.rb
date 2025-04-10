@@ -43,10 +43,6 @@ module SolarWindsAPM
 
         status = true
         if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
-          # check noop mode for otel ruby
-          # || SolarWindsAPM::Context.toString == '99-00000000000000000000000000000000-0000000000000000-00'
-          # library disabled or noop, just log and skip work.
-          # TODO: can we have a single indicator that the API is in noop mode?
           SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode." }
         elsif custom_name.nil? || custom_name.empty?
           SolarWindsAPM.logger.warn do

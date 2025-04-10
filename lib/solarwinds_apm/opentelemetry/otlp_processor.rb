@@ -34,8 +34,6 @@ module SolarWindsAPM
         @txn_manager&.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
         span.add_attributes(span_attributes(span))
         span.add_attributes({ SW_IS_ENTRY_SPAN => true })
-        scope_attribute = SolarWindsAPM::InstrumentationScope.gather_instrumented_framework(span)
-        span.add_attributes(scope_attribute) unless scope_attribute.nil?
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
