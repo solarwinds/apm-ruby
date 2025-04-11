@@ -76,7 +76,7 @@ module SolarWindsAPM
         # for case 10 and 11
         agent_enable = !ENV['SW_APM_API_TOKEN'].nil?
       else
-        token_type = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"]
+        token_source = if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"]
                        "#{data_type}_token"
                      elsif ENV['OTEL_EXPORTER_OTLP_HEADERS']
                        'general_token'
@@ -86,22 +86,20 @@ module SolarWindsAPM
                        'invalid'
                      end
 
-        case token_type
-        when "#{data_type}_token" || 'general_token'
-          # exporter header is ok, but still need extract it for sampler http get setting
-          headers = token_type == 'general_token' ? ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil) : ENV.fetch("OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS", nil)
-          @token = headers.gsub('authorization=Bearer ', '')
-        when 'service_key'
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] token source: #{token_source}" }
+
+        if token_source == 'service_key'
           if valid?(ENV['SW_APM_SERVICE_KEY'])
             @token, @service_name = ENV['SW_APM_SERVICE_KEY'].to_s.split(':')
           else
+            token_source = 'invalid'
             SolarWindsAPM.logger.warn { "SW_APM_SERVICE_KEY is invalid: #{mask_token(ENV['SW_APM_SERVICE_KEY'])}" }
           end
 
           ENV['OTEL_EXPORTER_OTLP_HEADERS'] = "authorization=Bearer #{@token}"
         end
 
-        agent_enable = token_type != 'invalid'
+        agent_enable = token_source != 'invalid'
       end
 
       @agent_enable = agent_enable
