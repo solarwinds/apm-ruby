@@ -10,19 +10,22 @@ module SolarWindsAPM
   # ServiceKeyChecker
   # It is a service that validate the service_key
   class ServiceKeyChecker
+    attr_reader :token, :service_name
+
     def initialize(reporter, is_lambda)
       @reporter = reporter
       @is_lambda = is_lambda
+      read_and_validate_service_key
     end
 
     def read_and_validate_service_key
-      return '' unless @reporter == 'ssl'
-      return '' if @is_lambda
+      return unless @reporter == 'ssl'
+      return if @is_lambda
 
       service_key = fetch_service_key
       if service_key.empty?
         SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY not configured." }
-        return ''
+        return
       end
 
       token, _, service_name = parse_service_key(service_key)
@@ -30,7 +33,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.error do
           "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY problem. API Token in wrong format. Masked token: #{token[0..3]}...#{token[-4..]}"
         end
-        return ''
+        return
       end
 
       # if no service_name from service_key, then the SW_APM_SERVICE_KEY is not right format, return
@@ -39,7 +42,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn do
           "[#{self.class}/#{__method__}] SW_APM_SERVICE_KEY format problem. Service Name is missing."
         end
-        return ''
+        return
       end
 
       service_name = transform_service_name(service_name)
@@ -55,7 +58,8 @@ module SolarWindsAPM
         service_name = transform_service_name(otel_service_name)
       end
 
-      "#{token}:#{service_name}"
+      @token = token
+      @service_name = service_name
     end
 
     private
