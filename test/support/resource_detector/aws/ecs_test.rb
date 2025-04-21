@@ -9,6 +9,8 @@ require 'webmock/minitest'
 require './lib/solarwinds_apm/support/resource_detector/aws/ecs'
 
 describe 'AWS ECS Resource Detector Test' do
+  puts "\n\033[1m=== TEST RUN ECS TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+
   let(:cgroup_path) { '/proc/self/cgroup' }
   let(:sample_json) { ECS_SAMPLE_JSON }
   let(:sample_task) { ECS_SAMPLE_TASK }

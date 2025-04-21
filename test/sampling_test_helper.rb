@@ -99,11 +99,6 @@ def make_sample_params(options = {})
   name_ = options.fetch(:name, 'child span')
   kind = options.fetch(:kind, OpenTelemetry::Trace::SpanKind::INTERNAL)
 
-  # tracer = OpenTelemetry.tracer_provider.tracer('')
-  # function setSpan(context: Context, span: Span)
-  # trace.setSpan(ROOT_CONTEXT, object.parent)
-
-  # start_span(name, with_parent: nil, attributes: nil, links: nil, start_timestamp: nil, kind: nil)
   trace_context = parent ? OpenTelemetry::Trace.context_with_span(parent) : OpenTelemetry::Context::ROOT
   trace_id = parent ? parent.context.trace_id : Random.bytes(16)
 

@@ -32,8 +32,7 @@ Rake::TestTask.new do |t|
                    FileList['test/noop/*_test.rb'] +
                    FileList['test/ext/*_test.rb'] +
                    FileList['test/support/*_test.rb'] +
-                   FileList['test/sampling/*_test.rb'] +
-                   FileList['test/support/resource_detector/aws/*_test.rb']
+                   FileList['test/sampling/*_test.rb']
   end
 end
 

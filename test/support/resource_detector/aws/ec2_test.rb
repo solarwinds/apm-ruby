@@ -9,6 +9,8 @@ require 'webmock/minitest'
 require './lib/solarwinds_apm/support/resource_detector/aws/ec2'
 
 describe 'AWS EC2 Resource Detector Test' do
+  puts "\n\033[1m=== TEST RUN EC2 TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+
   let(:ec2_metadata_host) { '169.254.169.254' }
   let(:token_path) { '/latest/api/token' }
   let(:identity_document_path) { '/latest/dynamic/instance-identity/document' }
