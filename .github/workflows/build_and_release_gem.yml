@@ -18,6 +18,9 @@ jobs:
     name: Build + Release Gem to RubyGems
     runs-on: ubuntu-latest
 
+    outputs:
+      apm_ruby_version: ${{ steps.build.outputs.gem_version }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -82,6 +85,12 @@ jobs:
               draft: true
             })
 
+      - name: Upload to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
+          path: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
+
       # may need a bit of time for the gem to become available (-> sleep 1)
       - name: Download new Rubygem from rubygems.org and test
         working-directory: .github/workflows/
@@ -92,3 +101,43 @@ jobs:
           sudo apt-get update && sudo apt-get install -y ruby-dev g++ make
           gem install solarwinds_apm --version ${{ steps.build.outputs.gem_version }}
           ruby ./scripts/test_install.rb
+
+  # extract the built layer from artifacts, then scan it with reverselab
+  reverselab_scan_gem:
+    needs:
+      - publish_to_ruby_gem
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: extract layer zip from artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
+          path: ./
+        env:
+          SOLARWINDS_APM_VERSION: ${{needs.publish_to_ruby_gem.outputs.apm_ruby_version}}
+
+      - name: Scan build artifact on the Portal
+        id: rl-scan
+        env:
+          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
+        uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
+        with:
+          artifact-to-scan: ./solarwinds_apm-${{ steps.SOLARWINDS_APM_VERSION }}.gem
+          rl-verbose: true
+          rl-portal-server: solarwinds
+          rl-portal-org: SolarWinds
+          rl-portal-group: SaaS-Agents-SWO
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-prod@${{ env.SOLARWINDS_APM_VERSION }}
+        env:
+          SOLARWINDS_APM_VERSION: ${{needs.publish_to_ruby_gem.outputs.apm_ruby_version}}
+
+      - name: report the scan status
+        if: success() || failure()
+        run: |
+          echo "The status is: '${{ steps.rl-scan.outputs.status }}'"
+          echo "The description is: '${{ steps.rl-scan.outputs.description }}'"

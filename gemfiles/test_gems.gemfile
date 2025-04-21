@@ -40,4 +40,8 @@ group :development, :test do
   gem 'opentelemetry-metrics-sdk'
   gem 'opentelemetry-exporter-otlp-metrics'
   gem 'opentelemetry-test-helpers'
+
+  gem 'opentelemetry-resource-detector-azure'
+  gem 'opentelemetry-resource-detector-container'
+  gem 'opentelemetry-resource-detector-google_cloud_platform'
 end

@@ -5,6 +5,21 @@ For the latest release info, see here:
 
 Dates in this file are in the format MM/DD/YYYY.
 
+## solarwinds_apm 6.1.2 (02/28/2025)
+
+This release includes the following features:
+
+* `add_tracer` helper function for custom instrumentation on specific function
+* Added dbo integration for PostgreSQL (without prepared statement)
+
+## solarwinds_apm 6.1.1 (12/09/2024)
+
+This release includes the following features:
+
+* Mysql2 sqlcommenting for DBO integration
+* Removed the marginalia support on query commenting
+* Added the support of after fork on forked process
+
 ## solarwinds_apm 6.1.0 (09/18/2024)
 
 This release includes the following features:
