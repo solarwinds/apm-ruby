@@ -27,7 +27,6 @@ module SolarWindsAPM
       # === Argument:
       #
       # * +wait_milliseconds+ - (int, default 3000) the maximum time to wait in milliseconds
-      # * +integer_response+  - (boolean, default false) determine whether return status code of reporter or not
       #
       # === Example:
       #
@@ -35,35 +34,13 @@ module SolarWindsAPM
       #     Logger.info "SolarWindsAPM not ready after 10 seconds, no metrics will be sent"
       #   end
       #
-      #   # with status code print out
-      #   status = SolarWindsAPM::API.solarwinds_ready?(10_000, integer_response: true)
-      #   unless status == 1
-      #     Logger.info "SolarWindsAPM not ready after 10 seconds, no metrics will be sent. Error code "#{status}"
-      #   end
-      #
       # === Returns:
-      # * Boolean (if integer_response: false)
-      # * Integer (if integer_response: true)
+      # * Boolean
       #
-      def solarwinds_ready?(wait_milliseconds = 3000, integer_response: false)
-        if SolarWindsAPM::OTelConfig[:metrics_processor].nil?
-          # OTelConfig not initialize, use sampler solarwinds_ready from http sampler
-          sampler_solarwinds_ready?(wait_milliseconds)
-        else
-          oboe_solarwinds_ready?(wait_milliseconds, integer_response: integer_response)
-        end
-      end
-
-      def oboe_solarwinds_ready?(wait_milliseconds = 3000, integer_response: false)
-        return false unless SolarWindsAPM.loaded
-
-        is_ready = SolarWindsAPM::Context.isReady(wait_milliseconds)
-        integer_response ? is_ready : is_ready == 1
-      end
-
-      def sampler_solarwinds_ready?(wait_milliseconds = 3000)
+      def solarwinds_ready?(wait_milliseconds = 3000)
         root_sampler = ::OpenTelemetry.tracer_provider.sampler.instance_variable_get(:@root)
         is_ready = root_sampler.wait_until_ready(wait_milliseconds / 1000)
+        puts "is_ready: #{is_ready}"
         !!is_ready
       end
     end

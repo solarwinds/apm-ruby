@@ -3,7 +3,6 @@
 # Copyright (c) 2025 SolarWinds, LLC.
 # All rights reserved.
 
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/http_sampler_test.rb
 require 'minitest_helper'
 require './lib/solarwinds_apm/sampling'
 require 'sampling_test_helper'

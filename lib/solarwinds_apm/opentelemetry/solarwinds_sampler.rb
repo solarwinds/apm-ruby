@@ -222,7 +222,7 @@ module SolarWindsAPM
           if xtraceoptions.trigger_trace
             # If a traceparent header was provided then oboe does not generate the message
             tracestring = Utils.traceparent_from_context(parent_span_context) if parent_span_context.valid? && parent_span_context.remote?
-            trigger_msg = tracestring && (liboboe_decision['decision_type']).zero? ? XTRACEOPTIONS_RESP_TRIGGER_IGNORED : liboboe_decision['status_msg']
+            trigger_msg = tracestring && liboboe_decision['decision_type'].zero? ? XTRACEOPTIONS_RESP_TRIGGER_IGNORED : liboboe_decision['status_msg']
             SolarWindsAPM.logger.debug do
               "[#{self.class}/#{__method__}] tracestring: #{tracestring}; trigger_msg: #{trigger_msg}"
             end

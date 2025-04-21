@@ -35,12 +35,18 @@ module SolarWindsAPM
       thread = Thread.new { settings_ready }
       thread.join(timeout) || (thread.kill
                                false)
+      @ready
     end
 
-    def settings_ready
+    def settings_ready(timeout = 10)
+      deadline = Time.now
       loop do
         break unless @settings.empty?
+
+        sleep 0.1
+        break if (Time.now - deadline).round(0) >= timeout
       end
+      @ready = true unless @settings[:signature_key].nil?
     end
 
     def resolve_tracing_mode(config)
