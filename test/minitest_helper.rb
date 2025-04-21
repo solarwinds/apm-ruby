@@ -18,6 +18,7 @@ require 'opentelemetry-exporter-otlp'
 require 'lumberjack'
 require 'logging'
 require 'bson'
+require 'grpc'
 
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
