@@ -6,167 +6,192 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-# HttpSampler extends Sampler extends OboeSampler extends OtelSampler
-# JsonSampler extends Sampler extends OboeSampler extends OtelSampler
-# HttpSampler get the settings info by url fetch on ./v1/settings/${this.#service}/${await this.#hostname}`
-# 	it get const parsed = this.updateSettings(unparsed) # updateSettings is from Sampler
-#   localSettings is for current sampler configuration
-#   http const parsed = this.updateSettings(unparsed) -> super.updateSettings(parsed) -> bucket.update(parsed)
+module SolarWindsAPM
+  class Sampler < OboeSampler
+    RUBY_SEM_CON = ::OpenTelemetry::SemanticConventions::Trace
 
-class Sampler < OboeSampler
+    ATTR_HTTP_REQUEST_METHOD = 'http.request.method'
+    ATTR_HTTP_METHOD = RUBY_SEM_CON::HTTP_METHOD
+    ATTR_HTTP_RESPONSE_STATUS_CODE = 'http.response.status_code'
+    ATTR_HTTP_STATUS_CODE = RUBY_SEM_CON::HTTP_STATUS_CODE
+    ATTR_URL_SCHEME = 'url.scheme'
+    ATTR_HTTP_SCHEME = RUBY_SEM_CON::HTTP_SCHEME
+    ATTR_SERVER_ADDRESS = 'server.address'
+    ATTR_NET_HOST_NAME = RUBY_SEM_CON::NET_HOST_NAME
+    ATTR_URL_PATH = 'url.path'
+    ATTR_HTTP_TARGET = RUBY_SEM_CON::HTTP_TARGET
 
-  RUBY_SEM_CON = ::OpenTelemetry::SemanticConventions::Trace
-
-  ATTR_HTTP_REQUEST_METHOD = 'http.request.method'
-  ATTR_HTTP_METHOD = RUBY_SEM_CON::HTTP_METHOD
-  ATTR_HTTP_RESPONSE_STATUS_CODE =  'http.response.status_code'
-  ATTR_HTTP_STATUS_CODE = RUBY_SEM_CON::HTTP_STATUS_CODE
-  ATTR_URL_SCHEME = 'url.scheme'
-  ATTR_HTTP_SCHEME = RUBY_SEM_CON::HTTP_SCHEME
-  ATTR_SERVER_ADDRESS = 'server.address'
-  ATTR_NET_HOST_NAME = RUBY_SEM_CON::NET_HOST_NAME
-  ATTR_URL_PATH = 'url.path'
-  ATTR_HTTP_TARGET = RUBY_SEM_CON::HTTP_TARGET
-
-  # tracing_mode is getting from SolarWindsAPM::Config
-  def initialize(config, logger)
-    @logger = logger
-    @tracing_mode = config[:tracing_mode] ? :always : :never if config.key?(:tracing_mode)
-    @trigger_mode = config[:trigger_trace_enabled]
-    @transaction_settings = config[:transaction_settings]
-    @ready = false
-    @header_storage = nil
-  end
-
-  # I don't think we need wait_until_ready when fetching the setting directly from http
-  def wait_until_ready(timeout)
-    true
-  end
-
-  def local_settings(_context, _trace_id, span_name, span_kind, attributes, _links)
-    settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
-    return settings if @transaction_settings.nil? || @transaction_settings.empty?
-    
-    http_metadata = http_span_metadata(span_kind, attributes)
-    identifier = http_metadata[:http] ? http_metadata[:url] : "#{span_kind}:#{span_name}"
-    
-    # matcher is transaction regex
-    @transaction_settings.each do |setting|
-      if setting[:matcher].call(identifier)
-        settings[:tracing_mode] = setting[:tracing] ? :always : :never
-        break
-      end
+    # tracing_mode is getting from SolarWindsAPM::Config
+    def initialize(config, logger)
+      super(logger)
+      @tracing_mode = resolve_tracing_mode(config)
+      @trigger_mode = config[:trigger_trace_enabled]
+      @transaction_settings = config[:transaction_settings]
+      @ready = false
     end
-    settings
-  end
 
-  def request_headers(context)
-    @header_storage[context].fetch(:request, {})
-  end
-
-  def set_response_headers(headers, context)
-    storage = @header_storage[context]
-    storage[:response].merge!(headers) if storage
-  end
-
-  def update_settings(settings)
-    parsed = parse_settings(settings)
-    if parsed
-      @logger.debug {"valid settings #{parsed.inspect} from setting #{settings.inspect}"}
-
-      super(parsed)  # call oboe_sampler update_settings function to update the buckets
-
-      @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" }  if parsed[:warning]
-
-      parsed
-    else
-      @logger.debug { "invalid settings: #{settings.inspect}" }
-      nil
+    # wait for getting the first settings
+    def wait_until_ready(timeout = 10)
+      thread = Thread.new { settings_ready }
+      thread.join(timeout) || (thread.kill
+                               false)
+      @ready
     end
-  end
 
-  def http_span_metadata(kind, attributes)
-    return { http: false } unless kind == SpanKind.server &&
-      (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
+    def settings_ready(timeout = 10)
+      deadline = Time.now
+      loop do
+        break unless @settings.empty?
 
-    method_ = (attributes[ATTR_HTTP_REQUEST_METHOD] || attributes[ATTR_HTTP_METHOD]).to_s
-    status = (attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || attributes[ATTR_HTTP_STATUS_CODE] || 0).to_i
-    scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME] || "http").to_s
-    hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME] || "localhost").to_s
-    path = (attributes[ATTR_URL_PATH] || attributes[ATTR_HTTP_TARGET]).to_s
-    url = "#{scheme}://#{hostname}#{path}"
-
-    {
-      http: true,
-      method: method_,
-      status: status,
-      scheme: scheme,
-      hostname: hostname,
-      path: path,
-      url: url
-    }
-  end
-
-  # tested - can run
-  def parse_settings(unparsed)
-    return unless unparsed.is_a?(Hash)
-
-    return unless unparsed['value'].is_a?(Numeric) &&
-                  unparsed['timestamp'].is_a?(Numeric) &&
-                  unparsed['ttl'].is_a?(Numeric)
-
-    sample_rate = unparsed['value']
-    timestamp = unparsed['timestamp']
-    ttl = unparsed['ttl']
-
-    return unless unparsed['flags'].is_a?(String)
-
-    flags = Flags::OK
-    flag_map = {
-      "OVERRIDE" => :override,
-      "SAMPLE_START" => :sample_start,
-      "SAMPLE_THROUGH_ALWAYS" => :sample_through_always,
-      "TRIGGER_TRACE" => :triggered_trace
-    }
-
-    flag = nil
-    unparsed['flags'].split(',').each { |f| flag = flag_map[f] }
-    flags = flag if flag
-
-    buckets = {}
-    signature_key = nil
-
-    if unparsed['arguments'].is_a?(Hash)
-      args = unparsed['arguments']
-
-      if args['BucketCapacity'].is_a?(Numeric) && args['BucketRate'].is_a?(Numeric)
-        buckets[BucketType::DEFAULT] = { capacity: args['BucketCapacity'], rate: args['BucketRate'] }
+        sleep 0.1
+        break if (Time.now - deadline).round(0) >= timeout
       end
+      @ready = true unless @settings[:signature_key].nil?
+    end
 
-      if args['TriggerRelaxedBucketCapacity'].is_a?(Numeric) && args['TriggerRelaxedBucketRate'].is_a?(Numeric)
-        buckets['trigger_relaxed'] = { capacity: args['TriggerRelaxedBucketCapacity'], rate: args['TriggerRelaxedBucketRate'] }
+    def resolve_tracing_mode(config)
+      return unless config.key?(:tracing_mode) && !config[:tracing_mode].nil?
+
+      config[:tracing_mode] ? TracingMode::ALWAYS : TracingMode::NEVER
+    end
+
+    def local_settings(params)
+      _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
+      settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
+      return settings if @transaction_settings.nil? || @transaction_settings.empty?
+
+      @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
+      http_metadata = http_span_metadata(span_kind, attributes)
+      @logger.debug { "http_metadata: #{http_metadata.inspect}" }
+
+      # below is for filter out unwanted transaction
+      trans_settings = ::SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
+      tracing_mode   = trans_settings.calculate_trace_mode == 1 ? TracingMode::ALWAYS : TracingMode::NEVER
+
+      settings[:tracing_mode] = tracing_mode
+      settings
+    end
+
+    # if context have sw-related value, it should be stored in context
+    # named sw_xtraceoptions in header propagator
+    # original x_trace_options will parse headers in the class, apm-js separate the task
+    # apm-js will make headers as hash
+    def request_headers(params)
+      parent_context = params[:parent_context]
+      header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
+      signature = obtain_sw_value(parent_context, 'sw_signature')
+      @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
+
+      {
+        'X-Trace-Options' => header,
+        'X-Trace-Options-Signature' => signature
+      }
+    end
+
+    def obtain_sw_value(context, type)
+      sw_value = nil
+      instance_variable = context&.instance_variable_get('@entries')
+      instance_variable&.each do |key, value|
+        next unless key.instance_of?(::String)
+
+        sw_value = value if key == type
       end
+      sw_value
+    end
 
-      if args['TriggerStrictBucketCapacity'].is_a?(Numeric) && args['TriggerStrictBucketRate'].is_a?(Numeric)
-        buckets['trigger_strict'] = { capacity: args['TriggerStrictBucketCapacity'], rate: args['TriggerStrictBucketRate'] }
-      end
+    def update_settings(settings)
+      parsed = parse_settings(settings)
+      if parsed
+        @logger.debug { "valid settings #{parsed.inspect} from setting #{settings.inspect}" }
 
-      if args['SignatureKey'].is_a?(String)
-        signature_key = args['SignatureKey'].bytes
+        super(parsed) # call oboe_sampler update_settings function to update the buckets
+
+        @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" } if parsed[:warning]
+
+        parsed
+      else
+        @logger.debug { "invalid settings: #{settings.inspect}" }
+        nil
       end
     end
 
-    warning = unparsed['warning'] if unparsed['warning'].is_a?(String)
+    def http_span_metadata(kind, attributes)
+      return { http: false } unless kind == ::OpenTelemetry::Trace::SpanKind::SERVER &&
+                                    (attributes.key?(ATTR_HTTP_REQUEST_METHOD) || attributes.key?(ATTR_HTTP_METHOD))
 
-    {
-      sample_source: :remote,
-      sample_rate: sample_rate,
-      flags: flags,
-      timestamp: timestamp,
-      ttl: ttl,
-      buckets: buckets,
-      signature_key: signature_key,
-      warning: warning
-    }
+      method_ = (attributes[ATTR_HTTP_REQUEST_METHOD] || attributes[ATTR_HTTP_METHOD]).to_s
+      status = (attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || attributes[ATTR_HTTP_STATUS_CODE] || 0).to_i
+      scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME] || 'http').to_s
+      hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME] || 'localhost').to_s
+      path = (attributes[ATTR_URL_PATH] || attributes[ATTR_HTTP_TARGET]).to_s
+      url = "#{scheme}://#{hostname}#{path}"
+
+      http_metadata = {
+        http: true,
+        method: method_,
+        status: status,
+        scheme: scheme,
+        hostname: hostname,
+        path: path,
+        url: url
+      }
+
+      @logger.debug { "Retrieved http metadata: #{http_metadata.inspect}" }
+      http_metadata
+    end
+
+    def parse_settings(unparsed)
+      return unless unparsed.is_a?(Hash)
+
+      return unless unparsed['value'].is_a?(Numeric) &&
+                    unparsed['timestamp'].is_a?(Numeric) &&
+                    unparsed['ttl'].is_a?(Numeric)
+
+      sample_rate = unparsed['value']
+      timestamp = unparsed['timestamp']
+      ttl = unparsed['ttl']
+
+      return unless unparsed['flags'].is_a?(String)
+
+      flags = unparsed['flags'].split(',').reduce(Flags::OK) do |final_flag, f|
+        flag = {
+          'OVERRIDE' => Flags::OVERRIDE,
+          'SAMPLE_START' => Flags::SAMPLE_START,
+          'SAMPLE_THROUGH_ALWAYS' => Flags::SAMPLE_THROUGH_ALWAYS,
+          'TRIGGER_TRACE' => Flags::TRIGGERED_TRACE
+        }[f]
+
+        final_flag |= flag if flag
+        final_flag
+      end
+
+      buckets = {}
+      signature_key = nil
+
+      if unparsed['arguments'].is_a?(Hash)
+        args = unparsed['arguments']
+
+        buckets[BucketType::DEFAULT] = { capacity: args['BucketCapacity'], rate: args['BucketRate'] } if args['BucketCapacity'].is_a?(Numeric) && args['BucketRate'].is_a?(Numeric)
+
+        buckets['trigger_relaxed'] = { capacity: args['TriggerRelaxedBucketCapacity'], rate: args['TriggerRelaxedBucketRate'] } if args['TriggerRelaxedBucketCapacity'].is_a?(Numeric) && args['TriggerRelaxedBucketRate'].is_a?(Numeric)
+
+        buckets['trigger_strict'] = { capacity: args['TriggerStrictBucketCapacity'], rate: args['TriggerStrictBucketRate'] } if args['TriggerStrictBucketCapacity'].is_a?(Numeric) && args['TriggerStrictBucketRate'].is_a?(Numeric)
+
+        signature_key = args['SignatureKey'] if args['SignatureKey'].is_a?(String)
+      end
+
+      warning = unparsed['warning'] if unparsed['warning'].is_a?(String)
+
+      {
+        sample_source: SampleSource::REMOTE,
+        sample_rate: sample_rate,
+        flags: flags,
+        timestamp: timestamp,
+        ttl: ttl,
+        buckets: buckets,
+        signature_key: signature_key,
+        warning: warning
+      }
+    end
   end
 end

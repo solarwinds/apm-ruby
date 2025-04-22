@@ -216,7 +216,6 @@ describe 'Trace Context in Log Test' do
     SolarWindsAPM::Config[:log_traceId] = :always
     logger = Lumberjack::Logger.new(@log_output, level: :debug)
     logger.debug('Sample debug message')
-    puts "@log_output: #{@log_output.string}"
     @log_output.rewind
     assert_includes @log_output.read, 'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
   end

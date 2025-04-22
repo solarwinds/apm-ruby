@@ -14,7 +14,7 @@ if [ -r /etc/alpine-release ]; then
     echo "Tests do not work on aarch64 alpine, skipping."
     exit
   else
-    apk update && apk add --upgrade git ruby-dev g++ make curl bash perl zlib-dev linux-headers shared-mime-info sqlite-dev yaml-dev grpc
+    apk update && apk add --upgrade git ruby-dev g++ make curl bash perl zlib-dev linux-headers shared-mime-info sqlite-dev yaml-dev grpc gcompat libc6-compat
   fi
 elif [ -r /etc/debian_version ]; then
   # this is for ubuntu (> 22.04) and debian

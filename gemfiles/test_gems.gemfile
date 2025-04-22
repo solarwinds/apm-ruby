@@ -32,10 +32,17 @@ group :development, :test do
   gem 'simplecov', require: false, group: :test
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
+  gem 'grpc', '~> 1.71'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
   gem 'opentelemetry-exporter-otlp'
   gem 'opentelemetry-metrics-sdk'
+  gem 'opentelemetry-exporter-otlp-metrics'
+  gem 'opentelemetry-test-helpers'
+
+  gem 'opentelemetry-resource-detector-azure'
+  gem 'opentelemetry-resource-detector-container'
+  gem 'opentelemetry-resource-detector-google_cloud_platform'
 end

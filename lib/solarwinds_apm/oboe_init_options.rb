@@ -126,9 +126,12 @@ module SolarWindsAPM
 
     def read_and_validate_service_key
       service_key_checker = SolarWindsAPM::ServiceKeyChecker.new(@reporter, @lambda_env)
-      service_key = service_key_checker.read_and_validate_service_key
-      @service_name = service_key.split(':', 2).last # instance variable used in testing
-      service_key
+      if service_key_checker.token.nil?
+        ''
+      else
+        @service_name = service_key_checker.service_name # instance variable used in testing
+        "#{service_key_checker.token}:#{service_key_checker.service_name}"
+      end
     end
 
     def read_and_validate_ec2_md_timeout

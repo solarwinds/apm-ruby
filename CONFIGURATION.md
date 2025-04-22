@@ -165,24 +165,10 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1;
 SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
 ```
 
-For Rails < 7 and non-Rails applications, we use a port of [Marginalia](https://github.com/basecamp/marginalia) that patches ActiveRecord to inject the comment.
+#### Limitation
 
-For Rails >= 7, Marginalia is [integrated into ActiveRecord](https://api.rubyonrails.org/classes/ActiveRecord/QueryLogs.html) so enabling this feature should be done through Rails [configuration](https://guides.rubyonrails.org/v7.0/configuring.html#config-active-record-query-log-tags-enabled). For example:
-
-```ruby
-class Application < Rails::Application
-  config.active_record.query_log_tags_enabled = true
-  config.active_record.query_log_tags = [
-    {
-      traceparent: -> {
-        SolarWindsAPM::SWOMarginalia::Comment.traceparent
-      }
-    }
-  ]
-end
-```
-
-Note that with Rails >= 7.1 the comment format can be specified via the `config.active_record.query_log_tags_format` option. SolarWinds Observability functionality depends on the default `:sqlcommenter` format, it is not recommended to change this value.
+> [!NOTE]  
+> This feature currently does not support prepared statements. For `mysql2` the `query` operation is supported, for `pg` the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 ### Background Jobs
 
