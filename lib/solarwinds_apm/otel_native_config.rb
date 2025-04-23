@@ -58,10 +58,6 @@ module SolarWindsAPM
         ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING.dig(log_level, :otel)
       end
 
-      puts "ENV['OTEL_EXPORTER_OTLP_HEADERS']: #{ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)}"
-      puts "ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']: #{ENV.fetch('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', nil)}"
-      puts "ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']: #{ENV.fetch('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT', nil)}"
-
       ::OpenTelemetry::SDK.configure do |c|
         c.resource = final_attributes
         c.use_all(@@config_map)

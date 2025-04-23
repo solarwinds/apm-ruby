@@ -38,9 +38,6 @@ module SolarWindsAPM
       # * Boolean
       #
       def set_transaction_name(custom_name = nil)
-        otel_config = SolarWindsAPM::OTelNativeConfig if defined? SolarWindsAPM::OTelNativeConfig
-        otel_config = SolarWindsAPM::OTelConfig if defined? SolarWindsAPM::OTelConfig
-
         status = true
         if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
           SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode." }
@@ -49,13 +46,13 @@ module SolarWindsAPM
             "[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."
           end
           status = false
-        elsif otel_config[:metrics_processor].nil?
+        elsif SolarWindsAPM::OTelNativeConfig[:metrics_processor].nil?
           SolarWindsAPM.logger.warn do
             "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."
           end
           status = false
         else
-          solarwinds_processor = otel_config[:metrics_processor]
+          solarwinds_processor = SolarWindsAPM::OTelNativeConfig[:metrics_processor]
           current_span = ::OpenTelemetry::Trace.current_span
 
           if current_span.context.valid?

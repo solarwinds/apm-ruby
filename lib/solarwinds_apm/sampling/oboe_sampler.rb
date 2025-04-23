@@ -213,8 +213,6 @@ module SolarWindsAPM
         sample_state.decision = OTEL_SAMPLING_DECISION::RECORD_ONLY
       else
         @logger.debug { 'TRIGGERED_TRACE set; trigger tracing' }
-
-        bucket = nil
         # If there's an auth response present, it's a valid signed request
         # Otherwise, this code wouldn't be reached
         if sample_state.trace_options.response.auth
