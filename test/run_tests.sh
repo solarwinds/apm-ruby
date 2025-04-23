@@ -94,18 +94,18 @@ for file in $RESOURCE_DETECTOR_TEST_FILE; do
 done
 
 # create fake libsolarwinds_apm.so for testing
-cd test/clib
-ruby solarwinds_apm.rb
-make
-cd -
-echo "Fake libsolarwinds_apm.so created"
+# cd test/clib
+# ruby solarwinds_apm.rb
+# make
+# cd -
+# echo "Fake libsolarwinds_apm.so created"
 
-NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
-for ((i = 1; i <= $NUMBER_FILE; i++)); do
-  check_file_name=init_${i}_test.rb
-  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
-  check_status
-done
+# NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
+# for ((i = 1; i <= $NUMBER_FILE; i++)); do
+#   check_file_name=init_${i}_test.rb
+#   BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
+#   check_status
+# done
 
 echo ""
 echo "--- SUMMARY ------------------------------"

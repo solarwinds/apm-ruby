@@ -33,7 +33,6 @@ module SolarWindsAPM
     SolarWindsAPM.logger.warn "Ruby: #{RUBY_DESCRIPTION}"
     SolarWindsAPM.logger.warn "PROGRAM_NAME: #{$PROGRAM_NAME}" # replace $0 to get executing script
     SolarWindsAPM.logger.warn "ARGV: #{ARGV.inspect}"
-    SolarWindsAPM.logger.warn "SolarWindsAPM.loaded == #{SolarWindsAPM.loaded}"
 
     SolarWindsAPM.logger.warn "SolarWindsAPM::Ruby defined?: #{yesno(defined?(SolarWindsAPM::Ruby))}"
     SolarWindsAPM.logger.warn "SolarWindsAPM.reporter: #{SolarWindsAPM.reporter}"

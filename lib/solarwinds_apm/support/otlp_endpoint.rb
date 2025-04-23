@@ -6,9 +6,13 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
+require_relative 'service_key_checker'
+
 module SolarWindsAPM
   # OTLPEndPoint
   class OTLPEndPoint
+    attr_reader :token, :service_name
+
     SWO_APM_ENDPOINT_REGEX = /^apm\.collector\.([a-z]{2}-\d{2})\.([^.]+)\.solarwinds\.com(?::\d+)?$/
     SWO_APM_ENDPOINT_DEFAULT = 'apm.collector.na-01.cloud.solarwinds.com:443'
 
@@ -20,6 +24,7 @@ module SolarWindsAPM
 
     def initialize
       @token = nil
+      @service_name = nil
     end
 
     def config_otlp_token_and_endpoint
@@ -29,6 +34,7 @@ module SolarWindsAPM
 
       service_key_checker = SolarWindsAPM::ServiceKeyChecker.new('ssl', SolarWindsAPM::Utils.determine_lambda)
       @token = service_key_checker.token unless service_key_checker.token.nil?
+      @service_name = service_key_checker.service_name
 
       OTEL_SIGNAL_TYPE.each do |data_type|
         config_token(data_type)
@@ -44,13 +50,13 @@ module SolarWindsAPM
 
       return unless @token
 
-      # puts "#{ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"].to_s.match?(SWO_OTLP_SIGNAL_ENDPOINT_REGEX)}"
-      # puts "#{ENV['OTEL_EXPORTER_OTLP_ENDPOINT'].to_s.match?(SWO_OTLP_GENERAL_ENDPOINT_REGEX)}"
       if ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"].to_s.empty? && ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_ENDPOINT"].to_s.match?(SWO_OTLP_SIGNAL_ENDPOINT_REGEX)
         ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"] = "authorization=Bearer #{@token}"
       elsif ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_ENDPOINT'].to_s.match?(SWO_OTLP_GENERAL_ENDPOINT_REGEX)
         ENV['OTEL_EXPORTER_OTLP_HEADERS'] = "authorization=Bearer #{@token}"
       end
+
+      ENV['OTEL_EXPORTER_OTLP_HEADERS'] = "authorization=Bearer #{@token}" if ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty? && ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"].to_s.empty?
     end
 
     def configure_otlp_endpoint(data_type, matches)

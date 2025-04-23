@@ -67,10 +67,10 @@ describe 'OTLP Endpoint Test' do
 
     _(@endpoint.instance_variable_get(:@token)).must_equal '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
     _(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil)).must_equal 'http://0.0.0.0:4317'
+    _(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil)).must_equal 'authorization=Bearer 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234'
 
-    assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_HEADERS', nil))
     assert_signal_endpoint_nil
-    assert_singal_headers_nil
+    assert_singal_headers_nil(general_singal_header: false)
   end
 
   it 'correct formatted SW_APM_SERVICE_KEY with headers set' do
@@ -142,7 +142,7 @@ describe 'OTLP Endpoint Test' do
 
     assert_nil(ENV.fetch('OTEL_EXPORTER_OTLP_ENDPOINT', nil))
     assert_signal_endpoint_default
-    assert_singal_headers_nil
+    assert_singal_headers_nil(general_singal_header: false)
   end
 
   it 'no OTEL ENDPOINT and no SW_APM_COLLECTOR' do

@@ -23,4 +23,4 @@ module SolarWindsAPM
   end
 end
 
-Lumberjack::LogEntry.prepend(SolarWindsAPM::Lumberjack::LogEntry) if SolarWindsAPM.loaded && defined?(Lumberjack::LogEntry)
+Lumberjack::LogEntry.prepend(SolarWindsAPM::Lumberjack::LogEntry) if defined?(Lumberjack::LogEntry)

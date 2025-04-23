@@ -291,8 +291,6 @@ task :build_gem do
   system('bundle install --without development --without test')
 
   puts "\n=== clean & compile & build ===\n"
-  Rake::Task['distclean'].execute
-  Rake::Task['fetch_oboe_file'].invoke('prod')
   system('gem build solarwinds_apm.gemspec')
 
   gemname = Dir['solarwinds_apm*.gem'].first
