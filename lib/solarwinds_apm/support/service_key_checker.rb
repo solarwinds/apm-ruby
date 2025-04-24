@@ -15,6 +15,8 @@ module SolarWindsAPM
     def initialize(reporter, is_lambda)
       @reporter = reporter
       @is_lambda = is_lambda
+      @token = nil
+      @service_name = nil
       read_and_validate_service_key
     end
 

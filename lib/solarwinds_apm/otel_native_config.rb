@@ -6,12 +6,12 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-require 'solarwinds_apm/constants'
-require 'solarwinds_apm/api'
-require 'solarwinds_apm/support'
-require 'solarwinds_apm/opentelemetry'
-require 'solarwinds_apm/sampling'
-require 'solarwinds_apm/patch'
+require_relative 'constants'
+require_relative 'api'
+require_relative 'support'
+require_relative 'opentelemetry'
+require_relative 'sampling'
+require_relative 'patch'
 
 module SolarWindsAPM
   # OTelNativeConfig module
@@ -23,6 +23,8 @@ module SolarWindsAPM
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
 
+      is_lambda = SolarWindsAPM::Utils.determine_lambda
+
       ENV['OTEL_TRACES_EXPORTER'] = ENV['OTEL_TRACES_EXPORTER'].to_s.split(',').tap { |e| e << 'otlp' unless e.include?('otlp') }.join(',')
 
       # add response propagator to rack instrumentation
@@ -31,10 +33,12 @@ module SolarWindsAPM
       # dbo: traceparent injection as sql comments
       require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
 
-      # endpoint and service_key
-      otlp_endpoint = SolarWindsAPM::OTLPEndPoint.new
-      otlp_endpoint.config_otlp_token_and_endpoint
-      return if otlp_endpoint.token.nil?
+      # endpoint and service_key for non-lambda
+      unless is_lambda
+        otlp_endpoint = SolarWindsAPM::OTLPEndPoint.new
+        otlp_endpoint.config_otlp_token_and_endpoint
+        return if otlp_endpoint.token.nil?
+      end
 
       ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV.fetch('OTEL_SERVICE_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
 
@@ -86,7 +90,7 @@ module SolarWindsAPM
         transaction_settings: SolarWindsAPM::Config[:transaction_settings]
       }
 
-      sampler = SolarWindsAPM::Utils.determine_lambda ? JsonSampler.new(sampler_config) : HttpSampler.new(sampler_config)
+      sampler = is_lambda ? JsonSampler.new(sampler_config) : HttpSampler.new(sampler_config)
 
       ::OpenTelemetry.tracer_provider.sampler = ::OpenTelemetry::SDK::Trace::Samplers.parent_based(
         root: sampler,

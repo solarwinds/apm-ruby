@@ -33,7 +33,7 @@ module SolarWindsAPM
       resolve_get_setting_endpoint(matches)
 
       service_key_checker = SolarWindsAPM::ServiceKeyChecker.new('ssl', SolarWindsAPM::Utils.determine_lambda)
-      @token = service_key_checker.token unless service_key_checker.token.nil?
+      @token = service_key_checker.token
       @service_name = service_key_checker.service_name
 
       OTEL_SIGNAL_TYPE.each do |data_type|
