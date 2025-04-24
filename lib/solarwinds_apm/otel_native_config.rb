@@ -34,6 +34,7 @@ module SolarWindsAPM
       require_relative 'patch/tag_sql_patch' if SolarWindsAPM::Config[:tag_sql]
 
       # endpoint and service_key for non-lambda
+      otlp_endpoint = nil
       unless is_lambda
         otlp_endpoint = SolarWindsAPM::OTLPEndPoint.new
         otlp_endpoint.config_otlp_token_and_endpoint
@@ -82,13 +83,18 @@ module SolarWindsAPM
 
       # collector, service and headers are used for http sampler get settings
       sampler_config = {
-        collector: "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com:443')}",
-        service: otlp_endpoint.service_name,
-        headers: "Bearer #{otlp_endpoint.token}",
         tracing_mode: SolarWindsAPM::Config[:tracing_mode],
         trigger_trace_enabled: SolarWindsAPM::Config[:trigger_tracing_mode],
         transaction_settings: SolarWindsAPM::Config[:transaction_settings]
       }
+
+      unless otlp_endpoint.nil?
+        sampler_config.merge!({
+                                collector: "https://#{ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com:443')}",
+                                service: otlp_endpoint.service_name,
+                                headers: "Bearer #{otlp_endpoint.token}"
+                              })
+      end
 
       sampler = is_lambda ? JsonSampler.new(sampler_config) : HttpSampler.new(sampler_config)
 
