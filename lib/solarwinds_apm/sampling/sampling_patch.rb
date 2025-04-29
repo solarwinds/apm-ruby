@@ -5,6 +5,7 @@ module SolarWindsAPM
     module Patch
       # do not send metrics if no data_points present
       def export(metrics, timeout: nil)
+        metrics.reject! { |m| m.data_points.empty? }
         return ::OpenTelemetry::SDK::Metrics::Export::SUCCESS unless metrics.any? { |m| m.data_points.any? }
 
         super
