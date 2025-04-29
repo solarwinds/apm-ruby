@@ -15,12 +15,18 @@ module SolarWindsAPM
         @meter = ::OpenTelemetry.meter_provider.meter('sw.apm.sampling.metrics')
 
         @counter = {
-          request_count: @meter.create_counter('trace.service.request_count'),
-          sample_count: @meter.create_counter('trace.service.samplecount'),
-          trace_count: @meter.create_counter('trace.service.tracecount'),
-          through_trace_count: @meter.create_counter('trace.service.through_trace_count'),
-          triggered_trace_count: @meter.create_counter('trace.service.triggered_trace_count'),
-          token_bucket_exhaustion_count: @meter.create_counter('trace.service.tokenbucket_exhaustion_count')
+          request_count:
+            @meter.create_counter('trace.service.request_count', unit: 'request', description: 'Count of all requests.'),
+          sample_count:
+            @meter.create_counter('trace.service.samplecount', unit: 'request', description: 'Count of requests that went through sampling, which excludes those with a valid upstream decision or trigger traced.'),
+          trace_count:
+            @meter.create_counter('trace.service.tracecount', unit: 'trace', description: 'Count of all traces.'),
+          through_trace_count:
+            @meter.create_counter('trace.service.through_trace_count', unit: 'request', description: 'Count of requests with a valid upstream decision, thus passed through sampling.'),
+          triggered_trace_count:
+            @meter.create_counter('trace.service.triggered_trace_count', unit: 'trace', description: 'Count of triggered traces.'),
+          token_bucket_exhaustion_count:
+            @meter.create_counter('trace.service.tokenbucket_exhaustion_count', unit: 'request', description: 'Count of requests that were not traced due to token bucket rate limiting.')
         }
       end
 
