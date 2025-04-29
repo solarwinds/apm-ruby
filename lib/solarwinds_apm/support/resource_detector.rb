@@ -162,8 +162,9 @@ module SolarWindsAPM
 
     def self.require_detector(gem_name)
       require gem_name
+      SolarWindsAPM.logger.info { "#{gem_name} is loaded." }
     rescue LoadError => e
-      SolarWindsAPM.logger.warn { "No #{gem_name} found. #{e.message}" }
+      SolarWindsAPM.logger.debug { "No #{gem_name} found. #{e.message}" }
     end
 
     def self.safe_integer?(number)
