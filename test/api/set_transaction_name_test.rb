@@ -74,4 +74,15 @@ describe 'SolarWinds Set Transaction Name Test' do
     result = SolarWindsAPM::API.set_transaction_name('abcdf')
     _(result).must_equal true
   end
+
+  it 'set_transaction_name_truncated_to_256_chars xuan' do
+    @solarwinds_processor.on_start(@span, OpenTelemetry::Context.current)
+    OpenTelemetry::Trace.stub(:current_span, @dummy_span) do
+      long_name = 'a' * 500
+      result = SolarWindsAPM::API.set_transaction_name(long_name)
+      _(result).must_equal true
+    end
+    tx_name = @solarwinds_processor.txn_manager.get('77cb6ccc522d3106114dd6ecbb70036a-31e175128efc4018')
+    _(tx_name.size).must_equal 256
+  end
 end

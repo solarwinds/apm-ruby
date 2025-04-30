@@ -41,14 +41,13 @@ module SolarWindsAPM
         status = true
         if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
           SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode." }
+        elsif SolarWindsAPM::OTelNativeConfig[:metrics_processor].nil?
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing. Noop mode."
+          end
         elsif custom_name.nil? || custom_name.empty?
           SolarWindsAPM.logger.warn do
             "[#{name}/#{__method__}] Set transaction name failed: custom_name is either nil or empty string."
-          end
-          status = false
-        elsif SolarWindsAPM::OTelNativeConfig[:metrics_processor].nil?
-          SolarWindsAPM.logger.warn do
-            "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing."
           end
           status = false
         else
