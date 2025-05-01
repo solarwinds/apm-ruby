@@ -7,7 +7,7 @@ group :development, :test do
     gem 'ffi', '<= 1.16.3' # set this version due to ffi 1.17.0 need rubygems version > 3 (https://rubygems.org/gems/ffi/versions/1.17.0-arm-linux-musl)
     gem 'google-protobuf', '< 3.25.4'
   else
-    gem 'ffi'
+    gem 'ffi', '<= 1.17.1'
   end
   gem 'benchmark-ips', '>= 2.7.2'
   gem 'bson'
@@ -33,7 +33,6 @@ group :development, :test do
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
   gem 'grpc', '~> 1.71'
-  gem 'ffi', '<= 1.17.1'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
