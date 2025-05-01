@@ -33,6 +33,7 @@ group :development, :test do
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
   gem 'grpc', '~> 1.71'
+  gem 'ffi', '<= 1.17.1'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
