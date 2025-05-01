@@ -43,6 +43,6 @@ group :development, :test do
   gem 'opentelemetry-test-helpers'
 
   gem 'opentelemetry-resource-detector-azure'
+  gem 'opentelemetry-resource-detector-aws'
   gem 'opentelemetry-resource-detector-container'
-  gem 'opentelemetry-resource-detector-google_cloud_platform'
 end
