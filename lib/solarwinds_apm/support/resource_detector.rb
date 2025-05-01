@@ -152,19 +152,25 @@ module SolarWindsAPM
     end
 
     def self.detect_ec2
-      ::OpenTelemetry::Resource::Detector::AWS::EC2.detect
+      attribute = ::OpenTelemetry::Resource::Detector::AWS::EC2.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
     rescue StandardError
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
     def self.detect_azure
-      ::OpenTelemetry::Resource::Detector::Azure.detect
+      attribute = ::OpenTelemetry::Resource::Detector::Azure.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
     rescue StandardError
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
     def self.detect_container
-      ::OpenTelemetry::Resource::Detector::Container.detect
+      attribute = ::OpenTelemetry::Resource::Detector::Container.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
     rescue StandardError
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
