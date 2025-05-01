@@ -144,10 +144,10 @@ trace.trace_flags    # 01
 
 On startup, this library initializes and maintains a connection to a SolarWinds Observability collector, and receives settings used for making tracing decisions. This process can take up to a few seconds depending on the connection. If the application receives requests before initialization has completed, these requests will not be traced. While this is not critical for long-running server processes, it might be a problem for short-running apps such as cron jobs or CLI apps.
 
-A call to the `solarwinds_ready` method allows the application to block until initialization has completed and the library is ready for tracing. The method accepts an optional timeout parameter in milliseconds.
+A call to the `solarwinds_ready?` method allows the application to block until initialization has completed and the library is ready for tracing. The method accepts an optional timeout parameter in milliseconds.
 
 ```ruby
-SolarWindsAPM::API.solarwinds_ready(wait_milliseconds=3000)
+SolarWindsAPM::API.solarwinds_ready?(wait_milliseconds=3000)
 ```
 
 #### Set a Custom Transaction Name
