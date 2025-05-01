@@ -88,7 +88,11 @@ module SolarWindsAPM
     def resolve_get_setting_endpoint(matches)
       return if matches&.size == 3
 
-      SolarWindsAPM.logger.warn { "[#{self.class}/#{__method__}] SW_APM_COLLECTOR format invalid: #{ENV.fetch('SW_APM_COLLECTOR', nil)}. Valid format: apm.collector.*.*.solarwinds.com" }
+      unless ENV['SW_APM_COLLECTOR'].to_s.empty?
+        SolarWindsAPM.logger.warn do
+          "[#{self.class}/#{__method__}] SW_APM_COLLECTOR format invalid: #{ENV.fetch('SW_APM_COLLECTOR', nil)}. Valid format: apm.collector.*.*.solarwinds.com"
+        end
+      end
       ENV['SW_APM_COLLECTOR'] = SWO_APM_ENDPOINT_DEFAULT
     end
   end
