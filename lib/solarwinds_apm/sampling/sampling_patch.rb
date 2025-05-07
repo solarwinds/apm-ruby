@@ -14,6 +14,8 @@ module SolarWindsAPM
   end
 end
 
+OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.prepend(SolarWindsAPM::MetricsExporter::Patch)
+
 module SolarWindsAPM
   module Span
     module Patch
@@ -43,5 +45,44 @@ module SolarWindsAPM
   end
 end
 
-OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.prepend(SolarWindsAPM::MetricsExporter::Patch)
 OpenTelemetry::SDK::Trace::Span.prepend(SolarWindsAPM::Span::Patch)
+
+module SolarWindsAPM
+  module MetricsSDK
+    module MetricStream
+      module Patch
+        def initialize(
+          name,
+          description,
+          unit,
+          instrument_kind,
+          meter_provider,
+          instrumentation_scope,
+          aggregation
+        )
+          @pid = nil
+
+          super
+        end
+
+        def update(value, attributes)
+          reset_on_fork
+          super
+        end
+
+        def reset_on_fork
+          pid = Process.pid
+          return if @pid == pid
+
+          @pid = pid
+
+          @meter_provider.metric_readers.each do |reader|
+            reader.send(:start) if reader.instance_of?(::OpenTelemetry::SDK::Metrics::Export::PeriodicMetricReader) && !reader.alive?
+          end
+        end
+      end
+    end
+  end
+end
+
+OpenTelemetry::SDK::Metrics::State::MetricStream.prepend(SolarWindsAPM::MetricsSDK::MetricStream::Patch)
