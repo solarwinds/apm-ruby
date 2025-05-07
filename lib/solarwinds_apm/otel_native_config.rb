@@ -78,9 +78,6 @@ module SolarWindsAPM
       @@config[:metrics_processor] = otlp_processor
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
 
-      # get_setting_endpoint = ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com:443')
-      # if get_setting_endpoint.include?()
-
       # collector, service and headers are used for http sampler get settings
       sampler_config = {
         tracing_mode: SolarWindsAPM::Config[:tracing_mode],
