@@ -48,7 +48,7 @@ module SolarWindsAPM
                         :ttl)
 
   LocalSettings = Struct.new(:tracing_mode, # TracingMode
-                             :trigger_mode) # Boolean
+                             :trigger_mode) # {:enabled, :disabled}
 
   BucketSettings = Struct.new(:capacity, # Number
                               :rate) # Number

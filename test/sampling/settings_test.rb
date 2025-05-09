@@ -21,7 +21,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
         }
         local = {
           tracing_mode: SolarWindsAPM::TracingMode::NEVER,
-          trigger_mode: false
+          trigger_mode: :disabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
@@ -39,7 +39,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
         }
         local = {
           tracing_mode: SolarWindsAPM::TracingMode::ALWAYS,
-          trigger_mode: true
+          trigger_mode: :enabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
@@ -58,7 +58,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
           ttl: 60
         }
         local = {
-          trigger_mode: true
+          trigger_mode: :enabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
@@ -78,7 +78,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
         }
         local = {
           tracing_mode: SolarWindsAPM::TracingMode::NEVER,
-          trigger_mode: false
+          trigger_mode: :disabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
@@ -96,7 +96,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
         }
         local = {
           tracing_mode: SolarWindsAPM::TracingMode::ALWAYS,
-          trigger_mode: true
+          trigger_mode: :enabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
@@ -113,7 +113,7 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
           ttl: 60
         }
         local = {
-          trigger_mode: false
+          trigger_mode: :disabled
         }
 
         merged = SolarWindsAPM::SamplingSettings.merge(remote, local)
