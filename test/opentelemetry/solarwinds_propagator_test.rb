@@ -6,12 +6,9 @@
 require 'minitest_helper'
 require 'minitest/mock'
 require './lib/solarwinds_apm/opentelemetry'
-require './lib/solarwinds_apm/support/x_trace_options'
 require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/support/utils'
-require './lib/solarwinds_apm/support/transaction_cache'
 require './lib/solarwinds_apm/support/transaction_settings'
-require './lib/solarwinds_apm/support/oboe_tracing_mode'
 require './lib/solarwinds_apm/config'
 
 describe 'SolarWindsPropagatorTest' do

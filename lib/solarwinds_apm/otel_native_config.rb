@@ -11,7 +11,6 @@ require_relative 'api'
 require_relative 'support'
 require_relative 'opentelemetry'
 require_relative 'sampling'
-require_relative 'patch'
 
 module SolarWindsAPM
   # OTelNativeConfig module
