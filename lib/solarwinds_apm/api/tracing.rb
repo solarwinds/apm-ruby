@@ -37,7 +37,6 @@ module SolarWindsAPM
 
         root_sampler = ::OpenTelemetry.tracer_provider.sampler.instance_variable_get(:@root)
         is_ready = root_sampler.wait_until_ready(wait_milliseconds / 1000)
-        puts "is_ready: #{is_ready}"
         !!is_ready
       end
     end

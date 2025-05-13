@@ -11,6 +11,9 @@ require 'uri'
 require 'json'
 require 'socket'
 require 'securerandom'
+require 'opentelemetry/resource/detector/azure'
+require 'opentelemetry/resource/detector/aws/ec2' if RUBY_VERSION >= '3.1.0' # aws resource detector requires ruby >= 3.1.0
+require 'opentelemetry/resource/detector/container'
 
 module SolarWindsAPM
   # ResourceDetector
@@ -41,7 +44,9 @@ module SolarWindsAPM
       attributes = ::OpenTelemetry::SDK::Resources::Resource.create(uuid_attr)
       attributes = attributes.merge(detect_uams_client_id)
       attributes = attributes.merge(detect_k8s_attributes)
-      attributes.merge(from_upstream_detector)
+      attributes = attributes.merge(detect_ec2)
+      attributes = attributes.merge(detect_azure)
+      attributes.merge(detect_container)
     end
 
     def self.detect_uams_client_id
@@ -146,25 +151,28 @@ module SolarWindsAPM
       ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
     end
 
-    def self.from_upstream_detector
-      require_detector('opentelemetry-resource-detector-google_cloud_platform')
-      require_detector('opentelemetry-resource-detector-container')
-      require_detector('opentelemetry-resource-detector-azure')
-
-      resource_attributes = ::OpenTelemetry::SDK::Resources::Resource.create({})
-      resource_attributes = resource_attributes.merge(::OpenTelemetry::Resource::Detector::Azure.detect) if defined? OpenTelemetry::Resource::Detector::Azure
-      resource_attributes = resource_attributes.merge(::OpenTelemetry::Resource::Detector::GoogleCloudPlatform.detect) if defined? OpenTelemetry::Resource::Detector::GoogleCloudPlatform
-      resource_attributes = resource_attributes.merge(::OpenTelemetry::Resource::Detector::Container.detect) if defined? OpenTelemetry::Resource::Detector::Container
-
-      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] resource_attributes: #{resource_attributes.inspect}" }
-      resource_attributes
+    def self.detect_ec2
+      attribute = ::OpenTelemetry::Resource::Detector::AWS::EC2.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
+    rescue StandardError
+      ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
-    def self.require_detector(gem_name)
-      require gem_name
-      SolarWindsAPM.logger.info { "#{gem_name} is loaded." }
-    rescue LoadError => e
-      SolarWindsAPM.logger.debug { "No #{gem_name} found. #{e.message}" }
+    def self.detect_azure
+      attribute = ::OpenTelemetry::Resource::Detector::Azure.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
+    rescue StandardError
+      ::OpenTelemetry::SDK::Resources::Resource.create({})
+    end
+
+    def self.detect_container
+      attribute = ::OpenTelemetry::Resource::Detector::Container.detect
+      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      attribute
+    rescue StandardError
+      ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
     def self.safe_integer?(number)

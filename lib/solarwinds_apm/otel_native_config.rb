@@ -19,6 +19,8 @@ module SolarWindsAPM
     @@config_map       = {}
     @@agent_enabled    = false
 
+    RESOURCE_ATTRIBUTES = 'RESOURCE_ATTRIBUTES'
+
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
 
@@ -44,14 +46,14 @@ module SolarWindsAPM
 
       # resource attributes
       mandatory_resource = SolarWindsAPM::ResourceDetector.detect
-      additional_attributes = @@config_map['resource_attributes']
+      additional_attributes = @@config_map[RESOURCE_ATTRIBUTES]
       if additional_attributes
-        @@config_map.delete('resource_attributes')
         if additional_attributes.instance_of?(::OpenTelemetry::SDK::Resources::Resource)
           final_attributes = mandatory_resource.merge(additional_attributes)
         elsif additional_attributes.instance_of?(Hash)
           final_attributes = mandatory_resource.merge(::OpenTelemetry::SDK::Resources::Resource.create(additional_attributes))
         end
+        @@config_map.delete(RESOURCE_ATTRIBUTES)
       else
         final_attributes = mandatory_resource.merge({})
       end
@@ -142,6 +144,7 @@ module SolarWindsAPM
     # SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
+    #   config["RESOURCE_ATTRIBUTES"] = ::OpenTelemetry::Resource::Detector::GoogleCloudPlatform.detect
     # end
     #
     def self.initialize_with_config
