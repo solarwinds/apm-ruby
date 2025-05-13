@@ -50,8 +50,8 @@ describe 'otlp processor sampled test' do
       end
 
       metric_exporter.pull
-      last_snapshot = metric_exporter.metric_snapshots
-      _(last_snapshot[0].data_points[0].attributes['sw.transaction']).must_equal 'just_a_simple_name'
+      metrics = metric_exporter.metric_snapshots
+      _(metrics[0].data_points[0].attributes['sw.transaction']).must_equal 'just_a_simple_name'
       _(trace_exporter.finished_spans[0].attributes['sw.transaction']).must_equal 'just_a_simple_name'
     end
   end

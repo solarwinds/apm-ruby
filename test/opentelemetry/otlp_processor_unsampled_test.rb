@@ -34,17 +34,15 @@ describe 'otlp processor unsampled test' do
     tracer = provider.tracer(__FILE__, OpenTelemetry::SDK::VERSION)
     parent_context = OpenTelemetry::Context.empty
 
-    span_processor.stub(:on_finish, nil) do
-      OpenTelemetry::Context.with_current(parent_context) do
-        tracer.in_span('just_a_simple_name') do
-          # no-op
-        end
-
-        metric_exporter.pull
-        last_snapshot = metric_exporter.metric_snapshots
-        _(last_snapshot[0].data_points[0].attributes['sw.transaction']).must_equal 'just_a_simple_name'
-        _(trace_exporter.finished_spans.size).must_equal 0
+    OpenTelemetry::Context.with_current(parent_context) do
+      tracer.in_span('just_a_simple_name') do |span|
+        span.instance_variable_get(:@context).instance_variable_set(:@trace_flags, OpenTelemetry::Trace::TraceFlags.from_byte(0))
       end
+
+      metric_exporter.pull
+      metrics = metric_exporter.metric_snapshots
+      _(metrics[0].data_points[0].attributes['sw.transaction']).must_equal 'just_a_simple_name'
+      _(trace_exporter.finished_spans.size).must_equal 0
     end
   end
 end

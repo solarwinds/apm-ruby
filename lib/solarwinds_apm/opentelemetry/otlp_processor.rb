@@ -87,7 +87,7 @@ module SolarWindsAPM
       end
 
       def calculate_lambda_transaction_name(span_name)
-        (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span_name || 'unknown').slice(0, 255)
+        (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span_name || 'unknown').slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
       end
 
       # Get trans_name and url_tran of this span instance.
@@ -107,6 +107,7 @@ module SolarWindsAPM
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if trans_name.to_s.empty? && span.name
+          trans_name = trans_name.to_s.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
         end
         trans_name
       end

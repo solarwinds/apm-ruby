@@ -11,7 +11,6 @@ module SolarWindsAPM
   # 200 unique transaction naming per 60 seconds for the transaction naming
   class TxnNameManager
     MAX_CARDINALITY = 200
-    MAX_TXN_NAME_LENGTH = 256
     DEFAULT_TXN_NAME = 'other'
     TXN_NAME_POOL_TTL = 60 # 60s
 
@@ -44,7 +43,7 @@ module SolarWindsAPM
       # new name and room in pool -> add name to pool and schedule for removal after ttl -> return name
       # new name but no room in pool -> return default name
       # existing name -> cancel previously scheduled removal -> schedule new removal -> return name
-      txn_name = value.slice(0, MAX_TXN_NAME_LENGTH)
+      txn_name = value.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
       txn_name_exist = false
 
       # thread exit execute ensure block, better option than kill for sleep
