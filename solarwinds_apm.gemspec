@@ -30,6 +30,9 @@ Gem::Specification.new do |s|
   s.add_dependency('opentelemetry-exporter-otlp-metrics', '>= 0.3.0')
   s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
   s.add_dependency('opentelemetry-metrics-sdk', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-aws', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-azure', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-container', '>= 0.2.0')
   s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
 
   s.required_ruby_version = '>= 3.1.0'
