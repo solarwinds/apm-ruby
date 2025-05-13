@@ -75,7 +75,7 @@ describe 'SolarWinds Set Transaction Name Test' do
     _(result).must_equal true
   end
 
-  it 'set_transaction_name_truncated_to_256_chars xuan' do
+  it 'set_transaction_name_truncated_to_256_chars' do
     @solarwinds_processor.on_start(@span, OpenTelemetry::Context.current)
     OpenTelemetry::Trace.stub(:current_span, @dummy_span) do
       long_name = 'a' * 500
