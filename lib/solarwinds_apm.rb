@@ -9,12 +9,12 @@
 begin
   require 'solarwinds_apm/logger'
   require 'solarwinds_apm/version'
-  require 'solarwinds_apm/noop'
   require 'opentelemetry-api'
   if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.info '==================================================================='
     SolarWindsAPM.logger.info 'SW_APM_ENABLED environment variable detected and was set to false. SolarWindsAPM disabled'
     SolarWindsAPM.logger.info '==================================================================='
+    require 'solarwinds_apm/noop'
     return
   end
 
@@ -36,8 +36,8 @@ begin
         SolarWindsAPM.logger.warn 'SolarWindsAPM not loaded. SolarWinds APM disabled'
         SolarWindsAPM.logger.warn 'Please check previous log messages.'
         SolarWindsAPM.logger.warn '=============================================================='
+        require 'solarwinds_apm/noop'
       end
-
     elsif ENV['SW_APM_AUTO_CONFIGURE'] == 'false'
       SolarWindsAPM.logger.warn '=============================================================='
       SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'
@@ -48,6 +48,7 @@ begin
       SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
       SolarWindsAPM.logger.warn "\e[1mPlease discard this message if application have already taken this action.\e[0m"
       SolarWindsAPM.logger.warn '=============================================================='
+      require 'solarwinds_apm/noop'
     end
   end
 rescue StandardError => e

@@ -93,6 +93,13 @@ for file in $RESOURCE_DETECTOR_TEST_FILE; do
   check_status
 done
 
+NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
+for ((i = 1; i <= $NUMBER_FILE; i++)); do
+  check_file_name=init_${i}_test.rb
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test test/solarwinds_apm/init_test/init_${i}_test.rb
+  check_status
+done
+
 echo ""
 echo "--- SUMMARY ------------------------------"
 grep -E '===|failures|FAIL|ERROR' "$TEST_RUNS_FILE_NAME"
