@@ -26,7 +26,7 @@ module SolarWindsAPM
       def initialize(txn_manager)
         @txn_manager = txn_manager
         @meters      = { 'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics') }
-        @metrics     = { response_time: @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'measures the duration of an inbound HTTP request') }
+        @metrics     = { response_time: @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.') }
         @transaction_name = nil
       end
 
