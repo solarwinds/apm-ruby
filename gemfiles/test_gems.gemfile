@@ -46,8 +46,6 @@ group :development, :test do
 
   gem 'opentelemetry-resource-detector-azure'
   # aws resource detector requires ruby >= 3.1.0
-  if RUBY_VERSION >= '3.1.0'
-    gem 'opentelemetry-resource-detector-aws'
-  end
+  gem 'opentelemetry-resource-detector-aws' if RUBY_VERSION >= '3.1.0'
   gem 'opentelemetry-resource-detector-container'
 end

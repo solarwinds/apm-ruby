@@ -108,8 +108,7 @@ module SolarWindsAPM
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if trans_name.to_s.empty? && span.name
         end
-        trans_name = trans_name.to_s.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
-        trans_name
+        trans_name.to_s.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
       end
 
       def record_request_metrics(span)
