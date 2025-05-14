@@ -31,7 +31,8 @@ Rake::TestTask.new do |t|
                    FileList['test/opentelemetry/*_test.rb'] +
                    FileList['test/noop/*_test.rb'] +
                    FileList['test/support/*_test.rb'] +
-                   FileList['test/sampling/*_test.rb']
+                   FileList['test/sampling/*_test.rb'] -
+                   FileList['test/opentelemetry/otlp_processor_*_test.rb']
   end
 end
 

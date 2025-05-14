@@ -6,7 +6,6 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-require_relative 'constants'
 require_relative 'api'
 require_relative 'support'
 require_relative 'opentelemetry'
@@ -79,9 +78,6 @@ module SolarWindsAPM
 
       @@config[:metrics_processor] = otlp_processor
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
-
-      # get_setting_endpoint = ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com:443')
-      # if get_setting_endpoint.include?()
 
       # collector, service and headers are used for http sampler get settings
       sampler_config = {

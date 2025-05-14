@@ -4,17 +4,18 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/support/txn_name_manager'
-require './lib/solarwinds_apm/otel_config'
+require './lib/solarwinds_apm/otel_native_config'
 require './lib/solarwinds_apm/api'
 
-describe 'SolarWindsProcessor' do
+describe 'SolarWindsOTLPProcessor' do
   before do
     @txn_manager = SolarWindsAPM::TxnNameManager.new
     # @exporter = SolarWindsAPM::OpenTelemetry::SolarWindsExporter.new(txn_manager: @txn_name_manager)
-    @processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@txn_manager)
+    @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@txn_manager)
   end
 
   it 'test_calculate_span_time' do
@@ -78,7 +79,7 @@ describe 'SolarWindsProcessor' do
 
   it 'test_on_start' do
     span = create_span
-    processor = SolarWindsAPM::OpenTelemetry::SolarWindsProcessor.new(@txn_manager)
+    processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@txn_manager)
     processor.on_start(span, OpenTelemetry::Context.current)
     _(processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal '31e175128efc4018-00'
   end

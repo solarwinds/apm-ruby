@@ -9,6 +9,7 @@
 begin
   require 'solarwinds_apm/logger'
   require 'solarwinds_apm/version'
+  require 'solarwinds_apm/constants'
   require 'opentelemetry-api'
   if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
     SolarWindsAPM.logger.info '==================================================================='

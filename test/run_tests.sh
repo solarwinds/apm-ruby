@@ -93,6 +93,14 @@ for file in $RESOURCE_DETECTOR_TEST_FILE; do
   check_status
 done
 
+# for otlp processor test
+OTLP_PROCESSOR_TEST_FILE=$(find test/opentelemetry/otlp_processor_*_test.rb -type f)
+for file in $OTLP_PROCESSOR_TEST_FILE; do
+  check_file_name=$file
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
+  check_status
+done
+
 NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
 for ((i = 1; i <= $NUMBER_FILE; i++)); do
   check_file_name=init_${i}_test.rb

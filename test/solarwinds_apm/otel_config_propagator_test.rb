@@ -7,68 +7,49 @@ require 'minitest_helper'
 require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/support/txn_name_manager'
-require './lib/solarwinds_apm/otel_config'
+require './lib/solarwinds_apm/otel_native_config'
 
 describe 'Loading Opentelemetry Test' do
   before do
     clean_old_setting
-    SolarWindsAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
-    SolarWindsAPM::OTelConfig.class_variable_set(:@@config, {})
-    SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, {})
+    SolarWindsAPM::OTelNativeConfig.class_variable_set(:@@agent_enabled, true)
+    SolarWindsAPM::OTelNativeConfig.class_variable_set(:@@config, {})
+    SolarWindsAPM::OTelNativeConfig.class_variable_set(:@@config_map, {})
   end
 
   # propagation in_code testing
   it 'test_propagators_with_default' do
-    SolarWindsAPM::OTelConfig.initialize
+    SolarWindsAPM::OTelNativeConfig.initialize
 
-    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
+    _(SolarWindsAPM::OTelNativeConfig.class_variable_get(:@@agent_enabled)).must_equal true
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators).count).must_equal 3
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[0].class).must_equal OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[1].class).must_equal OpenTelemetry::Baggage::Propagation::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[2].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
-    _(SolarWindsAPM::OTelConfig[:propagators].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
   end
 
   # propagation in_code testing
   it 'test_propagators_with_extra_propagators_from_otel' do
     ENV['OTEL_PROPAGATORS'] = 'b3,tracecontext,baggage'
-    SolarWindsAPM::OTelConfig.initialize
+    SolarWindsAPM::OTelNativeConfig.initialize
 
-    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
+    _(SolarWindsAPM::OTelNativeConfig.class_variable_get(:@@agent_enabled)).must_equal true
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators).count).must_equal 4
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[0].class).must_equal OpenTelemetry::Propagator::B3::Single::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[1].class).must_equal OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[2].class).must_equal OpenTelemetry::Baggage::Propagation::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[3].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
-    _(SolarWindsAPM::OTelConfig[:propagators].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
-  end
-
-  it 'test_propagators_without_tracecontext' do
-    ENV['OTEL_PROPAGATORS'] = 'baggage'
-    SolarWindsAPM::OTelConfig.initialize
-
-    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(OpenTelemetry.propagation.instance_variable_get(:@propagators)).must_equal nil
-  end
-
-  it 'test_propagators_without_baggage' do
-    ENV['OTEL_PROPAGATORS'] = 'tracecontext'
-    SolarWindsAPM::OTelConfig.initialize
-
-    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal false
-    _(OpenTelemetry.propagation.instance_variable_get(:@propagators)).must_equal nil
   end
 
   it 'test_propagators_with_wrong_otel_propagation' do
     ENV['OTEL_PROPAGATORS'] = 'tracecontext,baggage,abcd'
-    SolarWindsAPM::OTelConfig.initialize
+    SolarWindsAPM::OTelNativeConfig.initialize
 
-    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
+    _(SolarWindsAPM::OTelNativeConfig.class_variable_get(:@@agent_enabled)).must_equal true
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators).count).must_equal 4
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[0].class).must_equal OpenTelemetry::Trace::Propagation::TraceContext::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[1].class).must_equal OpenTelemetry::Baggage::Propagation::TextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[2].class).must_equal OpenTelemetry::SDK::Configurator::NoopTextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[3].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
-    _(SolarWindsAPM::OTelConfig[:propagators].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
   end
 end
