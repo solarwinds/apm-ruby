@@ -60,7 +60,7 @@ module SolarWindsAPM
 
       # set gzip compression
       %w[TRACES METRICS LOGS].each do |signal|
-        ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"] = 'gzip' if ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"].to_s.empty? || ENV['OTEL_EXPORTER_OTLP_COMPRESSION'].to_s.empty?
+        ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"] = 'gzip' if ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_COMPRESSION'].to_s.empty?
       end
 
       # set delta temporality
