@@ -52,3 +52,6 @@ Metrics/BlockNesting:
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - 'test/api/custom_instrumentation_test.rb'
+Style/StringLiterals:
+  Exclude:
+    - 'Gemfile'
