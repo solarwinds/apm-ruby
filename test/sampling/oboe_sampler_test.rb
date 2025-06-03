@@ -83,7 +83,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: true },
+        local_settings: { trigger_mode: :enabled },
         request_headers: make_request_headers(
           trigger_trace: true,
           signature: true,
@@ -114,7 +114,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: true },
+        local_settings: { trigger_mode: :enabled },
         request_headers: make_request_headers(
           trigger_trace: true,
           signature: 'bad-timestamp',
@@ -146,7 +146,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: true },
+        local_settings: { trigger_mode: :enabled },
         request_headers: make_request_headers(
           trigger_trace: true,
           signature: true,
@@ -172,7 +172,7 @@ describe 'OboeSampler' do
     it "doesn't sample" do
       sampler = OboeTestSampler.new(
         settings: false,
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -193,7 +193,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i - 60,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -210,7 +210,7 @@ describe 'OboeSampler' do
     it 'respects X-Trace-Options keys and values' do
       sampler = OboeTestSampler.new(
         settings: false,
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: make_request_headers(
           kvs: { 'custom-key' => 'value', 'sw-keys' => 'sw-values' }
         )
@@ -225,7 +225,7 @@ describe 'OboeSampler' do
     it 'ignores trigger-trace' do
       sampler = OboeTestSampler.new(
         settings: false,
-        local_settings: { trigger_mode: true },
+        local_settings: { trigger_mode: :enabled },
         request_headers: make_request_headers(
           trigger_trace: true,
           kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' }
@@ -253,7 +253,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: false },
+          local_settings: { trigger_mode: :disabled },
           request_headers: make_request_headers(
             kvs: { 'custom-key' => 'value', 'sw-keys' => 'sw-values' }
           )
@@ -278,7 +278,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: true },
+          local_settings: { trigger_mode: :enabled },
           request_headers: make_request_headers(
             trigger_trace: true,
             kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' }
@@ -306,7 +306,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: false },
+          local_settings: { trigger_mode: :disabled },
           request_headers: {}
         )
       end
@@ -376,7 +376,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: false },
+          local_settings: { trigger_mode: :disabled },
           request_headers: {}
         )
 
@@ -399,7 +399,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: false },
+          local_settings: { trigger_mode: :disabled },
           request_headers: {}
         )
 
@@ -431,7 +431,7 @@ describe 'OboeSampler' do
               timestamp: Time.now.to_i,
               ttl: 10
             },
-            local_settings: { trigger_mode: true },
+            local_settings: { trigger_mode: :enabled },
             request_headers: make_request_headers(
               trigger_trace: true,
               kvs: { 'custom-key' => 'value', 'sw-keys' => 'sw-values' }
@@ -470,7 +470,7 @@ describe 'OboeSampler' do
               timestamp: Time.now.to_i,
               ttl: 10
             },
-            local_settings: { trigger_mode: true },
+            local_settings: { trigger_mode: :enabled },
             request_headers: make_request_headers(
               trigger_trace: true,
               kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' }
@@ -509,7 +509,7 @@ describe 'OboeSampler' do
               timestamp: Time.now.to_i,
               ttl: 10
             },
-            local_settings: { trigger_mode: true },
+            local_settings: { trigger_mode: :enabled },
             request_headers: make_request_headers(
               trigger_trace: true,
               kvs: { 'custom-key' => 'value', 'sw-keys' => 'sw-values' },
@@ -553,7 +553,7 @@ describe 'OboeSampler' do
               timestamp: Time.now.to_i,
               ttl: 10
             },
-            local_settings: { trigger_mode: true },
+            local_settings: { trigger_mode: :enabled },
             request_headers: make_request_headers(
               trigger_trace: true,
               kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' },
@@ -592,7 +592,7 @@ describe 'OboeSampler' do
             timestamp: Time.now.to_i,
             ttl: 10
           },
-          local_settings: { trigger_mode: false },
+          local_settings: { trigger_mode: :disabled },
           request_headers: make_request_headers(
             trigger_trace: true,
             kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' }
@@ -625,7 +625,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: make_request_headers(kvs: { 'custom-key' => 'value', 'sw-keys' => 'sw-values' })
       )
 
@@ -649,7 +649,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -676,7 +676,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -703,7 +703,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -734,7 +734,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: true },
+        local_settings: { trigger_mode: :enabled },
         request_headers: make_request_headers(
           trigger_trace: true,
           kvs: { 'custom-key' => 'value', 'invalid-key' => 'value' }
@@ -761,7 +761,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 
@@ -783,7 +783,7 @@ describe 'OboeSampler' do
           timestamp: Time.now.to_i,
           ttl: 10
         },
-        local_settings: { trigger_mode: false },
+        local_settings: { trigger_mode: :disabled },
         request_headers: {}
       )
 

@@ -19,8 +19,9 @@ module NoopAPI
   # Tracing
   module Tracing
     # (wait_milliseconds=3000, integer_response: false)
-    def solarwinds_ready?(*_args, **options)
-      options && options[:integer_response] ? 0 : false
+    def solarwinds_ready?(_wait_milliseconds = 3000, integer_response: false)
+      _noop = integer_response
+      false
     end
   end
 
@@ -52,17 +53,6 @@ module NoopAPI
     end
   end
 
-  # CustomMetrics
-  module CustomMetrics
-    def increment_metric(*)
-      false
-    end
-
-    def summary_metric(*)
-      false
-    end
-  end
-
   # OpenTelemetry
   module OpenTelemetry
     def in_span(*)
@@ -80,6 +70,5 @@ end
 
 SolarWindsAPM::API.extend(NoopAPI::Tracing)
 SolarWindsAPM::API.extend(NoopAPI::CurrentTraceInfo)
-SolarWindsAPM::API.extend(NoopAPI::CustomMetrics)
 SolarWindsAPM::API.extend(NoopAPI::OpenTelemetry)
 SolarWindsAPM::API.extend(NoopAPI::TransactionName)

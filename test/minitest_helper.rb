@@ -19,6 +19,7 @@ require 'lumberjack'
 require 'logging'
 require 'bson'
 require 'grpc'
+require 'pp'
 
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'

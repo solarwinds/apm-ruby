@@ -6,7 +6,6 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-require_relative 'constants'
 require_relative 'api'
 require_relative 'support'
 require_relative 'opentelemetry'
@@ -18,6 +17,8 @@ module SolarWindsAPM
     @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = false
+
+    RESOURCE_ATTRIBUTES = 'RESOURCE_ATTRIBUTES'
 
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
@@ -44,17 +45,25 @@ module SolarWindsAPM
 
       # resource attributes
       mandatory_resource = SolarWindsAPM::ResourceDetector.detect
-      additional_attributes = @@config_map['resource_attributes']
+      additional_attributes = @@config_map[RESOURCE_ATTRIBUTES]
       if additional_attributes
-        @@config_map.delete('resource_attributes')
         if additional_attributes.instance_of?(::OpenTelemetry::SDK::Resources::Resource)
           final_attributes = mandatory_resource.merge(additional_attributes)
         elsif additional_attributes.instance_of?(Hash)
           final_attributes = mandatory_resource.merge(::OpenTelemetry::SDK::Resources::Resource.create(additional_attributes))
         end
+        @@config_map.delete(RESOURCE_ATTRIBUTES)
       else
         final_attributes = mandatory_resource.merge({})
       end
+
+      # set gzip compression
+      %w[TRACES METRICS LOGS].each do |signal|
+        ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"] = 'gzip' if ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_COMPRESSION'].to_s.empty?
+      end
+
+      # set delta temporality
+      ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta' if ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'].to_s.empty?
 
       # log level
       if ENV['OTEL_LOG_LEVEL'].to_s.empty?
@@ -76,9 +85,6 @@ module SolarWindsAPM
 
       @@config[:metrics_processor] = otlp_processor
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
-
-      # get_setting_endpoint = ENV.fetch('SW_APM_COLLECTOR', 'apm.collector.cloud.solarwinds.com:443')
-      # if get_setting_endpoint.include?()
 
       # collector, service and headers are used for http sampler get settings
       sampler_config = {
@@ -145,6 +151,7 @@ module SolarWindsAPM
     # SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
+    #   config["RESOURCE_ATTRIBUTES"] = ::OpenTelemetry::Resource::Detector::GoogleCloudPlatform.detect
     # end
     #
     def self.initialize_with_config

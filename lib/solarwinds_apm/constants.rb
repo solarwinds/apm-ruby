@@ -32,5 +32,6 @@ module SolarWindsAPM
     INTL_SWO_OTEL_STATUS             = 'otel.status_code'
     INTL_SWO_OTEL_STATUS_DESCRIPTION = 'otel.status_description'
     INTERNAL_TRIGGERED_TRACE         = 'TriggeredTrace'
+    MAX_TXN_NAME_LENGTH              = 256
   end
 end

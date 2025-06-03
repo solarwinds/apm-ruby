@@ -111,12 +111,16 @@ module SolarWindsAPM
         private
 
         def current_span
-          span     = ::OpenTelemetry::Trace.current_span if defined?(::OpenTelemetry::Trace)
-          trace_id = span.context.hex_trace_id
-          span_id  = span.context.hex_span_id
-          trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
-          tracestring = "00-#{trace_id}-#{span_id}-#{trace_flags}"
-          [trace_id, span_id, trace_flags, tracestring]
+          if defined?(::OpenTelemetry::Trace)
+            span     = ::OpenTelemetry::Trace.current_span
+            trace_id = span.context.hex_trace_id
+            span_id  = span.context.hex_span_id
+            trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
+            tracestring = "00-#{trace_id}-#{span_id}-#{trace_flags}"
+            [trace_id, span_id, trace_flags, tracestring]
+          else
+            %w[00000000000000000000000000000000 00000000 00 00-00000000000000000000000000000000-00000000-00]
+          end
         end
 
         # if true the trace info should be added to the log message
