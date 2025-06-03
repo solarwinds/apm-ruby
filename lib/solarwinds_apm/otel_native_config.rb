@@ -58,6 +58,14 @@ module SolarWindsAPM
         final_attributes = mandatory_resource.merge({})
       end
 
+      # set gzip compression
+      %w[TRACES METRICS LOGS].each do |signal|
+        ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"] = 'gzip' if ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_COMPRESSION'].to_s.empty?
+      end
+
+      # set delta temporality
+      ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta' if ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'].to_s.empty?
+
       # log level
       if ENV['OTEL_LOG_LEVEL'].to_s.empty?
         log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
