@@ -27,14 +27,6 @@ jobs:
           echo 'gem: --no-document' >> ~/.gemrc
           bundle install
 
-      - name: Install swig 4.0.2
-        run: |
-          apt udate && apt install -y --no-install-recommends bison
-          curl -SL https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz | tar xzC /tmp
-          cd /tmp/swig-4.0.2
-          ./autogen.sh && ./configure && make && sudo make install
-          cd -
-
       - name: Grab current version
         id: version
         run: |
