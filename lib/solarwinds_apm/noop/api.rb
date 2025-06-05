@@ -53,6 +53,19 @@ module NoopAPI
     end
   end
 
+  # CustomMetrics
+  module CustomMetrics
+    def increment_metric(*)
+      SolarWindsAPM.logger.warn { 'increment_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+      false
+    end
+
+    def summary_metric(*)
+      SolarWindsAPM.logger.warn { 'summary_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+      false
+    end
+  end
+
   # OpenTelemetry
   module OpenTelemetry
     def in_span(*)
@@ -70,5 +83,6 @@ end
 
 SolarWindsAPM::API.extend(NoopAPI::Tracing)
 SolarWindsAPM::API.extend(NoopAPI::CurrentTraceInfo)
+SolarWindsAPM::API.extend(NoopAPI::CustomMetrics)
 SolarWindsAPM::API.extend(NoopAPI::OpenTelemetry)
 SolarWindsAPM::API.extend(NoopAPI::TransactionName)
