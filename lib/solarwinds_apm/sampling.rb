@@ -24,3 +24,6 @@ require_relative 'sampling/oboe_sampler'
 require_relative 'sampling/sampler'
 require_relative 'sampling/http_sampler'
 require_relative 'sampling/json_sampler'
+
+# Patching
+require_relative 'sampling/sampling_patch'

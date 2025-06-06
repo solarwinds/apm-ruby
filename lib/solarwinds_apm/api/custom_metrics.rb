@@ -32,12 +32,9 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def increment_metric(name, count = 1, with_hostname = false, tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
-        return true unless SolarWindsAPM.loaded
-
-        with_hostname = with_hostname ? 1 : 0
-        tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.increment(name.to_s, count, with_hostname, nil, tags, tags_count).zero?
+      def increment_metric(_name, _count = 1, _with_hostname = false, _tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
+        SolarWindsAPM.logger.warn { 'increment_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+        false
       end
 
       # Send values with counts
@@ -66,29 +63,15 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def summary_metric(name, value, count = 1, with_hostname = false, tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
-        return true unless SolarWindsAPM.loaded
-
-        with_hostname = with_hostname ? 1 : 0
-        tags, tags_count = make_tags(tags_kvs)
-        SolarWindsAPM::CustomMetrics.summary(name.to_s, value, count, with_hostname, nil, tags, tags_count).zero?
+      def summary_metric(_name, _value, _count = 1, _with_hostname = false, _tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
+        SolarWindsAPM.logger.warn { 'summary_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+        false
       end
 
       private
 
-      def make_tags(tags_kvs)
-        unless tags_kvs.is_a?(Hash)
-          SolarWindsAPM.logger.warn("[solarwinds_apm/metrics] CustomMetrics received tags_kvs that are not a Hash (found #{tags_kvs.class}), setting tags_kvs = {}")
-          tags_kvs = {}
-        end
-        count = tags_kvs.size
-        tags = SolarWindsAPM::MetricTags.new(count)
-
-        tags_kvs.each_with_index do |(k, v), i|
-          tags.add(i, k.to_s, v.to_s)
-        end
-
-        [tags, count]
+      def make_tags(_tags_kvs)
+        nil
       end
     end
   end

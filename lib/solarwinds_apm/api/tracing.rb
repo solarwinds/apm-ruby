@@ -28,7 +28,7 @@ module SolarWindsAPM
       # === Returns:
       # * Boolean
       #
-      def solarwinds_ready?(wait_milliseconds = 3000, integer_response: false)
+      def solarwinds_ready?(wait_milliseconds = 3000, integer_response: nil)
         unless integer_response.nil?
           SolarWindsAPM.logger.warn do
             'Deprecation: solarwinds_ready? no longer accepts integer_response, this parameter will be removed in the next release.'

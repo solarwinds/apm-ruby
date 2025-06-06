@@ -43,7 +43,7 @@ begin
       SolarWindsAPM.logger.warn '=============================================================='
       SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'
       SolarWindsAPM.logger.warn 'You need to initialize Ruby library in application with'
-      SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelConfig.initialize_with_config do |config|'
+      SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|'
       SolarWindsAPM.logger.warn '  # ... your configuration code'
       SolarWindsAPM.logger.warn 'end'
       SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
