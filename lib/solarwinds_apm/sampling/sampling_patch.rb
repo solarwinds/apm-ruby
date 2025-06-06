@@ -44,4 +44,6 @@ module SolarWindsAPM
 end
 
 OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.prepend(SolarWindsAPM::MetricsExporter::Patch)
+
+# issue: https://github.com/open-telemetry/opentelemetry-ruby/issues/1824
 OpenTelemetry::SDK::Trace::Span.prepend(SolarWindsAPM::Span::Patch)
