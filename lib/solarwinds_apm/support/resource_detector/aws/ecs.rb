@@ -134,12 +134,12 @@ module SolarWindsAPM
 
       def get_account_id_from_arn(task_arn)
         matches = task_arn.to_s.match(/arn:aws:ecs:[^:]+:([^:]+):.*/)
-        matches.nil? ? matches[1] : nil
+        matches.nil? ? nil : matches[1]
       end
 
       def get_region_from_arn(task_arn)
         matches = task_arn.to_s.match(/arn:aws:ecs:([^:]+):.*/)
-        matches.nil? ? matches[1] : nil
+        matches.nil? ? nil : matches[1]
       end
 
       def get_url_as_json(url)
