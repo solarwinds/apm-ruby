@@ -55,3 +55,5 @@ Lint/ConstantDefinitionInBlock:
 Style/StringLiterals:
   Exclude:
     - 'Gemfile'
+Naming/PredicateMethod:
+  Enabled: false
