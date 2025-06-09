@@ -227,10 +227,10 @@ module SolarWindsAPM
         enable_disable_config('SW_APM_TAG_SQL', key, value, false, bool: true)
 
       when :hostname_alias
-        SolarWindsAPM.logger.warn { "config option for hostname_alias is depreciated."}
+        SolarWindsAPM.logger.warn { 'config option for hostname_alias is depreciated.' }
 
       when :http_proxy
-        SolarWindsAPM.logger.warn { "config option for http_proxy is depreciated."}
+        SolarWindsAPM.logger.warn { 'config option for http_proxy is depreciated.' }
 
       else
         @@config[key.to_sym] = value
