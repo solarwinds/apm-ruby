@@ -19,36 +19,11 @@ builds/
 config/
 coverage/
 doc/
-ext/oboe_metal/*.o
-ext/oboe_metal/Makefile
-ext/oboe_metal/lib/liboboe*so*
-ext/oboe_metal/mkmf.log
-ext/oboe_metal/oboe_metal.so
-ext/oboe_metal/oboe_noop.so
-ext/oboe_metal/src/bson/
-ext/oboe_metal/src/oboe_api.cpp
-ext/oboe_metal/src/oboe.h
-ext/oboe_metal/src/oboe_api.h
-ext/oboe_metal/src/oboe_debug.h
-ext/oboe_metal/src/oboe_swig_wrap.cc
-ext/oboe_metal/src/oboe.i
-ext/oboe_metal/src/VERSION_latest
-ext/oboe_metal/test/build/
-ext/oboe_metal/test/MakeFile
-ext/oboe_metal/.DS_Store
 gemfiles/*.lock
 gemfiles/.bundle/
 gemfiles/vendor*
-lib/libsolarwinds_apm.so
 vendor/
 *.DS_Store
-apm.collector.st-ssp.solarwinds.com
-appoptics.com
-test/clib/Makefile
-*.so
-*.o
-ext/oboe_metal/extconf_local.rb
-Makefile
 
 # test script
 install_gem.sh
