@@ -14,7 +14,7 @@ module SolarWindsAPM
     MAJOR  = 7 # breaking,
     MINOR  = 0 # feature,
     PATCH  = 0 # fix => BFF
-    PRE    = nil
+    PRE    = 'prev1'
 
     STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')
   end
