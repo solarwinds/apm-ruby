@@ -6,7 +6,9 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/support/resource_detector/aws/beanstalk'
 
-describe 'AWS ECS Resource Detector Test' do
+describe 'AWS Beanstalk Resource Detector Test' do
+  puts "\n\033[1m=== TEST RUN Beanstalk TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+
   let(:beanstalk_conf_dir) { '/var/elasticbeanstalk/xray' }
   let(:beanstalk_conf_path) { '/var/elasticbeanstalk/xray/environment.conf' }
 

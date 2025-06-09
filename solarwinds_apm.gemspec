@@ -22,27 +22,19 @@ Gem::Specification.new do |s|
                  'rubygems_mfa_required' => 'true' }
 
   s.extra_rdoc_files = ['LICENSE']
-  # s.files = `git ls-files`.split("\n").reject { |f| f.match(%r{^(test|gemfiles)/}) }
   s.files = Dir['lib/**/*']
   s.files += ['.yardopts', 'README.md', 'LICENSE']
-  s.files += ['ext/oboe_metal/src/oboe.h',
-              'ext/oboe_metal/src/oboe_api.cpp',
-              'ext/oboe_metal/src/oboe_api.h',
-              'ext/oboe_metal/src/oboe_debug.h',
-              'ext/oboe_metal/src/oboe_swig_wrap.cc',
-              'ext/oboe_metal/src/bson/bson.h',
-              'ext/oboe_metal/src/bson/platform_hacks.h',
-              'ext/oboe_metal/src/init_solarwinds_apm.cc',
-              'ext/oboe_metal/src/VERSION']
-  s.files += Dir['ext/oboe_metal/lib/*']
-
   s.files -= ['Rakefile']
 
-  s.extensions = ['ext/oboe_metal/extconf.rb']
-
+  s.add_dependency('opentelemetry-exporter-otlp', '>= 0.29.1')
+  s.add_dependency('opentelemetry-exporter-otlp-metrics', '>= 0.3.0')
   s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
+  s.add_dependency('opentelemetry-metrics-sdk', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-aws', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-azure', '>= 0.2.0')
+  s.add_dependency('opentelemetry-resource-detector-container', '>= 0.2.0')
   s.add_dependency('opentelemetry-sdk', '>= 1.2.0')
 
-  s.required_ruby_version = '>= 2.7.0'
+  s.required_ruby_version = '>= 3.1.0'
   s.executables = s.files.grep(%r{^bin/}) { |f| File.basename(f) }
 end

@@ -87,8 +87,4 @@ describe 'Resource Detector Test' do
     WebMock.reset!
     WebMock.allow_net_connect!
   end
-
-  # it '' do
-  #   assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, attributes_hash['service.instance.id'])
-  # end
 end

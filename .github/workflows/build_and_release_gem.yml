@@ -3,11 +3,9 @@
 
 name: Ruby Gem to RubyGems
 # This workflow relies on the following secrets
-# - ENOPS_5087_SOLARWINDS_APM_LIBOBOE
 # - RUBYGEMS_TOKEN (from the solarwinds-apm user on rubygems.org)
 # - APM_RUBY_INSTALL_TESTING_SWO_KEY
 #
-# The correct oboe version has to be in the file ext/oboe_metal/src/VERSION
 
 on:
   workflow_dispatch:
@@ -33,14 +31,6 @@ jobs:
         run: |
           echo 'gem: --no-document' >> ~/.gemrc
           bundle install --without development --without test
-
-      - name: Install swig 4.0.2
-        run: |
-          sudo apt-get update && sudo apt-get install -y --no-install-recommends bison swig
-
-      - name: Download files from cloud.solarwinds.com and create swig wrapper
-        run: |
-          bundle exec rake fetch_oboe_file["prod"]
 
       - name: Build Gem and upload to Rubygems
         id: build

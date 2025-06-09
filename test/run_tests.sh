@@ -85,12 +85,21 @@ for file in $PATCH_TEST_FILE; do
   check_status
 done
 
-# create fake libsolarwinds_apm.so for testing
-cd test/clib
-ruby solarwinds_apm.rb
-make
-cd -
-echo "Fake libsolarwinds_apm.so created"
+# for resource detection test
+RESOURCE_DETECTOR_TEST_FILE=$(find test/support/resource_detector/aws/*_test.rb -type f)
+for file in $RESOURCE_DETECTOR_TEST_FILE; do
+  check_file_name=$file
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile RESOURCE_TEST=1 bundle exec ruby -I test $file
+  check_status
+done
+
+# for otlp processor test
+OTLP_PROCESSOR_TEST_FILE=$(find test/opentelemetry/otlp_processor_*_test.rb -type f)
+for file in $OTLP_PROCESSOR_TEST_FILE; do
+  check_file_name=$file
+  BUNDLE_GEMFILE=gemfiles/test_gems.gemfile bundle exec ruby -I test $file
+  check_status
+done
 
 NUMBER_FILE=$(find test/solarwinds_apm/init_test/*_test.rb -type f | wc -l)
 for ((i = 1; i <= $NUMBER_FILE; i++)); do

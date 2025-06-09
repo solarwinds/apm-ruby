@@ -9,6 +9,8 @@ require 'webmock/minitest'
 require './lib/solarwinds_apm/support/resource_detector/aws/eks'
 
 describe 'AWS EKS Resource Detector Test' do
+  puts "\n\033[1m=== TEST RUN EKS TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+
   let(:k8s_svc_url) { 'kubernetes.default.svc' }
   let(:k8s_dir) { '/var/run/secrets/kubernetes.io/serviceaccount' }
   let(:k8s_token_path) { '/var/run/secrets/kubernetes.io/serviceaccount/token' }

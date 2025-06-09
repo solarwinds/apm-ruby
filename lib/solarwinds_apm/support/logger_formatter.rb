@@ -47,4 +47,4 @@ end
 
 # To use the trace context in log, ::Logger::Formatter.new must be defined
 # e.g. config.log_formatter = ::Logger::Formatter.new
-Logger::Formatter.prepend(SolarWindsAPM::Logger::Formatter) if SolarWindsAPM.loaded
+Logger::Formatter.prepend(SolarWindsAPM::Logger::Formatter)

@@ -6,6 +6,8 @@ group :development, :test do
   if RUBY_VERSION < '3.0.0'
     gem 'ffi', '<= 1.16.3' # set this version due to ffi 1.17.0 need rubygems version > 3 (https://rubygems.org/gems/ffi/versions/1.17.0-arm-linux-musl)
     gem 'google-protobuf', '< 3.25.4'
+  elsif RUBY_VERSION < '3.1.0'
+    gem 'ffi', '<= 1.17'
   else
     gem 'ffi'
   end
@@ -32,14 +34,18 @@ group :development, :test do
   gem 'simplecov', require: false, group: :test
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
+  gem 'grpc', '~> 1.71'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
   gem 'opentelemetry-propagator-b3'
   gem 'opentelemetry-exporter-otlp'
   gem 'opentelemetry-metrics-sdk'
+  gem 'opentelemetry-exporter-otlp-metrics'
+  gem 'opentelemetry-test-helpers'
 
   gem 'opentelemetry-resource-detector-azure'
+  # aws resource detector requires ruby >= 3.1.0
+  gem 'opentelemetry-resource-detector-aws' if RUBY_VERSION >= '3.1.0'
   gem 'opentelemetry-resource-detector-container'
-  gem 'opentelemetry-resource-detector-google_cloud_platform'
 end

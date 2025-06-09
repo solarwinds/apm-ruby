@@ -7,6 +7,8 @@ require 'minitest_helper'
 require './lib/solarwinds_apm/support/resource_detector/aws/lambda'
 
 describe 'AWS Lambda Resource Detector Test' do
+  puts "\n\033[1m=== TEST RUN Lambda TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
+
   let(:expected_attributes) do
     { 'cloud.provider' => 'aws', 'cloud.platform' => 'aws_lambda', 'cloud.region' => 'us-west-2', 'faas.name' => 'my_lambda_function', 'faas.version' => '1', 'faas.max_memory' => 134_217_728, 'aws.log.group.names' => ['/aws/lambda/my_lambda_function'], 'faas.instance' => ['2024/03/30/[$LATEST]abcdefgh1234567890'] }
   end

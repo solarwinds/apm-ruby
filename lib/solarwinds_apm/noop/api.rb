@@ -19,8 +19,9 @@ module NoopAPI
   # Tracing
   module Tracing
     # (wait_milliseconds=3000, integer_response: false)
-    def solarwinds_ready?(*_args, **options)
-      options && options[:integer_response] ? 0 : false
+    def solarwinds_ready?(_wait_milliseconds = 3000, integer_response: false)
+      _noop = integer_response
+      false
     end
   end
 
@@ -55,10 +56,12 @@ module NoopAPI
   # CustomMetrics
   module CustomMetrics
     def increment_metric(*)
+      SolarWindsAPM.logger.warn { 'increment_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
       false
     end
 
     def summary_metric(*)
+      SolarWindsAPM.logger.warn { 'summary_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
       false
     end
   end

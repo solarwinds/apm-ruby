@@ -18,6 +18,8 @@ require 'opentelemetry-exporter-otlp'
 require 'lumberjack'
 require 'logging'
 require 'bson'
+require 'grpc'
+require 'pp'
 
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
@@ -77,87 +79,6 @@ end
 module Exporter
   class Dummy
     def flush(); end
-  end
-end
-
-# rubocop:disable Naming/MethodName
-module SolarWindsAPM
-  module Context
-    def self.toString
-      '00-00000000000000000000000000000000-0000000000000000-00'
-    end
-
-    def self.clear; end
-
-    def self.getDecisions(*_args)
-      do_metrics = 1
-      do_sample = 0
-      rate = 1_000_000
-      status_msg = 'auth-failed'
-      auth_msg = 'bad-signature'
-      source = 6
-      bucket_rate = 0.0
-      status = -5
-      bucket_cap = 0
-      ype = 0
-      auth = 0
-      [do_metrics, do_sample, rate, source, bucket_rate, bucket_cap, ype, auth, status_msg, auth_msg, status]
-    end
-
-    def self.createEvent(_args)
-      self
-    end
-
-    def self.addInfo(_key, value); end
-
-    def self.createEntry(*_args)
-      self
-    end
-
-    def self.createExit(_args)
-      self
-    end
-
-    def self.isReady(_args)
-      self
-    end
-
-    def self.metadataString; end
-  end
-end
-
-module SolarWindsAPM
-  class Metadata
-    def self.makeRandom
-      Metadata.new
-    end
-
-    def self.fromString(_str)
-      '00-00000000000000000000000000000000-0000000000000000-00'
-    end
-
-    def isValid
-      false
-    end
-  end
-end
-# rubocop:enable Naming/MethodName
-
-module SolarWindsAPM
-  class Reporter
-    class << self
-      def send_report(*)
-        true
-      end
-
-      def send_status(*)
-        true
-      end
-    end
-  end
-
-  def self.loaded
-    true
   end
 end
 

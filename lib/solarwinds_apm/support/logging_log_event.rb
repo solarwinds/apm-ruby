@@ -23,4 +23,4 @@ module SolarWindsAPM
   end
 end
 
-Logging::LogEvent.prepend(SolarWindsAPM::Logging::LogEvent) if SolarWindsAPM.loaded && defined?(Logging::LogEvent)
+Logging::LogEvent.prepend(SolarWindsAPM::Logging::LogEvent) if defined?(Logging::LogEvent)

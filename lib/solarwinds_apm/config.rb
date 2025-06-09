@@ -212,7 +212,7 @@ module SolarWindsAPM
 
         # Assure value is an integer
         @@config[key.to_sym] = new_value.to_i
-        SolarWindsAPM.sample_rate(new_value) if SolarWindsAPM.loaded
+        SolarWindsAPM.sample_rate(new_value)
 
       when :transaction_settings
         compile_settings(value)
