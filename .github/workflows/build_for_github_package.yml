@@ -70,8 +70,6 @@ jobs:
 
       - name: Scan build artifact on the Portal
         id: rl-scan
-        env:
-          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
         uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
         with:
           artifact-to-scan: builds/solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
@@ -81,6 +79,7 @@ jobs:
           rl-portal-group: SaaS-Agents-SWO
           rl-package-url: solarwinds-apm-ruby/apm-ruby-stg@${{ env.SOLARWINDS_APM_VERSION }}
         env:
+          RLPORTAL_ACCESS_TOKEN: ${{ secrets.REVERSE_LAB_TOKEN }}
           SOLARWINDS_APM_VERSION: ${{needs.publish_to_github_package.outputs.apm_ruby_version}}
 
       - name: report the scan status
