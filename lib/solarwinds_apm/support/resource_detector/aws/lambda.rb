@@ -1,52 +1,65 @@
 # frozen_string_literal: true
 
-# © 2023 SolarWinds Worldwide, LLC. All rights reserved.
+# Copyright The OpenTelemetry Authors
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
-require 'net/http'
-require 'uri'
-require 'json'
-require 'socket'
+require 'opentelemetry/semantic_conventions/resource'
 
-module SolarWindsAPM
-  module ResourceDetector
-    module Lambda
-      module_function
+module OpenTelemetry
+  module Resource
+    module Detector
+      module AWS
+        # Lambda contains detect class method for determining Lambda resource attributes
+        module Lambda
+          extend self
 
-      def detect
-        attribute = gather_data
-        ::OpenTelemetry::SDK::Resources::Resource.create(attribute)
-      end
+          # Create a constant for resource semantic conventions
+          RESOURCE = ::OpenTelemetry::SemanticConventions::Resource
 
-      def gather_data
-        return {} unless ENV['AWS_EXECUTION_ENV'].to_s.start_with?('AWS_Lambda_')
+          def detect
+            # Return empty resource if not running on Lambda
+            return ::OpenTelemetry::SDK::Resources::Resource.create({}) unless lambda_environment?
 
-        region = ENV.fetch('AWS_REGION', nil)
-        function_name = ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)
-        function_version = ENV.fetch('AWS_LAMBDA_FUNCTION_VERSION', nil)
-        memory_size = ENV.fetch('AWS_LAMBDA_FUNCTION_MEMORY_SIZE', nil)
+            resource_attributes = {}
 
-        # These environment variables are not available in Lambda SnapStart functions
-        log_group_name = ENV.fetch('AWS_LAMBDA_LOG_GROUP_NAME', nil)
-        log_stream_name = ENV.fetch('AWS_LAMBDA_LOG_STREAM_NAME', nil)
+            begin
+              # Set Lambda-specific attributes from environment variables
+              resource_attributes[RESOURCE::CLOUD_PROVIDER] = 'aws'
+              resource_attributes[RESOURCE::CLOUD_PLATFORM] = 'aws_lambda'
+              resource_attributes[RESOURCE::CLOUD_REGION] = ENV.fetch('AWS_REGION', nil)
+              resource_attributes[RESOURCE::FAAS_NAME] = ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)
+              resource_attributes[RESOURCE::FAAS_VERSION] = ENV.fetch('AWS_LAMBDA_FUNCTION_VERSION', nil)
+              resource_attributes[RESOURCE::FAAS_INSTANCE] = ENV.fetch('AWS_LAMBDA_LOG_STREAM_NAME', nil)
 
-        attributes = {
-          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER => 'aws',
-          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM => 'aws_lambda',
-          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_REGION => region,
-          ::OpenTelemetry::SemanticConventions::Resource::FAAS_NAME => function_name,
-          ::OpenTelemetry::SemanticConventions::Resource::FAAS_VERSION => function_version,
-          ::OpenTelemetry::SemanticConventions::Resource::FAAS_MAX_MEMORY => memory_size.to_i * 1024 * 1024
-        }
+              # Convert memory size to integer
+              resource_attributes[RESOURCE::FAAS_MAX_MEMORY] = ENV['AWS_LAMBDA_FUNCTION_MEMORY_SIZE'].to_i if ENV['AWS_LAMBDA_FUNCTION_MEMORY_SIZE']
+            rescue StandardError => e
+              ::OpenTelemetry.handle_error(exception: e, message: 'Lambda resource detection failed')
+              return ::OpenTelemetry::SDK::Resources::Resource.create({})
+            end
 
-        attributes[::OpenTelemetry::SemanticConventions::Resource::AWS_LOG_GROUP_NAMES] = [log_group_name] if log_group_name
-        attributes[::OpenTelemetry::SemanticConventions::Resource::FAAS_INSTANCE] = [log_stream_name] if log_stream_name
+            # Filter out nil or empty values
+            # Note: we need to handle integers differently since they don't respond to empty?
+            resource_attributes.delete_if do |_key, value|
+              value.nil? || (value.respond_to?(:empty?) && value.empty?)
+            end
 
-        attributes.compact!
-        attributes
+            ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
+          end
+
+          private
+
+          # Determines if the current environment is AWS Lambda
+          #
+          # @return [Boolean] true if running on AWS Lambda
+          def lambda_environment?
+            # Check for Lambda-specific environment variables
+            !ENV['AWS_LAMBDA_FUNCTION_NAME'].nil? &&
+              !ENV['AWS_LAMBDA_FUNCTION_VERSION'].nil? &&
+              !ENV['AWS_LAMBDA_LOG_STREAM_NAME'].nil?
+          end
+        end
       end
     end
   end

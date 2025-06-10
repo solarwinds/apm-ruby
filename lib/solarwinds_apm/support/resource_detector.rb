@@ -12,8 +12,8 @@ require 'json'
 require 'socket'
 require 'securerandom'
 require 'opentelemetry/resource/detector/azure'
-require 'opentelemetry/resource/detector/aws/ec2' if RUBY_VERSION >= '3.1.0' # aws resource detector requires ruby >= 3.1.0
 require 'opentelemetry/resource/detector/container'
+require_relative 'resource_detector/aws/ec2'
 
 module SolarWindsAPM
   # ResourceDetector

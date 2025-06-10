@@ -1,146 +1,173 @@
 # frozen_string_literal: true
 
-# © 2023 SolarWinds Worldwide, LLC. All rights reserved.
+# Copyright The OpenTelemetry Authors
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 
 require 'net/http'
-require 'uri'
 require 'json'
-require 'socket'
+require 'openssl'
+require 'uri'
+require 'opentelemetry/common'
+require 'opentelemetry/semantic_conventions/resource'
 
-module SolarWindsAPM
-  module ResourceDetector
-    module EKS
-      module_function
+module OpenTelemetry
+  module Resource
+    module Detector
+      module AWS
+        # EKS contains detect class method for determining EKS resource attributes
+        module EKS
+          extend self
 
-      K8S_SVC_URL = 'kubernetes.default.svc'
-      K8S_TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token'
-      K8S_CERT_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
-      AUTH_CONFIGMAP_PATH = '/api/v1/namespaces/kube-system/configmaps/aws-auth'
-      CW_CONFIGMAP_PATH = '/api/v1/namespaces/amazon-cloudwatch/configmaps/cluster-info'
-      CONTAINER_ID_LENGTH = 64
-      DEFAULT_CGROUP_PATH = '/proc/self/cgroup'
-      TIMEOUT_MS = 2000
-      UTF8_UNICODE = 'utf-8'
+          # Container ID length from cgroup file
+          CONTAINER_ID_LENGTH = 64
 
-      def detect
-        ::OpenTelemetry::SDK::Resources::Resource.create(gather_data)
-      end
+          # HTTP request timeout in seconds
+          HTTP_TIMEOUT = 5
 
-      def gather_data
-        raise StandardError, 'K8S token path missing.' unless File.exist?(K8S_TOKEN_PATH) && File.readable?(K8S_TOKEN_PATH)
+          # Kubernetes token and certificate paths
+          TOKEN_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/token'
+          CERT_PATH = '/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 
-        k8scert = File.read(K8S_CERT_PATH) if File.exist?(K8S_CERT_PATH) && File.readable?(K8S_CERT_PATH)
+          # Kubernetes API paths
+          AWS_AUTH_PATH = '/api/v1/namespaces/kube-system/configmaps/aws-auth'
+          CLUSTER_INFO_PATH = '/api/v1/namespaces/amazon-cloudwatch/configmaps/cluster-info'
 
-        raise StandardError, 'Current environment is not in AWS EKS.' unless eks?(k8scert)
+          # Create a constant for resource semantic conventions
+          RESOURCE = ::OpenTelemetry::SemanticConventions::Resource
 
-        container_id = resolve_container_id
-        cluster_name = get_cluster_name(k8scert)
+          def detect
+            # Return empty resource if not running on K8s
+            return ::OpenTelemetry::SDK::Resources::Resource.create({}) unless k8s?
 
-        {
-          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PROVIDER => 'aws',
-          ::OpenTelemetry::SemanticConventions::Resource::CLOUD_PLATFORM => 'aws_eks',
-          ::OpenTelemetry::SemanticConventions::Resource::K8S_CLUSTER_NAME => cluster_name || nil,
-          ::OpenTelemetry::SemanticConventions::Resource::CONTAINER_ID => container_id || nil
-        }.compact!
-      rescue StandardError => e
-        SolarWindsAPM.logger.debug { "Gather data for AWS EKS resource detector failed: #{e.message}" }
-        {}
-      end
+            resource_attributes = {}
 
-      def resolve_container_id
-        container_id = nil
-        begin
-          raw_data = File.read(DEFAULT_CGROUP_PATH, encoding: UTF8_UNICODE).strip
-          raw_data.each_line do |line|
-            if line.length > CONTAINER_ID_LENGTH
-              container_id = line[-CONTAINER_ID_LENGTH..]
-              break
+            begin
+              # Get K8s credentials
+              cred_value = k8s_cred_value
+
+              # Verify this is an EKS cluster
+              unless eks?(cred_value)
+                ::OpenTelemetry.logger.debug('Could not confirm process is running on EKS')
+                return ::OpenTelemetry::SDK::Resources::Resource.create({})
+              end
+
+              # Get cluster name and container ID
+              cluster_name_val = cluster_name(cred_value)
+              container_id_val = container_id
+
+              if container_id_val.empty? && cluster_name_val.empty?
+                ::OpenTelemetry.logger.debug('Neither cluster name nor container ID found on EKS process')
+                return ::OpenTelemetry::SDK::Resources::Resource.create({})
+              end
+
+              # Set resource attributes
+              resource_attributes[RESOURCE::CLOUD_PROVIDER] = 'aws'
+              resource_attributes[RESOURCE::CLOUD_PLATFORM] = 'aws_eks'
+              resource_attributes[RESOURCE::K8S_CLUSTER_NAME] = cluster_name_val unless cluster_name_val.empty?
+              resource_attributes[RESOURCE::CONTAINER_ID] = container_id_val unless container_id_val.empty?
+            rescue StandardError => e
+              ::OpenTelemetry.logger.debug("EKS resource detection failed: #{e.message}")
+              return ::OpenTelemetry::SDK::Resources::Resource.create({})
+            end
+
+            resource_attributes.delete_if { |_key, value| value.nil? || value.empty? }
+            ::OpenTelemetry::SDK::Resources::Resource.create(resource_attributes)
+          end
+
+          private
+
+          # Check if running on K8s
+          #
+          # @return [Boolean] true if running on K8s
+          def k8s?
+            File.exist?(TOKEN_PATH) && File.exist?(CERT_PATH)
+          end
+
+          # Get K8s token
+          #
+          # @return [String] K8s token
+          # @raise [StandardError] if token could not be read
+          def k8s_cred_value
+            token = File.read(TOKEN_PATH).strip
+            "Bearer #{token}"
+          rescue StandardError => e
+            ::OpenTelemetry.logger.debug("Failed to get k8s token: #{e.message}")
+            raise e
+          end
+
+          # Check if running on EKS
+          #
+          # @param cred_value [String] K8s credentials
+          # @return [Boolean] true if running on EKS
+          def eks?(cred_value)
+            # Just try to to access the aws-auth configmap
+            # If it exists and we can access it, we're on EKS
+            aws_http_request(AWS_AUTH_PATH, cred_value)
+            true
+          rescue StandardError
+            false
+          end
+
+          # Get EKS cluster name
+          #
+          # @param cred_value [String] K8s credentials
+          # @return [String] Cluster name or empty string if not found
+          def cluster_name(cred_value)
+            begin
+              response = aws_http_request(CLUSTER_INFO_PATH, cred_value)
+              cluster_info = JSON.parse(response)
+              return cluster_info['data']['cluster.name'] if cluster_info['data'] && cluster_info['data']['cluster.name']
+            rescue StandardError => e
+              ::OpenTelemetry.logger.debug("Cannot get cluster name on EKS: #{e.message}")
+            end
+            ''
+          end
+
+          # Get container ID from cgroup file
+          #
+          # @return [String] Container ID or empty string if not found
+          def container_id
+            begin
+              File.open('/proc/self/cgroup', 'r') do |file|
+                file.each_line do |line|
+                  line = line.strip
+                  # Look for container ID (64 chars) at the end of the line
+                  return line[-CONTAINER_ID_LENGTH..] if line.length > CONTAINER_ID_LENGTH
+                end
+              end
+            rescue StandardError => e
+              ::OpenTelemetry.logger.debug("Failed to get container ID on EKS: #{e.message}")
+            end
+            ''
+          end
+
+          # Make HTTP GET request to K8s API
+          #
+          # @param path [String] API path
+          # @param cred_value [String] Authorization header value
+          # @return [String] Response body
+          # @raise [StandardError] if request fails
+          def aws_http_request(path, cred_value)
+            uri = URI.parse("https://kubernetes.default.svc#{path}")
+            http = Net::HTTP.new(uri.host, uri.port)
+            http.use_ssl = true
+            http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+            http.ca_file = CERT_PATH
+            http.open_timeout = HTTP_TIMEOUT
+            http.read_timeout = HTTP_TIMEOUT
+
+            request = Net::HTTP::Get.new(uri)
+            request['Authorization'] = cred_value
+
+            ::OpenTelemetry::Common::Utilities.untraced do
+              response = http.request(request)
+              raise "HTTP request failed with status #{response.code}" unless response.is_a?(Net::HTTPSuccess)
+
+              response.body
             end
           end
-        rescue StandardError => e
-          SolarWindsAPM.logger.debug { "AwsEksDetector failed to read container ID: #{e.message}" }
         end
-        container_id
-      end
-
-      def get_cluster_name(cert)
-        options = {
-          ca_file: cert,
-          headers: {
-            'Authorization' => k8s_cred_header
-          },
-          hostname: K8S_SVC_URL,
-          method: 'GET',
-          path: CW_CONFIGMAP_PATH,
-          timeout: TIMEOUT_MS / 1000
-        }
-
-        cluster_name = nil
-        response = fetch_string(options)
-        begin
-          cluster_name = JSON.parse(response).dig('data', 'cluster.name')
-        rescue StandardError => e
-          SolarWindsAPM.logger.debug { "Cannot get cluster name on EKS: #{e.message}" }
-        end
-
-        cluster_name
-      end
-
-      def eks?(cert)
-        options = {
-          ca_cert: cert,
-          headers: {
-            'Authorization' => k8s_cred_header
-          },
-          hostname: K8S_SVC_URL,
-          method: 'GET',
-          path: AUTH_CONFIGMAP_PATH,
-          timeout: TIMEOUT_MS / 1000
-        }
-
-        !!fetch_string(options)
-      end
-
-      def k8s_cred_header
-        content = File.read(K8S_TOKEN_PATH).strip
-        "Bearer #{content}"
-      rescue StandardError => e
-        SolarWindsAPM.logger.debug { "Unable to read Kubernetes client token: #{e.message}" }
-        ''
-      end
-
-      def fetch_string(options)
-        uri = URI::HTTPS.build(host: options[:hostname], path: options[:path])
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.use_ssl = true
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-        http.ca_file = options[:ca_cert]
-        http.open_timeout = options[:timeout]
-        http.read_timeout = options[:timeout]
-
-        request = Net::HTTP::Get.new(uri)
-
-        options[:headers]&.each { |key, value| request[key] = value }
-
-        response = nil
-        begin
-          ::OpenTelemetry::Common::Utilities.untraced do
-            response = http.request(request)
-          end
-        rescue StandardError => e
-          raise "EKS metadata API request error: #{e.message}."
-        end
-
-        raise "Failed to load page, status code: #{response.code}" unless response.is_a?(Net::HTTPSuccess)
-
-        response.body
-      rescue StandardError => e
-        SolarWindsAPM.logger.debug { "Request failed: #{e.message}" }
-        nil
       end
     end
   end
