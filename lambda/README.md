@@ -1,6 +1,6 @@
 # SolarWinds Lambda Ruby Layer
 
-## Building Lambda Ruby Layer With OpenTelemetry Ruby Dependencies Using SAM
+## Building Lambda Ruby Layer with OpenTelemetry Ruby Dependencies Using SAM
 
 Build
 
@@ -22,12 +22,18 @@ ruby
             └── specifications
 ```
 
-Zip the file for uploading to ruby lambda layer
+Zip the layer to file
 
 ```bash
 cd .aws-sam/build/OTelLayer/
 zip -qr ../../../<your_layer_name>.zip ruby/
 cd -
-# or run following script
-zip_layer.sh -n <your_layer_name>
+```
+
+## Building Lambda Ruby Layer with build-ruby Docker image
+
+Execute the following command to build layer that is compatiable with 3.2, 3.3 and 3.4
+
+```bash
+./build.sh
 ```
