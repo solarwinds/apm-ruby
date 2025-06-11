@@ -123,7 +123,7 @@ task :build_gem do
   File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
 
   puts "\n=== install required dependencies ===\n"
-  system('bundle install')
+  system('bundle install --without development --without test')
 
   puts "\n=== clean & compile & build ===\n"
   system('gem build solarwinds_apm.gemspec')
