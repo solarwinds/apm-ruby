@@ -5,6 +5,18 @@ For the latest release info, see here:
 
 Dates in this file are in the format MM/DD/YYYY.
 
+## solarwinds_apm 7.0.0.prev1 (06/10/2025)
+
+This release includes the following features:
+
+* Implemented pure ruby sampling logic
+* OTLP trace and metric exporter are the now default exporters for swo backend
+* NH-103815: Added resource detectors for Kubernetes and UAMS client
+* Added Lambda instrumentation for 6.1.2
+* Update tag_sql section by @cheempz in https://github.com/solarwinds/apm-ruby/pull/176
+* NH-103804: reverselab scan gem by @xuan-cao-swi in https://github.com/solarwinds/apm-ruby/pull/179
+* Bump DavidAnson/markdownlint-cli2-action from 19 to 20 by @dependabot in https://github.com/solarwinds/apm-ruby/pull/193
+
 ## solarwinds_apm 6.1.2 (02/28/2025)
 
 This release includes the following features:
