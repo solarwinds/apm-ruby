@@ -32,7 +32,7 @@ cd -
 
 ## Building Lambda Ruby Layer with build-ruby Docker image
 
-Execute the following command to build layer that is compatiable with 3.2, 3.3 and 3.4
+Execute the following command to build layer that is compatible with 3.2, 3.3 and 3.4
 
 ```bash
 ./build.sh
