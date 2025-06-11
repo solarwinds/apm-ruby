@@ -179,6 +179,6 @@ RUN_AT_EXIT_HOOKS=1 QUEUE=${QUEUE_NAME} ${EXTRA_OPTIONS} bundle exec rake resque
 
 Explanation:
 
-* `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`). This allow the background process that handle signal (trace, metrics, etc.) transmission complete their task.
+* `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`). This allows the background processes that handle signal (trace, metrics, etc.) transmission to complete their tasks.
 
 Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
