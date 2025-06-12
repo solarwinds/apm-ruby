@@ -158,7 +158,7 @@ By default, transaction names are constructed based on attributes such as the re
 result = SolarWindsAPM::API.set_transaction_name('my-custom-trace-name')
 ```
 
-#### Send Custom Metrics
+#### Send Custom Metrics (Depreciated)
 
 Service metrics are automatically collected by this library.  In addition, the following methods support sending two types of custom metrics:
 
