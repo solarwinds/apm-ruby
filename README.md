@@ -3,8 +3,10 @@
 The `solarwinds_apm` gem starting from version 6.0.0 is an [OpenTelemetry Ruby](https://opentelemetry.io/docs/instrumentation/ruby/) distribution. It provides automatic instrumentation and custom SolarWinds Observability features for Ruby applications.
 
 ## Requirements
+> [!NOTE]
+> Versions before 7.0.0 only support Linux and will go into no-op mode on other platforms.
 
-Only Linux is supported, the gem will go into no-op mode on other platforms. MRI Ruby version 3 or above is required. The [SolarWinds Observability documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm) has details on the supported platforms and system dependencies.
+MRI Ruby version 3 or above is required. The [SolarWinds Observability documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm) has details on the supported platforms and system dependencies.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to build for development.
 
@@ -32,7 +34,7 @@ The only required configuration is the service key, which can be set in the `SW_
 
 ## Custom Instrumentation
 
-`solarwinds_apm` supports the standard OpenTelemetry API for tracing and includes a helper to ease its use in manual instrumentation.  Additionally, a set of SolarWindsAPM APIs are provided for features specific to SolarWinds Observability.
+`solarwinds_apm` supports the standard OpenTelemetry API and includes a few convenience methods for manual instrumentation.  Additionally, a set of SolarWindsAPM APIs are provided for features specific to SolarWinds Observability.
 
 ### Using the OpenTelemetry API
 
@@ -59,6 +61,8 @@ current_span = ::OpenTelemetry::Trace.current_span
 ```
 
 Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`, it will not be configured with our distribution's customizations and manual instrumentation made with its `Tracer` object will not be reported to SolarWinds Observability.
+
+!!!TODO!!!! add metrics example
 
 ### Using the SolarWindsAPM API
 
@@ -158,7 +162,10 @@ By default, transaction names are constructed based on attributes such as the re
 result = SolarWindsAPM::API.set_transaction_name('my-custom-trace-name')
 ```
 
-#### Send Custom Metrics (Depreciated)
+#### Send Custom Metrics (Deprecated)
+
+> [!NOTE]
+> Starting from version 7.0.0 these are no-op, standard OTel API should be used instead.
 
 Service metrics are automatically collected by this library.  In addition, the following methods support sending two types of custom metrics:
 
