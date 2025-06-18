@@ -70,7 +70,7 @@ ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 
 ## Programmatic Configuration
 
-Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
+Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelNativeConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
 
 > [!IMPORTANT]
 > this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
@@ -180,5 +180,3 @@ RUN_AT_EXIT_HOOKS=1 QUEUE=${QUEUE_NAME} ${EXTRA_OPTIONS} bundle exec rake resque
 Explanation:
 
 * `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`). This allows the background processes that handle signal (trace, metrics, etc.) transmission to complete their tasks.
-
-Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
