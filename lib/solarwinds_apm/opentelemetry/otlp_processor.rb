@@ -45,6 +45,8 @@ module SolarWindsAPM
       end
 
       def on_finishing(span)
+        return if non_entry_span(span: span)
+
         @transaction_name = calculate_transaction_names(span)
         span.set_attribute(SW_TRANSACTION_NAME, @transaction_name)
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
@@ -65,6 +67,20 @@ module SolarWindsAPM
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
+      end
+
+      # @param [optional Numeric] timeout An optional timeout in seconds.
+      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
+      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
+      def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      end
+
+      # @param [optional Numeric] timeout An optional timeout in seconds.
+      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
+      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
+      def shutdown(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
       end
 
       private
