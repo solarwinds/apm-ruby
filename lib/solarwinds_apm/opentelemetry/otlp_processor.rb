@@ -45,6 +45,8 @@ module SolarWindsAPM
       end
 
       def on_finishing(span)
+        return if non_entry_span(span: span)
+
         @transaction_name = calculate_transaction_names(span)
         span.set_attribute(SW_TRANSACTION_NAME, @transaction_name)
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
