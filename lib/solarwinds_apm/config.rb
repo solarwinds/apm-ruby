@@ -230,7 +230,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn { ':http_proxy is depreciated' }
 
       when :hostname_alias
-        SolarWindsAPM.logger.warn { ':hostname_alias is depreciated' }
+        SolarWindsAPM.logger.warn { ':hostname_alias is deprecated' }
 
       else
         @@config[key.to_sym] = value
