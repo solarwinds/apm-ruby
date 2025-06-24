@@ -62,7 +62,24 @@ current_span = ::OpenTelemetry::Trace.current_span
 
 Note that if `OpenTelemetry::SDK.configure` is used to set up a `TracerProvider`, it will not be configured with our distribution's customizations and manual instrumentation made with its `Tracer` object will not be reported to SolarWinds Observability.
 
-!!!TODO!!!! add metrics example
+This gem also initializes a global `MeterProvider`, so your application can create Meters and Metric Instruments as follows to collect custom metrics, which will be exported every 60 seconds.
+
+```ruby
+# set up meter and create a counter instrument
+MyAppMeter = ::OpenTelemetry.meter_provider.meter('myapp')
+counter = MyAppMeter.create_counter('password.resets',
+  description: 'Count of password reset requests to myapp',
+  unit: '{request}'
+)
+
+# increment counter
+def reset
+  counter.add(1, attributes: {'user.id' => user_id})
+  # do things
+end
+```
+
+See the [OTel Ruby Metrics README](https://github.com/open-telemetry/opentelemetry-ruby/blob/main/metrics_api/README.md) for more information on the API and links to examples.
 
 ### Using the SolarWindsAPM API
 
