@@ -26,7 +26,7 @@ module SolarWindsAPM
       def initialize(txn_manager)
         @txn_manager = txn_manager
         @meters      = { 'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics') }
-        @metrics     = { response_time: @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.') }
+        @metrics     = init_response_time_metrics
         @transaction_name = nil
       end
 
@@ -84,6 +84,19 @@ module SolarWindsAPM
       end
 
       private
+
+      def init_response_time_metrics
+        # add the ExponentialBucketHistogram view
+        if defined? ::OpenTelemetry::Exporter::OTLP::Metrics && Gem::Version.new(::OpenTelemetry::Exporter::OTLP::Metrics::VERSION) >= Gem::Version.new('0.5.0')
+          ::OpenTelemetry.meter_provider.add_view('trace.service.response_time',
+                                                  aggregation: ::OpenTelemetry::SDK::Metrics::Aggregation::ExponentialBucketHistogram.new(max_scale: 20),
+                                                  type: :histogram,
+                                                  unit: 'ms')
+        end
+
+        instrument = @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.')
+        { response_time: instrument }
+      end
 
       def meter_attributes(span)
         meter_attrs = {
