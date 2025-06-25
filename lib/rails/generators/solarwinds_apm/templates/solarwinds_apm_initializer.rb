@@ -16,8 +16,7 @@
 
 if defined?(SolarWindsAPM::Config)
 
-  # :service_key, :hostname_alias, :http_proxy, and :debug_level
-  # are startup settings and can't be changed afterwards.
+  # :service_key and :debug_level are startup settings and can't be changed afterwards.
 
   #
   # Set SW_APM_SERVICE_KEY
@@ -28,34 +27,6 @@ if defined?(SolarWindsAPM::Config)
   # E.g.: 0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service
   #
   # SolarWindsAPM::Config[:service_key] = '0123456789abcde0123456789abcde0123456789abcde0123456789abcde1234:my_service'
-
-  #
-  # Set SW_APM_HOSTNAME_ALIAS
-  # This setting will be overridden if SW_APM_HOSTNAME_ALIAS is set as an environment variable
-  #
-  # SolarWindsAPM::Config[:hostname_alias] = 'alias_name'
-
-  #
-  # Set Proxy for SolarWinds
-  # This setting will be overridden if SW_APM_PROXY is set as an environment variable.
-  #
-  # Please configure http_proxy if a proxy needs to be used to communicate with
-  # the SolarWinds APM collector.
-  # The format should either be http://<proxyHost>:<proxyPort> for a proxy
-  # server that does not require authentication, or
-  # http://<username>:<password>@<proxyHost>:<proxyPort> for a proxy server that
-  # requires basic authentication.
-  #
-  # Note that while HTTP is the only type of connection supported, the traffic
-  # to SolarWinds is still encrypted using SSL/TLS.
-  #
-  # It is recommended to configure the proxy in this file or as SW_APM_PROXY
-  # environment variable. However, the agent's underlying network library will
-  # use a system-wide proxy defined in the environment variables grpc_proxy,
-  # https_proxy or http_proxy if no SolarWindsAPM-specific configuration is set.
-  # Please refer to gRPC environment variables for more information.
-  #
-  # SolarWindsAPM::Config[:http_proxy] = http://<proxyHost>:<proxyPort>
 
   #
   # Set SW_APM_DEBUG_LEVEL

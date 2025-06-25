@@ -15,6 +15,7 @@ describe 'otlp processor sampled test' do
   puts "\n\033[1m=== OTLP PROCESSOR TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
   before do
+    SolarWindsAPM::OpenTelemetry::OTLPProcessor.prepend(DisableAddView)
     txn_manager = SolarWindsAPM::TxnNameManager.new
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
   end
