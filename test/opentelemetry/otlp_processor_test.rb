@@ -13,6 +13,7 @@ require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsOTLPProcessor' do
   before do
+    SolarWindsAPM::OpenTelemetry::OTLPProcessor.prepend(DisableAddView)
     @txn_manager = SolarWindsAPM::TxnNameManager.new
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@txn_manager)
   end

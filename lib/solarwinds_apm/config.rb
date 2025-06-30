@@ -226,6 +226,12 @@ module SolarWindsAPM
       when :tag_sql
         enable_disable_config('SW_APM_TAG_SQL', key, value, false, bool: true)
 
+      when :http_proxy
+        SolarWindsAPM.logger.warn { ':http_proxy is deprecated' }
+
+      when :hostname_alias
+        SolarWindsAPM.logger.warn { ':hostname_alias is deprecated' }
+
       else
         @@config[key.to_sym] = value
 

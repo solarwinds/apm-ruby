@@ -115,7 +115,7 @@ jobs:
         id: rl-scan
         uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
         with:
-          artifact-to-scan: ./solarwinds_apm-${{ steps.SOLARWINDS_APM_VERSION }}.gem
+          artifact-to-scan: ./solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           rl-verbose: true
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds

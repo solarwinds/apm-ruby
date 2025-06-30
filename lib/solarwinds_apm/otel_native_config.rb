@@ -62,6 +62,9 @@ module SolarWindsAPM
         ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"] = 'gzip' if ENV["OTEL_EXPORTER_OTLP_#{signal}_COMPRESSION"].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_COMPRESSION'].to_s.empty?
       end
 
+      # set http stable semconv
+      ENV['OTEL_SEMCONV_STABILITY_OPT_IN'] = 'http' if ENV['OTEL_SEMCONV_STABILITY_OPT_IN'].to_s.empty?
+
       # set delta temporality
       ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'] = 'delta' if ENV['OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE'].to_s.empty?
 
