@@ -337,7 +337,7 @@ module SolarWindsAPM
       time_now = Time.now.to_i * 1000
       if time_now > expiry
         @logger.debug { 'settings expired, removing' }
-        @settings = nil
+        @settings = {}
         return
       end
       sampling_setting = SolarWindsAPM::SamplingSettings.merge(@settings, local_settings(params))
