@@ -81,6 +81,7 @@ module SolarWindsAPM
         end
       rescue StandardError => e
         @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
+        sleep(GET_SETTING_DURAION)
       end
     end
   end
