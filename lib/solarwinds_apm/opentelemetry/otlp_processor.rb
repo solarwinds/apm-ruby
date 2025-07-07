@@ -89,7 +89,7 @@ module SolarWindsAPM
         # add the ExponentialBucketHistogram view
         if defined? ::OpenTelemetry::Exporter::OTLP::Metrics && Gem::Version.new(::OpenTelemetry::Exporter::OTLP::Metrics::VERSION) >= Gem::Version.new('0.5.0')
           ::OpenTelemetry.meter_provider.add_view('trace.service.response_time',
-                                                  aggregation: ::OpenTelemetry::SDK::Metrics::Aggregation::ExponentialBucketHistogram.new(max_scale: 20),
+                                                  aggregation: ::OpenTelemetry::SDK::Metrics::Aggregation::ExponentialBucketHistogram.new(aggregation_temporality: :delta),
                                                   type: :histogram,
                                                   unit: 'ms')
         end
