@@ -108,29 +108,11 @@ jobs:
           bundler: "latest"
           bundler-cache: false
 
-      - name: Verify install (Unix)
+      - name: Verify install (MacOS)
         if: runner.os != 'Windows'
         working-directory: .github/workflows/scripts
-        shell: bash
-        run: |
-          if [ "$MODE" = "RubyGem" ]; then
-            echo "Installing from RubyGem..."
-            gem install solarwinds_apm -v "$SOLARWINDS_APM_VERSION"
-            ruby test_install.rb
-          elif [ "$MODE" = "GitHub" ]; then
-            echo "Installing from GitHub..."
-            VERSION_LOWER_CASE=$(echo "$SOLARWINDS_APM_VERSION" | tr '[:upper:]' '[:lower:]')
-            echo "source 'https://rubygems.org'" > Gemfile
-            echo "gem 'opentelemetry-metrics-api'" >> Gemfile
-            echo "gem 'opentelemetry-metrics-sdk'" >> Gemfile
-            echo "gem 'opentelemetry-exporter-otlp'" >> Gemfile
-            echo "gem 'opentelemetry-exporter-otlp-metrics'" >> Gemfile
-            echo "source 'https://rubygems.pkg.github.com/solarwinds' do" >> Gemfile
-            echo "  gem 'solarwinds_apm', '${VERSION_LOWER_CASE}'" >> Gemfile
-            echo "end" >> Gemfile
-            bundle install
-            bundle exec ruby test_install.rb
-          fi
+        run: ./verify_install.sh
+        shell: sh
         env:
           BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
 
