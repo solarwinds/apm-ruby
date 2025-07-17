@@ -35,36 +35,39 @@ jobs:
       fail-fast: false
       matrix:
         hostname:
-          - rb3.0.6-alpine3.16
-          - rb3.0.6-slim-bullseye
-          - rb3.2.2-alpine3.17
+          - rb3.1.0-slim-bullseye
           - rb3.2.2-slim-bullseye
-          - rb3.1.0-amazlinux2
+          - rb3.3.0-slim-bullseye
+          - rb3.2.2-alpine3.17
+          - rb3.1.0-alpine3.15
           - rb3.1.0-amazlinux2023
-          - rb3.0.2-ubuntu2204
+          - rb3.2.3-ubuntu2404
+          - rb3.3.7-ubuntu2504
+        include:
+          - hostname: rb3.1.0-slim-bullseye
+            image: ruby:3.1.0-slim-bullseye
+          - hostname: rb3.2.2-slim-bullseye
+            image: ruby:3.2.2-slim-bullseye
+          - hostname: rb3.3.0-slim-bullseye
+            image: ruby:3.3.0-slim-bullseye
+          - hostname: rb3.1.0-alpine3.15
+            image: ruby:3.1.0-alpine3.15
+          - hostname: rb3.2.2-alpine3.17
+            image: ruby:3.2.2-alpine3.17
+          - hostname: rb3.1.0-amazlinux2023
+            image: amazonlinux:2023
+          - hostname: rb3.2.3-ubuntu2404
+            image: ubuntu:24.04
+          - hostname: rb3.3.7-ubuntu2504
+            image: ubuntu:25.04
         arch:
           - x64
           - arm64
-        include:
-          - hostname: rb3.0.6-alpine3.16
-            image: ruby:3.0.6-alpine3.16
-          - hostname: rb3.0.6-slim-bullseye
-            image: ruby:3.0.6-slim-bullseye
-          - hostname: rb3.2.2-alpine3.17
-            image: ruby:3.2.2-alpine3.17
-          - hostname: rb3.2.2-slim-bullseye
-            image: ruby:3.2.2-slim-bullseye
-          - hostname: rb3.1.0-amazlinux2
-            image: amazonlinux:2
-          - hostname: rb3.1.0-amazlinux2023
-            image: amazonlinux:2023
-          - hostname: rb3.0.2-ubuntu2204
-            image: ubuntu:22.04
         exclude:
           # alpine not yet supported on self-hosted runners https://github.com/actions/runner/issues/801
-          - hostname: rb3.0.6-alpine3.16
-            arch: arm64
           - hostname: rb3.2.2-alpine3.17
+            arch: arm64
+          - hostname: rb3.1.0-alpine3.15
             arch: arm64
 
     runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
