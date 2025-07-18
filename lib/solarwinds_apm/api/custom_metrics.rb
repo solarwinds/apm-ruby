@@ -33,7 +33,7 @@ module SolarWindsAPM
       # * Boolean
       #
       def increment_metric(_name, _count = 1, _with_hostname = false, _tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
-        SolarWindsAPM.logger.warn { 'increment_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+        SolarWindsAPM.logger.warn { 'increment_metric is deprecated, please use the OpenTelemetry API instead.' }
         false
       end
 
@@ -64,7 +64,7 @@ module SolarWindsAPM
       # * Boolean
       #
       def summary_metric(_name, _value, _count = 1, _with_hostname = false, _tags_kvs = {}) # rubocop:disable Style/OptionalBooleanParameter
-        SolarWindsAPM.logger.warn { 'summary_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+        SolarWindsAPM.logger.warn { 'summary_metric is deprecated, please use the OpenTelemetry API instead.' }
         false
       end
 

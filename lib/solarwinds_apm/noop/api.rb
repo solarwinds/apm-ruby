@@ -56,12 +56,12 @@ module NoopAPI
   # CustomMetrics
   module CustomMetrics
     def increment_metric(*)
-      SolarWindsAPM.logger.warn { 'increment_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+      SolarWindsAPM.logger.warn { 'increment_metric is deprecated, please use the OpenTelemetry API instead.' }
       false
     end
 
     def summary_metric(*)
-      SolarWindsAPM.logger.warn { 'summary_metric have been deprecated. Please use opentelemetry metrics-sdk to log metrics data.' }
+      SolarWindsAPM.logger.warn { 'summary_metric is deprecated, please use the OpenTelemetry API instead.' }
       false
     end
   end
