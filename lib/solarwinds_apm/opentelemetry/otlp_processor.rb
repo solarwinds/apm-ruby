@@ -26,7 +26,7 @@ module SolarWindsAPM
       def initialize(txn_manager)
         @txn_manager = txn_manager
         @meters      = { 'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics') }
-        @metrics     = { response_time: @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.') }
+        @metrics     = init_response_time_metrics
         @transaction_name = nil
       end
 
@@ -45,6 +45,8 @@ module SolarWindsAPM
       end
 
       def on_finishing(span)
+        return if non_entry_span(span: span)
+
         @transaction_name = calculate_transaction_names(span)
         span.set_attribute(SW_TRANSACTION_NAME, @transaction_name)
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
@@ -67,7 +69,34 @@ module SolarWindsAPM
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
       end
 
+      # @param [optional Numeric] timeout An optional timeout in seconds.
+      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
+      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
+      def force_flush(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      end
+
+      # @param [optional Numeric] timeout An optional timeout in seconds.
+      # @return [Integer] Export::SUCCESS if no error occurred, Export::FAILURE if
+      #   a non-specific failure occurred, Export::TIMEOUT if a timeout occurred.
+      def shutdown(timeout: nil) # rubocop:disable Lint/UnusedMethodArgument
+        ::OpenTelemetry::SDK::Trace::Export::SUCCESS
+      end
+
       private
+
+      def init_response_time_metrics
+        # add the ExponentialBucketHistogram view
+        if defined? ::OpenTelemetry::Exporter::OTLP::Metrics && Gem::Version.new(::OpenTelemetry::Exporter::OTLP::Metrics::VERSION) >= Gem::Version.new('0.5.0')
+          ::OpenTelemetry.meter_provider.add_view('trace.service.response_time',
+                                                  aggregation: ::OpenTelemetry::SDK::Metrics::Aggregation::ExponentialBucketHistogram.new(aggregation_temporality: :delta),
+                                                  type: :histogram,
+                                                  unit: 'ms')
+        end
+
+        instrument = @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.')
+        { response_time: instrument }
+      end
 
       def meter_attributes(span)
         meter_attrs = {

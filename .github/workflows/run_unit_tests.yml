@@ -21,16 +21,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.2.2','3.1.0','3.0.6','2.7.5']
+        ruby: ['3.4.2', '3.3.2', '3.2.2','3.1.0']
         os: ['bullseye']
         include:
+          - ruby: '3.4.2'
+            os: 'alpine3.21'
+          - ruby: '3.3.3'
+            os: 'alpine3.20'
           - ruby: '3.2.2'
             os: 'alpine3.17'
           - ruby: '3.1.0'
-            os: 'alpine3.15'
-          - ruby: '3.0.6'
-            os: 'alpine3.16'
-          - ruby: '2.7.5'
             os: 'alpine3.15'
 
     container:

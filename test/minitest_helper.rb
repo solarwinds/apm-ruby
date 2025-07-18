@@ -361,3 +361,10 @@ module PG
   end
   VERSION = '999.0.0'
 end
+
+module DisableAddView
+  def init_response_time_metrics
+    instrument = @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.')
+    { response_time: instrument }
+  end
+end

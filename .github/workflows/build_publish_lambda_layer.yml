@@ -32,13 +32,7 @@ jobs:
   # build layer on arm64 and amd64, then upload to artifacts
   # act -j build_layer --container-architecture linux/arm64
   build_layer:
-    strategy:
-      matrix:
-        arch:
-          - x86_64
-          - arm64
-
-    runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +45,6 @@ jobs:
         working-directory: lambda/
         env:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
-          MATRIX_ARCH: ${{ matrix.arch }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
 
       - name: Show directory contents
@@ -62,8 +55,8 @@ jobs:
       - name: Upload to artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruby-layer-${{ matrix.arch }}.zip
-          path: lambda/build/ruby-layer-${{ matrix.arch }}.zip
+          name: ruby-layer.zip
+          path: lambda/build/ruby-layer.zip
 
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
@@ -72,10 +65,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        arch:
-          - x86_64
-          - arm64
 
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +72,7 @@ jobs:
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ruby-layer-${{ matrix.arch }}.zip
+          name: ruby-layer.zip
           path: lambda
 
       - name: extract current solarwinds_apm version
@@ -91,7 +80,7 @@ jobs:
           APM_VERSION=$(grep "gem 'solarwinds_apm'" lambda/otel/layer/Gemfile | awk -F"'" '{print $4}')
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
 
-      - name: Scan build artifact on the Portal ${{ matrix.arch }}
+      - name: Scan build artifact on the Portal
         id: rl-scan
 
         env:
@@ -99,12 +88,12 @@ jobs:
 
         uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
         with:
-          artifact-to-scan: ./lambda/ruby-layer-${{ matrix.arch }}.zip
+          artifact-to-scan: ./lambda/ruby-layer.zip
           rl-verbose: true
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
-          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.SOLARWINDS_APM_VERSION }}
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer@${{ env.SOLARWINDS_APM_VERSION }}
 
       - name: report the scan status
         if: success() || failure()
@@ -136,9 +125,7 @@ jobs:
           - us-east-2
           - us-west-1
           - us-west-2
-        arch:
-          - x86_64
-          - arm64
+
     steps:
       - uses: actions/checkout@v4
 
@@ -151,7 +138,7 @@ jobs:
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ruby-layer-${{ matrix.arch }}.zip
+          name: ruby-layer.zip
           path: lambda
 
       - name: extract current solarwinds_apm version
@@ -164,18 +151,17 @@ jobs:
         run: |
           cd lambda/
           aws lambda publish-layer-version \
-            --layer-name solarwinds-apm-ruby-${{ matrix.arch }}-${{ env.SOLARWINDS_APM_VERSION }} \
+            --layer-name solarwinds-apm-ruby-${{ env.SOLARWINDS_APM_VERSION }} \
             --license-info "Apache 2.0" \
-            --compatible-architectures ${{ matrix.arch }} \
-            --compatible-runtimes ruby3.2 ruby3.3 \
-            --zip-file fileb://ruby-layer-${{ matrix.arch }}.zip \
+            --compatible-architectures x86_64 arm64 \
+            --compatible-runtimes ruby3.2 ruby3.3 ruby3.4 \
+            --zip-file fileb://ruby-layer.zip \
             --query 'LayerVersionArn' \
-            --compatible-architectures ${{ matrix.arch }} \
             --output text
 
       - name: grant permissions to public for the published layer
         run: |
-          layer_name=solarwinds-apm-ruby-${{ matrix.arch }}-${{ env.SOLARWINDS_APM_VERSION }}
+          layer_name=solarwinds-apm-ruby-${{ env.SOLARWINDS_APM_VERSION }}
           latest_version=$(aws lambda list-layer-versions --layer-name $layer_name | jq -r '.LayerVersions | max_by(.Version) | .Version')
           aws lambda add-layer-version-permission \
             --layer-name $layer_name \

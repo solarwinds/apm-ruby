@@ -35,6 +35,7 @@ group :development, :test do
   gem 'simplecov-console'
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
   gem 'grpc', '~> 1.71'
+  gem 'base64' if RUBY_VERSION >= '3.4.0'
 
   gem 'opentelemetry-sdk'
   gem 'opentelemetry-instrumentation-all'
@@ -45,7 +46,6 @@ group :development, :test do
   gem 'opentelemetry-test-helpers'
 
   gem 'opentelemetry-resource-detector-azure'
-  # aws resource detector requires ruby >= 3.1.0
   gem 'opentelemetry-resource-detector-aws' if RUBY_VERSION >= '3.1.0'
   gem 'opentelemetry-resource-detector-container'
 end
