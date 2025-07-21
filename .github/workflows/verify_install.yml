@@ -30,63 +30,113 @@ permissions:
   contents: read
 
 jobs:
-  verify_installation:
+  # Linux containers (existing job)
+  verify_installation_linux:
     strategy:
       fail-fast: false
       matrix:
-        hostname:
-          - rb3.0.6-alpine3.16
-          - rb3.0.6-slim-bullseye
-          - rb3.2.2-alpine3.17
-          - rb3.2.2-slim-bullseye
-          - rb3.1.0-amazlinux2
-          - rb3.1.0-amazlinux2023
-          - rb3.0.2-ubuntu2204
+        image:
+          - ruby:3.1.0-slim-bullseye
+          - ruby:3.2.2-slim-bullseye
+          - ruby:3.3.0-slim-bullseye
+          - ruby:3.2.2-alpine3.17
+          - ruby:3.1.0-alpine3.15
+          - amazonlinux:2023
+          - ubuntu:24.04
+          - ubuntu:25.04
         arch:
           - x64
           - arm64
-        include:
-          - hostname: rb3.0.6-alpine3.16
-            image: ruby:3.0.6-alpine3.16
-          - hostname: rb3.0.6-slim-bullseye
-            image: ruby:3.0.6-slim-bullseye
-          - hostname: rb3.2.2-alpine3.17
-            image: ruby:3.2.2-alpine3.17
-          - hostname: rb3.2.2-slim-bullseye
-            image: ruby:3.2.2-slim-bullseye
-          - hostname: rb3.1.0-amazlinux2
-            image: amazonlinux:2
-          - hostname: rb3.1.0-amazlinux2023
-            image: amazonlinux:2023
-          - hostname: rb3.0.2-ubuntu2204
-            image: ubuntu:22.04
         exclude:
           # alpine not yet supported on self-hosted runners https://github.com/actions/runner/issues/801
-          - hostname: rb3.0.6-alpine3.16
+          - image: ruby:3.2.2-alpine3.17
             arch: arm64
-          - hostname: rb3.2.2-alpine3.17
+          - image: ruby:3.1.0-alpine3.15
             arch: arm64
 
     runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
 
     container:
       image: "${{ matrix.image }}"
-      options: --hostname "${{ matrix.hostname }}"
+      options: --hostname "${{ matrix.image }}"
     steps:
       - if: ${{ startsWith(matrix.image, 'amazonlinux') }}
         run: yum install -y tar gzip
 
       - name: Checkout ${{ github.ref }}
-        if: ${{ matrix.hostname == 'rb3.1.0-amazlinux2' }}
-        uses: actions/checkout@v3
-
-      - name: Checkout ${{ github.ref }}
-        if: ${{ matrix.hostname != 'rb3.1.0-amazlinux2' }}
         uses: actions/checkout@v4
 
       - name: Verify install
         working-directory: .github/workflows/scripts
         run: ./verify_install.sh
         shell: sh
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
+
+  # Windows and macOS (new job)
+  verify_installation_native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:                # https://github.com/actions/runner-images
+          - macos-latest   # macOS 14 Arm64
+          - windows-latest # Windows Server 2022
+        ruby-version:
+          - '3.2'
+          - '3.3'
+
+    name: ${{ matrix.os }} - Ruby ${{ matrix.ruby-version }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout ${{ github.ref }}
+        uses: actions/checkout@v4
+
+      - name: Setup
+        id: setup
+        shell: bash
+        run: |
+          dir=$(find . -iname 'solarwinds_apm.gemspec' -exec dirname {} \; 2>/dev/null || echo ".")
+          echo "gem_dir=${dir}" >> $GITHUB_OUTPUT
+          echo "cache_key=mri" >> $GITHUB_OUTPUT
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1.215.0
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          working-directory: "${{ steps.setup.outputs.gem_dir }}"
+          bundler: "latest"
+          bundler-cache: false
+
+      - name: Verify install (MacOS)
+        if: runner.os != 'Windows'
+        working-directory: .github/workflows/scripts
+        run: ./verify_install.sh
+        shell: sh
+        env:
+          BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
+
+      - name: Verify install (Windows)
+        if: runner.os == 'Windows'
+        working-directory: .github/workflows/scripts
+        shell: pwsh
+        run: |
+          if ($env:MODE -eq "RubyGem") {
+            Write-Host "Installing from RubyGem..."
+            gem install solarwinds_apm -v $env:SOLARWINDS_APM_VERSION
+            ruby test_install.rb
+          } elseif ($env:MODE -eq "GitHub") {
+            Write-Host "Installing from GitHub..."
+            $VERSION_LOWER_CASE = $env:SOLARWINDS_APM_VERSION.ToLower()
+            $gemfileContent = @"
+          source 'https://rubygems.org'
+          source 'https://rubygems.pkg.github.com/solarwinds' do
+            gem 'solarwinds_apm', '$VERSION_LOWER_CASE'
+          end
+          "@
+            $gemfileContent | Out-File -FilePath Gemfile -Encoding utf8
+            bundle install
+            bundle exec ruby test_install.rb
+          }
         env:
           BUNDLE_RUBYGEMS__PKG__GITHUB__COM: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
