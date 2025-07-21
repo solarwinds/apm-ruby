@@ -280,7 +280,6 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:tracing_mode]).must_equal :enabled
       _(SolarWindsAPM::Config[:debug_level]).must_equal 3
       _(SolarWindsAPM::Config[:log_traceId]).must_equal :never
-      _(SolarWindsAPM::Config[:log_args]).must_equal true
       _(SolarWindsAPM::Config[:tag_sql]).must_equal false
     end
 

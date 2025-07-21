@@ -39,8 +39,7 @@ if defined?(SolarWindsAPM::Config)
   SolarWindsAPM::Config[:debug_level] = 3
 
   #
-  # :debug_level will be used in the c-extension of the gem and also mapped to the
-  # Ruby logger as DISABLED, FATAL, ERROR, WARN, INFO, or DEBUG
+  # :debug_level will map the Ruby logger as DISABLED, FATAL, ERROR, WARN, INFO, or DEBUG
   # The Ruby logger can afterwards be changed to a different level, e.g:
   # SolarWindsAPM.logger.level = Logger::INFO
 
@@ -119,16 +118,6 @@ if defined?(SolarWindsAPM::Config)
   # to the agents, one such option being trigger-trace which we’ll call a trigger trace request.
   #
   SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
-
-  #
-  # Argument logging
-  #
-  # For http requests:
-  # By default the query string parameters are included in the URLs reported.
-  # Set :log_args to false and instrumentation will stop collecting
-  # and reporting query arguments from URLs.
-  #
-  SolarWindsAPM::Config[:log_args] = true
 
   #
   # Tracecontext in sql
