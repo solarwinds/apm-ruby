@@ -232,6 +232,9 @@ module SolarWindsAPM
       when :hostname_alias
         SolarWindsAPM.logger.warn { ':hostname_alias is deprecated' }
 
+      when :log_args
+        SolarWindsAPM.logger.warn { ':log_args is deprecated' }
+
       else
         @@config[key.to_sym] = value
 
