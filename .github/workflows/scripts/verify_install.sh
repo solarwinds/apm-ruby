@@ -34,10 +34,6 @@ elif [ "$MODE" = "GitHub" ]; then
   echo "GitHub"
   VERSION_LOWER_CASE=$(echo "$SOLARWINDS_APM_VERSION" | tr '[:upper:]' '[:lower:]')
   echo "source 'https://rubygems.org'" >> Gemfile
-  echo "gem 'opentelemetry-metrics-api'" >> Gemfile
-  echo "gem 'opentelemetry-metrics-sdk'" >> Gemfile
-  echo "gem 'opentelemetry-exporter-otlp'" >> Gemfile
-  echo "gem 'opentelemetry-exporter-otlp-metrics'" >> Gemfile
   echo "source 'https://rubygems.pkg.github.com/solarwinds' do" >> Gemfile
   echo "  gem 'solarwinds_apm', '${VERSION_LOWER_CASE}'" >> Gemfile
   echo "end" >> Gemfile

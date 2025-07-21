@@ -130,10 +130,6 @@ jobs:
             $VERSION_LOWER_CASE = $env:SOLARWINDS_APM_VERSION.ToLower()
             $gemfileContent = @"
           source 'https://rubygems.org'
-          gem 'opentelemetry-metrics-api'
-          gem 'opentelemetry-metrics-sdk'
-          gem 'opentelemetry-exporter-otlp'
-          gem 'opentelemetry-exporter-otlp-metrics'
           source 'https://rubygems.pkg.github.com/solarwinds' do
             gem 'solarwinds_apm', '$VERSION_LOWER_CASE'
           end
