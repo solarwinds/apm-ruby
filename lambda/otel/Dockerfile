@@ -13,24 +13,32 @@ RUN bundle config set --local path 'ruby'
 # Save gem filename if present
 RUN ls | grep solarwinds_apm-*.gem > gem_file.txt 2>/dev/null || true
 
-# Install dependencies
-RUN bundle update
+# (for local gem only)
+RUN gem_file=$(cat gem_file.txt) && \
+    if [ -f "$gem_file" ]; then \
+        gem install $gem_file; \
+        gem unpack $gem_file --target solarwinds_apm/; \
+        gem unpack $gem_file --target solarwinds_apm/ --spec; \
+        mv solarwinds_apm/*.gemspec solarwinds_apm/solarwinds_apm-*/; \
+        LOCAL_GEM_DIR=$(find solarwinds_apm -type d -name "solarwinds_apm-*"); \
+        sed -i.bak -E "s|^gem 'solarwinds_apm'.*|gem 'solarwinds_apm', path: '$LOCAL_GEM_DIR'|" Gemfile; \
+    fi
 
-# Install wget
+# install get gem
+RUN bundle install
+
 RUN sh -c '(command -v dnf && dnf install -y wget) || (command -v yum && yum install -y wget)'
 
-# Install aarch64 version of protobuf gem
 ENV ARCH=aarch64
 RUN PROTOBUF_VERSION=$(bundle exec ruby -e 'puts Gem.loaded_specs["google-protobuf"].version.to_s') && \
     wget "https://rubygems.org/downloads/google-protobuf-${PROTOBUF_VERSION}-${ARCH}-linux-gnu.gem" && \
     bundle exec gem install "google-protobuf-${PROTOBUF_VERSION}-${ARCH}-linux-gnu.gem"
 
-# Install solarwinds_apm gem (from file, if exists; for local build only)
+# (for local gem only)
 RUN gem_file=$(cat gem_file.txt) && \
     if [ -f "$gem_file" ]; then \
-        gem install $gem_file; \
-        bundle exec gem uninstall solarwinds_apm; \
-        mv /var/lang/lib/ruby/gems/${RUBY_VERSION}.0/gems/solarwinds_apm-*/ /build/layer/ruby/ruby/${RUBY_VERSION}.0/gems/; \
+        rm solarwinds_apm/solarwinds_apm-*/*.gemspec; \
+        mv /build/layer/solarwinds_apm/solarwinds_apm-*/ /build/layer/ruby/ruby/${RUBY_VERSION}.0/gems/; \
         mv /var/lang/lib/ruby/gems/${RUBY_VERSION}.0/specifications/solarwinds_apm-* /build/layer/ruby/ruby/${RUBY_VERSION}.0/specifications/; \
     fi
 

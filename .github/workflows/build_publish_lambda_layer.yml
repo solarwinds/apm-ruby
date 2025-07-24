@@ -46,6 +46,7 @@ jobs:
         env:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
+          PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
 
       - name: Show directory contents
         run: |
