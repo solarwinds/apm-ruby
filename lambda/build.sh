@@ -1,16 +1,17 @@
 #!/bin/sh
-set -e
+set -xe
 
+echo "Build from source: $SOLARWINDS_SOURCE. Publish to $PUBLISH_DEST."
 if [ $SOLARWINDS_SOURCE = 'Local' ]; then
-    cd ../
-    sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make
-    sudo gem install bundler
-    sudo echo 'gem: --no-document' >> ~/.gemrc
-    sudo bundle config set --local without 'test development'
-    sudo gem build solarwinds_apm.gemspec
-    CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
-    mv $CURRENT_GEM lambda/otel/layer/
-    cd -
+  cd ../
+  sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make
+  sudo gem install bundler
+  sudo echo 'gem: --no-document' >> ~/.gemrc
+  sudo bundle config set --local without 'test development'
+  sudo gem build solarwinds_apm.gemspec
+  CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
+  mv $CURRENT_GEM lambda/otel/layer/
+  cd -
 fi
 
 mkdir -p build
