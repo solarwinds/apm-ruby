@@ -30,6 +30,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
   it 'test_custom_instrumentation_simple_case' do
     class MyClass
       include SolarWindsAPM::API::Tracer
+
       def new_method(param1, param2)
         param1 + param2
       end
@@ -54,6 +55,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
   it 'test_custom_instrumentation_simple_case_with_custom_name_and_options' do
     class MyClass
       include SolarWindsAPM::API::Tracer
+
       def new_method(param1, param2)
         param1 + param2
       end
@@ -83,6 +85,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
 
       class << self
         include SolarWindsAPM::API::Tracer
+
         add_tracer :new_method, 'custom_name', { attributes: { 'foo' => 'bar' }, kind: :unknown }
       end
     end

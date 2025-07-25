@@ -165,19 +165,11 @@ To run the full suite:
 test/run_tests.sh
 ```
 
-To run a single test file:
+To run a single test file or single test case:
 
 ```bash
 # most tests require just the unit.gemfile dependencies
-BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
-
-BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
-```
-
-To run a specific test with 'trace_state_header' inside test case name:
-
-```bash
-BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle update
-
-BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
+bundle update
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
 ```

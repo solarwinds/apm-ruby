@@ -9,6 +9,8 @@ require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support/logger_formatter'
 require './lib/solarwinds_apm/support/logging_log_event'
 require './lib/solarwinds_apm/support/lumberjack_formatter'
+# to suppress unexpected configuration error due to undefined method `meter_provider='
+require 'opentelemetry-metrics-sdk'
 
 describe 'Trace Context in Log Test' do
   before do

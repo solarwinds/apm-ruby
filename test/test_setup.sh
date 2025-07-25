@@ -19,8 +19,8 @@ echo "Finished Setup"
 
 if [ -n "$RUN_TESTS" ]; then {
   echo "Start Run Unit Test"
-  export SW_APM_REPORTER=file
   mkdir -p log
+  bundle install
   test/run_tests.sh
   status=$?
   echo "Finished Unit Test"

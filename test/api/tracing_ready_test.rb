@@ -33,6 +33,8 @@ describe 'Test solarwinds_ready API call' do
   end
 
   it 'default_test_solarwinds_ready' do
+    skip if ENV['APM_RUBY_TEST_STAGING_KEY'].to_s.empty?
+
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)
@@ -40,6 +42,8 @@ describe 'Test solarwinds_ready API call' do
   end
 
   it 'solarwinds_ready_with_5000_wait_time' do
+    skip if ENV['APM_RUBY_TEST_STAGING_KEY'].to_s.empty?
+
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)
