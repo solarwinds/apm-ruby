@@ -18,50 +18,21 @@ require 'opentelemetry-exporter-otlp'
 require 'lumberjack'
 require 'logging'
 require 'bson'
-require 'grpc'
 require 'pp'
 
 require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
+require './lib/solarwinds_apm/constants'
+require 'opentelemetry-exporter-otlp-metrics'
 
-# simplecov coverage information
 require 'simplecov'
-require 'simplecov-console'
-SimpleCov.formatter = SimpleCov::Formatter::Console
-SimpleCov::Formatter::Console.max_rows = 15
-SimpleCov::Formatter::Console.max_lines = 5
-SimpleCov::Formatter::Console.missing_len = 20
 SimpleCov.start
 
 # needed by most tests
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
-
-# write to a file as well as STDOUT (comes in handy with docker runs)
-# This approach preserves the coloring of pass fail, which the cli
-# `./run_tests.sh 2>&1 | tee -a test/docker_test.log` does not
-if ENV['TEST_RUNS_TO_FILE']
-  FileUtils.mkdir_p('log') # create if it doesn't exist
-  $out_file = if ENV['TEST_RUNS_FILE_NAME']
-                File.new(ENV['TEST_RUNS_FILE_NAME'], 'a')
-              else
-                File.new("log/test_direct_runs_#{Time.now.strftime('%Y%m%d_%H_%M')}.log", 'a')
-              end
-  $out_file.sync = true
-  $stdout.sync = true
-
-  def $stdout.write(string)
-    $out_file.write(string)
-    super
-  end
-end
-
-# Print out a headline in with the settings used in the test run
-puts "\n\033[1m=== TEST RUN: #{RUBY_VERSION} #{File.basename(ENV.fetch('BUNDLE_GEMFILE', nil))} #{ENV.fetch('DBTYPE', nil)} #{ENV.fetch('TEST_PREPARED_STATEMENT', nil)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n" unless ENV['DBO_PATCH_TEST']
-
 ENV['RACK_ENV'] = 'test'
 Minitest::Reporters.use! Minitest::Reporters::SpecReporter.new
 
-# Bundler.require(:default, :test) # this load the solarwinds_apm library
 SolarWindsAPM.logger.level = 1
 
 # Dummy Propagator for testing
