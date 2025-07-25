@@ -6,4 +6,4 @@ source 'https://rubygems.org'
 # source 'https://rubygems.pkg.github.com/solarwinds' do
 # end
 
-gem 'solarwinds_apm', '7.0.0.prev1'
+gem 'solarwinds_apm'

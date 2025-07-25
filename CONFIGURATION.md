@@ -70,7 +70,7 @@ ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 
 ## Programmatic Configuration
 
-Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
+Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelNativeConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
 
 > [!IMPORTANT]
 > this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
@@ -159,7 +159,7 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae453341
 
 #### Limitation
 
-> [!NOTE]  
+> [!NOTE]
 > This feature currently does not support prepared statements. For `mysql2` the `query` operation is supported, for `pg` the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 ### Background Jobs
@@ -180,4 +180,14 @@ Explanation:
 
 * `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`). This allows the background processes that handle signal (trace, metrics, etc.) transmission to complete their tasks.
 
-Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
+### Proxy
+
+Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configuration file option `:http_proxy` are deprecated since telemetry is exported with standard OTLP exporters. These exporters use Ruby's `Net::HTTP`, which supports configuring an [HTTP proxy](https://docs.ruby-lang.org/en/master/Net/HTTP.html#class-Net::HTTPSession-label-Proxy+Server). The examples below set the `http_proxy` environment variable for the Ruby process to configure the proxy:
+
+```bash
+# proxy server with no authentication
+http_proxy=http://<proxyHost>:<proxyPort> ruby my.app
+
+# proxy server that requires basic authentication
+http_proxy=http://<username>:<password>@<proxyHost>:<proxyPort> ruby my.app
+```
