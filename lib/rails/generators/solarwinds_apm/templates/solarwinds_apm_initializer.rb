@@ -36,12 +36,11 @@ if defined?(SolarWindsAPM::Config)
   # -1 disabled, 0 fatal, 1 error, 2 warning, 3 info (the default), 4 debug low, 5 debug medium, 6 debug high.
   # Values out of range (< -1 or > 6) are ignored and the log level is set to the default (info).
   #
-  SolarWindsAPM::Config[:debug_level] = 3
-
-  #
   # :debug_level will map the Ruby logger as DISABLED, FATAL, ERROR, WARN, INFO, or DEBUG
   # The Ruby logger can afterwards be changed to a different level, e.g:
   # SolarWindsAPM.logger.level = Logger::INFO
+  #
+  SolarWindsAPM::Config[:debug_level] = 3
 
   #
   # Turn Tracing on or off
@@ -100,16 +99,6 @@ if defined?(SolarWindsAPM::Config)
     #     regexp: /batch/,
     #   }
   ]
-
-  #
-  # EC2 Metadata Fetching Timeout
-  #
-  # The timeout can be in the range 0 - 3000 (milliseconds)
-  # Setting to 0 milliseconds effectively disables fetching from
-  # the metadata URL (not waiting), and should only be used if
-  # not running on EC2 / Openstack to minimize agent start up time.
-  #
-  SolarWindsAPM::Config[:ec2_metadata_timeout] = 1000
 
   #
   # Trigger Trace Mode
