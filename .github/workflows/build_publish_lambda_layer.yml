@@ -154,6 +154,7 @@ jobs:
         if: ${{ github.event.inputs.solarwinds-source == 'Local' }}
         run: |
           APM_VERSION=$(ruby -r './lib/solarwinds_apm/version.rb' -e 'puts SolarWindsAPM::Version::STRING')
+          APM_VERSION=$(echo "$APM_VERSION" | tr '.' '_')
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
 
       - name: extract current solarwinds_apm version
@@ -161,6 +162,7 @@ jobs:
         run: |
           sudo apt-get update && apt-get install -y jq curl
           APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version)
+          APM_VERSION=$(echo "$APM_VERSION" | tr '.' '_')
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
 
       - name: publish lambda layer
