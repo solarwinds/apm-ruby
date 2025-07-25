@@ -32,6 +32,8 @@ describe 'HttpSampler' do
 
   describe 'valid service key' do
     it 'samples created spans' do
+      skip if ENV['APM_RUBY_TEST_STAGING_KEY'].to_s.empty?
+
       new_config = @config.dup
       sampler = SolarWindsAPM::HttpSampler.new(new_config)
       replace_sampler(sampler)

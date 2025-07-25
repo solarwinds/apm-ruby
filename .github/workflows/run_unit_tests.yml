@@ -60,4 +60,5 @@ jobs:
         export HOME=/root
         export RUN_TESTS=1
         echo "testing with ruby version: $RUBY_VERSION"
+        bundle install
         test/test_setup.sh
