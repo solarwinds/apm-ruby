@@ -150,10 +150,17 @@ jobs:
           name: ruby-layer.zip
           path: lambda
 
-      - name: extract current solarwinds_apm version
+      - name: extract current solarwinds_apm version from Local
+        if: ${{ github.event.inputs.solarwinds-source == 'Local' }}
         run: |
-          APM_VERSION=$(grep "gem 'solarwinds_apm'" lambda/otel/layer/Gemfile | awk -F"'" '{print $4}')
-          APM_VERSION="${APM_VERSION//./_}"
+          APM_VERSION=$(ruby -r './lib/solarwinds_apm/version.rb' -e 'puts SolarWindsAPM::Version::STRING')
+          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+
+      - name: extract current solarwinds_apm version
+        if: ${{ github.event.inputs.solarwinds-source == 'RubyGem' }}
+        run: |
+          sudo apt-get update && apt-get install -y jq curl
+          APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version)
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
 
       - name: publish lambda layer
