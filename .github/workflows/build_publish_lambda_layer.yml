@@ -24,6 +24,10 @@ on:
           - staging
           - production
 
+      ruby-version:
+        description: 'Supported ruby version for lambda layer'
+        default: '3.2 3.3 3.4'
+
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
@@ -47,6 +51,7 @@ jobs:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
           PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
+          ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
 
       - name: Show directory contents
         run: |
@@ -64,6 +69,10 @@ jobs:
     needs:
       - build_layer
     runs-on: ubuntu-latest
+
+    outputs:
+      apm_ruby_version: ${{ steps.version.outputs.SOLARWINDS_APM_VERSION }}
+
     strategy:
       fail-fast: false
 
@@ -76,18 +85,18 @@ jobs:
           name: ruby-layer.zip
           path: lambda
 
-      - name: extract current solarwinds_apm version from Local
-        if: ${{ github.event.inputs.solarwinds-source == 'Local' }}
-        run: |
-          APM_VERSION=$(ruby -r './lib/solarwinds_apm/version.rb' -e 'puts SolarWindsAPM::Version::STRING')
-          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
-
       - name: extract current solarwinds_apm version
-        if: ${{ github.event.inputs.solarwinds-source == 'RubyGem' }}
+        id: version
         run: |
-          sudo apt-get update && apt-get install -y jq curl
-          APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version)
+          if [ $SOLARWINDS_SOURCE = 'Local' ]; then \
+            APM_VERSION=$(ruby -r './lib/solarwinds_apm/version.rb' -e 'puts SolarWindsAPM::Version::STRING'); \
+          else \
+            apt-get update && apt-get install -y jq curl; \
+            APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version); \
+          fi
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+        env:
+          SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
 
       - name: Scan build artifact on the Portal
         id: rl-scan
@@ -150,20 +159,14 @@ jobs:
           name: ruby-layer.zip
           path: lambda
 
-      - name: extract current solarwinds_apm version from Local
-        if: ${{ github.event.inputs.solarwinds-source == 'Local' }}
+      - name: format version for aws lambda and define lambda ruby version
         run: |
-          APM_VERSION=$(ruby -r './lib/solarwinds_apm/version.rb' -e 'puts SolarWindsAPM::Version::STRING')
           APM_VERSION=$(echo "$APM_VERSION" | tr '.' '_')
           echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
-
-      - name: extract current solarwinds_apm version
-        if: ${{ github.event.inputs.solarwinds-source == 'RubyGem' }}
-        run: |
-          sudo apt-get update && apt-get install -y jq curl
-          APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version)
-          APM_VERSION=$(echo "$APM_VERSION" | tr '.' '_')
-          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+          echo "LAMBDA_RUBY_VERSION=$(echo $ALLOWED_RUBY_VERSION | sed 's/\([0-9]\+\.[0-9]\+\)/ruby\1/g')" >> $GITHUB_ENV
+        env:
+          APM_VERSION: ${{needs.reverselab_scan_layer.outputs.apm_ruby_version}}
+          ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
 
       - name: publish lambda layer
         run: |
@@ -172,7 +175,7 @@ jobs:
             --layer-name solarwinds-apm-ruby-${{ env.SOLARWINDS_APM_VERSION }} \
             --license-info "Apache 2.0" \
             --compatible-architectures x86_64 arm64 \
-            --compatible-runtimes ruby3.2 ruby3.3 ruby3.4 \
+            --compatible-runtimes ${{ env.LAMBDA_RUBY_VERSION }} \
             --zip-file fileb://ruby-layer.zip \
             --query 'LayerVersionArn' \
             --output text
