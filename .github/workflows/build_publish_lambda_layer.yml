@@ -94,7 +94,7 @@ jobs:
             apt-get update && apt-get install -y jq curl; \
             APM_VERSION=$(curl -s https://rubygems.org/api/v1/gems/solarwinds_apm.json | jq -r .version); \
           fi
-          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_ENV
+          echo "SOLARWINDS_APM_VERSION=$APM_VERSION" >> $GITHUB_OUTPUT
         env:
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
 
