@@ -128,7 +128,7 @@ fi
 # Print summary to console
 echo ""
 echo "==================== FINAL SUMMARY ===================="
-echo "Total: $total_tests | Passed: $passed_tests | Failed: $failed_tests"
+echo "Total Files: $total_tests | Passed: $passed_tests | Failed: $failed_tests"
 echo "Success rate: $((passed_tests * 100 / total_tests))%"
 
 if [[ $exit_status -eq 0 ]]; then

@@ -18,10 +18,18 @@ describe 'Test solarwinds_ready API call' do
     @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
     OpenTelemetry.tracer_provider.add_span_processor(OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter))
 
+    if ENV.key?('APM_RUBY_TEST_STAGING_KEY')
+      collector = 'https://apm.collector.st-ssp.solarwinds.com:443'
+      headers = ENV['APM_RUBY_TEST_STAGING_KEY']
+    else
+      collector = 'https://apm.collector.cloud.solarwinds.com:443'
+      headers = ENV.fetch('APM_RUBY_TEST_KEY', nil)
+    end
+
     @config = {
-      collector: 'https://apm.collector.st-ssp.solarwinds.com:443',
+      collector: collector,
       service: 'test-ruby',
-      headers: "Bearer #{ENV.fetch('APM_RUBY_TEST_STAGING_KEY', nil)}",
+      headers: "Bearer #{headers}",
       tracing_mode: true,
       trigger_trace_enabled: true
     }
@@ -33,8 +41,6 @@ describe 'Test solarwinds_ready API call' do
   end
 
   it 'default_test_solarwinds_ready' do
-    skip if ENV['APM_RUBY_TEST_STAGING_KEY'].to_s.empty?
-
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)
@@ -42,8 +48,6 @@ describe 'Test solarwinds_ready API call' do
   end
 
   it 'solarwinds_ready_with_5000_wait_time' do
-    skip if ENV['APM_RUBY_TEST_STAGING_KEY'].to_s.empty?
-
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)

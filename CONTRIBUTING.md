@@ -130,17 +130,14 @@ On the host machine, you can use the `docker_tests` Rake task to run the test su
 
 ### Run Test Suite
 
-Run the test suite:
+Run the test suite (some test cases rely on env `APM_RUBY_TEST_KEY`):
 
 ```bash
 # run tests in a ruby:3.1.0-bullseye container
-bundle exec rake docker_tests
-
-# run tests in a ruby:2.7.5 container
-bundle exec rake 'docker_tests[2.7.5]'
+bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
 
 # run tests in a ruby:3.2-alpine linux/amd64 container
-bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64]'
+bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
 ```
 
 Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
@@ -159,10 +156,10 @@ In the container, set up the environment:
 test/test_setup.sh
 ```
 
-To run the full suite:
+To run the full suite (some test cases rely on env `APM_RUBY_TEST_KEY`):
 
 ```bash
-test/run_tests.sh
+APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
 ```
 
 To run a single test file or single test case:
