@@ -122,7 +122,7 @@ jobs:
   # extract the built layer from artifacts, then publish it based on region
   publish_layer:
     needs:
-      - build_layer
+      - reverselab_scan_layer
     runs-on: ubuntu-latest
     strategy:
       matrix:
