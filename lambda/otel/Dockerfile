@@ -16,7 +16,7 @@ RUN gem_file=$(ls | grep solarwinds_apm-*.gem 2>/dev/null || true) && \
 
 RUN sh -c '(command -v dnf && dnf install -y wget) || (command -v yum && yum install -y wget)'
 
-ENV ARCH=x86_64
+ENV ARCH=aarch64
 RUN PROTOBUF_VERSION=$(GEM_PATH=ruby/ruby/${RUBY_VERSION}.0/ ruby -e 'require "google/protobuf"; puts Gem.loaded_specs["google-protobuf"].version.to_s') && \
     wget "https://rubygems.org/downloads/google-protobuf-${PROTOBUF_VERSION}-${ARCH}-linux-gnu.gem" && \
     gem install "google-protobuf-${PROTOBUF_VERSION}-${ARCH}-linux-gnu.gem" --install-dir ruby/ruby/${RUBY_VERSION}.0 --no-document
