@@ -86,10 +86,10 @@ jobs:
           BIGDECIMAL: true
 
       - name: extract layer zip from artifacts
-          uses: actions/download-artifact@v4
-          with:
-            name: ruby-layer.zip
-            path: lambda/build
+        uses: actions/download-artifact@v4
+        with:
+          name: ruby-layer.zip
+          path: lambda/build
 
       - name: Combine to single layer
         run: |
@@ -102,10 +102,10 @@ jobs:
         working-directory: lambda/build
 
       - name: Upload to artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: ruby-layer.zip
-            path: lambda/build/ruby-layer.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruby-layer.zip
+          path: lambda/build/ruby-layer.zip
 
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
