@@ -16,10 +16,18 @@ describe 'HttpSampler' do
     @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
     OpenTelemetry.tracer_provider.add_span_processor(OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter))
 
+    if ENV.key?('APM_RUBY_TEST_STAGING_KEY')
+      collector = 'https://apm.collector.st-ssp.solarwinds.com:443'
+      headers = ENV['APM_RUBY_TEST_STAGING_KEY']
+    else
+      collector = 'https://apm.collector.cloud.solarwinds.com:443'
+      headers = ENV.fetch('APM_RUBY_TEST_KEY', nil)
+    end
+
     @config = {
-      collector: 'https://apm.collector.st-ssp.solarwinds.com:443',
+      collector: collector,
       service: 'test-ruby',
-      headers: "Bearer #{ENV.fetch('APM_RUBY_TEST_STAGING_KEY', nil)}",
+      headers: "Bearer #{headers}",
       tracing_mode: true,
       trigger_trace_enabled: true
     }

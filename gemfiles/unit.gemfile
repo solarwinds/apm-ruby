@@ -1,7 +1,0 @@
-# frozen_string_literal: true
-
-source 'https://rubygems.org'
-
-eval(File.read(File.join(File.dirname(__FILE__), 'test_gems.gemfile'))) # rubocop:disable Security/Eval
-
-gem 'code-scanning-rubocop', '~> 0.6.1'

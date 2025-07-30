@@ -45,16 +45,27 @@ argument can be used to override the image architecture if multi-platform is sup
 tag: any available image tag e.g. 3.2-bookworm, 2.7.5-alpine3.15, etc. default: 3.1-bullseye.
 runtests: true or false. default: true.
 platform: run image for specified OS/Arch, e.g. linux/amd64. default: none.
+env_vars: comma-separated list of environment variables in KEY=VALUE format. default: none.
 
 Example:
-  bundle exec rake docker_tests
-  bundle exec rake 'docker_tests[3.3-rc]'
-  bundle exec rake 'docker_tests[,false]'
-  bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64]'"
-task :docker_tests, [:tag, :runtests, :platform] do |_, args|
+  bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
+  bundle exec rake 'docker_tests[3.3-rc,,,APM_RUBY_TEST_KEY=your_service_key]'
+  bundle exec rake 'docker_tests[,false,,APM_RUBY_TEST_KEY=your_service_key]'
+  bundle exec rake 'docker_tests[2.7.6-alpine3.15,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
+  bundle exec rake 'docker_tests[3.1-bullseye,true,,APM_RUBY_TEST_KEY=your_service_key]'"
+task :docker_tests, [:tag, :runtests, :platform, :env_vars] do |_, args|
   args.with_defaults(tag: '3.1-bullseye', runtests: 'true')
   opt = +' --rm --tty --volume $PWD:/code/ruby-solarwinds --workdir /code/ruby-solarwinds'
   opt << " --platform #{args.platform}" unless args.platform.to_s.empty?
+
+  # Add custom environment variables if provided
+  unless args.env_vars.to_s.empty?
+    env_vars = args.env_vars.split(',').map(&:strip)
+    env_vars.each do |env_var|
+      opt << " -e #{env_var}" if env_var.include?('=')
+    end
+  end
+
   if args.runtests == 'true'
     opt << ' --entrypoint test/test_setup.sh -e RUN_TESTS=1'
   else

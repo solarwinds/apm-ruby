@@ -9,8 +9,6 @@ ARG BUNDLE_RUBYGEMS__PKG__GITHUB__COM
 ENV TZ=America/Vancouver
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-ENV SW_APM_REPORTER=file
-
 # install OS packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

@@ -6,6 +6,9 @@
 require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp-metrics'
 require 'opentelemetry-test-helpers'
+require './lib/solarwinds_apm/sampling'
+require 'simplecov'
+SimpleCov.start
 
 ENV['OTEL_METRICS_EXPORTER'] = 'none'
 
