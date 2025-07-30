@@ -18,12 +18,11 @@ mkdir -p build
 
 for ruby_version in $ALLOWED_RUBY_VERSION; do
   if [ "$BIGDECIMAL" = 'true' ]; then
-    docker buildx --no-cache \
-                 --platform linux/arm64
-                 --build-arg RUBY_VERSION=${ruby_version} \
-                 --progress plain \
-                 -f otel/Dockerfile \
-                 -t sw-lambda-ruby-layer-${ruby_version} otel
+    docker buildx --platform linux/arm64 \
+                  --build-arg RUBY_VERSION=${ruby_version} \
+                  --progress plain \
+                  -f otel/Dockerfile \
+                  -t sw-lambda-ruby-layer-${ruby_version} otel
 
     docker run --rm -v "$(pwd)/build:/out" sw-lambda-ruby-layer-${ruby_version}
   else
