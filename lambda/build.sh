@@ -17,13 +17,24 @@ fi
 mkdir -p build
 
 for ruby_version in $ALLOWED_RUBY_VERSION; do
-  docker build --no-cache \
-               --build-arg RUBY_VERSION=${ruby_version} \
-               --progress plain \
-               -f otel/Dockerfile \
-               -t sw-lambda-ruby-layer-${ruby_version} otel
+  if [ "$BIGDECIMAL" = 'true' ]; then
+    docker buildx --no-cache \
+                 --platform linux/arm64
+                 --build-arg RUBY_VERSION=${ruby_version} \
+                 --progress plain \
+                 -f otel/Dockerfile \
+                 -t sw-lambda-ruby-layer-${ruby_version} otel
 
-  docker run --rm -v "$(pwd)/build:/out" sw-lambda-ruby-layer-${ruby_version}
+    docker run --rm -v "$(pwd)/build:/out" sw-lambda-ruby-layer-${ruby_version}
+  else
+    docker build --no-cache \
+                 --build-arg RUBY_VERSION=${ruby_version} \
+                 --progress plain \
+                 -f otel/Dockerfile \
+                 -t sw-lambda-ruby-layer-${ruby_version} otel
+
+    docker run --rm -v "$(pwd)/build:/out" sw-lambda-ruby-layer-${ruby_version}
+  fi
 done
 
 cd build/
@@ -33,7 +44,7 @@ for ruby_version in $ALLOWED_RUBY_VERSION; do
   unzip -q gems-$ruby_version.0.zip -d ruby/gems/
 done
 
-if [ $BIGDECIMAL = 'true' ]; then
+if [ "$BIGDECIMAL" = 'true' ]; then
   zip -qr bigdecimal-aarch64.zip ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/
   rm -rf ruby/
 else
