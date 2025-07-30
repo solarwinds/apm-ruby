@@ -19,7 +19,7 @@ mkdir -p build
 for ruby_version in $ALLOWED_RUBY_VERSION; do
   if [ "$BIGDECIMAL" = 'true' ]; then
     docker buildx build --no-cache \
-                 --platform linux/arm64
+                 --platform linux/arm64 \
                  --build-arg RUBY_VERSION=${ruby_version} \
                  --progress plain \
                  -f otel/Dockerfile \
