@@ -67,7 +67,7 @@ jobs:
   build_bigdecimal_arm64:
     needs:
       - build_layer
-    runs-on: ${{ fromJSON('{"group":"apm-arm-runner"}') }}
+    runs-on: [self-hosted, apm-arm-runner]
 
     steps:
       - uses: actions/checkout@v4
