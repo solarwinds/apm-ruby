@@ -67,7 +67,7 @@ jobs:
   build_bigdecimal_arm64:
     needs:
       - build_layer
-    runs-on: apm-arm-runner
+    runs-on: ${{ fromJSON('{"group":"apm-arm-runner"}') }}
 
     steps:
       - uses: actions/checkout@v4
@@ -85,27 +85,27 @@ jobs:
           ALLOWED_RUBY_VERSION: '3.4'
           BIGDECIMAL: true
 
-    - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ruby-layer.zip
-          path: lambda/build
+      - name: extract layer zip from artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: ruby-layer.zip
+            path: lambda/build
 
-    - name: Combine to single layer
-      run: |
-        unzip ruby-layer.zip
-        mkdir -p bigdecimal
-        unzip -d bigdecimal/ bigdecimal-aarch64.zip
-        mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/
-        mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/ ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
-        zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
-      working-directory: lambda/build
+      - name: Combine to single layer
+        run: |
+          unzip ruby-layer.zip
+          mkdir -p bigdecimal
+          unzip -d bigdecimal/ bigdecimal-aarch64.zip
+          mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/
+          mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/ ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
+          zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
+        working-directory: lambda/build
 
-    - name: Upload to artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruby-layer.zip
-          path: lambda/build/ruby-layer.zip
+      - name: Upload to artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: ruby-layer.zip
+            path: lambda/build/ruby-layer.zip
 
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
