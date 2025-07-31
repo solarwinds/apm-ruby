@@ -22,6 +22,7 @@ for ruby_version in $ALLOWED_RUBY_VERSION; do
                  --platform linux/arm64 \
                  --build-arg RUBY_VERSION=${ruby_version} \
                  --progress plain \
+                 --load \
                  -f otel/Dockerfile \
                  -t sw-lambda-ruby-layer-${ruby_version} otel
 
