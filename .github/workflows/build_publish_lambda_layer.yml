@@ -24,6 +24,10 @@ on:
           - staging
           - production
 
+      ruby-version:
+        description: 'Supported ruby version for lambda layer'
+        default: '3.2 3.3 3.4'
+
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
@@ -47,7 +51,7 @@ jobs:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
           PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
-          ALLOWED_RUBY_VERSION: '3.2 3.3 3.4'
+          ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
 
       - name: Show directory contents
         run: |
