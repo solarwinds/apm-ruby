@@ -112,6 +112,7 @@ jobs:
         with:
           name: ruby-layer.zip
           path: lambda/build/ruby-layer.zip
+          overwrite: true
 
   # build_bigdecimal_arm64:
   #   needs:
