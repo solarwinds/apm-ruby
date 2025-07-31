@@ -34,9 +34,8 @@ for ruby_version in $ALLOWED_RUBY_VERSION; do
 done
 
 if [ "$BIGDECIMAL" = 'true' ]; then
-  for ruby_version in $ALLOWED_RUBY_VERSION; do
-    zip -qr bigdecimal-aarch64-${ruby_version}.zip ruby/gems/${ruby_version}.0/extensions/aarch64-linux/${ruby_version}.0/bigdecimal-*/
-  done
+  zip -qr bigdecimal-aarch64.zip ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/
+  rm -rf ruby/
 else
   mkdir solarwinds-apm
   cp ../otel/layer/otel_wrapper.rb . && cp ../otel/layer/wrapper solarwinds-apm/
