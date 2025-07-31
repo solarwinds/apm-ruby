@@ -70,7 +70,7 @@ ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 
 ## Programmatic Configuration
 
-Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelNativeConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
+Many OpenTelemetry instrumentation library configurations can be set within the `SolarWindsAPM::OTelConfig.initialize_with_config ... end` block, please consult the individual [instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) README pages for the options available. Note this takes lower precedence than the [environment varable](#instrumentation-libraries) settings.
 
 > [!IMPORTANT]
 > this feature is only enabled if auto-config is disabled via `SW_APM_AUTO_CONFIGURE=false`.
@@ -83,7 +83,7 @@ Below is an example that disables Dalli instrumentation and sets the Rack instru
 
 require 'solarwinds_apm'
 
-SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|
+SolarWindsAPM::OTelConfig.initialize_with_config do |config|
   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
   config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
 end
