@@ -82,7 +82,7 @@ jobs:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
           PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
-          ALLOWED_RUBY_VERSION: '3.4'
+          ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
           BIGDECIMAL: true
 
       - name: extract layer zip from artifacts
@@ -94,12 +94,16 @@ jobs:
       - name: Combine to single layer
         run: |
           unzip ruby-layer.zip
-          mkdir -p bigdecimal
-          unzip -q -d bigdecimal/ bigdecimal-aarch64.zip
-          mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
-          mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-* ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
+          for ruby_version in $ALLOWED_RUBY_VERSION; do
+            mkdir -p bigdecimal-${ruby_version}
+            unzip -q -d bigdecimal-${ruby_version}/ bigdecimal-aarch64-${ruby_version}.zip
+            mkdir -p ruby/gems/${ruby_version}.0/extensions/aarch64-linux/${ruby_version}.0/
+            mv bigdecimal-${ruby_version}/ruby/gems/${ruby_version}.0/extensions/aarch64-linux/${ruby_version}.0/bigdecimal-* ruby/gems/${ruby_version}.0/extensions/aarch64-linux/${ruby_version}.0/
+          done
           zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
         working-directory: lambda/build
+        env:
+          ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
 
       - name: Upload to artifact
         uses: actions/upload-artifact@v4
