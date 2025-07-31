@@ -102,8 +102,8 @@ jobs:
           unzip ruby-layer.zip
           mkdir -p bigdecimal
           unzip -d bigdecimal/ bigdecimal-aarch64.zip
-          mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/
-          mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/ ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
+          mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
+          mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-* ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
           zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
         working-directory: lambda/build
 
