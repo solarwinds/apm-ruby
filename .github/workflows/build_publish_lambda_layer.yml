@@ -24,10 +24,6 @@ on:
           - staging
           - production
 
-      ruby-version:
-        description: 'Supported ruby version for lambda layer'
-        default: '3.2 3.3 3.4'
-
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
@@ -51,7 +47,7 @@ jobs:
           GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
           PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
-          ALLOWED_RUBY_VERSION: '3.4'
+          ALLOWED_RUBY_VERSION: '3.2 3.3 3.4'
 
       - name: Show directory contents
         run: |
@@ -101,7 +97,7 @@ jobs:
         run: |
           unzip ruby-layer.zip
           mkdir -p bigdecimal
-          unzip -d bigdecimal/ bigdecimal-aarch64.zip
+          unzip -q -d bigdecimal/ bigdecimal-aarch64.zip
           mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
           mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-* ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
           zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
@@ -114,52 +110,8 @@ jobs:
           path: lambda/build/ruby-layer.zip
           overwrite: true
 
-  # build_bigdecimal_arm64:
-  #   needs:
-  #     - build_layer
-  #   runs-on: [self-hosted, apm-arm-runner]
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Build ruby lambda layer on arm64 machine
-  #       run: |
-  #         uname -a
-  #         ./build.sh
-  #       shell: bash
-  #       working-directory: lambda/
-  #       env:
-  #         GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
-  #         SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
-  #         PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
-  #         ALLOWED_RUBY_VERSION: '3.4'
-  #         BIGDECIMAL: true
-
-  #     - name: extract layer zip from artifacts
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: ruby-layer.zip
-  #         path: lambda/build
-
-  #     - name: Combine to single layer
-  #       run: |
-  #         unzip ruby-layer.zip
-  #         mkdir -p bigdecimal
-  #         unzip -d bigdecimal/ bigdecimal-aarch64.zip
-  #         mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/
-  #         mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/ ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
-  #         zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
-  #       working-directory: lambda/build
-
-  #     - name: Upload to artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ruby-layer.zip
-  #         path: lambda/build/ruby-layer.zip
-
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
-    if: false  # Disable this job
     needs:
       - build_bigdecimal_arm64
     runs-on: ubuntu-latest
@@ -213,7 +165,6 @@ jobs:
 
   # extract the built layer from artifacts, then publish it based on region
   publish_layer:
-    if: false  # Disable this job
     needs:
       - reverselab_scan_layer
     runs-on: ubuntu-latest
