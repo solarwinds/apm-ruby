@@ -12,8 +12,8 @@ require_relative 'opentelemetry'
 require_relative 'sampling'
 
 module SolarWindsAPM
-  # OTelNativeConfig module
-  module OTelNativeConfig
+  # OTelConfig module
+  module OTelConfig
     @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = false
@@ -151,7 +151,7 @@ module SolarWindsAPM
     #
     # Default using the use_all to load all instrumentation
     # But with specific instrumentation disabled, use {:enabled: false} in config
-    # SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|
+    # SolarWindsAPM::OTelConfig.initialize_with_config do |config|
     #   config["OpenTelemetry::Instrumentation::Rack"]  = {"a" => "b"}
     #   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled: false}
     #   config["RESOURCE_ATTRIBUTES"] = ::OpenTelemetry::Resource::Detector::GoogleCloudPlatform.detect

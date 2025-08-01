@@ -21,11 +21,11 @@ begin
 
   begin
     require 'solarwinds_apm/config'
-    require 'solarwinds_apm/otel_native_config'
+    require 'solarwinds_apm/otel_config'
 
     if ENV['SW_APM_AUTO_CONFIGURE'] != 'false'
-      SolarWindsAPM::OTelNativeConfig.initialize
-      if SolarWindsAPM::OTelNativeConfig.agent_enabled
+      SolarWindsAPM::OTelConfig.initialize
+      if SolarWindsAPM::OTelConfig.agent_enabled
         SolarWindsAPM.logger.info '==================================================================='
         SolarWindsAPM.logger.info "Ruby #{RUBY_VERSION} on platform #{RUBY_PLATFORM}."
         SolarWindsAPM.logger.info "Current solarwinds_apm version: #{SolarWindsAPM::Version::STRING}."
@@ -43,7 +43,7 @@ begin
       SolarWindsAPM.logger.warn '=============================================================='
       SolarWindsAPM.logger.warn 'SW_APM_AUTO_CONFIGURE set to false.'
       SolarWindsAPM.logger.warn 'You need to initialize Ruby library in application with'
-      SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|'
+      SolarWindsAPM.logger.warn 'SolarWindsAPM::OTelConfig.initialize_with_config do |config|'
       SolarWindsAPM.logger.warn '  # ... your configuration code'
       SolarWindsAPM.logger.warn 'end'
       SolarWindsAPM.logger.warn 'See: https://github.com/solarwinds/apm-ruby/blob/main/CONFIGURATION.md#in-code-configuration'
