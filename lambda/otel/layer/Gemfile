@@ -1,9 +1,0 @@
-# frozen_string_literal: true
-
-source 'https://rubygems.org'
-
-## keep in case we need custom packages again
-# source 'https://rubygems.pkg.github.com/solarwinds' do
-# end
-
-gem 'solarwinds_apm'

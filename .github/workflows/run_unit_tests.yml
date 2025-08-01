@@ -10,6 +10,7 @@ on:
     paths-ignore:
       - 'test/Dockerfile'
       - '.github/*'
+      - 'lambda/*'
   workflow_dispatch:
 
 jobs:
