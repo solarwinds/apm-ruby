@@ -36,12 +36,19 @@ jobs:
   # build layer on arm64 and amd64, then upload to artifacts
   # act -j build_layer --container-architecture linux/arm64
   build_layer:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - arm64
+
+    runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build ruby lambda layer
+      - name: Build ruby lambda layer on ${{ matrix.arch }}
         run: |
           uname -a
           ./build.sh
@@ -52,6 +59,7 @@ jobs:
           SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
           PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
           ALLOWED_RUBY_VERSION: ${{ github.event.inputs.ruby-version }}
+          ARCHITECTURE: ${{ matrix.arch }}
 
       - name: Show directory contents
         run: |
@@ -61,57 +69,20 @@ jobs:
       - name: Upload to artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ruby-layer.zip
-          path: lambda/build/ruby-layer.zip
-
-  build_bigdecimal_arm64:
-    needs:
-      - build_layer
-    runs-on: ubuntu-24.04-arm
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build ruby lambda layer on arm64 machine
-        run: |
-          uname -a
-          ./build.sh
-        shell: bash
-        working-directory: lambda/
-        env:
-          GITHUB_RUBY_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
-          SOLARWINDS_SOURCE: ${{ github.event.inputs.solarwinds-source }}
-          PUBLISH_DEST: ${{ github.event.inputs.publish-dest }}
-          ALLOWED_RUBY_VERSION: '3.4'
-          BIGDECIMAL: true
-
-      - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ruby-layer.zip
-          path: lambda/build
-
-      - name: Combine to single layer
-        run: |
-          unzip ruby-layer.zip
-          mkdir -p bigdecimal
-          unzip -q -d bigdecimal/ bigdecimal-aarch64.zip
-          mkdir -p ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
-          mv bigdecimal/ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-* ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/
-          zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
-        working-directory: lambda/build
-
-      - name: Upload to artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ruby-layer.zip
-          path: lambda/build/ruby-layer.zip
-          overwrite: true
+          name: ruby-layer-${{ matrix.arch }}.zip
+          path: lambda/build/ruby-layer-${{ matrix.arch }}.zip
 
   # extract the built layer from artifacts, then scan it with reverselab
   reverselab_scan_layer:
     needs:
-      - build_bigdecimal_arm64
+      - build_layer
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64
+          - arm64
+
     runs-on: ubuntu-latest
 
     outputs:
@@ -123,7 +94,7 @@ jobs:
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ruby-layer.zip
+          name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda
 
       - name: extract current solarwinds_apm version
@@ -153,7 +124,7 @@ jobs:
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds
           rl-portal-group: SaaS-Agents-SWO
-          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer@${{ env.SOLARWINDS_APM_VERSION }}
+          rl-package-url: solarwinds-apm-ruby/apm-ruby-lambda-layer-${{ matrix.arch }}@${{ env.SOLARWINDS_APM_VERSION }}
 
       - name: report the scan status
         if: success() || failure()
@@ -165,8 +136,8 @@ jobs:
   publish_layer:
     needs:
       - reverselab_scan_layer
-    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         aws_region: 
           - ap-northeast-1
@@ -185,6 +156,11 @@ jobs:
           - us-east-2
           - us-west-1
           - us-west-2
+        arch:
+          - x86_64
+          - arm64
+
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -214,9 +190,9 @@ jobs:
         run: |
           cd lambda/
           aws lambda publish-layer-version \
-            --layer-name solarwinds-apm-ruby-${{ env.SOLARWINDS_APM_VERSION }} \
+            --layer-name solarwinds-apm-ruby-${{ matrix.arch }}-${{ env.SOLARWINDS_APM_VERSION }} \
             --license-info "Apache 2.0" \
-            --compatible-architectures x86_64 arm64 \
+            --compatible-architectures ${{ matrix.arch }} \
             --compatible-runtimes ${{ env.LAMBDA_RUBY_VERSION }} \
             --zip-file fileb://ruby-layer.zip \
             --query 'LayerVersionArn' \
@@ -224,7 +200,7 @@ jobs:
 
       - name: grant permissions to public for the published layer
         run: |
-          layer_name=solarwinds-apm-ruby-${{ env.SOLARWINDS_APM_VERSION }}
+          layer_name=solarwinds-apm-ruby-${{ matrix.arch }}-${{ env.SOLARWINDS_APM_VERSION }}
           latest_version=$(aws lambda list-layer-versions --layer-name $layer_name | jq -r '.LayerVersions | max_by(.Version) | .Version')
           aws lambda add-layer-version-permission \
             --layer-name $layer_name \

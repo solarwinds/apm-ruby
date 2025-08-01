@@ -33,11 +33,6 @@ for ruby_version in $ALLOWED_RUBY_VERSION; do
   unzip -q gems-$ruby_version.0.zip -d ruby/gems/
 done
 
-if [ "$BIGDECIMAL" = 'true' ]; then
-  zip -qr bigdecimal-aarch64.zip ruby/gems/3.4.0/extensions/aarch64-linux/3.4.0/bigdecimal-*/
-  rm -rf ruby/
-else
-  mkdir solarwinds-apm
-  cp ../otel/layer/otel_wrapper.rb . && cp ../otel/layer/wrapper solarwinds-apm/
-  zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
-fi
+mkdir solarwinds-apm
+cp ../otel/layer/otel_wrapper.rb . && cp ../otel/layer/wrapper solarwinds-apm/
+zip -qr ruby-layer-${ARCHITECTURE}.zip ruby/ solarwinds-apm/ otel_wrapper.rb
