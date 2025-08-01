@@ -119,7 +119,7 @@ jobs:
 
         uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
         with:
-          artifact-to-scan: ./lambda/ruby-layer.zip
+          artifact-to-scan: ./lambda/ruby-layer-${{ matrix.arch }}.zip
           rl-verbose: true
           rl-portal-server: solarwinds
           rl-portal-org: SolarWinds
@@ -174,7 +174,7 @@ jobs:
       - name: extract layer zip from artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ruby-layer.zip
+          name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda
 
       - name: format version for aws lambda and define lambda ruby version
@@ -194,7 +194,7 @@ jobs:
             --license-info "Apache 2.0" \
             --compatible-architectures ${{ matrix.arch }} \
             --compatible-runtimes ${{ env.LAMBDA_RUBY_VERSION }} \
-            --zip-file fileb://ruby-layer.zip \
+            --zip-file fileb://ruby-layer-${{ matrix.arch }}.zip \
             --query 'LayerVersionArn' \
             --output text
 
