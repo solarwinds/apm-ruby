@@ -1,21 +1,22 @@
 #!/bin/sh
-set -e
+set -xe
 
+echo "Build from source: $SOLARWINDS_SOURCE. Publish to $PUBLISH_DEST."
 if [ $SOLARWINDS_SOURCE = 'Local' ]; then
-    cd ../
-    sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make
-    sudo gem install bundler
-    sudo echo 'gem: --no-document' >> ~/.gemrc
-    sudo bundle config set --local without 'test development'
-    sudo gem build solarwinds_apm.gemspec
-    CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
-    mv $CURRENT_GEM lambda/otel/layer/
-    cd -
+  cd ../
+  sudo apt-get update && sudo apt-get install -y --no-install-recommends ruby ruby-dev g++ make
+  sudo gem install bundler
+  sudo echo 'gem: --no-document' >> ~/.gemrc
+  sudo bundle config set --local without 'test development'
+  sudo gem build solarwinds_apm.gemspec
+  CURRENT_GEM=$(ls | grep solarwinds_apm-*.gem)
+  mv $CURRENT_GEM lambda/otel/layer/
+  cd -
 fi
 
 mkdir -p build
 
-for ruby_version in 3.2 3.3 3.4; do
+for ruby_version in $ALLOWED_RUBY_VERSION; do
   docker build --no-cache \
                --build-arg RUBY_VERSION=${ruby_version} \
                --progress plain \
@@ -26,7 +27,12 @@ for ruby_version in 3.2 3.3 3.4; do
 done
 
 cd build/
-mkdir solarwinds-apm && mkdir ruby && mkdir ruby/gems
-unzip -q gems-3.2.0.zip -d ruby/gems/ && unzip -q gems-3.3.0.zip -d ruby/gems/ && unzip -q gems-3.4.0.zip -d ruby/gems/
+mkdir -p ruby/gems
+
+for ruby_version in $ALLOWED_RUBY_VERSION; do
+  unzip -q gems-$ruby_version.0.zip -d ruby/gems/
+done
+
+mkdir solarwinds-apm
 cp ../otel/layer/otel_wrapper.rb . && cp ../otel/layer/wrapper solarwinds-apm/
-zip -qr ruby-layer.zip ruby/ solarwinds-apm/ otel_wrapper.rb
+zip -qr ruby-layer-${ARCHITECTURE}.zip ruby/ solarwinds-apm/ otel_wrapper.rb
