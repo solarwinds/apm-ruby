@@ -5,10 +5,7 @@ source 'https://rubygems.org'
 gem 'rake'
 
 group :development, :test do
-  if RUBY_VERSION < '3.0.0'
-    gem 'ffi', '<= 1.16.3' # set this version due to ffi 1.17.0 need rubygems version > 3 (https://rubygems.org/gems/ffi/versions/1.17.0-arm-linux-musl)
-    gem 'google-protobuf', '< 3.25.4'
-  elsif RUBY_VERSION < '3.1.0'
+  if RUBY_VERSION < '3.1.0'
     gem 'ffi', '<= 1.17'
   else
     gem 'ffi'
