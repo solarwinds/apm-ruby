@@ -19,11 +19,11 @@ group :development, :test do
   gem 'logging'
   gem 'lumberjack'
   gem 'memory_profiler'
-  gem 'minitest', '< 5.25.0'
+  gem 'minitest', '< 5.26.0'
   gem 'minitest-debugger', require: false
   gem 'minitest-focus', '>= 1.1.2'
   gem 'minitest-hooks', '>= 1.5.0'
-  gem 'minitest-reporters', '< 1.0.18'
+  gem 'minitest-reporters', '< 1.7.2'
   gem 'mocha'
   gem 'rack-cache'
   gem 'rack-test'
