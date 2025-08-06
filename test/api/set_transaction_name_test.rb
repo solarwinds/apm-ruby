@@ -6,7 +6,7 @@
 require 'minitest_helper'
 require_relative '../../lib/solarwinds_apm/config'
 require_relative '../../lib/solarwinds_apm/support/txn_name_manager'
-require_relative '../../lib/solarwinds_apm/otel_native_config'
+require_relative '../../lib/solarwinds_apm/otel_config'
 
 # BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/api/set_transaction_name_test.rb
 describe 'SolarWinds Set Transaction Name Test' do
@@ -14,8 +14,8 @@ describe 'SolarWinds Set Transaction Name Test' do
     @span = create_span
     @dummy_span = create_span
     @dummy_span.context.instance_variable_set(:@span_id, 'fake_span_id') # with fake span_id, should still find the right root span
-    SolarWindsAPM::OTelNativeConfig.initialize
-    @solarwinds_processor = SolarWindsAPM::OTelNativeConfig[:metrics_processor]
+    SolarWindsAPM::OTelConfig.initialize
+    @solarwinds_processor = SolarWindsAPM::OTelConfig[:metrics_processor]
   end
 
   after do

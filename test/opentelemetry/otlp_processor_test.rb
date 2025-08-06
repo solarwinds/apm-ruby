@@ -6,9 +6,8 @@
 require 'minitest_helper'
 require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/opentelemetry'
-require './lib/solarwinds_apm/constants'
 require './lib/solarwinds_apm/support/txn_name_manager'
-require './lib/solarwinds_apm/otel_native_config'
+require './lib/solarwinds_apm/otel_config'
 require './lib/solarwinds_apm/api'
 
 describe 'SolarWindsOTLPProcessor' do

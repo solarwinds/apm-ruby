@@ -4,7 +4,6 @@
 # All rights reserved.
 
 require 'minitest_helper'
-# require './lib/solarwinds_apm/logger'
 require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support/service_key_checker'
 

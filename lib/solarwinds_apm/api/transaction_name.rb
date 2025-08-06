@@ -41,7 +41,7 @@ module SolarWindsAPM
         status = true
         if ENV.fetch('SW_APM_ENABLED', 'true') == 'false'
           SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] SolarWindsAPM is in disabled or noop mode." }
-        elsif SolarWindsAPM::OTelNativeConfig[:metrics_processor].nil?
+        elsif SolarWindsAPM::OTelConfig[:metrics_processor].nil?
           SolarWindsAPM.logger.warn do
             "[#{name}/#{__method__}] Set transaction name failed: Solarwinds processor is missing. Noop mode."
           end
@@ -51,7 +51,7 @@ module SolarWindsAPM
           end
           status = false
         else
-          solarwinds_processor = SolarWindsAPM::OTelNativeConfig[:metrics_processor]
+          solarwinds_processor = SolarWindsAPM::OTelConfig[:metrics_processor]
           current_span = ::OpenTelemetry::Trace.current_span
 
           if current_span.context.valid?

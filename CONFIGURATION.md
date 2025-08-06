@@ -83,7 +83,7 @@ Below is an example that disables Dalli instrumentation and sets the Rack instru
 
 require 'solarwinds_apm'
 
-SolarWindsAPM::OTelNativeConfig.initialize_with_config do |config|
+SolarWindsAPM::OTelConfig.initialize_with_config do |config|
   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
   config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
 end
@@ -123,7 +123,6 @@ Environment Variable | Config File Key | Description | Default
 `SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
 `SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
 `SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
-N/A | `:log_args` | Enable/disable the collection of URL query parameters, set to boolean false to disable. | true
 N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
 N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
 N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None
@@ -160,7 +159,7 @@ SELECT * FROM SAMPLE_TABLE WHERE user_id = 1; /* traceparent=7435a9fe510ae453341
 
 #### Limitation
 
-> [!NOTE]  
+> [!NOTE]
 > This feature currently does not support prepared statements. For `mysql2` the `query` operation is supported, for `pg` the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 ### Background Jobs
@@ -181,4 +180,14 @@ Explanation:
 
 * `RUN_AT_EXIT_HOOKS`: This option, provided by Resque, ensures that the forked processes shut down gracefully (i.e., no immediate `exit!`). This allows the background processes that handle signal (trace, metrics, etc.) transmission to complete their tasks.
 
-Additionally, you need to configure the Resque initializer in your Rails application by adding the following code to `config/initializers/resque.rb`. It's recommended to have a upper bound time (e.g. 8 seconds) to avoid infinited loop if something wrong with `solarwinds_apm` initialization.
+### Proxy
+
+Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configuration file option `:http_proxy` are deprecated since telemetry is exported with standard OTLP exporters. These exporters use Ruby's `Net::HTTP`, which supports configuring an [HTTP proxy](https://docs.ruby-lang.org/en/master/Net/HTTP.html#class-Net::HTTPSession-label-Proxy+Server). The examples below set the `http_proxy` environment variable for the Ruby process to configure the proxy:
+
+```bash
+# proxy server with no authentication
+http_proxy=http://<proxyHost>:<proxyPort> ruby my.app
+
+# proxy server that requires basic authentication
+http_proxy=http://<username>:<password>@<proxyHost>:<proxyPort> ruby my.app
+```
