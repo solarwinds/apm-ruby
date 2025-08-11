@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda
@@ -172,7 +172,7 @@ jobs:
           aws-region: ${{ matrix.aws_region }}
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda
