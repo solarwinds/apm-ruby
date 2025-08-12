@@ -64,7 +64,7 @@ jobs:
         run: yum install -y tar gzip
 
       - name: Checkout ${{ github.ref }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Verify install
         working-directory: .github/workflows/scripts
@@ -90,7 +90,7 @@ jobs:
 
     steps:
       - name: Checkout ${{ github.ref }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup
         id: setup
