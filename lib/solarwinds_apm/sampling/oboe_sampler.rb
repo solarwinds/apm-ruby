@@ -327,7 +327,7 @@ module SolarWindsAPM
 
     def sw_from_span_and_decision(parent_span, otel_decision)
       trace_flag = otel_decision == OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE ? '01' : '00'
-      [parent_span.context.hex_span_id, trace_flag].join('-')
+      "#{parent_span.context.hex_span_id}-#{trace_flag}"
     end
 
     def get_settings(params)

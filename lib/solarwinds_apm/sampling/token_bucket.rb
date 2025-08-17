@@ -86,6 +86,8 @@ module SolarWindsAPM
     # Attempts to consume tokens from the bucket
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
+    # we may need to include thread-safety here since sampler is shared across threads
+    # and we may have multiple threads trying to consume tokens at the same time
     def consume(token = 1)
       if @tokens >= token
         self.tokens = @tokens - token

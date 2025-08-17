@@ -66,9 +66,14 @@ module SolarWindsAPM
         @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
 
         response = fetch_with_timeout(@setting_url)
-        parsed = response.nil? ? nil : JSON.parse(response.body)
 
-        @logger.debug { "parsed settings in json: #{parsed.inspect}" }
+        begin
+          parsed = response&.body ? JSON.parse(response.body) : nil
+          @logger.debug { "parsed settings in json: #{parsed.inspect}" }
+        rescue JSON::ParserError => e
+          @logger.warn { "JSON parsing error: #{e.message}" }
+          parsed = nil
+        end
 
         if update_settings(parsed)
           # update the settings before the previous ones expire with some time to spare

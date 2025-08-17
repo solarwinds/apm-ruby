@@ -22,7 +22,7 @@ module SolarWindsAPM
         flags |= SolarWindsAPM::Flags::OVERRIDE
       end
 
-      remote.dup.tap { |merged| merged[:flags] = flags }
+      remote.merge(flags: flags)
     end
   end
 end
