@@ -17,13 +17,13 @@ module SolarWindsAPM
     def self.parse_trace_options(header, logger)
       trace_options = TriggerTraceOptions.new(nil, nil, nil, {}, [], TraceOptionsResponse.new(nil, nil, []))
 
-      kvs = header.split(';').map do |kv|
+      kvs = header.split(';').filter_map do |kv|
         key, *values = kv.split('=').map(&:strip)
+        next if key.nil? || key.empty?
+
         value = values.any? ? values.join('=') : nil
         [key, value]
       end
-
-      kvs.reject! { |key, _| key.nil? || key.empty? }
 
       kvs.each do |k, v|
         case k

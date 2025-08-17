@@ -21,15 +21,16 @@ module SolarWindsAPM
       #
       # === Example:
       #
-      #   class DogfoodsController < ApplicationController
+      #   class OrdersController < ApplicationController
       #
       #     def create
-      #       @dogfood = Dogfood.new(params.permit(:brand, :name))
-      #       @dogfood.save
+      #       @order = Order.new(params.permit(:item, :quantity))
+      #       if @order.save
+      #         custom_name = "orderscontroller.create_for_#{params[:item]}"
+      #         SolarWindsAPM::API.set_transaction_name(custom_name)
+      #       end
       #
-      #       SolarWindsAPM::API.set_transaction_name("dogfoodscontroller.create_for_#{params[:brand]}")
-      #
-      #       redirect_to @dogfood
+      #       redirect_to @order
       #     end
       #
       #   end

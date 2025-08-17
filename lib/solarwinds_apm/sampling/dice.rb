@@ -14,6 +14,7 @@ module SolarWindsAPM
     def initialize(settings)
       @scale = settings[:scale]
       @rate = settings[:rate] || 0
+      @random_generator = Random.new
     end
 
     def update(settings)
@@ -23,7 +24,7 @@ module SolarWindsAPM
 
     # return Boolean
     def roll
-      (rand * @scale) < @rate
+      (@random_generator.rand * @scale) < @rate
     end
 
     def rate=(rate)
