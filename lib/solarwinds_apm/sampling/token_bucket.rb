@@ -72,8 +72,11 @@ module SolarWindsAPM
       @rate = [0, rate].max
     end
 
+    # self.interval= sets the @interval and @sleep_interval
+    # @sleep_interval is used in the timer thread to sleep between replenishing the bucket
     def interval=(interval)
       @interval = interval.clamp(0, MAX_INTERVAL)
+      @sleep_interval = @interval / 1000.0
     end
 
     def tokens=(tokens)
@@ -99,7 +102,7 @@ module SolarWindsAPM
       @timer = Thread.new do
         loop do
           task
-          sleep(@interval / 1000.0)
+          sleep(@sleep_interval)
         end
       end
     end

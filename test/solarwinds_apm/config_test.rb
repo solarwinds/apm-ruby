@@ -85,13 +85,13 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:dummy_key]).must_equal :enabled
     end
 
-    it 'with nil env key, use config file configuration (disabled)' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, :disabled, :enabled)
+    it 'with empty env key, use config file configuration (disabled)' do
+      SolarWindsAPM::Config.enable_disable_config('', :dummy_key, :disabled, :enabled)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal :disabled
     end
 
-    it 'with nil env key, use config file configuration (enabled)' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, :enabled, :enabled)
+    it 'with empty env key, use config file configuration (enabled)' do
+      SolarWindsAPM::Config.enable_disable_config('', :dummy_key, :enabled, :enabled)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal :enabled
     end
 
@@ -168,20 +168,20 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
-    it 'with nil env, config env true, use default false, should be true' do
+    it 'with empty env, config env true, use default false, should be true' do
       ENV['DUMMY_KEY'] = 'true'
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, true, false, bool: true)
+      SolarWindsAPM::Config.enable_disable_config('', :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
-    it 'with nil env, empty config env, use default false, should be false' do
+    it 'with empty env, empty config env, use default false, should be false' do
       ENV['DUMMY_KEY'] = ''
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', false, bool: true)
+      SolarWindsAPM::Config.enable_disable_config('', :dummy_key, '', false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
-    it 'with nil env, empty config env, use default true, should be true' do
-      SolarWindsAPM::Config.enable_disable_config(nil, :dummy_key, '', true, bool: true)
+    it 'with empty env, empty config env, use default true, should be true' do
+      SolarWindsAPM::Config.enable_disable_config('', :dummy_key, '', true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
   end

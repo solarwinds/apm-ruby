@@ -52,9 +52,7 @@ module SolarWindsAPM
           txn_name_exist = true
           @transaction_name[txn_name].exit
         end
-      end
 
-      @mutex.synchronize do
         if txn_name_exist || @transaction_name.size < MAX_CARDINALITY
           @cache[key] = txn_name
           @transaction_name[txn_name] = Thread.new { cleanup_txn(key, txn_name) }
