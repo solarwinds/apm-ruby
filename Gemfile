@@ -5,10 +5,7 @@ source 'https://rubygems.org'
 gem 'rake'
 
 group :development, :test do
-  if RUBY_VERSION < '3.0.0'
-    gem 'ffi', '<= 1.16.3' # set this version due to ffi 1.17.0 need rubygems version > 3 (https://rubygems.org/gems/ffi/versions/1.17.0-arm-linux-musl)
-    gem 'google-protobuf', '< 3.25.4'
-  elsif RUBY_VERSION < '3.1.0'
+  if RUBY_VERSION < '3.1.0'
     gem 'ffi', '<= 1.17'
   else
     gem 'ffi'
@@ -22,11 +19,11 @@ group :development, :test do
   gem 'logging'
   gem 'lumberjack'
   gem 'memory_profiler'
-  gem 'minitest', '< 5.25.0'
+  gem 'minitest', '< 5.26.0'
   gem 'minitest-debugger', require: false
   gem 'minitest-focus', '>= 1.1.2'
   gem 'minitest-hooks', '>= 1.5.0'
-  gem 'minitest-reporters', '< 1.0.18'
+  gem 'minitest-reporters', '< 1.7.2'
   gem 'mocha'
   gem 'rack-cache'
   gem 'rack-test'
