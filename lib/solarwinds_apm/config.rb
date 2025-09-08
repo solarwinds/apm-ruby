@@ -263,9 +263,16 @@ module SolarWindsAPM
       end
 
       # `tracing: disabled` is the default; below only separate the enabled and disabled settings
-      disabled, enabled = settings.partition do |v|
-        !v.key?(:tracing) || v[:tracing] == :disabled
+      result = settings.each_with_object({ enabled: [], disabled: [] }) do |setting, acc|
+        if setting[:tracing] == :enabled
+          acc[:enabled] << setting
+        elsif !setting.key?(:tracing) || setting[:tracing] == :disabled
+          acc[:disabled] << setting
+        end
       end
+
+      enabled = result[:enabled]
+      disabled = result[:disabled]
 
       SolarWindsAPM::Config[:enabled_regexps] = compile_regexp(enabled)
       SolarWindsAPM::Config[:disabled_regexps] = compile_regexp(disabled)

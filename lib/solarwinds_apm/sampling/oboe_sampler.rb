@@ -37,6 +37,7 @@ module SolarWindsAPM
           SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL))
       }
       @settings = {} # parsed setting from swo backend
+      @settings_mutex = ::Mutex.new
 
       @buckets.each_value(&:start)
     end
@@ -298,9 +299,11 @@ module SolarWindsAPM
     def update_settings(settings)
       return unless settings[:timestamp] > (@settings[:timestamp] || 0)
 
-      @settings = settings
-      @buckets.each do |type, bucket|
-        bucket.update(@settings[:buckets][type]) if @settings[:buckets][type]
+      @settings_mutex.synchronize do
+        @settings = settings
+        @buckets.each do |type, bucket|
+          bucket.update(@settings[:buckets][type]) if @settings[:buckets][type]
+        end
       end
     end
 

@@ -22,6 +22,29 @@ module SolarWindsAPM
       @hostname = hostname
       @setting_url = URI.join(@url, "./v1/settings/#{@service}/#{@hostname}")
 
+      @pid = nil
+      @thread = nil
+
+      reset_on_fork
+    end
+
+    # restart the settings request thread after forking
+    def should_sample?(params)
+      reset_on_fork
+      super
+    end
+
+    def reset_on_fork(restart_thread: true)
+      pid = Process.pid
+      return if @pid == pid
+
+      @pid = pid
+      @thread = restart_thread ? Thread.new { work } : nil
+    rescue ThreadError => e
+      @logger.error { "Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
+    end
+
+    def work
       Thread.new { settings_request }
     end
 
