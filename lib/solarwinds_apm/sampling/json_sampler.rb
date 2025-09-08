@@ -15,11 +15,11 @@ module SolarWindsAPM
 
       @path = path || DEFAULT_PATH
       @expiry = Time.now.to_i
+      @logger.debug { "[#{self.class}/#{__method__}] JsonSampler initialized: path=#{@path}, initial_expiry=#{@expiry}" }
       loop_check
     end
 
     # only json sampler will need to check if the settings.json file
-    # updated or not from collector extention
     def should_sample?(params)
       loop_check
       super
@@ -28,25 +28,34 @@ module SolarWindsAPM
     private
 
     def loop_check
-      # Update if we're within 10s of expiry
-      return if Time.now.to_i + 10 < @expiry
+      return if Time.now.to_i + 10 < @expiry # update if we're not within 10s of expiry
 
+      unparsed = nil
       begin
         contents = File.read(@path)
         unparsed = JSON.parse(contents)
+
+        if unparsed.is_a?(Array) && unparsed.length == 1
+          @logger.debug { "[#{self.class}/#{__method__}] Invalid settings file : #{unparsed}" }
+          unparsed = nil
+        end
+
+      rescue JSON::ParserError => e
+        @logger.error { "[#{self.class}/#{__method__}] JSON parsing error in #{@path}: #{e.message}" }
       rescue StandardError => e
-        @logger.debug { "missing or invalid settings file; Error: #{e.message}" }
-        return
+        @logger.debug { "[#{self.class}/#{__method__}] Missing or invalid settings file; Error: #{e.message}" }
       end
 
-      unless unparsed.is_a?(Array) && unparsed.length == 1
-        @logger.debug { "invalid settings file : #{unparsed}" }
-        return
-      end
+      return if unparsed.nil?
 
       parsed = update_settings(unparsed.first)
-      @logger.debug { "update_settings: #{parsed}" }
-      @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i if parsed
+
+      if parsed
+        @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i
+        @logger.debug { "[#{self.class}/#{__method__}] Settings updated successfully: old_expiry=#{@expiry}, new_expiry=#{new_expiry}, parsed=#{parsed.inspect}" }
+      else
+        @logger.debug { "[#{self.class}/#{__method__}] Settings update failed, keeping current expiry: #{@expiry}" }
+      end
     end
   end
 end

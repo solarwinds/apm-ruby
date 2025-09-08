@@ -25,6 +25,8 @@ module SolarWindsAPM
       @pid = nil
       @thread = nil
 
+      @logger.debug { "[#{self.class}/#{__method__}] HttpSampler initialized: url=#{@url}, service=#{@service}, hostname=#{@hostname}, setting_url=#{@setting_url}" }
+
       reset_on_fork
     end
 
@@ -40,9 +42,9 @@ module SolarWindsAPM
 
       @pid = pid
       @thread = restart_thread ? Thread.new { work } : nil
-      @logger.debug { "Restart the settings_request thread in process: #{@pid}." }
+      @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
     rescue ThreadError => e
-      @logger.error { "Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
+      @logger.error { "[#{self.class}/#{__method__}] Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
     end
 
     def work
@@ -86,16 +88,15 @@ module SolarWindsAPM
 
     # a endless loop within a thread (non-blocking)
     def settings_request
+      @logger.debug { "[#{self.class}/#{__method__}] Starting settings request loop" }
       loop do
-        @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
-
         response = fetch_with_timeout(@setting_url)
 
         begin
           parsed = response&.body ? JSON.parse(response.body) : nil
-          @logger.debug { "parsed settings in json: #{parsed.inspect}" }
+          @logger.debug { "[#{self.class}/#{__method__}] Parsed settings in json: #{parsed.inspect}" }
         rescue JSON::ParserError => e
-          @logger.warn { "JSON parsing error: #{e.message}" }
+          @logger.warn { "[#{self.class}/#{__method__}] JSON parsing error: #{e.message}" }
           parsed = nil
         end
 
@@ -105,11 +106,11 @@ module SolarWindsAPM
           expiry_timeout = expiry - REQUEST_TIMEOUT - Time.now.to_i
           sleep([0, expiry_timeout].max)
         else
-          @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
+          @logger.warn { "[#{self.class}/#{__method__}] Retrieved sampling settings are invalid. Ensure proper configuration." }
           sleep(GET_SETTING_DURAION)
         end
       rescue StandardError => e
-        @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
+        @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
         sleep(GET_SETTING_DURAION)
       end
     end

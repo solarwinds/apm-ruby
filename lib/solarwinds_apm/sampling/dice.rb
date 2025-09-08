@@ -24,11 +24,12 @@ module SolarWindsAPM
 
     # return Boolean
     def roll
-      (@random_generator.rand * @scale) < @rate
+      rand_num = @random_generator.rand
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] rand_num=#{rand_num.round(6)}, @scale=#{@scale}, @rate=#{@rate}" }
+      (rand_num * @scale) < @rate
     end
 
     def rate=(rate)
-      # Math.max(0, Math.min(this.#scale, n))
       @rate = rate.clamp(0, @scale)
     end
   end
