@@ -166,7 +166,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: configure AWS ${{ inputs.publish-dest }} credential
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ inputs.publish-dest == 'production' && secrets.LAMBDA_PUBLISHER_ARN_PROD || inputs.publish-dest == 'staging' && secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
           aws-region: ${{ matrix.aws_region }}
