@@ -40,6 +40,7 @@ module SolarWindsAPM
 
       @pid = pid
       @thread = restart_thread ? Thread.new { work } : nil
+      @logger.debug { "Restart the settings_request thread in process: #{@pid}." }
     rescue ThreadError => e
       @logger.error { "Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
     end

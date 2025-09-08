@@ -25,8 +25,8 @@ module SolarWindsAPM
 
       def initialize(txn_manager)
         @txn_manager = txn_manager
-        @meters      = { 'sw.apm.request.metrics' => ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics') }
         @metrics     = init_response_time_metrics
+        @is_lambda   = SolarWindsAPM::Utils.determine_lambda
         @transaction_name = nil
       end
 
@@ -40,16 +40,19 @@ module SolarWindsAPM
         trace_flags = span.context.trace_flags.sampled? ? '01' : '00'
         @txn_manager&.set_root_context_h(span.context.hex_trace_id, "#{span.context.hex_span_id}-#{trace_flags}")
         span.add_attributes({ SW_IS_ENTRY_SPAN => true })
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_start end" }
       rescue StandardError => e
         SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_start error: #{e.message}" }
       end
 
       def on_finishing(span)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing span: #{span.to_span_data.inspect}" }
         return if non_entry_span(span: span)
 
         @transaction_name = calculate_transaction_names(span)
         span.set_attribute(SW_TRANSACTION_NAME, @transaction_name)
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing end" }
       end
 
       # @param [Span] span the (immutable) {Span} that just ended.
@@ -63,10 +66,9 @@ module SolarWindsAPM
         ::OpenTelemetry.meter_provider.metric_readers.each do |reader|
           reader.pull if reader.respond_to? :pull
         end
-
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish succeed" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish end" }
       rescue StandardError => e
-        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] error processing span on_finish: #{e.message}" }
+        SolarWindsAPM.logger.info { "[#{self.class}/#{__method__}] processor on_finish error: #{e.message}" }
       end
 
       # @param [optional Numeric] timeout An optional timeout in seconds.
@@ -94,7 +96,9 @@ module SolarWindsAPM
                                                   unit: 'ms')
         end
 
-        instrument = @meters['sw.apm.request.metrics'].create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.')
+        meter = ::OpenTelemetry.meter_provider.meter('sw.apm.request.metrics')
+        instrument = meter.create_histogram('trace.service.response_time', unit: 'ms', description: 'Duration of each entry span for the service, typically meaning the time taken to process an inbound request.')
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Adding ExponentialBucketHistogram for response time metrics: #{instrument.inspect}" }
         { response_time: instrument }
       end
 
@@ -104,37 +108,42 @@ module SolarWindsAPM
           SW_TRANSACTION_NAME => @transaction_name
         }
 
-        if span_http?(span)
+        is_http_span = span_http?(span)
+
+        if is_http_span
           http_status_code = get_http_status_code(span)
           meter_attrs['http.status_code'] = http_status_code if http_status_code != 0
           meter_attrs['http.method'] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
         end
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] meter_attrs: #{meter_attrs.inspect}" }
+
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] is_http_span: #{is_http_span}; meter_attrs: #{meter_attrs.inspect}" }
         meter_attrs.compact!
         meter_attrs
       end
 
       def calculate_lambda_transaction_name(span_name)
-        (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span_name || 'unknown').slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
+        txn_name = (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span_name || 'unknown').slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Lambda transaction name: #{txn_name} (from env_txn=#{ENV['SW_APM_TRANSACTION_NAME']}, lambda_func=#{ENV['AWS_LAMBDA_FUNCTION_NAME']}, span_name=#{span_name})" }
+        txn_name
       end
 
       # Get trans_name and url_tran of this span instance.
       # Predecessor order: custom SDK > env var SW_APM_TRANSACTION_NAME > automatic naming
       def calculate_transaction_names(span)
-        return calculate_lambda_transaction_name(span.name) if SolarWindsAPM::Utils.determine_lambda
+        return calculate_lambda_transaction_name(span.name) if @is_lambda
 
         trace_span_id = "#{span.context.hex_trace_id}-#{span.context.hex_span_id}"
         trans_name = @txn_manager.get(trace_span_id)
         if trans_name
-          SolarWindsAPM.logger.debug do
-            "[#{self.class}/#{__method__}] found trans name from txn_manager: #{trans_name} by #{trace_span_id}"
-          end
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Using transaction name from txn_manager: #{trans_name} (#{trace_span_id})" }
           @txn_manager.del(trace_span_id)
         elsif !ENV['SW_APM_TRANSACTION_NAME'].to_s.empty?
           trans_name = ENV.fetch('SW_APM_TRANSACTION_NAME', nil)
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Using transaction name from env var: #{trans_name}" }
         else
           trans_name = span.attributes[HTTP_ROUTE] || nil
           trans_name = span.name if trans_name.to_s.empty? && span.name
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Using transaction name from span.attributes: #{span.attributes[HTTP_ROUTE]} or span.name: #{span.name}" }
         end
         trans_name.to_s.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
       end
