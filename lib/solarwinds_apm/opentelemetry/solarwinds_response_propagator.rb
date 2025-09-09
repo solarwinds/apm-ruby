@@ -66,9 +66,8 @@ module SolarWindsAPM
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED,
                                      SolarWindsAPM::Constants::INTL_SWO_EQUALS)
           sanitized = sanitized.gsub(':', SolarWindsAPM::Constants::INTL_SWO_EQUALS)
-          sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
-                                     SolarWindsAPM::Constants::INTL_SWO_COMMA)
-          sanitized
+          sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
+                         SolarWindsAPM::Constants::INTL_SWO_COMMA)
         end
       end
     end

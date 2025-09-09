@@ -39,7 +39,6 @@ module SolarWindsAPM
           @logger.debug { "[#{self.class}/#{__method__}] Invalid settings file : #{unparsed}" }
           unparsed = nil
         end
-
       rescue JSON::ParserError => e
         @logger.error { "[#{self.class}/#{__method__}] JSON parsing error in #{@path}: #{e.message}" }
       rescue StandardError => e

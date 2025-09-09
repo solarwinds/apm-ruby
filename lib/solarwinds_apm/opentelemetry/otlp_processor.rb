@@ -123,7 +123,7 @@ module SolarWindsAPM
 
       def calculate_lambda_transaction_name(span_name)
         txn_name = (ENV['SW_APM_TRANSACTION_NAME'] || ENV['AWS_LAMBDA_FUNCTION_NAME'] || span_name || 'unknown').slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Lambda transaction name: #{txn_name} (from env_txn=#{ENV['SW_APM_TRANSACTION_NAME']}, lambda_func=#{ENV['AWS_LAMBDA_FUNCTION_NAME']}, span_name=#{span_name})" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Lambda transaction name: #{txn_name} (from env_txn=#{ENV.fetch('SW_APM_TRANSACTION_NAME', nil)}, lambda_func=#{ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)}, span_name=#{span_name})" }
         txn_name
       end
 
