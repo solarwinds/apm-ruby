@@ -9,12 +9,12 @@
 module SolarWindsAPM
   class TraceOptions
     TRIGGER_TRACE_KEY = 'trigger-trace'
-    TIMESTAMP_KEY = 'ts'
-    SW_KEYS_KEY = 'sw-keys'
-
-    CUSTOM_KEY_REGEX = /^custom-[^\s]*$/
+    TIMESTAMP_KEY     = 'ts'
+    SW_KEYS_KEY       = 'sw-keys'
+    CUSTOM_KEY_REGEX  = /^custom-[^\s]*$/
 
     def self.parse_trace_options(header, logger)
+      logger.debug { "[#{self.class}/#{__method__}] Parsing trace options header: #{header&.slice(0, 100)}..." }
       trace_options = TriggerTraceOptions.new(nil, nil, nil, {}, [], TraceOptionsResponse.new(nil, nil, []))
 
       kvs = header.split(';').filter_map do |kv|
@@ -25,47 +25,50 @@ module SolarWindsAPM
         [key, value]
       end
 
+      logger.debug { "[#{self.class}/#{__method__}] Parsed kvs #{kvs.inspect}" }
+
       kvs.each do |k, v|
         case k
         when TRIGGER_TRACE_KEY
           if v || trace_options.trigger_trace
-            logger.debug { 'invalid trace option for trigger trace' }
+            logger.debug { "[#{self.class}/#{__method__}] invalid trace option for trigger trace: value=#{v}, already_set=#{trace_options.trigger_trace}" }
             trace_options.ignored << [k, v]
             next
           end
           trace_options.trigger_trace = true
         when TIMESTAMP_KEY
           if v.nil? || trace_options.timestamp
-            logger.debug { 'invalid trace option for timestamp' }
+            logger.debug { "[#{self.class}/#{__method__}] invalid trace option for timestamp: value=#{v}, already_set=#{trace_options.timestamp}" }
             trace_options.ignored << [k, v]
             next
           end
 
           unless numeric_integer?(v)
-            logger.debug { 'invalid trace option for timestamp, should be an integer' }
+            logger.debug { "[#{self.class}/#{__method__}] invalid trace option for timestamp, should be an integer: #{v}" }
             trace_options.ignored << [k, v]
             next
           end
           trace_options.timestamp = v.to_i
         when SW_KEYS_KEY
           if v.nil? || trace_options.sw_keys
-            logger.debug { 'invalid trace option for sw keys' }
+            logger.debug { "[#{self.class}/#{__method__}] invalid trace option for sw keys: value=#{v}, already_set=#{trace_options.sw_keys}" }
             trace_options.ignored << [k, v]
             next
           end
           trace_options.sw_keys = v
         when CUSTOM_KEY_REGEX
           if v.nil? || trace_options.custom[k]
-            logger.debug { "invalid trace option for custom key #{k}" }
+            logger.debug { "[#{self.class}/#{__method__}] invalid trace option for custom key #{k}: value=#{v}, already_set=#{trace_options.custom[k]}" }
             trace_options.ignored << [k, v]
             next
           end
           trace_options.custom[k] = v
         else
+          logger.debug { "[#{self.class}/#{__method__}] Unknown key ignored: #{k}=#{v}" }
           trace_options.ignored << [k, v]
         end
       end
-
+      logger.debug { "[#{self.class}/#{__method__}] Parsing complete: trigger_trace=#{trace_options.trigger_trace}, timestamp=#{trace_options.timestamp}, sw_keys=#{trace_options.sw_keys}, custom_keys=#{trace_options.custom}, ignored=#{trace_options.ignored}" }
       trace_options
     end
 
@@ -86,15 +89,29 @@ module SolarWindsAPM
         'trigger-trace': trace_options_response.trigger_trace,
         ignored: trace_options_response.ignored.empty? ? nil : trace_options_response.ignored.join(',')
       }
-      kvs.compact.map { |k, v| "#{k}:#{v}" }.join(';')
+
+      kvs.compact!
+      result = kvs.map { |k, v| "#{k}:#{v}" }.join(';')
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Stringified trace options response: #{result}" }
+      result
     end
 
     def self.validate_signature(header, signature, key, timestamp)
-      return Auth::NO_SIGNATURE_KEY unless key
-      return Auth::BAD_TIMESTAMP unless timestamp && (Time.now.to_i - timestamp).abs <= 5 * 60
+      unless key
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Signature validation failed: no signature key available" }
+        return Auth::NO_SIGNATURE_KEY
+      end
+
+      unless timestamp && (Time.now.to_i - timestamp).abs <= 5 * 60
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Signature validation failed: bad timestamp (diff more than 300s)" }
+        return Auth::BAD_TIMESTAMP
+      end
 
       digest = OpenSSL::HMAC.hexdigest('SHA1', key, header)
-      signature == digest ? Auth::OK : Auth::BAD_SIGNATURE
+      is_valid = signature == digest
+
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Signature validation result: #{is_valid ? 'valid' : 'invalid'}" }
+      is_valid ? Auth::OK : Auth::BAD_SIGNATURE
     end
   end
 end

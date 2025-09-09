@@ -9,6 +9,7 @@
 module SolarWindsAPM
   module SamplingSettings
     def self.merge(remote, local)
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] SamplingSettings merge with remote: #{remote.inspect}; local: #{local.inspect}" }
       flags = local[:tracing_mode] || remote[:flags]
 
       if local[:trigger_mode] == :enabled
@@ -22,6 +23,7 @@ module SolarWindsAPM
         flags |= SolarWindsAPM::Flags::OVERRIDE
       end
 
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] final flags: #{flags}" }
       remote.merge(flags: flags)
     end
   end

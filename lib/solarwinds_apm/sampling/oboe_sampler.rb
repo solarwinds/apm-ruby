@@ -30,11 +30,11 @@ module SolarWindsAPM
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
         SolarWindsAPM::BucketType::DEFAULT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'DEFUALT')),
         SolarWindsAPM::BucketType::TRIGGER_RELAXED =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL)),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_RELAXED')),
         SolarWindsAPM::BucketType::TRIGGER_STRICT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL))
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_STRICT'))
       }
       @settings = {} # parsed setting from swo backend
       @settings_mutex = ::Mutex.new
@@ -321,8 +321,6 @@ module SolarWindsAPM
       end
 
       stringified_trace_options = SolarWindsAPM::TraceOptions.stringify_trace_options_response(sample_state.trace_options&.response)
-      @logger.debug { "[#{self.class}/#{__method__}] stringified_trace_options: #{stringified_trace_options}" }
-
       trace_state = trace_state.set_value('xtrace_options_response', stringified_trace_options)
       @logger.debug { "[#{self.class}/#{__method__}] new trace_state: #{trace_state.inspect}" }
       trace_state

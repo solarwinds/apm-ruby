@@ -13,17 +13,19 @@ module SolarWindsAPM
     # Maximum value of a signed 32-bit integer
     MAX_INTERVAL = (2**31) - 1
 
-    attr_reader :capacity, :rate, :interval, :tokens
+    attr_reader :capacity, :rate, :interval, :tokens, :type
 
     def initialize(token_bucket_settings)
       self.capacity = token_bucket_settings.capacity || 0
       self.rate = token_bucket_settings.rate || 0
       self.interval = token_bucket_settings.interval || MAX_INTERVAL
       self.tokens = @capacity
+      self.type = token_bucket_settings.type
       @timer = nil
     end
 
-    # used call from update_settings e.g. bucket.update(bucket_settings)
+    # oboe sampler update_settings will update the token
+    # (thread safe as update_settings is guarded by mutex from oboe sampler)
     def update(settings)
       settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_token_bucket_settings(settings)
     end
@@ -91,8 +93,10 @@ module SolarWindsAPM
     def consume(token = 1)
       if @tokens >= token
         self.tokens = @tokens - token
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Consumed #{token} from total #{@tokens} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
         true
       else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
         false
       end
     end

@@ -55,7 +55,8 @@ module SolarWindsAPM
 
   TokenBucketSettings = Struct.new(:capacity,    # Number
                                    :rate,        # Number
-                                   :interval) # Number
+                                   :interval,    # Number
+                                   :type)        # String
 
   module SampleSource
     LOCAL_DEFAULT = 2
