@@ -15,6 +15,7 @@ module SolarWindsAPM
 
       @path = path || DEFAULT_PATH
       @expiry = Time.now.to_i
+      @last_mtime = nil
       @logger.debug { "[#{self.class}/#{__method__}] JsonSampler initialized: path=#{@path}, initial_expiry=#{@expiry}" }
       loop_check
     end
@@ -27,35 +28,39 @@ module SolarWindsAPM
 
     private
 
+    # mutli-thread is rare in lambda environment,
+    # here we don't use mutex to guard the execution
     def loop_check
-      return if Time.now.to_i + 10 < @expiry # update if we're not within 10s of expiry
+      return if Time.now.to_i < @expiry - 10
 
-      unparsed = nil
+      # 1. Read and parse settings from the file.
       begin
-        contents = File.read(@path)
-        unparsed = JSON.parse(contents)
+        current_mtime = File.mtime(@path)
+        return if @last_mtime && current_mtime == @last_mtime
 
-        unless unparsed.is_a?(Array) && unparsed.length == 1
-          @logger.debug { "[#{self.class}/#{__method__}] Invalid settings file : #{unparsed}" }
-          unparsed = nil
-        else
-          @logger.debug { "[#{self.class}/#{__method__}] Parsed settings: #{unparsed}" }
-        end
+        settings_data = JSON.parse(File.read(@path))
+        @last_mtime = current_mtime
+      rescue Errno::ENOENT
+        # This is a normal condition if the file doesn't exist yet.
+        @logger.debug { "[#{self.class}##{__method__}] Settings file not found at #{@path}." }
+        return
       rescue JSON::ParserError => e
-        @logger.error { "[#{self.class}/#{__method__}] JSON parsing error in #{@path}: #{e.message}" }
-      rescue StandardError => e
-        @logger.debug { "[#{self.class}/#{__method__}] Missing or invalid settings file; Error: #{e.message}" }
+        @logger.error { "[#{self.class}##{__method__}] JSON parsing error in #{@path}: #{e.message}" }
+        return
       end
 
-      return if unparsed.nil?
+      # 2. Validate the structure of the parsed settings.
+      unless settings_data.is_a?(Array) && settings_data.length == 1
+        @logger.debug { "[#{self.class}##{__method__}] Invalid settings file content: #{settings_data.inspect}" }
+        return
+      end
 
-      parsed = update_settings(unparsed.first)
-
-      if parsed
-        @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i
-        @logger.debug { "[#{self.class}/#{__method__}] Settings updated successfully: new expiry=#{@expiry}, parsed=#{parsed.inspect}" }
+      # 3. Attempt to update the settings.
+      if (new_settings = update_settings(settings_data.first))
+        @expiry = new_settings[:timestamp].to_i + new_settings[:ttl].to_i
+        @logger.debug { "[#{self.class}##{__method__}] Settings #{new_settings} updated successfully. New expiry: #{@expiry}" }
       else
-        @logger.debug { "[#{self.class}/#{__method__}] Settings update failed, keeping current expiry: #{@expiry}" }
+        @logger.debug { "[#{self.class}##{__method__}] Settings update failed, keeping current expiry: #{@expiry}" }
       end
     end
   end

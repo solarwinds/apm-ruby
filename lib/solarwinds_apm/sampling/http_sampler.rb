@@ -24,7 +24,6 @@ module SolarWindsAPM
 
       @pid = nil
       @thread = nil
-      @thread_mutex = Mutex.new
 
       @logger.debug { "[#{self.class}/#{__method__}] HttpSampler initialized: url=#{@url}, service=#{@service}, hostname=#{@hostname}, setting_url=#{@setting_url}" }
 
@@ -39,14 +38,11 @@ module SolarWindsAPM
 
     def reset_on_fork
       pid = Process.pid
-      @thread_mutex.synchronize do
-        return if @pid == pid
+      return if @pid == pid
 
-        @thread&.kill # Safely terminate the old thread
-        @pid = pid
-        @thread = Thread.new { settings_request }
-        @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
-      end
+      @pid = pid
+      @thread = Thread.new { settings_request }
+      @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
     rescue ThreadError => e
       @logger.error { "[#{self.class}/#{__method__}] Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
     end
@@ -114,8 +110,6 @@ module SolarWindsAPM
         @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
       ensure
         sleep(sleep_duration)
-        # minitest will delay due to this.
-        # defined?(Minitest) ? sleep(1) : sleep(sleep_duration)
       end
     end
   end

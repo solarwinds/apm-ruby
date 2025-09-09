@@ -37,17 +37,23 @@ module SolarWindsAPM
       SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] enabled_regexps: #{enabled_regexps&.inspect}" }
       SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] disabled_regexps: #{disabled_regexps&.inspect}" }
 
-      return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(@url_path) }
-      return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(@url_path) }
-      return false if disabled_regexps.is_a?(Array) && disabled_regexps.any? { |regex| regex.match?(span_layer) }
-      return true if enabled_regexps.is_a?(Array) && enabled_regexps.any? { |regex| regex.match?(span_layer) }
+      return false if matches_any?(disabled_regexps, @url_path)
+      return true  if matches_any?(enabled_regexps, @url_path)
+      return false if matches_any?(disabled_regexps, span_layer)
+      return true  if matches_any?(enabled_regexps, span_layer)
 
       true
     rescue StandardError => e
       SolarWindsAPM.logger.warn do
-        "[#{self.class}/#{__method__}] Could not determine tracing status for #{kind}. #{e.inspect}. transaction_settings regexps/extensions igonred/unfiltered."
+        "[#{self.class}/#{__method__}] Could not determine tracing status for #{@kind}. #{e.inspect}. transaction_settings regexps/extensions igonred/unfiltered."
       end
       true
+    end
+
+    # Checks if a given string matches any regex in a list.
+    def matches_any?(regex_list, string_to_match)
+      return false unless regex_list.is_a?(Array)
+      regex_list.any? { |regex| regex.match?(string_to_match) }
     end
   end
 end
