@@ -35,7 +35,7 @@ module SolarWindsAPM
         contents = File.read(@path)
         unparsed = JSON.parse(contents)
 
-        if unparsed.is_a?(Array) && unparsed.length == 1
+        unless unparsed.is_a?(Array) && unparsed.length == 1
           @logger.debug { "[#{self.class}/#{__method__}] Invalid settings file : #{unparsed}" }
           unparsed = nil
         end

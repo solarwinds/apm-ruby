@@ -20,7 +20,7 @@ module SolarWindsAPM
       self.rate = token_bucket_settings.rate || 0
       self.interval = token_bucket_settings.interval || MAX_INTERVAL
       self.tokens = @capacity
-      self.type = token_bucket_settings.type
+      @type = token_bucket_settings.type
       @timer = nil
     end
 

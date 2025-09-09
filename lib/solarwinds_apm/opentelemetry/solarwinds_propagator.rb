@@ -82,14 +82,6 @@ module SolarWindsAPM
           end
         end
 
-        # Returns the predefined propagation fields. If your carrier is reused, you
-        # should delete the fields returned by this method before calling +inject+.
-        #
-        # @return [Array<String>] a list of fields that will be used by this propagator.
-        def fields
-          TRACESTATE_HEADER_NAME
-        end
-
         private
 
         def inject_extracted_header(carrier, context, getter, header, inject_key)

@@ -87,7 +87,7 @@ module SolarWindsAPM
       }
     end
 
-    def obtain_traceoptions_signature(parent_context)
+    def obtain_traceoptions_signature(context)
       header = nil
       signature = nil
       instance_variable = context&.instance_variable_get('@entries')
