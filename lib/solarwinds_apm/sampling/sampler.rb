@@ -50,7 +50,7 @@ module SolarWindsAPM
     end
 
     def resolve_tracing_mode(config)
-      return  unless config.key?(:tracing_mode) && !config[:tracing_mode].nil?
+      return unless config.key?(:tracing_mode) && !config[:tracing_mode].nil?
 
       config[:tracing_mode] ? TracingMode::ALWAYS : TracingMode::NEVER
     end
@@ -79,7 +79,7 @@ module SolarWindsAPM
     def request_headers(params)
       header, signature = obtain_traceoptions_signature(params[:parent_context])
       @logger.debug { "[#{self.class}/#{__method__}] trace_options header: #{header.inspect}, signature: #{signature.inspect} from parent_context: #{params[:parent_context].inspect}" }
-      {'X-Trace-Options' => header,'X-Trace-Options-Signature' => signature}
+      { 'X-Trace-Options' => header, 'X-Trace-Options-Signature' => signature }
     end
 
     def obtain_traceoptions_signature(context)

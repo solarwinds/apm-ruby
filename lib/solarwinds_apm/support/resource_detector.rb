@@ -170,15 +170,17 @@ module SolarWindsAPM
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
-    def self.is_number?(string)
-      true if Float(string) rescue false
+    def self.number?(string)
+      true if Float(string)
+    rescue StandardError
+      false
     end
 
     def self.safe_integer?(number)
       min_safe_integer = -((2**53) - 1)
       max_safe_integer = (2**53) - 1
-      number = number.to_i if is_number?(number)
-      number >= min_safe_integer && number <= max_safe_integer
+      number = number.to_i if number?(number)
+      number.between?(min_safe_integer, max_safe_integer)
     end
 
     def self.windows?

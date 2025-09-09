@@ -53,6 +53,7 @@ module SolarWindsAPM
     # Checks if a given string matches any regex in a list.
     def matches_any?(regex_list, string_to_match)
       return false unless regex_list.is_a?(Array)
+
       regex_list.any? { |regex| regex.match?(string_to_match) }
     end
   end
