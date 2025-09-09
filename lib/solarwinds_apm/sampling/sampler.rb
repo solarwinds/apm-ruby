@@ -121,6 +121,7 @@ module SolarWindsAPM
       parsed = parse_settings(settings)
       if parsed
         @logger.debug { "[#{self.class}/#{__method__}] Valid settings #{parsed.inspect} from setting #{settings.inspect}" }
+        @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" } if parsed[:warning]
         super(parsed) # call oboe_sampler update_settings function to update the buckets
         parsed
       else
