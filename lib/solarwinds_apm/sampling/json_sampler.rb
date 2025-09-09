@@ -38,6 +38,8 @@ module SolarWindsAPM
         unless unparsed.is_a?(Array) && unparsed.length == 1
           @logger.debug { "[#{self.class}/#{__method__}] Invalid settings file : #{unparsed}" }
           unparsed = nil
+        else
+          @logger.debug { "[#{self.class}/#{__method__}] Parsed settings: #{unparsed}" }
         end
       rescue JSON::ParserError => e
         @logger.error { "[#{self.class}/#{__method__}] JSON parsing error in #{@path}: #{e.message}" }
@@ -51,7 +53,7 @@ module SolarWindsAPM
 
       if parsed
         @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i
-        @logger.debug { "[#{self.class}/#{__method__}] Settings updated successfully: old_expiry=#{@expiry}, new_expiry=#{new_expiry}, parsed=#{parsed.inspect}" }
+        @logger.debug { "[#{self.class}/#{__method__}] Settings updated successfully: new expiry=#{@expiry}, parsed=#{parsed.inspect}" }
       else
         @logger.debug { "[#{self.class}/#{__method__}] Settings update failed, keeping current expiry: #{@expiry}" }
       end

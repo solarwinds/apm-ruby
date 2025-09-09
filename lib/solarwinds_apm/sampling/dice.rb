@@ -12,7 +12,7 @@ module SolarWindsAPM
     attr_reader :rate, :scale
 
     def initialize(settings)
-      @scale = settings[:scale]
+      @scale = settings[:scale] || 1000000
       @rate = settings[:rate] || 0
       @random_generator = Random.new
     end

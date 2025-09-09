@@ -56,6 +56,8 @@ module SolarWindsAPM
                        xtraceoptions_response)
           end
           setter.set(carrier, HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, exposed_headers.join(','))
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
         private

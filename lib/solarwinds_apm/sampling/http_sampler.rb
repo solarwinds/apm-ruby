@@ -24,6 +24,7 @@ module SolarWindsAPM
 
       @pid = nil
       @thread = nil
+      @thread_mutex = Mutex.new
 
       @logger.debug { "[#{self.class}/#{__method__}] HttpSampler initialized: url=#{@url}, service=#{@service}, hostname=#{@hostname}, setting_url=#{@setting_url}" }
 
@@ -36,19 +37,18 @@ module SolarWindsAPM
       super
     end
 
-    def reset_on_fork(restart_thread: true)
+    def reset_on_fork
       pid = Process.pid
-      return if @pid == pid
+      @thread_mutex.synchronize do
+        return if @pid == pid
 
-      @pid = pid
-      @thread = restart_thread ? Thread.new { work } : nil
-      @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
+        @thread&.kill # Safely terminate the old thread
+        @pid = pid
+        @thread = settings_request
+        @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
+      end
     rescue ThreadError => e
       @logger.error { "[#{self.class}/#{__method__}] Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
-    end
-
-    def work
-      Thread.new { settings_request }
     end
 
     private
@@ -62,25 +62,24 @@ module SolarWindsAPM
 
     def fetch_with_timeout(url, timeout_seconds = nil)
       uri = url
+      timeout = timeout_seconds || REQUEST_TIMEOUT
       response = nil
 
-      thread = Thread.new do
+      begin
         ::OpenTelemetry::Common::Utilities.untraced do
-          Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+          Net::HTTP.start(uri.host, uri.port,
+                          use_ssl: uri.scheme == 'https',
+                          open_timeout: timeout,
+                          read_timeout: timeout) do |http|
             request = Net::HTTP::Get.new(uri)
             request['Authorization'] = @headers
-
             response = http.request(request)
           end
         end
+      rescue Net::ReadTimeout, Net::OpenTimeout
+        @logger.debug { "Request timed out after #{timeout} seconds" }
       rescue StandardError => e
         @logger.debug { "Error during request: #{e.message}" }
-      end
-
-      thread_join = thread.join(timeout_seconds || REQUEST_TIMEOUT)
-      if thread_join.nil?
-        @logger.debug { "Request timed out after #{timeout_seconds} seconds" }
-        thread.kill
       end
 
       response
@@ -89,29 +88,32 @@ module SolarWindsAPM
     # a endless loop within a thread (non-blocking)
     def settings_request
       @logger.debug { "[#{self.class}/#{__method__}] Starting settings request loop" }
+      sleep_duration = GET_SETTING_DURAION
       loop do
         response = fetch_with_timeout(@setting_url)
 
-        begin
-          parsed = response&.body ? JSON.parse(response.body) : nil
-          @logger.debug { "[#{self.class}/#{__method__}] Parsed settings in json: #{parsed.inspect}" }
-        rescue JSON::ParserError => e
-          @logger.warn { "[#{self.class}/#{__method__}] JSON parsing error: #{e.message}" }
-          parsed = nil
+        # Check for nil response from timeout
+        unless response&.is_a?(Net::HTTPSuccess)
+          @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve settings due to timeout." }
+          next
         end
+
+        parsed = JSON.parse(response.body)
 
         if update_settings(parsed)
           # update the settings before the previous ones expire with some time to spare
           expiry = (parsed['timestamp'].to_i + parsed['ttl'].to_i)
           expiry_timeout = expiry - REQUEST_TIMEOUT - Time.now.to_i
-          sleep([0, expiry_timeout].max)
+          sleep_duration = [0, expiry_timeout].max
         else
           @logger.warn { "[#{self.class}/#{__method__}] Retrieved sampling settings are invalid. Ensure proper configuration." }
-          sleep(GET_SETTING_DURAION)
         end
+      rescue JSON::ParserError => e
+        @logger.warn { "[#{self.class}/#{__method__}] JSON parsing error: #{e.message}" }
       rescue StandardError => e
         @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
-        sleep(GET_SETTING_DURAION)
+      ensure
+        sleep(sleep_duration)
       end
     end
   end

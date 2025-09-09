@@ -141,8 +141,8 @@ module SolarWindsAPM
           trans_name = ENV.fetch('SW_APM_TRANSACTION_NAME', nil)
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Using transaction name from env var: #{trans_name}" }
         else
-          trans_name = span.attributes[HTTP_ROUTE] || nil
-          trans_name = span.name if trans_name.to_s.empty? && span.name
+          trans_name = span.attributes[HTTP_ROUTE]
+          trans_name = span.name if trans_name.to_s.empty?
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Using transaction name from span.attributes: #{span.attributes[HTTP_ROUTE]} or span.name: #{span.name}" }
         end
         trans_name.to_s.slice(0, SolarWindsAPM::Constants::MAX_TXN_NAME_LENGTH)
