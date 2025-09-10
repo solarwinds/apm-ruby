@@ -175,14 +175,21 @@ module SolarWindsAPM
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 
+    def self.number?(string)
+      true if Float(string)
+    rescue StandardError
+      false
+    end
+
     def self.safe_integer?(number)
       min_safe_integer = -((2**53) - 1)
       max_safe_integer = (2**53) - 1
-      number.is_a?(Integer) && number >= min_safe_integer && number <= max_safe_integer
+      number = number.to_i if number?(number)
+      number.between?(min_safe_integer, max_safe_integer)
     end
 
     def self.windows?
-      %w[mingw32 cygwin].any? { |platform| RUBY_PLATFORM.include?(platform) }
+      /mswin|mingw|cygwin/.match?(RUBY_PLATFORM)
     end
 
     def self.random_uuid

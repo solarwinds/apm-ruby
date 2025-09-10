@@ -6,6 +6,8 @@
 #
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
+require 'set'
+
 module SolarWindsAPM
   ##
   # This module exposes a nested configuration hash that can be used to
@@ -30,8 +32,7 @@ module SolarWindsAPM
                            excon faraday graphql grpc_client grpc_server grape
                            httpclient nethttp memcached mongo moped padrino rack redis
                            resqueclient resqueworker rest_client
-                           sequel sidekiqclient sidekiqworker sinatra typhoeus
-                           curb excon faraday httpclient nethttp rest_client typhoeus]
+                           sequel sidekiqclient sidekiqworker sinatra typhoeus].to_set
 
     ##
     # load_config_file
