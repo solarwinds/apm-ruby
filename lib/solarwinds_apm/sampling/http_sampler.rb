@@ -9,7 +9,7 @@
 module SolarWindsAPM
   class HttpSampler < Sampler
     REQUEST_TIMEOUT = 10 # 10s
-    GET_SETTING_DURAION = 60 # 60s
+    GET_SETTING_DURATION = 60 # 60s
 
     # we don't need hostname as it's for separating browser and local env
     def initialize(config)
@@ -22,10 +22,30 @@ module SolarWindsAPM
       @hostname = hostname
       @setting_url = URI.join(@url, "./v1/settings/#{@service}/#{@hostname}")
 
-      Thread.new { settings_request }
+      @pid = nil
+      @thread = nil
+
+      reset_on_fork
+    end
+
+    # restart the settings request thread after forking
+    def should_sample?(params)
+      reset_on_fork
+      super
     end
 
     private
+
+    def reset_on_fork
+      pid = Process.pid
+      return if @pid == pid
+
+      @pid = pid
+      @thread = Thread.new { settings_request }
+      @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
+    rescue ThreadError => e
+      @logger.error { "[#{self.class}/#{__method__}] Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
+    end
 
     # Node.js equivalent: Retrieve system hostname
     # e.g. docker -> docker.swo.ubuntu.development; macos -> NHSDFWSSD
@@ -36,25 +56,37 @@ module SolarWindsAPM
 
     def fetch_with_timeout(url, timeout_seconds = nil)
       uri = url
+      timeout = timeout_seconds || REQUEST_TIMEOUT
+
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+
+      remaining = lambda {
+        r = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        r.negative? ? 0.0 : r
+      }
+
       response = nil
 
-      thread = Thread.new do
+      begin
         ::OpenTelemetry::Common::Utilities.untraced do
-          Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
+          Net::HTTP.start(
+            uri.host, uri.port,
+            use_ssl: uri.scheme == 'https',
+            open_timeout: timeout,
+            read_timeout: timeout # will shrink later
+          ) do |http|
             request = Net::HTTP::Get.new(uri)
             request['Authorization'] = @headers
 
+            # Before issuing request, tighten read_timeout to remaining
+            http.read_timeout = remaining.call
             response = http.request(request)
           end
         end
+      rescue Net::ReadTimeout, Net::OpenTimeout
+        @logger.debug { "Request timed out after #{timeout} seconds" }
       rescue StandardError => e
         @logger.debug { "Error during request: #{e.message}" }
-      end
-
-      thread_join = thread.join(timeout_seconds || REQUEST_TIMEOUT)
-      if thread_join.nil?
-        @logger.debug { "Request timed out after #{timeout_seconds} seconds" }
-        thread.kill
       end
 
       response
@@ -77,11 +109,11 @@ module SolarWindsAPM
           sleep([0, expiry_timeout].max)
         else
           @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
-          sleep(GET_SETTING_DURAION)
+          sleep(GET_SETTING_DURATION)
         end
       rescue StandardError => e
         @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
-        sleep(GET_SETTING_DURAION)
+        sleep(GET_SETTING_DURATION)
       end
     end
   end

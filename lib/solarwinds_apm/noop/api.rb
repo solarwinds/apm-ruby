@@ -79,10 +79,17 @@ module NoopAPI
       true
     end
   end
+
+  module Tracer
+    def add_tracer(*); end
+  end
 end
 
-SolarWindsAPM::API.extend(NoopAPI::Tracing)
-SolarWindsAPM::API.extend(NoopAPI::CurrentTraceInfo)
-SolarWindsAPM::API.extend(NoopAPI::CustomMetrics)
-SolarWindsAPM::API.extend(NoopAPI::OpenTelemetry)
-SolarWindsAPM::API.extend(NoopAPI::TransactionName)
+[
+  NoopAPI::Tracing,
+  NoopAPI::CurrentTraceInfo,
+  NoopAPI::CustomMetrics,
+  NoopAPI::OpenTelemetry,
+  NoopAPI::TransactionName,
+  NoopAPI::Tracer
+].each { |mod| SolarWindsAPM::API.extend(mod) }
