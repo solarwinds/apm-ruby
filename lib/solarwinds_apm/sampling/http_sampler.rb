@@ -9,7 +9,7 @@
 module SolarWindsAPM
   class HttpSampler < Sampler
     REQUEST_TIMEOUT = 10 # 10s
-    GET_SETTING_DURAION = 60 # 60s
+    GET_SETTING_DURATION = 60 # 60s
 
     # we don't need hostname as it's for separating browser and local env
     def initialize(config)
@@ -56,24 +56,25 @@ module SolarWindsAPM
 
     def fetch_with_timeout(url, timeout_seconds = nil)
       uri = url
-      timeout = timeout_seconds || REQUEST_TIMEOUT
       response = nil
 
-      begin
+      thread = Thread.new do
         ::OpenTelemetry::Common::Utilities.untraced do
-          Net::HTTP.start(uri.host, uri.port,
-                          use_ssl: uri.scheme == 'https',
-                          open_timeout: timeout,
-                          read_timeout: timeout) do |http|
+          Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
             request = Net::HTTP::Get.new(uri)
             request['Authorization'] = @headers
+
             response = http.request(request)
           end
         end
-      rescue Net::ReadTimeout, Net::OpenTimeout
-        @logger.debug { "Request timed out after #{timeout} seconds" }
       rescue StandardError => e
         @logger.debug { "Error during request: #{e.message}" }
+      end
+
+      thread_join = thread.join(timeout_seconds || REQUEST_TIMEOUT)
+      if thread_join.nil?
+        @logger.debug { "Request timed out after #{timeout_seconds} seconds" }
+        thread.kill
       end
 
       response
@@ -96,11 +97,11 @@ module SolarWindsAPM
           sleep([0, expiry_timeout].max)
         else
           @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
-          sleep(GET_SETTING_DURAION)
+          sleep(GET_SETTING_DURATION)
         end
       rescue StandardError => e
         @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
-        sleep(GET_SETTING_DURAION)
+        sleep(GET_SETTING_DURATION)
       end
     end
   end

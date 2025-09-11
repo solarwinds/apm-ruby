@@ -81,9 +81,7 @@ module NoopAPI
   end
 
   module Tracer
-    def add_tracer(*)
-      SolarWindsAPM.logger.warn { 'add_tracer is noop mode, function is instrumented.' }
-    end
+    def add_tracer(*); end
   end
 end
 

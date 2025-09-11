@@ -26,13 +26,6 @@ module SolarWindsAPM
                              6 => { stdlib: ::Logger::DEBUG, otel: 'debug' } }.freeze
 
     @@config = {}
-    @@instrumentation = %i[action_controller action_controller_api action_view
-                           active_record bunnyclient bunnyconsumer curb
-                           dalli delayed_jobclient delayed_jobworker
-                           excon faraday graphql grpc_client grpc_server grape
-                           httpclient nethttp memcached mongo moped padrino rack redis
-                           resqueclient resqueworker rest_client
-                           sequel sidekiqclient sidekiqworker sinatra typhoeus].to_set
 
     ##
     # load_config_file
@@ -132,8 +125,6 @@ module SolarWindsAPM
     def self.print_config
       SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] General configurations list blow:" }
       @@config.each do |k, v|
-        next if @@instrumentation.include?(k)
-
         SolarWindsAPM.logger.debug do
           "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"
         end
@@ -149,8 +140,6 @@ module SolarWindsAPM
     # This will be called when require 'solarwinds_apm/config' happen
     #
     def self.initialize
-      # for config file backward compatibility
-      @@instrumentation.each { |inst| @@config[inst] = {} }
       @@config[:transaction_name] = {}
 
       # Always load the template, it has all the keys and defaults defined,
