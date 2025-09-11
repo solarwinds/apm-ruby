@@ -26,6 +26,6 @@ The following methods require noop implementations based on the API modules:
   - `set_transaction_name(custom_name=nil)` - Always returns true
 
 - **CustomInstrumentation/Tracer**:
-  - `add_tracer(method_name, span_name=nil, options={})` - No-op with warning message that logs "add_tracer is noop mode, function is instrumented."
+  - `add_tracer(method_name, span_name=nil, options={})` - Always returns nil.
 
 These modules are extended into `SolarWindsAPM::API` to provide consistent behavior when SolarWindsAPM is disabled or in noop mode.
