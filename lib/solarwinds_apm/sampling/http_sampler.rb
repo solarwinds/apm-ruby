@@ -106,7 +106,7 @@ module SolarWindsAPM
     # a endless loop within a thread (non-blocking)
     def settings_request
       @logger.debug { "[#{self.class}/#{__method__}] Starting settings request loop" }
-      sleep_duration = GET_SETTING_DURAION
+      sleep_duration = GET_SETTING_DURATION
       loop do
         response = fetch_with_timeout(@setting_url)
 
