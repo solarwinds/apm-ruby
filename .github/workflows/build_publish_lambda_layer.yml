@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ matrix.arch == 'arm64' && fromJSON('{"group":"apm-arm-runner"}') || 'ubuntu-latest' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build ruby lambda layer on ${{ matrix.arch }}
         run: |
@@ -89,10 +89,10 @@ jobs:
       apm_ruby_version: ${{ steps.version.outputs.SOLARWINDS_APM_VERSION }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda
@@ -163,16 +163,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: configure AWS ${{ inputs.publish-dest }} credential
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ inputs.publish-dest == 'production' && secrets.LAMBDA_PUBLISHER_ARN_PROD || inputs.publish-dest == 'staging' && secrets.LAMBDA_PUBLISHER_ARN_STAGING }}
           aws-region: ${{ matrix.aws_region }}
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda

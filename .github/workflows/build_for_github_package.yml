@@ -15,7 +15,7 @@ jobs:
       apm_ruby_version: ${{ steps.version.outputs.gem_version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Ruby 3.1 and bundle
         uses: ruby/setup-ruby@v1
@@ -58,10 +58,10 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: builds

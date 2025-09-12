@@ -20,7 +20,7 @@ jobs:
       apm_ruby_version: ${{ steps.build.outputs.gem_version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Ruby 3.1.0 and bundle
         uses: ruby/setup-ruby@v1
@@ -62,7 +62,7 @@ jobs:
           exit 1
 
       - name: Create release draft that includes the checksum
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -101,10 +101,10 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: ./
