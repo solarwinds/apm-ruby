@@ -232,7 +232,7 @@ describe 'SamplerTest' do
       assert_equal 0, spans.length
     end
 
-    it 'respects enabled config when no transaction settings' do
+    it 'respects enabled config when no transaction settings xuan' do
       sampler = TestSampler.new({ local_settings: local_settings(trigger_trace: true, tracing_mode: true), settings: settings(enabled: false) })
 
       replace_sampler(sampler)

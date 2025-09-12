@@ -87,21 +87,32 @@ module SolarWindsAPM
       SolarWindsAPM.logger.level = SW_LOG_LEVEL_MAPPING.dig(log_level, :stdlib) || ::Logger::INFO # default log level info
     end
 
+    # e.g. enable_disable_config('STRING', :key, value, false, bool: true)
     def self.enable_disable_config(env_var, key, value, default, bool: false)
-      env_value = ENV[env_var.to_s]&.downcase
+      raw_env_value  = ENV.fetch(env_var, '')
+      env_value      = raw_env_value.downcase
       valid_env_values = bool ? %w[true false] : %w[enabled disabled]
 
-      if env_var && valid_env_values.include?(env_value)
+      if !env_var.empty? && valid_env_values.include?(env_value)
         value = bool ? true?(env_value) : env_value.to_sym
-      elsif env_var && !env_value.to_s.empty?
-        SolarWindsAPM.logger.warn("[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{ENV.fetch(env_var, nil)}). Using default value: #{default}.")
-        return @@config[key.to_sym] = default
+      elsif !env_var.empty? && !raw_env_value.empty?
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{raw_env_value}). Using default value: #{default}."
+        end
+        return @@config[key] = default
       end
 
-      return @@config[key.to_sym] = value unless (bool && !boolean?(value)) || (!bool && !symbol?(value))
+      # Validate final value efficiently
+      valid = bool ? boolean?(value) : symbol?(value)
 
-      SolarWindsAPM.logger.warn("[#{name}/#{__method__}] :#{key} must be a #{valid_env_values.join('/')}. Using default value: #{default}.")
-      @@config[key.to_sym] = default
+      unless valid
+        SolarWindsAPM.logger.warn do
+          "[#{name}/#{__method__}] :#{key} must be #{valid_env_values.join('/')}. Using default value: #{default}."
+        end
+        return @@config[key] = default
+      end
+
+      @@config[key] = value
     end
 
     def self.true?(obj)
@@ -211,7 +222,7 @@ module SolarWindsAPM
         enable_disable_config('SW_APM_TRIGGER_TRACING_MODE', key, value, :enabled)
 
       when :tracing_mode
-        enable_disable_config(nil, key, value, :enabled)
+        enable_disable_config('', key, value, :enabled)
 
       when :tag_sql
         enable_disable_config('SW_APM_TAG_SQL', key, value, false, bool: true)
@@ -242,9 +253,17 @@ module SolarWindsAPM
         return
       end
 
-      # `tracing: disabled` is the default
-      disabled = settings.select { |v| !v.key?(:tracing) || v[:tracing] == :disabled }
-      enabled  = settings.select { |v| v[:tracing] == :enabled }
+      # `tracing: disabled` is the default; below only separate the enabled and disabled settings
+      result = settings.each_with_object({ enabled: [], disabled: [] }) do |setting, acc|
+        if setting[:tracing] == :enabled
+          acc[:enabled] << setting
+        elsif !setting.key?(:tracing) || setting[:tracing] == :disabled
+          acc[:disabled] << setting
+        end
+      end
+
+      enabled = result[:enabled]
+      disabled = result[:disabled]
 
       SolarWindsAPM::Config[:enabled_regexps] = compile_regexp(enabled)
       SolarWindsAPM::Config[:disabled_regexps] = compile_regexp(disabled)
