@@ -28,7 +28,7 @@ module SolarWindsAPM
 
     private
 
-    # mutli-thread is rare in lambda environment,
+    # multi-thread is rare in lambda environment,
     # here we don't use mutex to guard the execution
     def loop_check
       return if Time.now.to_i < @expiry - 10
@@ -41,8 +41,8 @@ module SolarWindsAPM
         settings_data = JSON.parse(File.read(@path))
         @last_mtime = current_mtime
       rescue Errno::ENOENT
-        # This is a normal condition if the file doesn't exist yet.
-        @logger.debug { "[#{self.class}##{__method__}] Settings file not found at #{@path}." }
+        # File doesn't exist due to timing, missing collector, etc
+        @logger.error { "[#{self.class}##{__method__}] Settings file not found at #{@path}." }
         return
       rescue JSON::ParserError => e
         @logger.error { "[#{self.class}##{__method__}] JSON parsing error in #{@path}: #{e.message}" }
@@ -51,7 +51,7 @@ module SolarWindsAPM
 
       # 2. Validate the structure of the parsed settings.
       unless settings_data.is_a?(Array) && settings_data.length == 1
-        @logger.debug { "[#{self.class}##{__method__}] Invalid settings file content: #{settings_data.inspect}" }
+        @logger.error { "[#{self.class}##{__method__}] Invalid settings file content: #{settings_data.inspect}" }
         return
       end
 
