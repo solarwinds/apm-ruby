@@ -87,6 +87,10 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
+        def fields
+          TRACESTATE_HEADER_NAME
+        end
+
         private
 
         def inject_extracted_header(carrier, context, getter, header, inject_key)
