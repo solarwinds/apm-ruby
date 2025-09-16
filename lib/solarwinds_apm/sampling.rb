@@ -10,7 +10,6 @@ require 'json'
 require 'fileutils'
 require 'tempfile'
 require 'uri'
-# require 'opentelemetry-sdk'
 
 require_relative 'sampling/sampling_constants'
 require_relative 'sampling/dice'
