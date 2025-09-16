@@ -35,17 +35,6 @@ module SolarWindsAPM
       super
     end
 
-    def reset_on_fork
-      pid = Process.pid
-      return if @pid == pid
-
-      @pid = pid
-      @thread = Thread.new { settings_request }
-      @logger.debug { "[#{self.class}/#{__method__}] Restart the settings_request thread in process: #{@pid}." }
-    rescue ThreadError => e
-      @logger.error { "[#{self.class}/#{__method__}] Unexpected error in HttpSampler#reset_on_fork: #{e.message}" }
-    end
-
     private
 
     def reset_on_fork

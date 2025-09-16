@@ -46,7 +46,7 @@ module SolarWindsAPM
       end
 
       def on_finishing(span)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing span: #{span.to_span_data.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing span attributes: #{span.attributes}" }
         return if non_entry_span(span: span)
 
         @transaction_name = calculate_transaction_names(span)
@@ -57,7 +57,7 @@ module SolarWindsAPM
 
       # @param [Span] span the (immutable) {Span} that just ended.
       def on_finish(span)
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span: #{span.to_span_data.inspect}" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finish span attributes: #{span.attributes}" }
         return if non_entry_span(span: span)
 
         record_request_metrics(span)
