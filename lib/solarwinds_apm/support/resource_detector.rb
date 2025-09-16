@@ -166,7 +166,7 @@ module SolarWindsAPM
       SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Detector #{detector_class} retrieved: #{attribute.instance_variable_get(:@attributes)}" }
       attribute
     rescue StandardError => e
-      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Detector #{detector_class} failed. Error: #{e.message}." }
+      SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] Detector #{detector_class} failed. Error: #{e.message}." }
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 

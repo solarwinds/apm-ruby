@@ -82,7 +82,7 @@ module SolarWindsAPM
       { 'X-Trace-Options' => header, 'X-Trace-Options-Signature' => signature }
     end
 
-    def obtain_traceoptions_signature(context)
+    def obtain_traceoptions_headers_signature(context)
       header = context.value(SW_XTRACEOPTIONS_KEY)
       signature = context.value(SW_SIGNATURE_KEY)
       [header, signature]
