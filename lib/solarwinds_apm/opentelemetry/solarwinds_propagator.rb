@@ -87,6 +87,11 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
+        # Returns the predefined propagation fields, required by upstream.
+        # If your carrier is reused, you should delete the fields returned by
+        # this method before calling +inject+.
+        #
+        # @return [Array<String>] a list of fields that will be used by this propagator.
         def fields
           TRACESTATE_HEADER_NAME
         end
