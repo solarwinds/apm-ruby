@@ -77,7 +77,7 @@ module SolarWindsAPM
     # if context have sw-related value, it should be stored in context
     # named sw_xtraceoptions and sw_signature in header from propagator
     def request_headers(params)
-      header, signature = obtain_traceoptions_signature(params[:parent_context])
+      header, signature = obtain_traceoptions_headers_signature(params[:parent_context])
       @logger.debug { "[#{self.class}/#{__method__}] trace_options header: #{header.inspect}, signature: #{signature.inspect} from parent_context: #{params[:parent_context].inspect}" }
       { 'X-Trace-Options' => header, 'X-Trace-Options-Signature' => signature }
     end
