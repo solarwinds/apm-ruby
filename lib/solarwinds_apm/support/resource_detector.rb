@@ -64,9 +64,7 @@ module SolarWindsAPM
 
           response = nil
           ::OpenTelemetry::Common::Utilities.untraced do
-            http = Net::HTTP.new(url.host, url.port)
-            request = Net::HTTP::Get.new(url)
-            response = http.request(request)
+            response = Net::HTTP.get_response(url)
           end
 
           raise 'Response returned non-200 status code' unless response&.code.to_i == 200
@@ -152,26 +150,23 @@ module SolarWindsAPM
     end
 
     def self.detect_ec2
-      attribute = ::OpenTelemetry::Resource::Detector::AWS::EC2.detect
-      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
-      attribute
-    rescue StandardError
-      ::OpenTelemetry::SDK::Resources::Resource.create({})
+      run_opentelemetry_detector(::OpenTelemetry::Resource::Detector::AWS::EC2)
     end
 
     def self.detect_azure
-      attribute = ::OpenTelemetry::Resource::Detector::Azure.detect
-      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
-      attribute
-    rescue StandardError
-      ::OpenTelemetry::SDK::Resources::Resource.create({})
+      run_opentelemetry_detector(::OpenTelemetry::Resource::Detector::Azure)
     end
 
     def self.detect_container
-      attribute = ::OpenTelemetry::Resource::Detector::Container.detect
-      SolarWindsAPM.logger.debug { "#{self.class}/#{__method__}] retrieved resource_attributes: #{attribute.instance_variable_get(:@attributes)}" }
+      run_opentelemetry_detector(::OpenTelemetry::Resource::Detector::Container)
+    end
+
+    def self.run_opentelemetry_detector(detector_class)
+      attribute = detector_class.detect
+      SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Detector #{detector_class} retrieved: #{attribute.instance_variable_get(:@attributes)}" }
       attribute
-    rescue StandardError
+    rescue StandardError => e
+      SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] Detector #{detector_class} failed. Error: #{e.message}." }
       ::OpenTelemetry::SDK::Resources::Resource.create({})
     end
 

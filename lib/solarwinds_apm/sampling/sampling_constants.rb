@@ -55,7 +55,8 @@ module SolarWindsAPM
 
   TokenBucketSettings = Struct.new(:capacity,    # Number
                                    :rate,        # Number
-                                   :interval) # Number
+                                   :interval,    # Number
+                                   :type)        # String
 
   module SampleSource
     LOCAL_DEFAULT = 2
@@ -105,11 +106,11 @@ module SolarWindsAPM
     end
 
     def self.valid_trace_id?(trace_id)
-      !!(trace_id =~ VALID_TRACEID_REGEX) && trace_id != INVALID_TRACEID
+      VALID_TRACEID_REGEX.match?(trace_id) && trace_id != INVALID_TRACEID
     end
 
     def self.valid_span_id?(span_id)
-      !!(span_id =~ VALID_SPANID_REGEX) && span_id != INVALID_SPANID
+      VALID_SPANID_REGEX.match?(span_id) && span_id != INVALID_SPANID
     end
 
     def self.span_context_valid?(span_context)

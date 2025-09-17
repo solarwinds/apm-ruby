@@ -40,6 +40,9 @@ module SolarWindsAPM
           context = ::OpenTelemetry::Context.new({}) if context.nil?
           context = inject_extracted_header(carrier, context, getter, XTRACEOPTIONS_HEADER_NAME, INTL_SWO_X_OPTIONS_KEY)
           inject_extracted_header(carrier, context, getter, XTRACEOPTIONS_SIGNATURE_HEADER_NAME, INTL_SWO_SIGNATURE_KEY)
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Extraction failed: #{e.message}" }
+          context || ::OpenTelemetry::Context.current
         end
 
         # Inject trace context into the supplied carrier.
@@ -80,10 +83,13 @@ module SolarWindsAPM
             end
             setter.set(carrier, TRACESTATE_HEADER_NAME, Utils.trace_state_header(trace_state))
           end
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
-        # Returns the predefined propagation fields. If your carrier is reused, you
-        # should delete the fields returned by this method before calling +inject+.
+        # Returns the predefined propagation fields, required by upstream.
+        # If your carrier is reused, you should delete the fields returned by
+        # this method before calling +inject+.
         #
         # @return [Array<String>] a list of fields that will be used by this propagator.
         def fields

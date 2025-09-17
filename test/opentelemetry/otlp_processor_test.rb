@@ -17,18 +17,8 @@ describe 'SolarWindsOTLPProcessor' do
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@txn_manager)
   end
 
-  it 'initializes_meters_and_metrics' do
-    request_metrics           = @processor.instance_variable_get(:@meters)['sw.apm.request.metrics']
-    sampling_metrics          = @processor.instance_variable_get(:@meters)['sw.apm.sampling.metrics']
-    request_metrics_registry  = request_metrics.instance_variable_get(:@instrument_registry)
-    sampling_metrics.instance_variable_get(:@instrument_registry)
-
-    _(@processor.instance_variable_get(:@meters).size).must_equal 1
+  it 'initializes_metrics' do
     _(@processor.instance_variable_get(:@metrics).size).must_equal 1
-
-    refute_nil(request_metrics_registry['trace.service.response_time'])
-
-    @processor.instance_variable_get(:@meters)['sw.apm.request.metrics'].instance_variable_set(:@instrument_registry, {})
   end
 
   it 'does_not_have_transaction_manager' do

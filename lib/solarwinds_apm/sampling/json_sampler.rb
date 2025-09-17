@@ -15,11 +15,12 @@ module SolarWindsAPM
 
       @path = path || DEFAULT_PATH
       @expiry = Time.now.to_i
+      @last_mtime = nil
+      @logger.debug { "[#{self.class}/#{__method__}] JsonSampler initialized: path=#{@path}, initial_expiry=#{@expiry}" }
       loop_check
     end
 
     # only json sampler will need to check if the settings.json file
-    # updated or not from collector extention
     def should_sample?(params)
       loop_check
       super
@@ -27,26 +28,40 @@ module SolarWindsAPM
 
     private
 
+    # multi-thread is rare in lambda environment,
+    # here we don't use mutex to guard the execution
     def loop_check
-      # Update if we're within 10s of expiry
-      return if Time.now.to_i + 10 < @expiry
+      return if Time.now.to_i < @expiry - 10
 
+      # 1. Read and parse settings from the file.
       begin
-        contents = File.read(@path)
-        unparsed = JSON.parse(contents)
-      rescue StandardError => e
-        @logger.debug { "missing or invalid settings file; Error: #{e.message}" }
+        current_mtime = File.mtime(@path)
+        return if @last_mtime && current_mtime == @last_mtime
+
+        settings_data = JSON.parse(File.read(@path))
+        @last_mtime = current_mtime
+      rescue Errno::ENOENT
+        # File doesn't exist due to timing, missing collector, etc
+        @logger.error { "[#{self.class}##{__method__}] Settings file not found at #{@path}." }
+        return
+      rescue JSON::ParserError => e
+        @logger.error { "[#{self.class}##{__method__}] JSON parsing error in #{@path}: #{e.message}" }
         return
       end
 
-      unless unparsed.is_a?(Array) && unparsed.length == 1
-        @logger.debug { "invalid settings file : #{unparsed}" }
+      # 2. Validate the structure of the parsed settings.
+      unless settings_data.is_a?(Array) && settings_data.length == 1
+        @logger.error { "[#{self.class}##{__method__}] Invalid settings file content: #{settings_data.inspect}" }
         return
       end
 
-      parsed = update_settings(unparsed.first)
-      @logger.debug { "update_settings: #{parsed}" }
-      @expiry = parsed[:timestamp].to_i + parsed[:ttl].to_i if parsed
+      # 3. Attempt to update the settings.
+      if (new_settings = update_settings(settings_data.first))
+        @expiry = new_settings[:timestamp].to_i + new_settings[:ttl].to_i
+        @logger.debug { "[#{self.class}##{__method__}] Settings #{new_settings} updated successfully. New expiry: #{@expiry}" }
+      else
+        @logger.debug { "[#{self.class}##{__method__}] Settings update failed, keeping current expiry: #{@expiry}" }
+      end
     end
   end
 end

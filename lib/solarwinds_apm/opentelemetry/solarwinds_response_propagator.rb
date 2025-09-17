@@ -56,31 +56,20 @@ module SolarWindsAPM
                        xtraceoptions_response)
           end
           setter.set(carrier, HTTP_HEADER_ACCESS_CONTROL_EXPOSE_HEADERS, exposed_headers.join(','))
-        end
-
-        # Returns the predefined propagation fields. If your carrier is reused, you
-        # should delete the fields returned by this method before calling +inject+.
-        #
-        # @return [Array<String>] a list of fields that will be used by this propagator.
-        def fields
-          TRACESTATE_HEADER_NAME
+        rescue StandardError => e
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
         private
-
-        # sw_xtraceoptions_response_key -> xtrace_options_response
+        # SW_XTRACEOPTIONS_RESPONSE_KEY -> xtrace_options_response
         def recover_response_from_tracestate(span_context)
           sanitized = span_context.tracestate.value(SW_XTRACEOPTIONS_RESPONSE_KEY)
           sanitized = '' if sanitized.nil?
           sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED,
                                      SolarWindsAPM::Constants::INTL_SWO_EQUALS)
           sanitized = sanitized.gsub(':', SolarWindsAPM::Constants::INTL_SWO_EQUALS)
-          sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
-                                     SolarWindsAPM::Constants::INTL_SWO_COMMA)
-          SolarWindsAPM.logger.debug do
-            "[#{self.class}/#{__method__}] recover_response_from_tracestate sanitized: #{sanitized.inspect}"
-          end
-          sanitized
+          sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
+                         SolarWindsAPM::Constants::INTL_SWO_COMMA)
         end
       end
     end

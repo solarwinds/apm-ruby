@@ -21,6 +21,9 @@ module SolarWindsAPM
     ATTR_URL_PATH = 'url.path'
     ATTR_HTTP_TARGET = RUBY_SEM_CON::HTTP_TARGET
 
+    SW_XTRACEOPTIONS_KEY = 'sw_xtraceoptions'
+    SW_SIGNATURE_KEY = 'sw_signature'
+
     # tracing_mode is getting from SolarWindsAPM::Config
     def initialize(config, logger)
       super(logger)
@@ -28,25 +31,22 @@ module SolarWindsAPM
       @trigger_mode = config[:trigger_trace_enabled]
       @transaction_settings = config[:transaction_settings]
       @ready = false
+      @logger.debug { "[#{self.class}/#{__method__}] Sampler initialized: tracing_mode=#{@tracing_mode}, trigger_mode=#{@trigger_mode}, transaction_settings_count=#{@transaction_settings.inspect}" }
     end
 
-    # wait for getting the first settings
     def wait_until_ready(timeout = 10)
-      thread = Thread.new { settings_ready }
-      thread.join(timeout) || (thread.kill
-                               false)
-      @ready
-    end
-
-    def settings_ready(timeout = 10)
-      deadline = Time.now
-      loop do
-        break unless @settings.empty?
-
+      deadline = Time.now + timeout
+      while Time.now < deadline
+        # The @settings hash is populated by another thread (e.g., HttpSampler)
+        unless @settings.empty?
+          @ready = !@settings[:signature_key].nil?
+          return @ready
+        end
         sleep 0.1
-        break if (Time.now - deadline).round(0) >= timeout
       end
-      @ready = true unless @settings[:signature_key].nil?
+
+      @logger.warn { "[#{self.class}/#{__method__}] Timed out waiting for settings after #{timeout} seconds." }
+      @ready # Will be false if timeout is reached
     end
 
     def resolve_tracing_mode(config)
@@ -58,59 +58,45 @@ module SolarWindsAPM
     def local_settings(params)
       _trace_id, _parent_context, _links, span_name, span_kind, attributes = params.values
       settings = { tracing_mode: @tracing_mode, trigger_mode: @trigger_mode }
-      return settings if @transaction_settings.nil? || @transaction_settings.empty?
 
-      @logger.debug { "Current @transaction_settings: #{@transaction_settings.inspect}" }
-      http_metadata = http_span_metadata(span_kind, attributes)
-      @logger.debug { "http_metadata: #{http_metadata.inspect}" }
+      if @transaction_settings.nil? || @transaction_settings.empty?
+        @logger.debug { "[#{self.class}/#{__method__}] No transaction settings, using defaults settings: #{settings.inspect}" }
+      else
+        http_metadata = http_span_metadata(span_kind, attributes)
+        # below is for filter out unwanted transaction
+        trans_settings = ::SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
+        tracing_mode   = trans_settings.calculate_trace_mode == 1 ? TracingMode::ALWAYS : TracingMode::NEVER
 
-      # below is for filter out unwanted transaction
-      trans_settings = ::SolarWindsAPM::TransactionSettings.new(url_path: http_metadata[:url], name: span_name, kind: span_kind)
-      tracing_mode   = trans_settings.calculate_trace_mode == 1 ? TracingMode::ALWAYS : TracingMode::NEVER
+        settings[:tracing_mode] = tracing_mode
+      end
 
-      settings[:tracing_mode] = tracing_mode
+      @logger.debug { "[#{self.class}/#{__method__}] Transaction settings after calculation #{settings.inspect}" }
       settings
     end
 
     # if context have sw-related value, it should be stored in context
-    # named sw_xtraceoptions in header propagator
-    # original x_trace_options will parse headers in the class, apm-js separate the task
-    # apm-js will make headers as hash
+    # named sw_xtraceoptions and sw_signature in header from propagator
     def request_headers(params)
-      parent_context = params[:parent_context]
-      header = obtain_sw_value(parent_context, 'sw_xtraceoptions')
-      signature = obtain_sw_value(parent_context, 'sw_signature')
-      @logger.debug { "[#{self.class}/#{__method__}] trace_options option_header: #{header}; trace_options sw_signature: #{signature}" }
-
-      {
-        'X-Trace-Options' => header,
-        'X-Trace-Options-Signature' => signature
-      }
+      header, signature = obtain_traceoptions_headers_signature(params[:parent_context])
+      @logger.debug { "[#{self.class}/#{__method__}] trace_options header: #{header.inspect}, signature: #{signature.inspect} from parent_context: #{params[:parent_context].inspect}" }
+      { 'X-Trace-Options' => header, 'X-Trace-Options-Signature' => signature }
     end
 
-    def obtain_sw_value(context, type)
-      sw_value = nil
-      instance_variable = context&.instance_variable_get('@entries')
-      instance_variable&.each do |key, value|
-        next unless key.instance_of?(::String)
-
-        sw_value = value if key == type
-      end
-      sw_value
+    def obtain_traceoptions_headers_signature(context)
+      header = context.value(SW_XTRACEOPTIONS_KEY)
+      signature = context.value(SW_SIGNATURE_KEY)
+      [header, signature]
     end
 
     def update_settings(settings)
       parsed = parse_settings(settings)
       if parsed
-        @logger.debug { "valid settings #{parsed.inspect} from setting #{settings.inspect}" }
-
-        super(parsed) # call oboe_sampler update_settings function to update the buckets
-
+        @logger.debug { "[#{self.class}/#{__method__}] Valid settings #{parsed.inspect} from setting #{settings.inspect}" }
         @logger.warn { "Warning from parsed settings: #{parsed[:warning]}" } if parsed[:warning]
-
+        super(parsed) # call oboe_sampler update_settings function to update the buckets
         parsed
       else
-        @logger.debug { "invalid settings: #{settings.inspect}" }
+        @logger.debug { "[#{self.class}/#{__method__}] Invalid settings: #{settings.inspect}" }
         nil
       end
     end
@@ -136,24 +122,25 @@ module SolarWindsAPM
         url: url
       }
 
-      @logger.debug { "Retrieved http metadata: #{http_metadata.inspect}" }
+      @logger.debug { "[#{self.class}/#{__method__}] Retrieved http metadata: #{http_metadata.inspect}" }
       http_metadata
     end
 
     def parse_settings(unparsed)
       return unless unparsed.is_a?(Hash)
 
-      return unless unparsed['value'].is_a?(Numeric) &&
-                    unparsed['timestamp'].is_a?(Numeric) &&
-                    unparsed['ttl'].is_a?(Numeric)
-
       sample_rate = unparsed['value']
-      timestamp = unparsed['timestamp']
-      ttl = unparsed['ttl']
+      timestamp   = unparsed['timestamp']
+      ttl         = unparsed['ttl']
+      flags       = unparsed['flags']
 
-      return unless unparsed['flags'].is_a?(String)
+      return unless sample_rate.is_a?(Numeric) &&
+                    timestamp.is_a?(Numeric) &&
+                    ttl.is_a?(Numeric)
 
-      flags = unparsed['flags'].split(',').reduce(Flags::OK) do |final_flag, f|
+      return unless flags.is_a?(String)
+
+      flags = flags.split(',').reduce(Flags::OK) do |final_flag, f|
         flag = {
           'OVERRIDE' => Flags::OVERRIDE,
           'SAMPLE_START' => Flags::SAMPLE_START,
@@ -167,6 +154,7 @@ module SolarWindsAPM
 
       buckets = {}
       signature_key = nil
+      warning = nil
 
       if unparsed['arguments'].is_a?(Hash)
         args = unparsed['arguments']
