@@ -25,8 +25,6 @@ module SolarWindsAPM
 
       is_lambda = SolarWindsAPM::Utils.determine_lambda
 
-      ENV['OTEL_TRACES_EXPORTER'] = ENV['OTEL_TRACES_EXPORTER'].to_s.split(',').tap { |e| e << 'otlp' unless e.include?('otlp') }.join(',')
-
       # add response propagator to rack instrumentation
       resolve_response_propagator
 
