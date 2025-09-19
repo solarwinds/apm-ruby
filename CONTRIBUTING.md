@@ -1,70 +1,114 @@
-# Contributing
+# Contributing to SolarWinds APM Ruby
 
-## Requirements
+Thank you for your interest in contributing to the SolarWinds APM Ruby gem! This document provides guidelines and instructions for contributing to this OpenTelemetry-based Ruby distribution.
 
-The descriptions below assume you are in the locally cloned project root directory, i.e. `apm-ruby`.
+## Table of Contents
 
-Prerequisites
+- [Code of Conduct](#code-of-conduct)
+- [How to Contribute](#how-to-contribute)
+- [Development Setup](#development-setup)
+- [Development Workflow](#development-workflow)
+- [Testing](#testing)
+- [Code Quality](#code-quality)
+- [Getting Help](#getting-help)
 
-* Docker
-* Docker Compose
+## Code of Conduct
+
+By participating in this project, you agree to abide by our Code of Conduct. Please treat all community members with respect and create a welcoming environment for everyone.
+
+## How to Contribute
+
+We welcome various types of contributions:
+
+- **Bug reports**: Help us identify and fix issues
+- **Feature requests**: Suggest new functionality or improvements
+- **Documentation**: Improve our docs, guides, and examples
+- **Code contributions**: Bug fixes, new features, performance improvements
+- **Testing**: Add test coverage or improve existing tests
+
+## Development Setup
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed on your system:
+
+- **Docker** - Required for containerized development and testing
+- **Docker Compose** - Used for orchestrating multi-container setups
+- **Git** - For version control
+- **Ruby** - For running Rake tasks
+
+> **Note:** All development work is done in Docker containers, so you don't need Ruby installed on your host machine, but it's helpful for running Rake tasks.
+
+The instructions below assume you are in the locally cloned project root directory (`apm-ruby`).
+
+### Getting Started
+
+1. **Fork the repository** on GitHub
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/apm-ruby.git
+   cd apm-ruby
+   ```
+3. **Add the upstream remote**:
+   ```bash
+   git remote add upstream https://github.com/solarwinds/apm-ruby.git
+   ```
 
 ## Host Machine Setup
 
-You'll need a host environment that can run the various Rake tasks to spin up development and testing containers. The following describes how to do this with [rbenv](https://github.com/rbenv/rbenv).
+For development, you'll need a host environment capable of running Rake tasks to manage development and testing containers. We recommend using [rbenv](https://github.com/rbenv/rbenv) for Ruby version management.
 
 ### 1. Install rbenv
 
-Mac
+Choose the installation method that works best for your system:
 
+**macOS (using Homebrew):**
 ```bash
 brew install rbenv ruby-build
 ```
 
-Linux
-
+**Linux (Ubuntu/Debian):**
 ```bash
 sudo apt install rbenv
 ```
 
-Built from source (github)
-
+**Build from source:**
 ```bash
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
 echo 'eval "$(~/.rbenv/bin/rbenv init - zsh)"' >> ~/.zshrc   # for zsh
 ```
 
-### 2. Install and Set Ruby Runtime
+### 2. Install and Configure Ruby
 
-Install ruby from rbenv:
+Install Ruby using rbenv:
 
 ```bash
-# list latest stable versions:
+# List latest stable versions
 rbenv install -l
 
-# list all local versions:
+# List all available versions
 rbenv install -L
 
-# install a Ruby version:
+# Install the desired Ruby version
 rbenv install 3.1.2
 ```
 
-Enable rbenv by following the instructions printed by this command:
+Enable rbenv by following the initialization instructions:
 
 ```bash
 rbenv init
 ```
 
-Set ruby version to use.  Set this at the global level to prevent `.ruby-version` conflicts within the development container which bind mounts the working tree:
+Set the global Ruby version (this prevents conflicts within development containers):
 
 ```bash
-rbenv global 3.1.2   # set the default Ruby version for this machine
+rbenv global 3.1.2   # Set the default Ruby version for this machine
 ```
 
-### 3. Install Minimal Project Dependencies
+### 3. Install Project Dependencies
 
-Install bundler, configure it to skip unneeded groups, then install the project dependencies to allow working with Rake tasks:
+Install Bundler and configure it for development:
 
 ```bash
 gem install bundler
@@ -72,101 +116,150 @@ bundle config set --local without development test
 bundle install
 ```
 
-Should now be able to list the Rake tasks:
+Verify the setup by listing available Rake tasks:
 
 ```bash
 bundle exec rake -T
 ```
 
-## Run Development Container
+You should see tasks like `docker_dev`, `docker_tests`, `build_gem`, etc.
 
-The `solarwinds_apm` gem requires a Linux run time environment. To work on the codebase we set up an Ubuntu container with the tools needed to build, install and work with the project.
+## Development Workflow
 
-Starting the container:
+### Setting Up the Development Environment
+
+The `solarwinds_apm` gem requires a Linux runtime environment. We use Ubuntu containers with all necessary tools for building, installing, and working with the project.
+
+#### Starting the Development Container
+
+Launch the development container:
 
 ```bash
 bundle exec rake docker_dev
 ```
 
-In the container, set up the environment and project dependencies:
+Once inside the container, set up the environment:
 
 ```bash
-# choose the ruby version to use, setting it at the global level
+# Choose and set the Ruby version (check available versions)
 rbenv versions
 rbenv global <some-version>
 
-# install project gem dependencies
+# Install project dependencies
 bundle install
 ```
 
-### Building the Gem
+#### Working in the Development Container
 
-The gem can be built, installed, and run inside the development container:
+The development container provides a complete environment for:
+- Building and testing the gem
+- Running linting tools
+- Debugging issues
+- Making code changes
+
+All source code is mounted from your host machine, so changes are immediately reflected in the container.
+
+### Building and Testing the Gem
+
+#### Building the Gem
+
+Build the gem within the development container:
 
 ```bash
-# build the gem
+# Build the gem
 bundle exec rake build_gem
 
-# install the built gem
+# Install the built gem locally
 gem install builds/solarwinds_apm-<version>.gem
 
-# load the gem
+# Test the installation by loading the gem
 SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 ```
 
+#### Making Changes
+
+1. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes** in the appropriate files under `lib/`
+
+3. **Write or update tests** in the `test/` directory
+
+4. **Test your changes** (see Testing section below)
+
+5. **Run linting** to ensure code quality
+
+## Testing
+
+> **Note:** Some tests require the `APM_RUBY_TEST_KEY` environment variable. Contact the maintainers if you need access to a test key.
+
+### Running Tests
+
+**Full test suite:**
+```bash
+APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
+```
+
+**Single test file:**
+```bash
+# Most tests require only the unit.gemfile dependencies
+bundle update
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
+```
+
+**Single test case:**
+```bash
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
+```
+
+### Running the Complete Test Suite From the Host Machine
+
+Execute the full test suite from the host machine:
+
+```bash
+# Run tests in Ruby 3.1.0 bullseye container
+bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
+
+# Run tests in Ruby 3.2 Alpine container for ARM64
+bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
+```
+
+Test logs are written to the `log/` directory and are available on the host machine.
+
+### Test Organization
+
+Tests are organized in the `test/` directory:
+- `test/api/` - API-related tests
+- `test/opentelemetry/` - OpenTelemetry integration tests
+- `test/patch/` - Instrumentation patch tests
+- `test/sampling/` - Sampling logic tests
+- `test/support/` - Test utilities and helpers
+
+## Code Quality
+
 ### Linting
 
-Use this Rake task to run rubocop inside the development container:
+We use RuboCop for code style enforcement. Run linting in the development container:
 
 ```bash
 bundle exec rake rubocop
 ```
 
-It will produce the file `rubocop_result.txt`.  Issues found should be addressed prior to commit.
+This generates a `rubocop_result.txt` file. **All linting issues must be resolved before submitting a pull request.**
 
-## Run Test Containers
+## Getting Help
 
-On the host machine, you can use the `docker_tests` Rake task to run the test suite, or launch an interactive shell session into the test container to run specific tests or to debug.
+- **Issues**: Check existing issues or create a new one
+- **Discussions**: Use GitHub Discussions for questions
+- **Documentation**: Refer to our [documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm)
+- **Email**: Contact technicalsupport@solarwinds.com for technical support
 
-### Run Test Suite
+## Additional Resources
 
-Run the test suite (some test cases rely on env `APM_RUBY_TEST_KEY`):
+- [OpenTelemetry Ruby Documentation](https://opentelemetry.io/docs/instrumentation/ruby/)
+- [SolarWinds Observability Documentation](https://documentation.solarwinds.com/en/success_center/observability/default.htm)
+- [Project GitHub Repository](https://github.com/solarwinds/apm-ruby)
 
-```bash
-# run tests in a ruby:3.1.0-bullseye container
-bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
-
-# run tests in a ruby:3.2-alpine linux/amd64 container
-bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
-```
-
-Test logs are written to the project's `log` directory, which is bind mounted and available on the host machine.
-
-### Launch Interactive Shell
-
-Start an interactive session in the container:
-
-```bash
-bundle exec rake 'docker_tests[,false]'
-```
-
-In the container, set up the environment:
-
-```bash
-test/test_setup.sh
-```
-
-To run the full suite (some test cases rely on env `APM_RUBY_TEST_KEY`):
-
-```bash
-APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
-```
-
-To run a single test file or single test case:
-
-```bash
-# most tests require just the unit.gemfile dependencies
-bundle update
-bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
-bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
-```
+Thank you for contributing to SolarWinds APM Ruby! 🙏
