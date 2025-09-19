@@ -75,11 +75,13 @@ All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard OpenT
 The SolarWinds backend uses the OTLP exporter by default. You can configure additional exporters for debugging or multi-backend scenarios:
 
 **Console Exporter (for debugging):**
+
 ```bash
 export OTEL_TRACES_EXPORTER=console
 ```
 
 **Multiple Exporters:**
+
 ```bash
 export OTEL_TRACES_EXPORTER=otlp,console
 ```
@@ -95,6 +97,7 @@ gem 'solarwinds_apm'
 ```
 
 Then configure:
+
 ```bash
 export OTEL_TRACES_EXPORTER=jaeger
 ```
@@ -104,11 +107,13 @@ export OTEL_TRACES_EXPORTER=jaeger
 The service name is extracted from your service key by default, but can be overridden:
 
 **Service key format:**
+
 ```bash
 export SW_APM_SERVICE_KEY=<api-token>:<service-name>
 ```
 
 **Override with OpenTelemetry variables:**
+
 ```bash
 # Service name will be 'production-api', not 'my-service'
 export SW_APM_SERVICE_KEY=<api-token>:my-service
@@ -116,6 +121,7 @@ export OTEL_SERVICE_NAME=production-api
 ```
 
 **Resource attributes:**
+
 ```bash
 export OTEL_RESOURCE_ATTRIBUTES=service.name=production-api,service.version=1.2.3
 ```
@@ -125,12 +131,14 @@ export OTEL_RESOURCE_ATTRIBUTES=service.name=production-api,service.version=1.2.
 Fine-tune individual instrumentation libraries using OpenTelemetry environment variables:
 
 **Disable specific instrumentation:**
+
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
 export OTEL_RUBY_INSTRUMENTATION_REDIS_ENABLED=false
 ```
 
 **Configure instrumentation options:**
+
 ```bash
 # Include full SQL statements (disable obfuscation)
 export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
@@ -140,6 +148,7 @@ export OTEL_RUBY_INSTRUMENTATION_NET_HTTP_CONFIG_OPTS='untraced_hosts=localhost,
 ```
 
 Set inside file through ENV hash
+
 ```ruby
 # Set before requiring solarwinds_apm
 ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED'] = 'false'
@@ -273,6 +282,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 Control which transactions are traced using pattern-based filtering. This is useful for excluding static assets, health checks, or other requests that don't need tracing.
 
 **Configuration:**
+
 ```ruby
 SolarWindsAPM::Config[:transaction_settings] = [
   {
@@ -292,6 +302,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ```
 
 **Pattern Matching:**
+
 - Uses Ruby regular expressions
 - Matches against the transaction name
 - Supports regex options like `Regexp::IGNORECASE`
@@ -302,11 +313,13 @@ SolarWindsAPM::Config[:transaction_settings] = [
 Append trace context to database queries as SQL comments for correlation between traces and database logs.
 
 **Enable SQL tagging:**
+
 ```bash
 export SW_APM_TAG_SQL=true
 ```
 
 **Example output:**
+
 ```sql
 -- Before (without tagging)
 SELECT * FROM users WHERE id = 1;
@@ -317,6 +330,7 @@ SELECT * FROM users WHERE id = 1;
 ```
 
 **Supported Operations:**
+
 - **MySQL2**: `query` operations
 - **PostgreSQL**: `exec`, `query`, and similar operations
 
@@ -351,6 +365,7 @@ Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configu
 For environments requiring HTTP proxies, configure using standard Ruby `Net::HTTP` proxy environment variables:
 
 **Basic proxy:**
+
 ```bash
 # proxy server with no authentication
 http_proxy=http://<proxyHost>:<proxyPort> ruby my.app
@@ -385,7 +400,7 @@ Environment Variable | Config File Key | Description | Default
 `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
 `SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
 `SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None
-`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#tag-query-with-trace-context) for details.| `false`
+`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#sql-query-tagging) for details.| `false`
 `SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
 `SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
 `SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
@@ -411,6 +426,7 @@ N/A | `:transaction_settings` | Configure tracing mode per transaction, aka tran
 ### Log Analysis
 
 Enable debug logging and look for:
+
 - Service key validation
 - Collector connection status
 - Instrumentation loading

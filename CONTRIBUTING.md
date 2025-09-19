@@ -45,11 +45,14 @@ The instructions below assume you are in the locally cloned project root directo
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/apm-ruby.git
    cd apm-ruby
    ```
+
 3. **Add the upstream remote**:
+
    ```bash
    git remote add upstream https://github.com/solarwinds/apm-ruby.git
    ```
@@ -63,16 +66,19 @@ For development, you'll need a host environment capable of running Rake tasks to
 Choose the installation method that works best for your system:
 
 **macOS (using Homebrew):**
+
 ```bash
 brew install rbenv ruby-build
 ```
 
 **Linux (Ubuntu/Debian):**
+
 ```bash
 sudo apt install rbenv
 ```
 
 **Build from source:**
+
 ```bash
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
 echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
@@ -152,6 +158,7 @@ bundle install
 #### Working in the Development Container
 
 The development container provides a complete environment for:
+
 - Building and testing the gem
 - Running linting tools
 - Debugging issues
@@ -179,6 +186,7 @@ SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 #### Making Changes
 
 1. **Create a feature branch**:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -198,11 +206,13 @@ SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
 ### Running Tests
 
 **Full test suite:**
+
 ```bash
 APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
 ```
 
 **Single test file:**
+
 ```bash
 # Most tests require only the unit.gemfile dependencies
 bundle update
@@ -210,6 +220,7 @@ bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
 ```
 
 **Single test case:**
+
 ```bash
 bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
 ```
@@ -231,6 +242,7 @@ Test logs are written to the `log/` directory and are available on the host mach
 ### Test Organization
 
 Tests are organized in the `test/` directory:
+
 - `test/api/` - API-related tests
 - `test/opentelemetry/` - OpenTelemetry integration tests
 - `test/patch/` - Instrumentation patch tests
@@ -254,7 +266,7 @@ This generates a `rubocop_result.txt` file. **All linting issues must be resolve
 - **Issues**: Check existing issues or create a new one
 - **Discussions**: Use GitHub Discussions for questions
 - **Documentation**: Refer to our [documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm)
-- **Email**: Contact technicalsupport@solarwinds.com for technical support
+- **Email**: Contact <technicalsupport@solarwinds.com> for technical support
 
 ## Additional Resources
 
