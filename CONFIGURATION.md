@@ -46,21 +46,17 @@ Configuration can be set in multiple ways with the following precedence order (h
 
 > **💡 Tip:** Environment variables always take precedence, making them ideal for deployment-specific settings.
 
-## Environment Variables
-
 Environment variables are the most flexible way to configure the SolarWinds APM gem, especially in containerized or cloud environments.
-
-### Core Settings
 
 All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard OpenTelemetry environment variables are also supported where applicable.
 
-#### Required Configuration
+**Required Configuration**
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `SW_APM_SERVICE_KEY` | API token and service name (required) | `your-token:my-service` |
 
-#### Common Configuration
+**Common Configuration**
 
 | Variable | Description | Default | Example |
 |----------|-------------|---------|---------|
@@ -185,7 +181,7 @@ SolarWindsAPM::OTelConfig.initialize_with_config do |config|
 end
 ```
 
-### Advanced Configuration
+Advanced Configuration
 
 ```ruby
 SolarWindsAPM::OTelConfig.initialize_with_config do |config|
@@ -392,21 +388,21 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 
 ### Environment Variables
 
-Environment Variable | Config File Key | Description | Default
--------------------- | --------------- | ----------- | -------
-`SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true`
-`SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443`
-`SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None
-`SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3
-`SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true`
-`SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None
-`SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#sql-query-tagging) for details.| `false`
-`SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled`
-`SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true`
-`SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None
-N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never`
-N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled`
-N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None
+| Environment Variable | Config File Key | Description | Default |
+| -------------------- | --------------- | ----------- | ------- |
+| `SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true` |
+| `SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443` |
+| `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None |
+| `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3 |
+| `SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true` |
+| `SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None |
+| `SW_APM_TAG_SQL` | `:tag_sql` | Enable/disable injecting trace context into supported SQL statements. Set to boolean true or (or string `true` in env var) to enable, see [Tag Query with Trace Context](#sql-query-tagging) for details.| `false` |
+| `SW_APM_TRIGGER_TRACING_MODE` | `:trigger_tracing_mode` | Enable/disable trigger tracing for the service.  Setting to `disabled` may impact DEM visibility into the service. | `enabled` |
+| `SW_APM_LAMBDA_PRELOAD_DEPS` | N/A | This option only takes effect in the AWS Lambda runtime. Set to `false` to disable the attempt to preload function dependencies and install instrumentations. | `true` |
+| `SW_APM_TRANSACTION_NAME` | N/A | Customize the transaction name for all traces, typically used to target specific instrumented lambda functions. _Precedence order_: custom SDK > `SW_APM_TRANSACTION_NAME` > automatic naming | None |
+| N/A | `:log_traceId` | Configure the insertion of trace context into application logs, setting `:traced` would include the available context fields such as trace_id, span_id into log messages. | `:never` |
+| N/A | `:tracing_mode` | Enable/disable the tracing mode for this service, setting `:disabled` would suppress all trace spans and metrics. | `:enabled` |
+| N/A | `:transaction_settings` | Configure tracing mode per transaction, aka transaction filtering. See [Transaction Filtering](#transaction-filtering) for details.| None |
 
 ### Debug Levels
 
