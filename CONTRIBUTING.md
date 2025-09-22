@@ -22,14 +22,10 @@ We welcome various types of contributions:
 
 Before you begin, ensure you have the following installed on your system:
 
-- **Docker** - Required for containerized development and testing
-- **Docker Compose** - Used for orchestrating multi-container setups
 - **Git** - For version control
 - **Ruby** - For running Rake tasks
-
-> **Note:** All development work is done in Docker containers, so you don't need Ruby installed on your host machine, but it's helpful for running Rake tasks.
-
-The instructions below assume you are in the locally cloned project root directory (`apm-ruby`).
+- **Docker** - (Optional) Required for containerized development and testing
+- **Docker Compose** - (Optional) Used for some rake tests that start the container
 
 ### Getting Started
 
@@ -49,7 +45,7 @@ The instructions below assume you are in the locally cloned project root directo
 
 ## Host Machine Setup
 
-For development, you'll need a host environment capable of running Rake tasks to manage development and testing containers. We recommend using [rbenv](https://github.com/rbenv/rbenv) for Ruby version management.
+We recommend using [rbenv](https://github.com/rbenv/rbenv) for Ruby version management.
 
 ### 1. Install rbenv
 
@@ -71,35 +67,22 @@ sudo apt install rbenv
 
 ```bash
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
 echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
 echo 'eval "$(~/.rbenv/bin/rbenv init - zsh)"' >> ~/.zshrc   # for zsh
+source ~/.bashrc    # for bash
+source ~/.zshrc     # for zsh
 ```
 
 ### 2. Install and Configure Ruby
 
-Install Ruby using rbenv:
-
-```bash
-# List latest stable versions
-rbenv install -l
-
-# List all available versions
-rbenv install -L
-
-# Install the desired Ruby version
-rbenv install 3.1.2
-```
-
-Enable rbenv by following the initialization instructions:
+Install Ruby using rbenv, enable rbenv, and set the global Ruby version
 
 ```bash
 rbenv init
-```
-
-Set the global Ruby version (this prevents conflicts within development containers):
-
-```bash
-rbenv global 3.1.2   # Set the default Ruby version for this machine
+rbenv install -L                # List all available versions
+rbenv install 3.1.2             # Install the desired Ruby version
+rbenv global 3.1.2              # Set the default Ruby version for this machine
 ```
 
 ### 3. Install Project Dependencies
@@ -108,23 +91,23 @@ Install Bundler and configure it for development:
 
 ```bash
 gem install bundler
-bundle config set --local without development test
 bundle install
 ```
 
-Verify the setup by listing available Rake tasks:
-
-```bash
-bundle exec rake -T
-```
-
-You should see tasks like `docker_dev`, `docker_tests`, `build_gem`, etc.
-
 ## Development Workflow
 
-### Setting Up the Development Environment
+### Development Environment
 
-The `solarwinds_apm` gem requires a Linux runtime environment. We use Ubuntu containers with all necessary tools for building, installing, and working with the project.
+You can use your host machine for building, installing, and testing.
+
+```bash
+# e.g. running all test case after update
+APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
+```
+
+### Development Environment inside Container
+
+You can use Ubuntu containers with all necessary tools for building, installing, and working with the project.
 
 #### Starting the Development Container
 
@@ -137,15 +120,9 @@ bundle exec rake docker_dev
 Once inside the container, set up the environment:
 
 ```bash
-# Choose and set the Ruby version (check available versions)
-rbenv versions
-rbenv global <some-version>
-
-# Install project dependencies
-bundle install
+rbenv global <some-version>      # Choose and set the Ruby version (check available versions)
+bundle install                   # Install project dependencies
 ```
-
-#### Working in the Development Container
 
 The development container provides a complete environment for:
 
@@ -160,17 +137,20 @@ All source code is mounted from your host machine, so changes are immediately re
 
 #### Building the Gem
 
-Build the gem within the development container:
+Build the gem:
 
 ```bash
-# Build the gem
-bundle exec rake build_gem
+bundle exec rake build_gem                          # Build the gem
+gem install builds/solarwinds_apm-<version>.gem     # Install the built gem locally
+SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm # Test the installation by loading the gem
+```
 
-# Install the built gem locally
-gem install builds/solarwinds_apm-<version>.gem
+Build the gem without rake task:
 
-# Test the installation by loading the gem
-SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
+```bash
+gem build solarwinds_apm.gemspec                    # Build the gem
+gem install solarwinds_apm-<version>.gem     # Install the built gem locally
+SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm # Test the installation by loading the gem
 ```
 
 #### Making Changes
@@ -215,7 +195,7 @@ bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
 bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
 ```
 
-### Running the Complete Test Suite From the Host Machine
+### Running the Complete Test Suite inside Container From the Host Machine
 
 Execute the full test suite from the host machine:
 
@@ -243,7 +223,7 @@ Tests are organized in the `test/` directory:
 
 ### Linting
 
-We use RuboCop for code style enforcement. Run linting in the development container:
+We use RuboCop for code style enforcement. Run linting:
 
 ```bash
 bundle exec rake rubocop
