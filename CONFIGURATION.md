@@ -2,17 +2,6 @@
 
 This guide covers all configuration options for the SolarWinds APM Ruby gem, an OpenTelemetry-based distribution that provides automatic instrumentation and observability features for Ruby applications.
 
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [Configuration Precedence](#configuration-precedence)
-- [Environment Variables](#environment-variables)
-- [Configuration Files](#configuration-files)
-- [Programmatic Configuration](#programmatic-configuration)
-- [Advanced Configuration](#advanced-configuration)
-- [Configuration Reference](#configuration-reference)
-- [Troubleshooting](#troubleshooting)
-
 ## Quick Start
 
 To get started quickly, you only need to set your service key:
@@ -48,7 +37,7 @@ Configuration can be set in multiple ways with the following precedence order (h
 
 Environment variables are the most flexible way to configure the SolarWinds APM gem, especially in containerized or cloud environments.
 
-All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard OpenTelemetry environment variables are also supported where applicable.
+All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard [OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) are also supported where applicable.
 
 **Required Configuration**
 
@@ -63,6 +52,8 @@ All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard OpenT
 | `SW_APM_ENABLED` | Enable/disable the entire library | `true` | `false` |
 | `SW_APM_DEBUG_LEVEL` | Logging verbosity (-1 to 6) | `3` | `5` |
 | `SW_APM_COLLECTOR` | Collector endpoint override | `apm.collector.na-01.cloud.solarwinds.com:443` | `custom.collector.com:443` |
+
+More configuration option see [Configuration Reference](#configuration-reference)
 
 ### OpenTelemetry Integration
 
@@ -100,7 +91,11 @@ export OTEL_TRACES_EXPORTER=jaeger
 
 #### Service Naming
 
-The service name is extracted from your service key by default, but can be overridden:
+The service name is extracted from your service key by default, but can be overridden.
+
+By default the service name portion of the service key is used, e.g. `my-service` if the service key is `SW_APM_SERVICE_KEY=api-token:my-service`. If the `OTEL_SERVICE_NAME` or `OTEL_RESOURCE_ATTRIBUTES` environment variable is used to specify a service name, it will take precedence over the default.
+
+`OTEL_SERVICE_NAME` > `OTEL_RESOURCE_ATTRIBUTES` > `SW_APM_SERVICE_KEY` > `SolarWindsAPM::Config[:service_key]`
 
 **Service key format:**
 
