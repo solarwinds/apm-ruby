@@ -49,7 +49,7 @@ All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard [Open
 |----------|-------------|---------|---------|
 | `SW_APM_ENABLED` | Enable/disable the entire library | `true` | `false` |
 | `SW_APM_DEBUG_LEVEL` | Logging verbosity (-1 to 6) | `3` | `5` |
-| `SW_APM_COLLECTOR` | Collector endpoint override | `apm.collector.na-01.cloud.solarwinds.com:443` | `custom.collector.com:443` |
+| `SW_APM_COLLECTOR` | Collector endpoint override | `apm.collector.na-01.cloud.solarwinds.com:443` | `apm.collector.eu-01.cloud.solarwinds.com:443` |
 
 More configuration option see [Configuration Reference](#configuration-reference)
 
@@ -89,7 +89,7 @@ export OTEL_TRACES_EXPORTER=jaeger
 
 #### Service Name
 
-By default the service name portion of the service key is used, e.g. `my-service` if the service key is `SW_APM_SERVICE_KEY=api-token:my-service`. If the `OTEL_SERVICE_NAME` or `OTEL_RESOURCE_ATTRIBUTES` environment variable is used to specify a service name, it will take precedence over the default.
+By default the service name portion of the service key is used, e.g. `my-service` if the service key is `SW_APM_SERVICE_KEY=api-token:my-service`. If the `OTEL_SERVICE_NAME` or `OTEL_RESOURCE_ATTRIBUTES` environment variable is used to specify a service name, it will take precedence over the default. The precedence is as follows:
 
 `OTEL_SERVICE_NAME` > `OTEL_RESOURCE_ATTRIBUTES` > `SW_APM_SERVICE_KEY` > `SolarWindsAPM::Config[:service_key]`
 
@@ -266,7 +266,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 
 ### Transaction Filtering
 
-Control which transactions are traced using pattern-based filtering. This is useful for excluding static assets, health checks, or other requests that don't need tracing.
+Specific transactions can be disabled from tracing (suppressing both spans and metrics) using the `:transaction_settings` configuration. An example that filters out static assets, health check requests, and a background job consumer:
 
 **Configuration:**
 
@@ -312,7 +312,7 @@ SELECT * FROM users WHERE id = 1;
 **Supported Operations:**
 
 - **MySQL2**: `query` operations
-- **PostgreSQL**: `exec`, `query`, and similar operations
+- **PostgreSQL**: the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 > **⚠️ Limitation:** Currently does not support prepared statements.
 
@@ -330,7 +330,7 @@ This adds trace and span IDs to log entries when using supported logging framewo
 
 #### Resque
 
-When using Resque, ensure graceful shutdown for proper trace transmission:
+When starting the Resque worker, it is necessary to set `RUN_AT_EXIT_HOOKS=1`. For example:
 
 ```bash
 RUN_AT_EXIT_HOOKS=1 QUEUE=myqueue bundle exec rake resque:work
@@ -366,7 +366,7 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 
 ## Configuration Reference
 
-### Environment Variables
+### All Options
 
 | Environment Variable | Config File Key | Description | Default |
 | -------------------- | --------------- | ----------- | ------- |
