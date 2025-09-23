@@ -12,16 +12,16 @@ We welcome various types of contributions:
 - **Code contributions**: Bug fixes, new features, performance improvements
 - **Testing**: Add test coverage or improve existing tests
 
-## Development Setup
+## Development Environment Setup
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed on your system:
+Before you begin, ensure you have the following installed:
 
 - **Git** - For version control
-- **Ruby** - For running Rake tasks
-- **Docker** - (Optional) Required for containerized development and testing
-- **Docker Compose** - (Optional) Used for some rake tests that start the container
+- **rbenv** - For Ruby version management (see [rbenv installation guide](https://github.com/rbenv/rbenv#installation))
+- **Ruby** - Install via rbenv
+- **Docker** - (Optional)
 
 ### Getting Started
 
@@ -39,117 +39,33 @@ Before you begin, ensure you have the following installed on your system:
    git remote add upstream https://github.com/solarwinds/apm-ruby.git
    ```
 
-## Host Machine Setup
+### Setup Ruby Environment
 
-We recommend using [rbenv](https://github.com/rbenv/rbenv) for Ruby version management.
+1. **Install Ruby** using rbenv (install appropriate version as needed):
 
-### 1. Install rbenv
+   ```bash
+   rbenv install 3.1.2
+   rbenv local 3.1.2  # or rbenv global 3.1.2
+   ```
 
-Choose the installation method that works best for your system:
+2. **Install dependencies** with isolated vendoring:
 
-**macOS (using Homebrew):**
+   ```bash
+   gem install bundler
+   bundle install --path vendor/bundle
+   ```
 
-```bash
-brew install rbenv ruby-build
-```
+3. **Verify setup** by listing available rake tasks:
 
-**Linux (Ubuntu/Debian):**
+   ```bash
+   bundle exec rake -T
+   ```
 
-```bash
-sudo apt install rbenv
-```
-
-**Build from source:**
-
-```bash
-git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-echo 'eval "$(~/.rbenv/bin/rbenv init - bash)"' >> ~/.bashrc # for bash
-echo 'eval "$(~/.rbenv/bin/rbenv init - zsh)"' >> ~/.zshrc   # for zsh
-source ~/.bashrc    # for bash
-source ~/.zshrc     # for zsh
-```
-
-### 2. Install and Configure Ruby
-
-Install Ruby using rbenv, enable rbenv, and set the global Ruby version
-
-```bash
-rbenv init
-rbenv install -L                # List all available versions
-rbenv install 3.1.2             # Install the desired Ruby version
-rbenv global 3.1.2              # Set the default Ruby version for this machine
-```
-
-### 3. Install Project Dependencies
-
-Install Bundler and configure it for development:
-
-```bash
-gem install bundler
-bundle install
-```
+   You should see various available tasks for building, testing, and linting.
 
 ## Development Workflow
 
-### Development Environment
-
-You can use your host machine for building, installing, and testing.
-
-```bash
-# e.g. running all test case after update
-APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
-```
-
-### Development Environment inside Container
-
-You can use Ubuntu containers with all necessary tools for building, installing, and working with the project.
-
-#### Starting the Development Container
-
-Launch the development container:
-
-```bash
-bundle exec rake docker_dev
-```
-
-Once inside the container, set up the environment:
-
-```bash
-rbenv global <some-version>      # Choose and set the Ruby version (check available versions)
-bundle install                   # Install project dependencies
-```
-
-The development container provides a complete environment for:
-
-- Building and testing the gem
-- Running linting tools
-- Debugging issues
-- Making code changes
-
-All source code is mounted from your host machine, so changes are immediately reflected in the container.
-
-### Building and Testing the Gem
-
-#### Building the Gem
-
-Build the gem:
-
-```bash
-bundle exec rake build_gem                          # Build the gem
-gem install builds/solarwinds_apm-<version>.gem     # Install the built gem locally
-SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm # Test the installation by loading the gem
-```
-
-Build the gem without rake task:
-
-```bash
-gem build solarwinds_apm.gemspec                    # Build the gem
-gem install solarwinds_apm-<version>.gem     # Install the built gem locally
-SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm # Test the installation by loading the gem
-```
-
-#### Making Changes
+### Making Changes
 
 1. **Create a feature branch**:
 
@@ -161,27 +77,25 @@ SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm # Test the ins
 
 3. **Write or update tests** in the `test/` directory
 
-4. **Test your changes** (see Testing section below)
+### Testing Your Changes
 
-5. **Run linting** to ensure code quality
+#### Load Changes Interactively
 
-## Testing
-
-> **Note:** Some tests require the `APM_RUBY_TEST_KEY` environment variable. Contact the maintainers if you need access to a test key.
-
-### Running Tests
-
-**Full test suite:**
+Test your changes without building a gem:
 
 ```bash
-APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
+bundle exec irb -Ilib -r solarwinds_apm
 ```
+
+This loads your source code changes directly for quick testing and debugging.
+
+#### Running Tests
+
+> **Note:** Some tests require the `APM_RUBY_TEST_KEY` environment variable. Contact the maintainers if you need access to a test key.
 
 **Single test file:**
 
 ```bash
-# Most tests require only the unit.gemfile dependencies
-bundle update
 bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
 ```
 
@@ -191,9 +105,44 @@ bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
 bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
 ```
 
-### Running the Complete Test Suite inside Container From the Host Machine
+**Local test suite (run all test file):**
 
-Execute the full test suite from the host machine:
+```bash
+APM_RUBY_TEST_KEY=your_service_key test/run_tests.sh
+```
+
+#### Code Quality
+
+Run RuboCop for code style enforcement:
+
+```bash
+bundle exec rake rubocop
+```
+
+All linting issues must be resolved before submitting a pull request.
+
+## Advanced Setup (Optional)
+
+### Development Environment inside Container
+
+For complex debugging or if you prefer working in a containerized environment, you can use Ubuntu containers with all necessary tools:
+
+```bash
+bundle exec rake docker_dev
+```
+
+Once inside the container:
+
+```bash
+rbenv global <version>      # Set Ruby version
+bundle install             # Install dependencies
+```
+
+The development container provides a complete isolated environment with all source code mounted from your host machine.
+
+### Full Regression Testing
+
+Run the complete test suite in containers (from host machine):
 
 ```bash
 # Run tests in Ruby 3.1.0 bullseye container
@@ -203,36 +152,7 @@ bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
 bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
 ```
 
-Test logs are written to the `log/` directory and are available on the host machine.
-
-### Test Organization
-
-Tests are organized in the `test/` directory:
-
-- `test/api/` - API-related tests
-- `test/opentelemetry/` - OpenTelemetry integration tests
-- `test/patch/` - Instrumentation patch tests
-- `test/sampling/` - Sampling logic tests
-- `test/support/` - Test utilities and helpers
-
-## Code Quality
-
-### Linting
-
-We use RuboCop for code style enforcement. Run linting:
-
-```bash
-bundle exec rake rubocop
-```
-
-This generates a `rubocop_result.txt` file. **All linting issues must be resolved before submitting a pull request.**
-
-## Getting Help
-
-- **Issues**: Check existing issues or create a new one
-- **Discussions**: Use GitHub Discussions for questions
-- **Documentation**: Refer to our [documentation website](https://documentation.solarwinds.com/en/success_center/observability/content/configure/services/ruby/install.htm)
-- **Email**: Contact <technicalsupport@solarwinds.com> for technical support
+Test logs are written to the `log/` directory.
 
 ## Additional Resources
 
