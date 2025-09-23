@@ -33,8 +33,6 @@ Configuration can be set in multiple ways with the following precedence order (h
 3. **Configuration Files** - Rails initializer or config file
 4. **Default Values** - Built-in defaults
 
-> **💡 Tip:** Environment variables always take precedence, making them ideal for deployment-specific settings.
-
 Environment variables are the most flexible way to configure the SolarWinds APM gem, especially in containerized or cloud environments.
 
 All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard [OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) are also supported where applicable.
@@ -89,9 +87,7 @@ Then configure:
 export OTEL_TRACES_EXPORTER=jaeger
 ```
 
-#### Service Naming
-
-The service name is extracted from your service key by default, but can be overridden.
+#### Service Name
 
 By default the service name portion of the service key is used, e.g. `my-service` if the service key is `SW_APM_SERVICE_KEY=api-token:my-service`. If the `OTEL_SERVICE_NAME` or `OTEL_RESOURCE_ATTRIBUTES` environment variable is used to specify a service name, it will take precedence over the default.
 
@@ -292,13 +288,6 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ]
 ```
 
-**Pattern Matching:**
-
-- Uses Ruby regular expressions
-- Matches against the transaction name
-- Supports regex options like `Regexp::IGNORECASE`
-- Can disable both spans and metrics
-
 ### SQL Query Tagging
 
 Append trace context to database queries as SQL comments for correlation between traces and database logs.
@@ -352,10 +341,6 @@ The `RUN_AT_EXIT_HOOKS=1` ensures background processes complete before worker sh
 ### Proxy Configuration
 
 Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configuration file option `:http_proxy` are deprecated since telemetry is exported with standard OTLP exporters. These exporters use Ruby's `Net::HTTP`, which supports configuring an [HTTP proxy](https://docs.ruby-lang.org/en/master/Net/HTTP.html#class-Net::HTTPSession-label-Proxy+Server). The examples below set the `http_proxy` environment variable for the Ruby process to configure the proxy:
-
-For environments requiring HTTP proxies, configure using standard Ruby `Net::HTTP` proxy environment variables:
-
-**Basic proxy:**
 
 ```bash
 # proxy server with no authentication

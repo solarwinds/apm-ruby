@@ -2,10 +2,6 @@
 
 Thank you for your interest in contributing to the SolarWinds APM Ruby gem! This document provides guidelines and instructions for contributing to this OpenTelemetry-based Ruby distribution.
 
-## Code of Conduct
-
-By participating in this project, you agree to abide by our Code of Conduct. Please treat all community members with respect and create a welcoming environment for everyone.
-
 ## How to Contribute
 
 We welcome various types of contributions:
