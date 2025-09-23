@@ -33,9 +33,9 @@ Configuration can be set in multiple ways with the following precedence order (h
 3. **Configuration Files** - Rails initializer or config file
 4. **Default Values** - Built-in defaults
 
-Environment variables are the most flexible way to configure the SolarWinds APM gem, especially in containerized or cloud environments.
+## Environment Variables
 
-All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard [OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) are also supported where applicable.
+Environment variables are the most flexible way to configure the SolarWinds APM gem, especially in containerized or cloud environments. All SolarWinds APM-specific settings are prefixed with `SW_APM_`. Standard [OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) are also supported where applicable.
 
 **Required Configuration**
 
@@ -59,32 +59,10 @@ More configuration option see [Configuration Reference](#configuration-reference
 
 The SolarWinds backend uses the OTLP exporter by default. You can configure additional exporters for debugging or multi-backend scenarios:
 
-**Console Exporter (for debugging):**
-
 ```bash
-export OTEL_TRACES_EXPORTER=console
-```
-
-**Multiple Exporters:**
-
-```bash
-export OTEL_TRACES_EXPORTER=otlp,console
-```
-
-**Third-party Exporters:**
-
-For exporters like Jaeger, first add them to your Gemfile:
-
-```ruby
-# Add before solarwinds_apm in your Gemfile
-gem 'opentelemetry-exporter-jaeger'
-gem 'solarwinds_apm'
-```
-
-Then configure:
-
-```bash
-export OTEL_TRACES_EXPORTER=jaeger
+export OTEL_TRACES_EXPORTER=console          # Console Exporter (for debugging)
+export OTEL_TRACES_EXPORTER=otlp,console     # Multiple Exporters
+export OTEL_TRACES_EXPORTER=jaeger           # Third-party Exporters (e.g. jaeger, add gem opentelemetry-exporter-jaeger before solarwinds_apm)
 ```
 
 #### Service Name
@@ -93,13 +71,13 @@ By default the service name portion of the service key is used, e.g. `my-service
 
 `OTEL_SERVICE_NAME` > `OTEL_RESOURCE_ATTRIBUTES` > `SW_APM_SERVICE_KEY` > `SolarWindsAPM::Config[:service_key]`
 
-**Service key format:**
+Service key format:
 
 ```bash
 export SW_APM_SERVICE_KEY=<api-token>:<service-name>
 ```
 
-**Override with OpenTelemetry variables:**
+Override with OpenTelemetry variables:
 
 ```bash
 # Service name will be 'production-api', not 'my-service'
@@ -107,7 +85,7 @@ export SW_APM_SERVICE_KEY=<api-token>:my-service
 export OTEL_SERVICE_NAME=production-api
 ```
 
-**Resource attributes:**
+Resource attributes:
 
 ```bash
 export OTEL_RESOURCE_ATTRIBUTES=service.name=production-api,service.version=1.2.3
@@ -117,14 +95,14 @@ export OTEL_RESOURCE_ATTRIBUTES=service.name=production-api,service.version=1.2.
 
 Fine-tune individual instrumentation libraries using OpenTelemetry environment variables:
 
-**Disable specific instrumentation:**
+Disable specific instrumentation:
 
 ```bash
 export OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED=false
 export OTEL_RUBY_INSTRUMENTATION_REDIS_ENABLED=false
 ```
 
-**Configure instrumentation options:**
+Configure instrumentation options:
 
 ```bash
 # Include full SQL statements (disable obfuscation)
@@ -134,15 +112,15 @@ export OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS='db_statement=include;'
 export OTEL_RUBY_INSTRUMENTATION_NET_HTTP_CONFIG_OPTS='untraced_hosts=localhost,internal.service;'
 ```
 
-Set inside file through ENV hash
+Set inside file through ENV hash:
 
 ```ruby
 # Set before requiring solarwinds_apm
-ENV['OTEL_RUBY_INSTRUMENTATION_SINATRA_ENABLED'] = 'false'
 ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
+ENV['OTEL_RUBY_INSTRUMENTATION_NET_HTTP_CONFIG_OPTS'] = 'untraced_hosts=localhost,internal.service;'
 ```
 
-> **📚 Learn More:** See the [OpenTelemetry Ruby instrumentation documentation](https://opentelemetry.io/docs/languages/ruby/libraries/) for all available options.
+> See the [OpenTelemetry Ruby instrumentation documentation](https://opentelemetry.io/docs/languages/ruby/libraries/) for all available options.
 
 ## Programmatic Configuration
 
@@ -161,11 +139,8 @@ export SW_APM_AUTO_CONFIGURE=false
 Below is an example that disables Dalli instrumentation and sets the Rack instrumentation to capture certain headers as Span attributes:
 
 ```ruby
-# note auto-configure must be disabled, e.g.
-# export SW_APM_AUTO_CONFIGURE=false
-
+# note auto-configure must be disabled, e.g. export SW_APM_AUTO_CONFIGURE=false
 require 'solarwinds_apm'
-
 SolarWindsAPM::OTelConfig.initialize_with_config do |config|
   config["OpenTelemetry::Instrumentation::Dalli"] = {:enabled => false}
   config["OpenTelemetry::Instrumentation::Rack"]  = {:allowed_request_headers => ['header1', 'header2']}
@@ -196,13 +171,15 @@ SolarWindsAPM::OTelConfig.initialize_with_config do |config|
 end
 ```
 
-> **📖 Reference:** Consult individual [instrumentation README files](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) for complete configuration options.
+> **Reference:** Consult individual [instrumentation README files](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation) for complete configuration options.
 
 ## Configuration Files
 
-Configuration files provide a centralized way to manage settings, especially useful for complex configurations or when using multiple environments.
+The configuration file should be Ruby code that sets key/values in the hash exposed by `SolarWindsAPM::Config`. The bundled [Rails generator template file](https://github.com/solarwinds/apm-ruby/blob/main/lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb) serves as an example of the supported values, see also the [Configuration Reference](#configuration-reference) section.
 
-### Rails Applications
+### How to install the file
+
+#### Rails Applications
 
 For Rails applications, use the built-in generator to create a configuration file:
 
@@ -212,7 +189,7 @@ bundle exec rails generate solarwinds_apm:install
 
 This creates `config/initializers/solarwinds_apm.rb` with documented configuration options.
 
-### Non-Rails Applications
+#### Non-Rails Applications
 
 Create a file named `solarwinds_apm_config.rb` in your application's root directory:
 
@@ -223,7 +200,7 @@ SolarWindsAPM::Config[:debug_level] = 3
 SolarWindsAPM::Config[:tag_sql] = true
 ```
 
-### Custom Location
+#### Custom Location
 
 Override the default configuration file location:
 
@@ -231,44 +208,11 @@ Override the default configuration file location:
 export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
 ```
 
-### Configuration File Template
+### Config Options
 
-Here's a comprehensive configuration file example:
-
-```ruby
-# SolarWinds APM Configuration
-
-# Required: Service key
-SolarWindsAPM::Config[:service_key] = ENV['SW_APM_SERVICE_KEY']
-
-# Logging and debugging
-SolarWindsAPM::Config[:debug_level] = 3
-SolarWindsAPM::Config[:log_traceId] = :traced
-
-# Tracing configuration
-SolarWindsAPM::Config[:tracing_mode] = :enabled
-SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
-
-# Database query tagging
-SolarWindsAPM::Config[:tag_sql] = false
-
-# Transaction filtering (see Advanced Configuration section)
-SolarWindsAPM::Config[:transaction_settings] = [
-  {
-    regexp: '\.(css|js|png|jpg|gif|ico)$',
-    opts: Regexp::IGNORECASE,
-    tracing: :disabled
-  }
-]
-```
-
-## Advanced Configuration
-
-### Transaction Filtering
+#### Transaction Filtering
 
 Specific transactions can be disabled from tracing (suppressing both spans and metrics) using the `:transaction_settings` configuration. An example that filters out static assets, health check requests, and a background job consumer:
-
-**Configuration:**
 
 ```ruby
 SolarWindsAPM::Config[:transaction_settings] = [
@@ -288,35 +232,32 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ]
 ```
 
-### SQL Query Tagging
+#### SQL Query Tagging
 
 Append trace context to database queries as SQL comments for correlation between traces and database logs.
 
-**Enable SQL tagging:**
-
 ```bash
-export SW_APM_TAG_SQL=true
+export SW_APM_TAG_SQL=true        # Enable SQL tagging
 ```
 
-**Example output:**
+Output:
 
 ```sql
 -- Before (without tagging)
 SELECT * FROM users WHERE id = 1;
 
 -- After (with tagging)
-SELECT * FROM users WHERE id = 1; 
-/* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
+SELECT * FROM users WHERE id = 1; /* traceparent=7435a9fe510ae4533414d425dadf4e18-49e60702469db05f-01 */
 ```
 
-**Supported Operations:**
+Supported Operations:
 
 - **MySQL2**: `query` operations
 - **PostgreSQL**: the "[exec-ish](https://github.com/solarwinds/apm-ruby/blob/main/lib/solarwinds_apm/patch/tag_sql/sw_pg_patch.rb#L15)" operations like `exec` and `query` are supported.
 
 > **⚠️ Limitation:** Currently does not support prepared statements.
 
-### Log Trace Context Integration
+#### Log Trace Context Integration
 
 Include trace context in your application logs for better correlation:
 
@@ -326,9 +267,9 @@ SolarWindsAPM::Config[:log_traceId] = :traced
 
 This adds trace and span IDs to log entries when using supported logging frameworks.
 
-### Background Job Configuration
+### Other Configuration
 
-#### Resque
+#### Background Job Configuration: Resque
 
 When starting the Resque worker, it is necessary to set `RUN_AT_EXIT_HOOKS=1`. For example:
 
@@ -351,7 +292,7 @@ http_proxy=http://<proxyHost>:<proxyPort> ruby my.app
 http_proxy=http://<username>:<password>@<proxyHost>:<proxyPort> ruby my.app
 ```
 
-> **📝 Note:** Starting with version 7.0.0, `SW_APM_PROXY` is deprecated in favor of standard HTTP proxy environment variables.
+> **Note:** Starting with version 7.0.0, `SW_APM_PROXY` is deprecated in favor of standard HTTP proxy environment variables.
 
 ### Lambda Configuration
 
