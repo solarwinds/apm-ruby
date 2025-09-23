@@ -208,9 +208,9 @@ Override the default configuration file location:
 export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
 ```
 
-### Config Options
+## Configuration Topics
 
-#### Transaction Filtering
+### Transaction Filtering
 
 Specific transactions can be disabled from tracing (suppressing both spans and metrics) using the `:transaction_settings` configuration. An example that filters out static assets, health check requests, and a background job consumer:
 
@@ -232,7 +232,7 @@ SolarWindsAPM::Config[:transaction_settings] = [
 ]
 ```
 
-#### SQL Query Tagging
+### SQL Query Tagging
 
 Append trace context to database queries as SQL comments for correlation between traces and database logs.
 
@@ -257,7 +257,7 @@ Supported Operations:
 
 > **⚠️ Limitation:** Currently does not support prepared statements.
 
-#### Log Trace Context Integration
+### Log Trace Context Integration
 
 Include trace context in your application logs for better correlation:
 
@@ -267,9 +267,7 @@ SolarWindsAPM::Config[:log_traceId] = :traced
 
 This adds trace and span IDs to log entries when using supported logging frameworks.
 
-### Other Configuration
-
-#### Background Job Configuration: Resque
+### Background Job Configuration: Resque
 
 When starting the Resque worker, it is necessary to set `RUN_AT_EXIT_HOOKS=1`. For example:
 
@@ -307,8 +305,6 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 ```
 
 ## Configuration Reference
-
-### All Options
 
 | Environment Variable | Config File Key | Description | Default |
 | -------------------- | --------------- | ----------- | ------- |

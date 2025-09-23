@@ -158,6 +158,5 @@ Test logs are written to the `log/` directory.
 
 - [OpenTelemetry Ruby Documentation](https://opentelemetry.io/docs/instrumentation/ruby/)
 - [SolarWinds Observability Documentation](https://documentation.solarwinds.com/en/success_center/observability/default.htm)
-- [Project GitHub Repository](https://github.com/solarwinds/apm-ruby)
 
-Thank you for contributing to SolarWinds APM Ruby! 🙏
+Thank you for contributing to SolarWinds APM Ruby!
