@@ -340,7 +340,8 @@ The `RUN_AT_EXIT_HOOKS=1` ensures background processes complete before worker sh
 
 ### Proxy Configuration
 
-Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configuration file option `:http_proxy` are deprecated since telemetry is exported with standard OTLP exporters. These exporters use Ruby's `Net::HTTP`, which supports configuring an [HTTP proxy](https://docs.ruby-lang.org/en/master/Net/HTTP.html#class-Net::HTTPSession-label-Proxy+Server). The examples below set the `http_proxy` environment variable for the Ruby process to configure the proxy:
+Starting with version 7.0.0, the environment variable `SW_APM_PROXY` and configuration file option `:http_proxy` are deprecated since telemetry is exported with standard OTLP exporters. These exporters use Ruby
+'s `Net::HTTP`, which supports configuring an [HTTP proxy](https://docs.ruby-lang.org/en/master/Net/HTTP.html#class-Net::HTTPSession-label-Proxy+Server). The examples below set the `http_proxy` environment variable for the Ruby process to configure the proxy:
 
 ```bash
 # proxy server with no authentication
