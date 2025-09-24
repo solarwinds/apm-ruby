@@ -77,6 +77,8 @@ module SolarWindsAPM
         c.use_all(@@config_map)
       end
 
+      require_relative 'patch/instrumentation_patch'
+
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 
