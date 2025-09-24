@@ -15,14 +15,32 @@ In the `solarwinds_apm` repository:
 
 ## Development Environment
 
-- Work inside the Linux dev container (`bundle exec rake docker_dev`); host Ruby can also be used for running test or simple experiment with irb.
-- Use `rbenv` to select a Ruby already installed there; set globally (`rbenv global <version>`).
-- Run `bundle install` after selecting Ruby.
-- Build gem: `bundle exec rake build_gem` (outputs `builds/solarwinds_apm-<version>.gem`)  or `gem build solarwinds_apm.gemspec` (outputs `solarwinds_apm-<version>.gem`).
-- Load gem interactively:
-  ```
-  SW_APM_SERVICE_KEY=<api-token:service-name> irb -r solarwinds_apm
-  ```
+### Setup
+
+1. **Prerequisites**: Install rbenv, Ruby, and bundler (see [rbenv installation guide](https://github.com/rbenv/rbenv#installation))
+2. **Clone and setup**:
+   ```bash
+   git clone <repo-url>
+   cd apm-ruby
+   rbenv install 3.1.2 && rbenv local 3.1.2
+   gem install bundler
+   bundle install --path vendor/bundle
+   ```
+3. **Verify setup**: `bundle exec rake -T` should list available tasks
+
+### Development Workflow
+
+After making changes:
+
+- **Load interactively**: `bundle exec irb -Ilib -r solarwinds_apm` (no build needed)
+- **Run single test**: `bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb`
+- **Run test suite**: `APM_RUBY_TEST_KEY=<key> test/run_tests.sh`
+- **Lint**: `bundle exec rake rubocop`
+- **Full regression**: `bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=<key>]'`
+
+### Advanced: Container Development (Optional)
+
+For complex debugging: `bundle exec rake docker_dev` provides isolated environment with all tools.
 
 ## Linting & Formatting
 
@@ -64,30 +82,25 @@ In the `solarwinds_apm` repository:
 
 ## Tests
 
-- Full suite (default Ruby baseline):
-  ```
-  bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=<key>]'
-  ```
-- Alternate Ruby / platform example:
-  ```
-  bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=<key>]'
-  ```
-- Interactive debugging:
-  ```
-  bundle exec rake 'docker_tests[,false]'
-  test/test_setup.sh
-  APM_RUBY_TEST_KEY=<key> test/run_tests.sh
-  ```
-- Without container:
-  ```
-  test/test_setup.sh
-  ```
-- Run a single file / example:
-  ```
-  bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
-  bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
-  ```
-- Logs emitted to `log/` (bind mounted) — inspect when diagnosing failures.
+**Interactive loading**: `bundle exec irb -Ilib -r solarwinds_apm`
+
+**Single test**:
+```
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
+```
+
+**Local suite**: `APM_RUBY_TEST_KEY=<key> test/run_tests.sh`
+
+**Full regression**:
+```
+bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=<key>]'
+bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=<key>]'
+```
+
+**Setup only**: `test/test_setup.sh`
+
+Logs: Check `log/` directory for test output and debugging.
 
 ### Test Change Scope Guidelines
 
@@ -98,10 +111,10 @@ In the `solarwinds_apm` repository:
 
 ## Release / Build Checklist (Internal)
 
-1. Ensure rubocop passes.
-2. Ensure test suite green on primary supported Ruby versions.
-3. Build gem (`rake build_gem`) and verify `gem spec builds/solarwinds_apm-*.gem name version`.
-4. Smoke test with IRB + service key (span appears, no initialization warnings).
+1. **Code quality**: `bundle exec rake rubocop` passes
+2. **Tests**: Suite green on primary supported Ruby versions
+3. **Build**: `bundle exec rake build_gem` → verify `gem spec builds/solarwinds_apm-*.gem name version`
+4. **Smoke test**: `SW_APM_SERVICE_KEY=<key> bundle exec irb -Ilib -r solarwinds_apm` (spans export, no warnings)
 
 ## Common Pitfalls
 
