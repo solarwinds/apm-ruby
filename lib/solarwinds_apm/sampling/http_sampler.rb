@@ -25,6 +25,7 @@ module SolarWindsAPM
       @pid = nil
       @thread = nil
 
+      @logger.debug { "[#{self.class}/#{__method__}] HttpSampler initialized: url=#{@url}, service=#{@service}, hostname=#{@hostname}, setting_url=#{@setting_url}" }
       reset_on_fork
     end
 
@@ -57,7 +58,6 @@ module SolarWindsAPM
     def fetch_with_timeout(url, timeout_seconds = nil)
       uri = url
       timeout = timeout_seconds || REQUEST_TIMEOUT
-
       deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
 
       remaining = lambda {
@@ -94,26 +94,33 @@ module SolarWindsAPM
 
     # a endless loop within a thread (non-blocking)
     def settings_request
+      @logger.debug { "[#{self.class}/#{__method__}] Starting settings request loop" }
+      sleep_duration = GET_SETTING_DURATION
       loop do
-        @logger.debug { "Retrieving sampling settings from #{@setting_url}" }
-
         response = fetch_with_timeout(@setting_url)
-        parsed = response.nil? ? nil : JSON.parse(response.body)
 
-        @logger.debug { "parsed settings in json: #{parsed.inspect}" }
+        # Check for nil response from timeout
+        unless response.is_a?(Net::HTTPSuccess)
+          @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve settings due to timeout." }
+          next
+        end
+
+        parsed = JSON.parse(response.body)
 
         if update_settings(parsed)
           # update the settings before the previous ones expire with some time to spare
           expiry = (parsed['timestamp'].to_i + parsed['ttl'].to_i)
           expiry_timeout = expiry - REQUEST_TIMEOUT - Time.now.to_i
-          sleep([0, expiry_timeout].max)
+          sleep_duration = [0, expiry_timeout].max
         else
-          @logger.warn { 'Retrieved sampling settings are invalid. Ensure proper configuration.' }
-          sleep(GET_SETTING_DURATION)
+          @logger.warn { "[#{self.class}/#{__method__}] Retrieved sampling settings are invalid. Ensure proper configuration." }
         end
+      rescue JSON::ParserError => e
+        @logger.warn { "[#{self.class}/#{__method__}] JSON parsing error: #{e.message}" }
       rescue StandardError => e
-        @logger.warn { "Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
-        sleep(GET_SETTING_DURATION)
+        @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve sampling settings (#{e.message}), tracing will be disabled until valid ones are available." }
+      ensure
+        sleep(sleep_duration)
       end
     end
   end

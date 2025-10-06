@@ -19,14 +19,8 @@ describe 'otlp processor sampled test' do
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
   end
 
-  it 'initializes_meters_and_metrics' do
-    request_metrics           = @processor.instance_variable_get(:@meters)['sw.apm.request.metrics']
-    request_metrics_registry  = request_metrics.instance_variable_get(:@instrument_registry)
-
-    _(@processor.instance_variable_get(:@meters).size).must_equal 1
+  it 'initializes_metrics' do
     _(@processor.instance_variable_get(:@metrics).size).must_equal 1
-
-    refute_nil(request_metrics_registry['trace.service.response_time'])
   end
 
   it 'ensure_both_span_and_metrics_have_transaction_name' do

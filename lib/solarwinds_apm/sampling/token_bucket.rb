@@ -13,17 +13,19 @@ module SolarWindsAPM
     # Maximum value of a signed 32-bit integer
     MAX_INTERVAL = (2**31) - 1
 
-    attr_reader :capacity, :rate, :interval, :tokens
+    attr_reader :capacity, :rate, :interval, :tokens, :type
 
     def initialize(token_bucket_settings)
       self.capacity = token_bucket_settings.capacity || 0
       self.rate = token_bucket_settings.rate || 0
       self.interval = token_bucket_settings.interval || MAX_INTERVAL
       self.tokens = @capacity
+      @type = token_bucket_settings.type
       @timer = nil
     end
 
-    # used call from update_settings e.g. bucket.update(bucket_settings)
+    # oboe sampler update_settings will update the token
+    # (thread safe as update_settings is guarded by mutex from oboe sampler)
     def update(settings)
       settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_token_bucket_settings(settings)
     end
@@ -72,8 +74,11 @@ module SolarWindsAPM
       @rate = [0, rate].max
     end
 
+    # self.interval= sets the @interval and @sleep_interval
+    # @sleep_interval is used in the timer thread to sleep between replenishing the bucket
     def interval=(interval)
       @interval = interval.clamp(0, MAX_INTERVAL)
+      @sleep_interval = @interval / 1000.0
     end
 
     def tokens=(tokens)
@@ -83,11 +88,15 @@ module SolarWindsAPM
     # Attempts to consume tokens from the bucket
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
+    # TODO: we need to include thread-safety here since sampler is shared across threads
+    # and we may have multiple threads trying to consume tokens at the same time
     def consume(token = 1)
       if @tokens >= token
         self.tokens = @tokens - token
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Consumed #{token} from total #{@tokens} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
         true
       else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
         false
       end
     end
@@ -99,7 +108,7 @@ module SolarWindsAPM
       @timer = Thread.new do
         loop do
           task
-          sleep(@interval / 1000.0)
+          sleep(@sleep_interval)
         end
       end
     end
