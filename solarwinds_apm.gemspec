@@ -27,8 +27,10 @@ Gem::Specification.new do |s|
   s.files -= ['Rakefile']
 
   s.add_dependency('opentelemetry-exporter-otlp', '>= 0.29.1')
+  s.add_dependency('opentelemetry-exporter-otlp-logs', '>= 0.2.1')
   s.add_dependency('opentelemetry-exporter-otlp-metrics', '>= 0.3.0')
   s.add_dependency('opentelemetry-instrumentation-all', '>= 0.31.0')
+  s.add_dependency('opentelemetry-logs-sdk', '>= 0.4.0')
   s.add_dependency('opentelemetry-metrics-sdk', '>= 0.2.0')
   s.add_dependency('opentelemetry-resource-detector-aws', '>= 0.1.0')
   s.add_dependency('opentelemetry-resource-detector-azure', '>= 0.2.0')

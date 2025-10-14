@@ -77,6 +77,9 @@ module SolarWindsAPM
         c.use_all(@@config_map)
       end
 
+      # only enable logger bridge if required and exist
+      SolarWindsAPM.logger.skip_otel_emit = ENV['SW_APM_LOG_BRIDGE'].to_s == 'true' if SolarWindsAPM.logger.respond_to?(:skip_otel_emit)
+
       # append our propagators
       ::OpenTelemetry.propagation.instance_variable_get(:@propagators).append(SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new)
 

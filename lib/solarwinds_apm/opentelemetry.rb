@@ -11,6 +11,8 @@ require 'opentelemetry-metrics-sdk'
 require 'opentelemetry-exporter-otlp'
 require 'opentelemetry-exporter-otlp-metrics'
 require 'opentelemetry-instrumentation-all'
+require 'opentelemetry-logs-sdk'
+require 'opentelemetry-exporter-otlp-logs'
 
 require_relative 'opentelemetry/solarwinds_propagator'
 require_relative 'opentelemetry/solarwinds_response_propagator'
