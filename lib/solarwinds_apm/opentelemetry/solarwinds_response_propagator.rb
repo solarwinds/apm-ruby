@@ -61,6 +61,7 @@ module SolarWindsAPM
         end
 
         private
+
         # SW_XTRACEOPTIONS_RESPONSE_KEY -> xtrace_options_response
         def recover_response_from_tracestate(span_context)
           sanitized = span_context.tracestate.value(SW_XTRACEOPTIONS_RESPONSE_KEY)

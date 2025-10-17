@@ -12,8 +12,8 @@ module SolarWindsAPM
   # solarwinds_apm.gemspec during gem build process
   module Version
     MAJOR  = 7 # breaking,
-    MINOR  = 0 # feature,
-    PATCH  = 2 # fix => BFF
+    MINOR  = 1 # feature,
+    PATCH  = 0 # fix => BFF
     PRE    = 'prev1'
 
     STRING = [MAJOR, MINOR, PATCH, PRE].compact.join('.')

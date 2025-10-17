@@ -72,6 +72,9 @@ module SolarWindsAPM
         ENV['OTEL_LOG_LEVEL'] = SolarWindsAPM::Config::SW_LOG_LEVEL_MAPPING.dig(log_level, :otel)
       end
 
+      # disable log bridge by default
+      ENV['OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED'] = 'false' unless %w[true false].include?(ENV['OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED'].to_s)
+
       ::OpenTelemetry::SDK.configure do |c|
         c.resource = final_attributes
         c.use_all(@@config_map)
