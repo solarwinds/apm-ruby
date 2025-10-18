@@ -21,7 +21,7 @@ describe 'Log Bridge Initialization Test' do
       _(ENV.fetch('OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED', nil)).must_equal 'true'
     end
 
-    it 'OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED=false -> enabled' do
+    it 'OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED=false -> disabled' do
       ENV['OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED'] = 'false'
       SolarWindsAPM::OTelConfig.initialize
       _(ENV.fetch('OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED', nil)).must_equal 'false'
