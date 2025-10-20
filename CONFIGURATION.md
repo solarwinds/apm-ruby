@@ -124,7 +124,7 @@ See the [OpenTelemetry Ruby instrumentation documentation](https://opentelemetry
 
 #### Exporting Application Logs
 
-The [Logger instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/logger) is a log appender for the Ruby `logger` that bridges messages into OTel log record format for export. By default this instrumentation is disabled, it can be enabled by setting the environment variable `OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED=true`.
+The [Logger instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/logger) is a log appender for the Ruby `logger` that bridges messages into OTel log record format for export. By default this instrumentation is disabled; it can be enabled by setting the environment variable `OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED=true`.
 
 ## Programmatic Configuration
 
