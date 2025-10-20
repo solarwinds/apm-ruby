@@ -183,7 +183,7 @@ module SolarWindsAPM
       # Something went wrong in OTel or instrumented service crashed early
       # if no status_code in attributes of HTTP span
       def get_http_status_code(span)
-        span.attributes[HTTP_STATUS_CODE] || span.attributes[HTTP_RESPONSE_STATUS_CODE] || INVALID_HTTP_STATUS_CODE
+        span.attributes[HTTP_RESPONSE_STATUS_CODE] || span.attributes[HTTP_STATUS_CODE] || INVALID_HTTP_STATUS_CODE
       end
 
       # check if it's entry span based on no parent or parent is remote

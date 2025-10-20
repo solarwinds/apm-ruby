@@ -336,7 +336,7 @@ describe 'SolarWindsOTLPProcessor' do
 
       result = @processor.send(:meter_attributes, span_data)
       _(result['http.method']).must_equal 'POST'
-      _(result['http.status_code']).must_equal 200
+      _(result['http.status_code']).must_equal 201
       _(result['sw.transaction']).must_equal 'test_transaction'
       _(result['sw.is_error']).must_equal false
     end
