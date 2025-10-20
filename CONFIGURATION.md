@@ -51,13 +51,13 @@ Environment variables are the most flexible way to configure the SolarWinds APM 
 | `SW_APM_DEBUG_LEVEL` | Logging verbosity (-1 to 6) | `3` | `5` |
 | `SW_APM_COLLECTOR` | Collector endpoint override | `apm.collector.na-01.cloud.solarwinds.com:443` | `apm.collector.eu-01.cloud.solarwinds.com:443` |
 
-More configuration option see [Configuration Reference](#configuration-reference)
+For more configuration options see [Configuration Reference](#configuration-reference).
 
 ### OpenTelemetry Integration
 
 #### Exporters
 
-The SolarWinds backend uses the OTLP exporter by default. You can configure additional exporters for debugging or multi-backend scenarios:
+This gem uses the OTLP exporter by default. You can configure additional exporters for debugging or multi-backend scenarios:
 
 ```bash
 export OTEL_TRACES_EXPORTER=console          # Console Exporter (for debugging)
@@ -120,7 +120,11 @@ ENV['OTEL_RUBY_INSTRUMENTATION_MYSQL2_CONFIG_OPTS'] = 'db_statement=include;'
 ENV['OTEL_RUBY_INSTRUMENTATION_NET_HTTP_CONFIG_OPTS'] = 'untraced_hosts=localhost,internal.service;'
 ```
 
-> See the [OpenTelemetry Ruby instrumentation documentation](https://opentelemetry.io/docs/languages/ruby/libraries/) for all available options.
+See the [OpenTelemetry Ruby instrumentation documentation](https://opentelemetry.io/docs/languages/ruby/libraries/) for all available options.
+
+#### Exporting Application Logs
+
+The [Logger instrumentation](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/logger) is a log appender for the Ruby `logger` that bridges messages into OTel log record format for export. By default this instrumentation is disabled; it can be enabled by setting the environment variable `OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED=true`.
 
 ## Programmatic Configuration
 
@@ -156,13 +160,13 @@ SolarWindsAPM::OTelConfig.initialize_with_config do |config|
     untraced_hosts: ['localhost', 'internal.service.com'],
     untraced_requests: ->(uri, req) { uri.path == '/health' }
   }
-  
+
   # Rails configuration
   config["OpenTelemetry::Instrumentation::Rails"] = {
     enable_recognize_route: true,
     enable_dependency_tracking: true
   }
-  
+
   # Redis configuration
   config["OpenTelemetry::Instrumentation::Redis"] = {
     peer_service: 'redis-cluster',
@@ -265,7 +269,7 @@ Include trace context in your application logs for better correlation:
 SolarWindsAPM::Config[:log_traceId] = :traced
 ```
 
-This adds trace and span IDs to log entries when using supported logging frameworks.
+This adds trace and span IDs to log entries when using supported logging frameworks. See also [Exporting Application Logs](#exporting-application-logs) on how to send logs to SolarWinds Observability.
 
 ### Background Job Configuration: Resque
 
