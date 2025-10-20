@@ -92,4 +92,288 @@ describe 'SolarWindsOTLPProcessor' do
     processor.on_start(span, OpenTelemetry::Context.current)
     _(processor.txn_manager.get_root_context_h('77cb6ccc522d3106114dd6ecbb70036a')).must_equal '31e175128efc4018-00'
   end
+
+  describe 'HTTP semantic convention tests' do
+    it 'test_get_http_status_code_with_new_semantic_convention' do
+      span_data = create_span_data
+      span_data.attributes['http.response.status_code'] = 201
+      result = @processor.send(:get_http_status_code, span_data)
+      _(result).must_equal 201
+    end
+
+    it 'test_span_http_with_old_http_method' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.method' => 'GET' }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'GET /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+
+      result = @processor.send(:span_http?, span_data)
+      _(result).must_equal true
+    end
+
+    it 'test_span_http_with_new_http_request_method' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.request.method' => 'POST' }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'POST /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+
+      result = @processor.send(:span_http?, span_data)
+      _(result).must_equal true
+    end
+
+    it 'test_span_http_with_both_old_and_new_conventions' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.method' => 'GET', 'http.request.method' => 'POST' }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'GET /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+
+      result = @processor.send(:span_http?, span_data)
+      _(result).must_equal true
+    end
+
+    it 'test_span_http_returns_false_for_non_server_span' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.request.method' => 'GET' }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'GET /users',
+        OpenTelemetry::Trace::SpanKind::CLIENT,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+
+      result = @processor.send(:span_http?, span_data)
+      _(result).must_equal false
+    end
+
+    it 'test_meter_attributes_with_old_http_method' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.method' => 'GET', 'http.status_code' => 200 }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'GET /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
+
+      result = @processor.send(:meter_attributes, span_data)
+      _(result['http.method']).must_equal 'GET'
+      _(result['http.status_code']).must_equal 200
+      _(result['sw.transaction']).must_equal 'test_transaction'
+      _(result['sw.is_error']).must_equal false
+    end
+
+    it 'test_meter_attributes_with_new_http_request_method' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.request.method' => 'POST', 'http.response.status_code' => 201 }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'POST /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
+
+      result = @processor.send(:meter_attributes, span_data)
+      _(result['http.method']).must_equal 'POST'
+      _(result['http.status_code']).must_equal 201
+      _(result['sw.transaction']).must_equal 'test_transaction'
+      _(result['sw.is_error']).must_equal false
+    end
+
+    it 'test_meter_attributes_with_new_and_old_status_code_as_same_code' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 201, 'http.response.status_code' => 201 }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'POST /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
+
+      result = @processor.send(:meter_attributes, span_data)
+      _(result['http.method']).must_equal 'POST'
+      _(result['http.status_code']).must_equal 201
+      _(result['sw.transaction']).must_equal 'test_transaction'
+      _(result['sw.is_error']).must_equal false
+    end
+
+    it 'test_meter_attributes_with_new_and_old_status_code_as_different_code' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 200, 'http.response.status_code' => 201 }
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'POST /users',
+        OpenTelemetry::Trace::SpanKind::SERVER,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
+
+      result = @processor.send(:meter_attributes, span_data)
+      _(result['http.method']).must_equal 'POST'
+      _(result['http.status_code']).must_equal 201
+      _(result['sw.transaction']).must_equal 'test_transaction'
+      _(result['sw.is_error']).must_equal false
+    end
+
+    it 'test_meter_attributes_non_http_span' do
+      span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
+      attributes = {}
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: "1\xE1u\x12\x8E\xFC@\x18",
+        trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
+      )
+      span = OpenTelemetry::SDK::Trace::Span.new(
+        span_context,
+        OpenTelemetry::Context.empty,
+        OpenTelemetry::Trace::Span::INVALID,
+        'database_query',
+        OpenTelemetry::Trace::SpanKind::INTERNAL,
+        nil,
+        span_limits,
+        [],
+        attributes,
+        nil,
+        Time.now,
+        nil,
+        nil
+      )
+      span_data = span.to_span_data
+      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
+
+      result = @processor.send(:span_http?, span_data)
+      _(result).must_equal false
+
+      result = @processor.send(:meter_attributes, span_data)
+      _(result.key?('http.method')).must_equal false
+      _(result.key?('http.status_code')).must_equal false
+      _(result['sw.transaction']).must_equal 'test_transaction'
+      _(result['sw.is_error']).must_equal false
+    end
+  end
 end

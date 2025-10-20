@@ -21,6 +21,9 @@ module SolarWindsAPM
       HTTP_STATUS_CODE    = 'http.status_code'
       HTTP_URL            = 'http.url'
 
+      HTTP_RESPONSE_STATUS_CODE = 'http.response.status_code'
+      HTTP_REQUEST_METHOD = 'http.request.method'
+
       INVALID_HTTP_STATUS_CODE = 0
 
       def initialize(txn_manager)
@@ -112,8 +115,9 @@ module SolarWindsAPM
 
         if is_http_span
           http_status_code = get_http_status_code(span)
-          meter_attrs['http.status_code'] = http_status_code if http_status_code != 0
-          meter_attrs['http.method'] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
+          meter_attrs[HTTP_STATUS_CODE] = http_status_code if http_status_code != 0
+          meter_attrs[HTTP_METHOD] = span.attributes[HTTP_METHOD] if span.attributes[HTTP_METHOD]
+          meter_attrs[HTTP_METHOD] = span.attributes[HTTP_REQUEST_METHOD] if span.attributes[HTTP_REQUEST_METHOD]
         end
 
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] is_http_span: #{is_http_span}; meter_attrs: #{meter_attrs.inspect}" }
@@ -172,14 +176,14 @@ module SolarWindsAPM
 
       # This span from inbound HTTP request if from a SERVER by some http.method
       def span_http?(span)
-        span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER && !span.attributes[HTTP_METHOD].nil?
+        (!span.attributes[HTTP_METHOD].nil? || !span.attributes[HTTP_REQUEST_METHOD].nil?) && span.kind == ::OpenTelemetry::Trace::SpanKind::SERVER
       end
 
       # Calculate HTTP status_code from span or default to UNAVAILABLE
       # Something went wrong in OTel or instrumented service crashed early
       # if no status_code in attributes of HTTP span
       def get_http_status_code(span)
-        span.attributes[HTTP_STATUS_CODE] || INVALID_HTTP_STATUS_CODE
+        span.attributes[HTTP_RESPONSE_STATUS_CODE] || span.attributes[HTTP_STATUS_CODE] || INVALID_HTTP_STATUS_CODE
       end
 
       # check if it's entry span based on no parent or parent is remote
