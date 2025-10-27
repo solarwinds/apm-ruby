@@ -76,7 +76,7 @@ jobs:
             })
 
       - name: Upload to artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
           path: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
