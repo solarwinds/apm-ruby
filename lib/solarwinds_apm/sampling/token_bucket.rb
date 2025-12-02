@@ -16,68 +16,65 @@ module SolarWindsAPM
     attr_reader :capacity, :rate, :interval, :tokens
 
     def initialize(token_bucket_settings)
+      @lock = Mutex.new
       self.capacity = token_bucket_settings.capacity || 0
       self.rate = token_bucket_settings.rate || 0
       self.interval = token_bucket_settings.interval || MAX_INTERVAL
-      self.tokens = @capacity
+      self.tokens = capacity
+      @stop_requested = false
       @timer = nil
     end
 
     # used call from update_settings e.g. bucket.update(bucket_settings)
     def update(settings)
-      settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_token_bucket_settings(settings)
+      settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_hash(tb_to_hash(settings))
     end
 
     def update_from_hash(settings)
       if settings[:capacity]
-        difference = settings[:capacity] - @capacity
+        difference = settings[:capacity] - capacity
         self.capacity = settings[:capacity]
-        self.tokens = @tokens + difference
+        self.tokens = tokens + difference
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated capacity: #{capacity}, tokens: #{tokens}, difference: #{difference}" }
       end
 
-      self.rate = settings[:rate] if settings[:rate]
+      if settings[:rate]
+        self.rate = settings[:rate]
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated rate: #{rate}" }
+      end
 
-      return unless settings[:interval]
+      if settings[:interval]
+        self.interval = settings[:interval]
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated interval: #{interval}ms" }
+        if running
+          stop
+          start
+        end
+      end
 
-      self.interval = settings[:interval]
-      return unless running
-
-      stop
       start
     end
 
-    def update_from_token_bucket_settings(settings)
-      if settings.capacity
-        difference = settings.capacity - @capacity
-        self.capacity = settings.capacity
-        self.tokens = @tokens + difference
-      end
-
-      self.rate = settings.rate if settings.rate
-
-      return unless settings.interval
-
-      self.interval = settings.interval
-      return unless running
-
-      stop
-      start
+    def tb_to_hash(settings)
+      { capacity: settings.capacity,
+        rate: settings.rate,
+        interval: settings.interval }
     end
 
     def capacity=(capacity)
-      @capacity = [0, capacity].max
+      @lock.synchronize { @capacity = [0, capacity].max }
     end
 
     def rate=(rate)
-      @rate = [0, rate].max
+      @lock.synchronize { @rate = [0, rate].max }
     end
 
     def interval=(interval)
-      @interval = interval.clamp(0, MAX_INTERVAL)
+      @lock.synchronize { @interval = interval.clamp(0, MAX_INTERVAL) }
     end
 
     def tokens=(tokens)
-      @tokens = tokens.clamp(0, @capacity)
+      @lock.synchronize { @tokens = tokens.clamp(0, @capacity) }
     end
 
     # Attempts to consume tokens from the bucket
@@ -86,18 +83,27 @@ module SolarWindsAPM
     def consume(token = 1)
       if @tokens >= token
         self.tokens = @tokens - token
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} tokens, remaining: #{@tokens}/#{@capacity} (#{(tokens.to_f / @capacity * 100).round(1)}%)" }
         true
       else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
         false
       end
     end
 
     # Starts replenishing the bucket
     def start
-      return if running
+      @lock.synchronize do
+        return if running
+
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Starting replenishment timer (interval: #{interval}ms, rate: #{rate})" }
+        @stop_requested = false
+      end
 
       @timer = Thread.new do
         loop do
+          break if @stop_requested
+
           task
           sleep(@interval / 1000.0)
         end
@@ -106,21 +112,25 @@ module SolarWindsAPM
 
     # Stops replenishing the bucket
     def stop
-      return unless running
+      @lock.synchronize do
+        return unless running
 
-      @timer.kill
-      @timer = nil
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Stopping replenishment timer" }
+        @stop_requested = true
+      end
+      @timer.join # Wait for clean exit
+      @lock.synchronize { @timer = nil }
     end
 
     # Whether the bucket is actively being replenished
     def running
-      !@timer.nil?
+      !@timer.nil? && @timer.alive?
     end
 
     private
 
     def task
-      self.tokens = tokens + @rate
+      self.tokens = @tokens + rate
     end
   end
 end

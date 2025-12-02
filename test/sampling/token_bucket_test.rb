@@ -67,7 +67,8 @@ describe 'SolarWindsAPM::TokenBucket' do
   end
 
   it 'defaults to zero' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new)
+    # default interval is ~24 days, not suitable for testing
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(0, 0, 1000))
 
     bucket.start
     sleep(0.1)
