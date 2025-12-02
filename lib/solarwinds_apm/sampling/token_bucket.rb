@@ -13,8 +13,6 @@ module SolarWindsAPM
     # Maximum value of a signed 32-bit integer
     MAX_INTERVAL = (2**31) - 1
 
-    attr_reader :capacity, :rate, :interval, :tokens
-
     def initialize(token_bucket_settings)
       @lock = Mutex.new
       self.capacity = token_bucket_settings.capacity || 0
@@ -31,28 +29,31 @@ module SolarWindsAPM
     end
 
     def update_from_hash(settings)
-      if settings[:capacity]
-        difference = settings[:capacity] - capacity
-        self.capacity = settings[:capacity]
-        self.tokens = tokens + difference
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated capacity: #{capacity}, tokens: #{tokens}, difference: #{difference}" }
-      end
+      @lock.synchronize do
+        if settings[:capacity]
+          difference = settings[:capacity] - @capacity
+          @capacity = [0, settings[:capacity]].max
+          @tokens = (@tokens + difference).clamp(0, @capacity)
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated capacity: #{@capacity}, tokens: #{@tokens}, difference: #{difference}" }
+        end
 
-      if settings[:rate]
-        self.rate = settings[:rate]
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated rate: #{rate}" }
-      end
+        if settings[:rate]
+          @rate = [0, settings[:rate]].max
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated rate: #{@rate}" }
+        end
 
-      if settings[:interval]
-        self.interval = settings[:interval]
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated interval: #{interval}ms" }
-        if running
-          stop
-          start
+        if settings[:interval]
+          @interval = settings[:interval].clamp(0, MAX_INTERVAL)
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated interval: #{@interval}ms" }
         end
       end
 
-      start
+      if settings[:interval] && running
+        stop
+        start
+      end
+
+      start unless running
     end
 
     def tb_to_hash(settings)
@@ -61,16 +62,32 @@ module SolarWindsAPM
         interval: settings.interval }
     end
 
+    def capacity
+      @lock.synchronize { @capacity }
+    end
+
     def capacity=(capacity)
       @lock.synchronize { @capacity = [0, capacity].max }
+    end
+
+    def rate
+      @lock.synchronize { @rate }
     end
 
     def rate=(rate)
       @lock.synchronize { @rate = [0, rate].max }
     end
 
+    def interval
+      @lock.synchronize { @interval }
+    end
+
     def interval=(interval)
       @lock.synchronize { @interval = interval.clamp(0, MAX_INTERVAL) }
+    end
+
+    def tokens
+      @lock.synchronize { @tokens }
     end
 
     def tokens=(tokens)
@@ -81,13 +98,15 @@ module SolarWindsAPM
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
     def consume(token = 1)
-      if @tokens >= token
-        self.tokens = @tokens - token
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} tokens, remaining: #{@tokens}/#{@capacity} (#{(tokens.to_f / @capacity * 100).round(1)}%)" }
-        true
-      else
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
-        false
+      @lock.synchronize do
+        if @tokens >= token
+          @tokens -= token
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} tokens, remaining: #{@tokens}/#{@capacity} (#{(@tokens.to_f / @capacity * 100).round(1)}%)" }
+          true
+        else
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
+          false
+        end
       end
     end
 
@@ -96,7 +115,7 @@ module SolarWindsAPM
       @lock.synchronize do
         return if running
 
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Starting replenishment timer (interval: #{interval}ms, rate: #{rate})" }
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Starting replenishment timer (interval: #{@interval}ms, rate: #{@rate})" }
         @stop_requested = false
       end
 
@@ -130,7 +149,9 @@ module SolarWindsAPM
     private
 
     def task
-      self.tokens = @tokens + rate
+      @lock.synchronize do
+        @tokens = [@tokens + @rate, @capacity].min
+      end
     end
   end
 end
