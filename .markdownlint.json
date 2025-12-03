@@ -10,5 +10,6 @@
   "no-trailing-spaces": true,
   "custom-rules-below-this-point": false,
   "trim-code-block-and-unindent": true,
-  "single-title/single-h1": false
+  "single-title/single-h1": false,
+  "table-column-style": false
 }
