@@ -1,0 +1,358 @@
+# AGENTS.md
+
+## Project Overview
+
+The `solarwinds_apm` gem is an OpenTelemetry Ruby distribution that provides automatic instrumentation and observability features for Ruby applications. It's built on top of OpenTelemetry SDK >= 1.2.0 and supports Ruby >= 3.1.0.
+
+**Key Technologies:**
+- Ruby >= 3.1.0
+- OpenTelemetry SDK >= 1.2.0
+- OpenTelemetry Instrumentation All >= 0.31.0
+- Minitest for testing
+- RuboCop for code quality
+
+**Architecture:**
+- Modular design with clear separation: API, Config, Sampling, Support, Patch
+- Entry point: `lib/solarwinds_apm.rb`
+- Test suite mirrors lib/ structure
+
+## Setup Commands
+
+```bash
+# Install Ruby version manager
+# See https://github.com/rbenv/rbenv#installation
+
+# Install Ruby (minimum 3.1.0)
+rbenv install 3.1.2
+rbenv local 3.1.2
+
+# Install dependencies with isolated vendoring
+gem install bundler
+bundle install --path vendor/bundle
+
+# Verify setup
+bundle exec rake -T
+```
+
+## Development Workflow
+
+### Quick Interactive Testing
+
+Load your code changes without building a gem:
+
+```bash
+bundle exec irb -Ilib -r solarwinds_apm
+```
+
+This is fastest for rapid iteration and testing changes to the library code.
+
+### Environment Variables for Testing
+
+Some tests require a service key. Set this before running tests:
+
+```bash
+export SW_APM_SERVICE_KEY=dummy-token-for-testing:test-service
+# Or for actual integration tests:
+export APM_RUBY_TEST_KEY=your_actual_service_key
+```
+
+### File Organization
+
+- **Source code**: `lib/solarwinds_apm/`
+  - `api/` - Public API methods
+  - `config.rb` - Configuration management
+  - `sampling/` - Sampling algorithms
+  - `support/` - Utility classes
+  - `patch/` - Instrumentation patches
+- **Tests**: `test/` (mirrors lib/ structure)
+  - `api/*_test.rb` - API tests
+  - `sampling/*_test.rb` - Sampling tests
+  - `support/*_test.rb` - Support tests
+
+## Testing Instructions
+
+### Run Single Test File
+
+```bash
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
+```
+
+### Run Single Test Case
+
+Use minitest's `-n` flag with a pattern:
+
+```bash
+bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
+```
+
+### Run All Tests Locally
+
+```bash
+# Set service key first
+export APM_RUBY_TEST_KEY=your_service_key
+
+# Run all tests
+test/run_tests.sh
+```
+
+The script provides detailed logging and saves results to `log/testrun_*.log`.
+
+### Run Tests in Docker
+
+Test against specific Ruby versions in containers:
+
+```bash
+# Default: Ruby 3.1-bullseye
+bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
+
+# Specific Ruby version
+bundle exec rake 'docker_tests[3.3-rc,,,APM_RUBY_TEST_KEY=your_service_key]'
+
+# Alpine variant for specific architecture
+bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
+
+# Interactive mode (skip tests, get shell)
+bundle exec rake 'docker_tests[3.1-bullseye,false,,APM_RUBY_TEST_KEY=your_service_key]'
+```
+
+### Development Container
+
+For persistent development environment with all tools:
+
+```bash
+# Start dev container
+bundle exec rake docker_dev
+
+# Inside container:
+rbenv global 3.1.2
+bundle install
+# Make changes, run tests, etc.
+```
+
+To resume an existing dev container:
+
+```bash
+bundle exec rake docker_con
+```
+
+### Test File Patterns
+
+- All test files end with `_test.rb`
+- Use Minitest spec-style DSL: `describe` and `it` blocks
+- Test structure: `describe 'ClassName' do ... end`
+- Assertions: Use `assert`, `refute`, `_(value).must_equal expected`
+
+## Code Style
+
+### Ruby Conventions
+
+- **Always** start files with `# frozen_string_literal: true`
+- Include copyright header after frozen string literal
+- Use snake_case for methods: `set_transaction_name`, `should_sample?`
+- Use `?` suffix for predicate methods: `ready?`, `valid?`
+- Use CamelCase for modules/classes: `SolarWindsAPM`, `OboeSampler`
+- Use SCREAMING_SNAKE_CASE for constants: `SAMPLE_RATE_ATTRIBUTE`
+- Freeze constant collections: `.freeze`
+
+### Module Organization
+
+- Use proper nesting: `SolarWindsAPM::API::TransactionName`
+- File names match class names in snake_case
+- Place classes in: `lib/solarwinds_apm/module_name/class_name.rb`
+
+### Logging Patterns
+
+Always use `SolarWindsAPM.logger` with context:
+
+```ruby
+SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] message" }
+SolarWindsAPM.logger.warn { "[#{self.class}/#{__method__}] warning: #{details}" }
+```
+
+Use block syntax for expensive operations to avoid evaluation when not needed.
+
+### Error Handling
+
+```ruby
+begin
+  # code
+rescue StandardError => e
+  SolarWindsAPM.logger.error { "[#{self.class}/#{__method__}] Error: #{e.message}" }
+  false # return status boolean
+end
+```
+
+### Linting
+
+Run RuboCop to check code style:
+
+```bash
+# Check style
+bundle exec rake rubocop
+
+# Auto-fix safe issues
+bundle exec rake rubocop auto-safe
+
+# Auto-fix all issues (use with caution)
+bundle exec rake rubocop auto-all
+```
+
+**All linting issues must be resolved before submitting PR.**
+
+Configuration: `.rubocop.yml` with custom rules for this project.
+
+## Build and Deployment
+
+### Build Gem Locally
+
+For local testing:
+
+```bash
+bundle exec rake build_gem
+```
+
+Output: `builds/solarwinds_apm-X.Y.Z.gem`
+
+The script shows SHA256 checksum and lists the last 5 built gems.
+
+### Build for GitHub Packages
+
+```bash
+bundle exec rake build_gem_for_github_package[7.1.0]
+```
+
+### Push to GitHub Packages
+
+Requires credentials in `~/.gem/credentials`:
+
+```bash
+bundle exec rake push_gem_to_github_package[7.1.0]
+```
+
+### Build and Publish to RubyGems
+
+**For maintainers only:**
+
+```bash
+bundle exec rake build_and_publish_gem
+```
+
+Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.
+
+## Pull Request Guidelines
+
+### Before Submitting
+
+1. **Run all checks:**
+   ```bash
+   bundle exec rake rubocop
+   test/run_tests.sh
+   ```
+
+2. **All RuboCop issues resolved** - No warnings or errors
+3. **All tests passing** - 100% success rate required
+4. **Add tests for changes** - Even if not specifically requested
+
+### PR Title Format
+
+Use descriptive titles that explain the change:
+- `Fix sampling decision for parent-based traces`
+- `Add support for custom transaction naming`
+- `Update OpenTelemetry SDK to 1.2.0`
+
+### Commit Messages
+
+- Use clear, descriptive commit messages
+- Reference issue numbers when applicable: `Fixes #123`
+- Explain the "why" not just the "what"
+
+## Additional Context
+
+### Version Compatibility
+
+- **Ruby**: >= 3.1.0 (specified in gemspec)
+- **OpenTelemetry SDK**: >= 1.2.0
+- Never use features from newer versions without updating requirements
+
+### Documentation Standards
+
+- Public API methods must have YARD documentation
+- Include `@param`, `@return`, and usage examples
+- Document configuration options in CONFIGURATION.md
+- Update README.md for user-facing changes
+
+### OpenTelemetry Integration Patterns
+
+Access current span:
+```ruby
+current_span = ::OpenTelemetry::Trace.current_span
+```
+
+Create spans:
+```ruby
+tracer.in_span('span_name', attributes: {...}, kind: :span_kind) do |span|
+  # your code
+end
+```
+
+Work with context:
+```ruby
+::OpenTelemetry::Context.with_current(context) do
+  # code with context
+end
+```
+
+### Configuration Access
+
+```ruby
+# Read config
+value = SolarWindsAPM::Config[:key]
+
+# Set config
+SolarWindsAPM::Config[:key] = value
+
+# Environment variables take precedence
+ENV['SW_APM_ENABLED'] || SolarWindsAPM::Config[:enabled]
+```
+
+### Thread Safety
+
+Use mutexes for shared mutable state:
+```ruby
+@mutex = ::Mutex.new
+@mutex.synchronize do
+  @shared_state = new_value
+end
+```
+
+### Debugging Tips
+
+- Use `bundle exec irb -Ilib -r solarwinds_apm` for quick testing
+- Check `log/testrun_*.log` for test execution details
+- Set `SW_APM_DEBUG_LEVEL=5` for verbose logging
+- Use Docker containers to test against specific Ruby versions
+- Run single test files to isolate issues
+
+### Common Gotchas
+
+- Tests require `SW_APM_SERVICE_KEY` environment variable
+- Some integration tests need actual service keys (contact maintainers)
+- Alpine containers may have different behavior than Debian-based
+- Always run RuboCop before committing
+- Test logs accumulate in `log/` directory
+
+### File Locations
+
+- Main entry: `lib/solarwinds_apm.rb`
+- Configuration: `lib/solarwinds_apm/config.rb`
+- Version: `lib/solarwinds_apm/version.rb`
+- Gemspec: `solarwinds_apm.gemspec`
+- Test helper: `test/minitest_helper.rb`
+- CI workflows: `.github/workflows/`
+
+### Related Documentation
+
+- [README.md](README.md) - User-facing documentation
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+- [CONFIGURATION.md](CONFIGURATION.md) - Configuration reference
+- [CHANGELOG.md](CHANGELOG.md) - Version history
