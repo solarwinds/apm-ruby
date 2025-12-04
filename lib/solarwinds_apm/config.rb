@@ -181,12 +181,12 @@ module SolarWindsAPM
       case key
       when :sampling_rate
         SolarWindsAPM.logger.warn do
-          '[Depreciated] sampling_rate is not a supported setting for SolarWindsAPM::Config.'
+          '[Deprecated] sampling_rate is not a supported setting for SolarWindsAPM::Config.'
         end
 
       when :sample_rate
         SolarWindsAPM.logger.warn do
-          '[Depreciated] sample_rate is not a supported setting for SolarWindsAPM::Config.'
+          '[Deprecated] sample_rate is not a supported setting for SolarWindsAPM::Config.'
         end
 
       when :transaction_settings
