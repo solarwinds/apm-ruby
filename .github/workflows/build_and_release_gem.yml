@@ -2,10 +2,6 @@
 # All rights reserved.
 
 name: Ruby Gem to RubyGems
-# This workflow relies on the following secrets
-# - RUBYGEMS_TOKEN (from the solarwinds-apm user on rubygems.org)
-# - APM_RUBY_INSTALL_TESTING_SWO_KEY
-#
 
 on:
   workflow_dispatch:
@@ -16,32 +12,40 @@ jobs:
     name: Build + Release Gem to RubyGems
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+      id-token: write
+
     outputs:
       apm_ruby_version: ${{ steps.build.outputs.gem_version }}
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up Ruby 3.1.0 and bundle
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.1'
+          bundler-cache: true
 
-      - name: Install gems
-        run: |
-          echo 'gem: --no-document' >> ~/.gemrc
-          bundle install --without development --without test
-
-      - name: Build Gem and upload to Rubygems
+      - name: Get gem version
         id: build
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_TOKEN }}
-        run:  |
-          bundle exec rake build_and_publish_gem
-          checksum=`shasum -a256 *.gem | awk '{print $1;}'`
+        run: |
+          echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
+
+      - name: Build and publish gem using trusted publishing
+        uses: rubygems/release-gem@v1
+
+      - name: Calculate checksum
+        id: checksum_step
+        run: |
+          checksum=`shasum -a256 pkg/solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem | awk '{print $1;}'`
           echo "checksum: $checksum"
           echo "checksum=$checksum" >> $GITHUB_OUTPUT
-          echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
+          # Copy gem to root for artifact upload
+          cp pkg/solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem .
 
       - name: Get checksum from Rubygems
         id: checksum
@@ -51,12 +55,12 @@ jobs:
 
       - name: Print checksums (in case some debugging is needed)
         run: |
-          echo "local checksum:    ${{ steps.build.outputs.checksum }}"
+          echo "local checksum:    ${{ steps.checksum_step.outputs.checksum }}"
           echo "Rubygems checksum: ${{ fromJson(steps.checksum.outputs.geminfo).sha }}"
           echo "Gem version:       ${{ steps.build.outputs.gem_version }}"
 
       - name: Fail if local and rubygems checksums don't match
-        if: fromJson(steps.checksum.outputs.geminfo).sha != steps.build.outputs.checksum
+        if: fromJson(steps.checksum.outputs.geminfo).sha != steps.checksum_step.outputs.checksum
         run: |
           echo "local and rubygems checksum not matching, gem needs to be yanked from rubygems.org"
           exit 1
@@ -69,7 +73,7 @@ jobs:
             github.rest.repos.createRelease({
               owner: "solarwinds",
               repo: "apm-ruby",
-              body: "SHA256 checksum: ${{ steps.build.outputs.checksum }}",
+              body: "SHA256 checksum: ${{ steps.checksum_step.outputs.checksum }}",
               tag_name: "${{ steps.build.outputs.gem_version }}",
               name: "${{ steps.build.outputs.gem_version }}",
               draft: true
@@ -97,8 +101,6 @@ jobs:
     needs:
       - publish_to_ruby_gem
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
 
     steps:
       - uses: actions/checkout@v6
