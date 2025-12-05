@@ -47,6 +47,7 @@ describe 'pg patch integrate test' do
     _(client_ancestors[2]).must_equal PG::Connection
 
     pg_client = PG::Connection.new
+    exporter.reset
 
     args = ['SELECT * FROM ABC;']
 

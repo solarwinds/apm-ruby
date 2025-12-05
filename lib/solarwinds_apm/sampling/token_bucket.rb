@@ -23,9 +23,10 @@ module SolarWindsAPM
       @timer = nil
     end
 
-    # used call from update_settings e.g. bucket.update(bucket_settings)
+    # oboe sampler update_settings will update the token
+    # (thread safe as update_settings is guarded by mutex from oboe sampler)
     def update(settings)
-      settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_token_bucket_settings(settings)
+      settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_hash(tb_to_hash(settings))
     end
 
     def update_from_hash(settings)
@@ -36,32 +37,13 @@ module SolarWindsAPM
       end
 
       self.rate = settings[:rate] if settings[:rate]
-
-      return unless settings[:interval]
-
-      self.interval = settings[:interval]
-      return unless running
-
-      stop
       start
     end
 
-    def update_from_token_bucket_settings(settings)
-      if settings.capacity
-        difference = settings.capacity - @capacity
-        self.capacity = settings.capacity
-        self.tokens = @tokens + difference
-      end
-
-      self.rate = settings.rate if settings.rate
-
-      return unless settings.interval
-
-      self.interval = settings.interval
-      return unless running
-
-      stop
-      start
+    def tb_to_hash(settings)
+      { capacity: settings.capacity,
+        rate: settings.rate,
+        interval: settings.interval }
     end
 
     def capacity=(capacity)
@@ -72,8 +54,11 @@ module SolarWindsAPM
       @rate = [0, rate].max
     end
 
+    # self.interval= sets the @interval and @sleep_interval
+    # @sleep_interval is used in the timer thread to sleep between replenishing the bucket
     def interval=(interval)
       @interval = interval.clamp(0, MAX_INTERVAL)
+      @sleep_interval = @interval / 1000.0
     end
 
     def tokens=(tokens)
@@ -83,11 +68,15 @@ module SolarWindsAPM
     # Attempts to consume tokens from the bucket
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
+    # TODO: we need to include thread-safety here since sampler is shared across threads
+    # and we may have multiple threads trying to consume tokens at the same time
     def consume(token = 1)
       if @tokens >= token
         self.tokens = @tokens - token
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} from total #{@tokens} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
         true
       else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
         false
       end
     end
@@ -99,7 +88,7 @@ module SolarWindsAPM
       @timer = Thread.new do
         loop do
           task
-          sleep(@interval / 1000.0)
+          sleep(@sleep_interval)
         end
       end
     end
@@ -114,7 +103,7 @@ module SolarWindsAPM
 
     # Whether the bucket is actively being replenished
     def running
-      !@timer.nil?
+      !@timer.nil? && @timer.alive?
     end
 
     private
