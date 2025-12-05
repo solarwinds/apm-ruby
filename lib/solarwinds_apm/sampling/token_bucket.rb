@@ -13,47 +13,31 @@ module SolarWindsAPM
     # Maximum value of a signed 32-bit integer
     MAX_INTERVAL = (2**31) - 1
 
+    attr_reader :capacity, :rate, :interval, :tokens
+
     def initialize(token_bucket_settings)
-      @lock = Mutex.new
       self.capacity = token_bucket_settings.capacity || 0
       self.rate = token_bucket_settings.rate || 0
       self.interval = token_bucket_settings.interval || MAX_INTERVAL
-      self.tokens = capacity
-      @stop_requested = false
+      self.tokens = @capacity
       @timer = nil
     end
 
-    # used call from update_settings e.g. bucket.update(bucket_settings)
+    # oboe sampler update_settings will update the token
+    # (thread safe as update_settings is guarded by mutex from oboe sampler)
     def update(settings)
       settings.instance_of?(Hash) ? update_from_hash(settings) : update_from_hash(tb_to_hash(settings))
     end
 
     def update_from_hash(settings)
-      @lock.synchronize do
-        if settings[:capacity]
-          difference = settings[:capacity] - @capacity
-          @capacity = [0, settings[:capacity]].max
-          @tokens = (@tokens + difference).clamp(0, @capacity)
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated capacity: #{@capacity}, tokens: #{@tokens}, difference: #{difference}" }
-        end
-
-        if settings[:rate]
-          @rate = [0, settings[:rate]].max
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated rate: #{@rate}" }
-        end
-
-        if settings[:interval]
-          @interval = settings[:interval].clamp(0, MAX_INTERVAL)
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Updated interval: #{@interval}ms" }
-        end
+      if settings[:capacity]
+        difference = settings[:capacity] - @capacity
+        self.capacity = settings[:capacity]
+        self.tokens = @tokens + difference
       end
 
-      if settings[:interval] && running
-        stop
-        start
-      end
-
-      start unless running
+      self.rate = settings[:rate] if settings[:rate]
+      start
     end
 
     def tb_to_hash(settings)
@@ -62,83 +46,59 @@ module SolarWindsAPM
         interval: settings.interval }
     end
 
-    def capacity
-      @lock.synchronize { @capacity }
-    end
-
     def capacity=(capacity)
-      @lock.synchronize { @capacity = [0, capacity].max }
-    end
-
-    def rate
-      @lock.synchronize { @rate }
+      @capacity = [0, capacity].max
     end
 
     def rate=(rate)
-      @lock.synchronize { @rate = [0, rate].max }
+      @rate = [0, rate].max
     end
 
-    def interval
-      @lock.synchronize { @interval }
-    end
-
+    # self.interval= sets the @interval and @sleep_interval
+    # @sleep_interval is used in the timer thread to sleep between replenishing the bucket
     def interval=(interval)
-      @lock.synchronize { @interval = interval.clamp(0, MAX_INTERVAL) }
-    end
-
-    def tokens
-      @lock.synchronize { @tokens }
+      @interval = interval.clamp(0, MAX_INTERVAL)
+      @sleep_interval = @interval / 1000.0
     end
 
     def tokens=(tokens)
-      @lock.synchronize { @tokens = tokens.clamp(0, @capacity) }
+      @tokens = tokens.clamp(0, @capacity)
     end
 
     # Attempts to consume tokens from the bucket
     # @param n [Integer] Number of tokens to consume
     # @return [Boolean] Whether there were enough tokens
+    # TODO: we need to include thread-safety here since sampler is shared across threads
+    # and we may have multiple threads trying to consume tokens at the same time
     def consume(token = 1)
-      @lock.synchronize do
-        if @tokens >= token
-          @tokens -= token
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} tokens, remaining: #{@tokens}/#{@capacity} (#{(@tokens.to_f / @capacity * 100).round(1)}%)" }
-          true
-        else
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
-          false
-        end
+      if @tokens >= token
+        self.tokens = @tokens - token
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Consumed #{token} from total #{@tokens} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
+        true
+      else
+        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }
+        false
       end
     end
 
     # Starts replenishing the bucket
     def start
-      @lock.synchronize do
-        return if running
-
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Starting replenishment timer (interval: #{@interval}ms, rate: #{@rate})" }
-        @stop_requested = false
-      end
+      return if running
 
       @timer = Thread.new do
         loop do
-          break if @stop_requested
-
           task
-          sleep(@interval / 1000.0)
+          sleep(@sleep_interval)
         end
       end
     end
 
     # Stops replenishing the bucket
     def stop
-      @lock.synchronize do
-        return unless running
+      return unless running
 
-        SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Stopping replenishment timer" }
-        @stop_requested = true
-      end
-      @timer.join # Wait for clean exit
-      @lock.synchronize { @timer = nil }
+      @timer.kill
+      @timer = nil
     end
 
     # Whether the bucket is actively being replenished
@@ -149,9 +109,7 @@ module SolarWindsAPM
     private
 
     def task
-      @lock.synchronize do
-        @tokens = [@tokens + @rate, @capacity].min
-      end
+      self.tokens = tokens + @rate
     end
   end
 end
