@@ -60,18 +60,9 @@ RUN echo 'alias be="bundle exec"' >> ~/.profile
 # install rubies to build our gem against
 RUN . ~/.profile \
     && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
-    && rbenv install 3.1.0
+    && rbenv install 3.2.6
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
-
-# install swig 4.0.2
-RUN curl -SL https://github.com/swig/swig/archive/refs/tags/v4.0.2.tar.gz \
-    | tar xzC /tmp \
-    && cd /tmp/swig-4.0.2 \
-    && ./autogen.sh \
-    && ./configure && make && make install \
-    && cd - \
-    && rm -rf /tmp/swig-4.0.2
 
 # set up github package credentials for pushing
 RUN mkdir ~/.gem \
