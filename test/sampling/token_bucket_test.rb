@@ -98,7 +98,7 @@ describe 'SolarWindsAPM::TokenBucket' do
   it 'is thread-safe when accessing capacity and rate' do
     bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(100, 50, 1000, 'test'))
 
-    threads = 10.times.map do
+    threads = Array.new(10) do
       Thread.new do
         100.times do
           bucket.capacity
@@ -116,15 +116,15 @@ describe 'SolarWindsAPM::TokenBucket' do
   it 'handles concurrent updates and consumes safely' do
     bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1000, 100, 1000, 'test'))
 
-    consumer_threads = 5.times.map do
+    consumer_threads = Array.new(5) do
       Thread.new do
         10.times { bucket.consume(1) }
       end
     end
 
-    updater_threads = 2.times.map do
+    updater_threads = Array.new(2) do
       Thread.new do
-        5.times { bucket.update(rate: 100 + rand(100)) }
+        5.times { bucket.update(rate: rand(100..199)) }
       end
     end
 
