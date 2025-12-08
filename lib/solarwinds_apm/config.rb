@@ -192,28 +192,13 @@ module SolarWindsAPM
       case key
       when :sampling_rate
         SolarWindsAPM.logger.warn do
-          "[#{name}/#{__method__}] sampling_rate is not a supported setting for SolarWindsAPM::Config. Please use :sample_rate."
+          '[Deprecated] sampling_rate is not a supported setting for SolarWindsAPM::Config.'
         end
 
       when :sample_rate
-        unless value.is_a?(Integer) || value.is_a?(Float)
-          SolarWindsAPM.logger.warn do
-            "[#{name}/#{__method__}] :sample_rate must be a number between 0 and 1000000 (1m) (provided: #{value}), corrected to 0"
-          end
-          value = 0
+        SolarWindsAPM.logger.warn do
+          '[Deprecated] sample_rate is not a supported setting for SolarWindsAPM::Config.'
         end
-
-        # Validate :sample_rate value
-        unless value.between?(0, 1e6)
-          new_value = value.negative? ? 0 : 1_000_000
-          SolarWindsAPM.logger.warn do
-            "[#{name}/#{__method__}] :sample_rate must be between 0 and 1000000 (1m) (provided: #{value}), corrected to #{new_value}"
-          end
-        end
-
-        # Assure value is an integer
-        @@config[key.to_sym] = new_value.to_i
-        SolarWindsAPM.sample_rate(new_value)
 
       when :transaction_settings
         compile_settings(value)
