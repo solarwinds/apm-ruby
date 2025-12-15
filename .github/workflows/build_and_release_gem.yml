@@ -106,7 +106,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: ./
