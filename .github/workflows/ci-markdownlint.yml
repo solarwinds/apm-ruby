@@ -11,7 +11,7 @@ jobs:
 
       # equivalent cli: markdownlint-cli2  "**/*.md" "#lambda/.aws-sam/**" "#.github/pull_request_template.md" "#.github/ISSUE_TEMPLATE/bug-or-feature-request.md"  --config .markdownlint.json
       - name: "Markdown Lint Check"
-        uses: DavidAnson/markdownlint-cli2-action@v21
+        uses: DavidAnson/markdownlint-cli2-action@v22
         with:
           fix: false
           globs: |
