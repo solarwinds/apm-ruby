@@ -5,7 +5,7 @@
 When generating code for this repository:
 
 1. **Version Compatibility**: Always detect and respect the exact versions of Ruby, OpenTelemetry, and dependent gems used in this project
-2. **Context Files**: Prioritize patterns and standards defined in the .github/copilot directory when available
+2. **Context Files**: Prioritize patterns and standards defined in the .github/instructions directory when available
 3. **Codebase Patterns**: When context files don't provide specific guidance, scan the codebase for established patterns
 4. **Architectural Consistency**: Maintain the modular architecture with clear separation between API, config, sampling, and instrumentation layers
 5. **Code Quality**: Prioritize maintainability, performance, and security in all generated code
@@ -36,9 +36,9 @@ Before generating code, scan the codebase to identify:
 
 ## Context Files
 
-Prioritize the following files in .github/copilot directory (if they exist):
+Prioritize the following files in .github/instructions directory (if they exist):
 
-- **instructions/*.md**: File-type specific generic instructions for various file types (Ruby, YAML, etc.)
+- **/*.instructions.md**: File-type specific instructions for various file types (Ruby, YAML, etc.)
 - **architecture.md**: System architecture guidelines
 - **tech-stack.md**: Technology versions and framework details
 - **coding-standards.md**: Code style and formatting standards
@@ -147,155 +147,22 @@ Follow the YARD documentation format found in the codebase:
 - Include usage examples in documentation blocks (see API::TransactionName)
 - Use inline comments for non-obvious logic, prefixed with `#`
 - Document configuration options with their expected types and defaults
-- Add copyright headers to all new files following this pattern:
 
-```ruby
-# frozen_string_literal: true
+## Ruby Coding Conventions
 
-# © 2023 SolarWinds Worldwide, LLC. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at:http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-```
+For comprehensive Ruby coding standards including:
+- File headers and frozen string literals
+- Module and class organization
+- Naming conventions (methods, variables, constants)
+- Documentation with YARD
+- Error handling and logging patterns
+- Environment variable handling
+- Testing with Minitest
+- OpenTelemetry integration
+- Configuration management
+- Thread safety and performance optimization
 
-## Testing Approach
-
-### Unit Testing with Minitest
-
-- Use Minitest's spec-style DSL with `describe` and `it` blocks
-- Structure: `describe 'ClassName or feature' do ... end`
-- Test naming: `it 'describes_what_the_test_does' do ... end`
-- Use `let` blocks for test fixtures and shared setup
-- Use `before` and `after` hooks for setup and teardown
-- Follow the AAA pattern (Arrange, Act, Assert) within test blocks
-
-### Test Organization
-
-- Mirror the lib/ directory structure in test/
-- Group related tests in describe blocks
-- Use nested describe blocks for method-specific tests
-- Name test files with `_test.rb` suffix (e.g., `config_test.rb`)
-- Place integration tests in appropriate subdirectories (e.g., test/patch/)
-
-### Assertions
-
-- Use Minitest expectations: `_(value).must_equal expected`
-- Common patterns:
-  - `_(result).must_equal expected_value`
-  - `_(collection).must_include item`
-  - `_(lambda { code }).must_raise ExceptionClass`
-  - `_(value).must_be_nil`
-  - `_(result).must_be_instance_of ClassName`
-
-### Test Setup
-
-- Use `minitest_helper.rb` for common test configuration
-- Set required environment variables in test setup (e.g., `SW_APM_SERVICE_KEY`)
-- Use custom test helpers like `CustomInMemorySpanExporter` for OpenTelemetry testing
-- Create helper methods for common test operations (e.g., `create_span`, `create_context`)
-- Use `skip` directive when tests require specific conditions not met
-
-### Mocking and Stubbing
-
-- Use the mocha gem for mocking (included in test dependencies)
-- Follow patterns like `Object.stub(:method, return_value) do ... end`
-- Mock external dependencies (HTTP requests, file I/O) in integration tests
-- Use `before` blocks to set up mocks and stubs
-
-## OpenTelemetry Integration Patterns
-
-### Span Creation
-
-- Use `::OpenTelemetry.tracer_provider.tracer(name)` to obtain tracers
-- Create spans with `tracer.in_span(name, attributes: {...}, kind: :span_kind) do ... end`
-- Access current span with `::OpenTelemetry::Trace.current_span`
-- Add attributes: `span.add_attributes({key: value})`
-- Record exceptions: `span.record_exception(exception)`
-
-### Context Propagation
-
-- Work with context: `::OpenTelemetry::Context.current`
-- Set context: `OpenTelemetry::Context.with_current(context) do ... end`
-- Extract span context from current span: `span.context`
-- Check validity: `span.context.valid?`
-
-### Sampling Decisions
-
-- Return `OTEL_SAMPLING_RESULT.new(decision:, tracestate:, attributes:)`
-- Decision types:
-  - `OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE` - trace and export
-  - `OTEL_SAMPLING_DECISION::RECORD_ONLY` - trace but don't export
-  - `OTEL_SAMPLING_DECISION::DROP` - don't trace
-- Manage tracestate: `::OpenTelemetry::Trace::Tracestate.from_hash({...})`
-
-## Configuration Management Patterns
-
-### Environment Variable Handling
-
-- Use `ENV.fetch('VAR_NAME', 'default')` for optional variables
-- Use `ENV['VAR_NAME']` for checking presence
-- Document all environment variables in CONFIGURATION.md
-- Priority: ENV > config file > defaults
-- Convert strings to appropriate types (integers, booleans, symbols)
-
-### Config Hash Access
-
-- Access config with symbols: `SolarWindsAPM::Config[:key]`
-- Set config: `SolarWindsAPM::Config[:key] = value`
-- Validate config values in the setter
-- Log warnings for invalid configurations
-
-### Boolean and Symbol Validation
-
-- Use helper methods: `true?`, `boolean?`, `symbol?`
-- Convert strings: `'true'.casecmp('true').zero?`
-- Validate enabled/disabled: `:enabled` or `:disabled` symbols
-
-## Logging Patterns
-
-### Logger Usage
-
-- Use `SolarWindsAPM.logger` for all logging
-- Log levels: `debug`, `info`, `warn`, `error`, `fatal`
-- Use blocks for expensive log operations: `SolarWindsAPM.logger.debug { "message" }`
-- Include module/method context: `"[#{name}/#{__method__}] message"`
-- Use structured logging with variable inspection: `#{variable.inspect}`
-
-### Log Level Mapping
-
-- Respect `SW_APM_DEBUG_LEVEL` environment variable
-- Map to both stdlib Logger and OpenTelemetry log levels
-- Default log level: INFO (3)
-- Level -1: disables logging by setting logger to `Logger.new(nil)`
-
-## Naming Conventions
-
-### Modules and Classes
-
-- Use CamelCase: `SolarWindsAPM`, `OboeSampler`, `TokenBucket`
-- Nest modules logically: `SolarWindsAPM::API::TransactionName`
-- Use descriptive names that reflect purpose
-
-### Methods
-
-- Use snake_case: `set_transaction_name`, `should_sample?`, `parent_based_algo`
-- Use `?` suffix for predicate methods: `ready?`, `boolean?`, `valid?`
-- Use `!` suffix for destructive methods or methods with side effects (sparingly)
-- Private methods: mark with `private` keyword or `private_class_method :method_name`
-
-### Constants
-
-- Use SCREAMING_SNAKE_CASE: `SAMPLE_RATE_ATTRIBUTE`, `OTEL_SAMPLING_DECISION`
-- Freeze constant arrays and hashes: `.freeze`
-- Group related constants in modules
-
-### Variables
-
-- Use snake_case: `sample_state`, `trace_flags`, `parent_span`
-- Use descriptive names avoiding abbreviations unless conventional
-- Instance variables: `@logger`, `@settings`, `@buckets`
-- Class variables: `@@config` (use sparingly, prefer class instance variables)
+**Refer to [.github/instructions/ruby.instructions.md](.github/instructions/ruby.instructions.md)** which is automatically applied to all Ruby files based on the `applyTo` glob pattern.
 
 ## Versioning and Releases
 
@@ -310,15 +177,15 @@ This project uses Semantic Versioning:
 
 ## File-Type Specific Instructions
 
-For file-type specific guidance (Ruby files, YAML, Markdown, etc.), refer to the generic instructions in `.github/copilot/instructions/` directory. These provide detailed patterns for:
+For file-type specific guidance (Ruby files, YAML, Markdown, etc.), refer to the instructions in `.github/instructions/` directory. These provide detailed patterns for:
 
-- Ruby source files (`.rb`)
-- Ruby gemspec files (`.gemspec`)
-- Test files (`*_test.rb`)
-- Configuration files (YAML, JSON)
-- Documentation files (Markdown)
+- Ruby source files (`.rb`) - `ruby.instructions.md`
+- Ruby gemspec files (`.gemspec`) - `ruby.instructions.md`
+- Test files (`*_test.rb`) - `ruby.instructions.md`
+- Configuration files (YAML, JSON) - `coding.instructions.md`
+- Documentation files (Markdown) - `markdown.instructions.md`
 
-**Note**: The `.github/copilot/instructions/` folder should be created using the `/agent-create-or-update-generic-instructions.prompt.md` prompt before using these repository-specific instructions.
+**Note**: These instruction files are automatically applied by GitHub Copilot based on the `applyTo` glob patterns specified in their frontmatter.
 
 ## General Best Practices
 
