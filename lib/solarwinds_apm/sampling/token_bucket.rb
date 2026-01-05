@@ -18,7 +18,7 @@ module SolarWindsAPM
       @tokens = @capacity
       @last_update_time = Time.now.to_f
       @type = token_bucket_settings.type
-      @lock = Mutex.new
+      @lock = ::Mutex.new
     end
 
     def capacity

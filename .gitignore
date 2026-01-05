@@ -50,6 +50,7 @@ rubocop_result.txt
 git_push.sh
 test_run.sh
 test.js
+review.txt
 
 # act.secrets
 act.secrets
