@@ -7,8 +7,13 @@ The `solarwinds_apm` gem is an OpenTelemetry Ruby distribution that provides aut
 **Key Technologies:**
 
 - Ruby >= 3.1.0
-- OpenTelemetry SDK >= 1.2.0
-- OpenTelemetry Instrumentation All >= 0.31.0
+- [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-ruby/sdk): **>= 1.2.0**
+- [OpenTelemetry Instrumentation All](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/all): **>= 0.31.0**
+- [OpenTelemetry OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp): **>= 0.29.1**
+- [OpenTelemetry Metrics OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp-metrics): **>= 0.3.0**
+- [OpenTelemetry Logs OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp-logs): **>= 0.2.1**
+- [OpenTelemetry Metrics SDK](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/metrics_sdk): **>= 0.2.0**
+- [OpenTelemetry Logs SDK](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/logs_sdk): **>= 0.4.0**
 - Minitest for testing
 - RuboCop for code quality
 
