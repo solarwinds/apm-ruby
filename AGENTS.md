@@ -5,6 +5,7 @@
 The `solarwinds_apm` gem is an OpenTelemetry Ruby distribution that provides automatic instrumentation and observability features for Ruby applications. It's built on top of OpenTelemetry SDK >= 1.2.0 and supports Ruby >= 3.1.0.
 
 **Key Technologies:**
+
 - Ruby >= 3.1.0
 - OpenTelemetry SDK >= 1.2.0
 - OpenTelemetry Instrumentation All >= 0.31.0
@@ -12,128 +13,69 @@ The `solarwinds_apm` gem is an OpenTelemetry Ruby distribution that provides aut
 - RuboCop for code quality
 
 **Architecture:**
+
 - Modular design with clear separation: API, Config, Sampling, Support, Patch
 - Entry point: `lib/solarwinds_apm.rb`
 - Test suite mirrors lib/ structure
 
 ## Setup Commands
 
-```bash
-# Install Ruby version manager
-# See https://github.com/rbenv/rbenv#installation
-
-# Install Ruby (minimum 3.1.0)
-rbenv install 3.1.2
-rbenv local 3.1.2
-
-# Install dependencies with isolated vendoring
-gem install bundler
-bundle install --path vendor/bundle
-
-# Verify setup
-bundle exec rake -T
-```
+For detailed setup instructions, see [CONTRIBUTING.md](CONTRIBUTING.md#development-environment-setup).
 
 ## Development Workflow
 
-### Quick Interactive Testing
-
-Load your code changes without building a gem:
-
-```bash
-bundle exec irb -Ilib -r solarwinds_apm
-```
-
-This is fastest for rapid iteration and testing changes to the library code.
-
-### Environment Variables for Testing
-
-Some tests require a service key. Set this before running tests:
-
-```bash
-export SW_APM_SERVICE_KEY=dummy-token-for-testing:test-service
-# Or for actual integration tests:
-export APM_RUBY_TEST_KEY=your_actual_service_key
-```
+For complete development workflow, see [CONTRIBUTING.md](CONTRIBUTING.md#development-workflow).
 
 ### File Organization
 
-- **Source code**: `lib/solarwinds_apm/`
-  - `api/` - Public API methods
-  - `config.rb` - Configuration management
-  - `sampling/` - Sampling algorithms
-  - `support/` - Utility classes
-  - `patch/` - Instrumentation patches
+- **Source code**: `lib/`
+  - `solarwinds_apm.rb` - Main entry point
+  - `solarwinds_apm/` - Core implementation
+    - `api/` - Public API methods (TransactionName, CurrentTraceInfo, Tracing, OpenTelemetry)
+    - `api.rb` - API module loader
+    - `config.rb` - Configuration management
+    - `otel_config.rb` - OpenTelemetry configuration and initialization
+    - `sampling/` - Sampling algorithms (OboeSampler, TokenBucket, Dice, TraceOptions)
+    - `sampling.rb` - Sampling module loader
+    - `support/` - Utility classes (ServiceKeyChecker, ResourceDetector, TransactionSettings, OtlpEndpoint)
+    - `support.rb` - Support module loader
+    - `patch/` - Instrumentation patches (MySQL2, PostgreSQL SQL tagging)
+    - `opentelemetry/` - OpenTelemetry extensions (propagator, processor)
+    - `noop/` - No-op implementations when disabled
+    - `version.rb` - Gem version
+    - `constants.rb` - Shared constants
+    - `logger.rb` - Logger configuration
+  - `rails/generators/` - Rails generator templates
 - **Tests**: `test/` (mirrors lib/ structure)
-  - `api/*_test.rb` - API tests
-  - `sampling/*_test.rb` - Sampling tests
-  - `support/*_test.rb` - Support tests
+  - `minitest_helper.rb` - Test setup and helpers
+  - `run_tests.sh` - Test execution script
+  - `api/` - API tests (custom instrumentation, transaction naming, tracing readiness)
+  - `sampling/` - Sampling tests (dice, sampler, token bucket, trace options)
+  - `opentelemetry/` - OpenTelemetry tests (propagator, processor)
+  - `support/` - Support tests (service key checker, resource detector, OTLP endpoint)
+  - `patch/` - Patch tests (MySQL2, PostgreSQL)
+  - `solarwinds_apm/` - Core functionality tests
+- **Configuration**:
+  - `solarwinds_apm.gemspec` - Gem specification
+  - `Gemfile` - Development dependencies
+  - `Rakefile` - Build and test tasks
+  - `.rubocop.yml` - RuboCop configuration
+- **Documentation**:
+  - `README.md` - User-facing documentation
+  - `CONTRIBUTING.md` - Contribution guidelines
+  - `CONFIGURATION.md` - Configuration reference
+  - `CHANGELOG.md` - Version history
+  - `AGENTS.md` - This file (AI agent instructions)
+  - `SECURITY.md` - Security policy
+- **Build artifacts**:
+  - `builds/` - Built gem files
+  - `doc/` - Generated YARD documentation
+  - `coverage/` - Test coverage reports
+  - `log/` - Test execution logs
 
 ## Testing Instructions
 
-### Run Single Test File
-
-```bash
-bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb
-```
-
-### Run Single Test Case
-
-Use minitest's `-n` flag with a pattern:
-
-```bash
-bundle exec ruby -I test test/opentelemetry/solarwinds_propagator_test.rb -n /trace_state_header/
-```
-
-### Run All Tests Locally
-
-```bash
-# Set service key first
-export APM_RUBY_TEST_KEY=your_service_key
-
-# Run all tests
-test/run_tests.sh
-```
-
-The script provides detailed logging and saves results to `log/testrun_*.log`.
-
-### Run Tests in Docker
-
-Test against specific Ruby versions in containers:
-
-```bash
-# Default: Ruby 3.1-bullseye
-bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
-
-# Specific Ruby version
-bundle exec rake 'docker_tests[3.3-rc,,,APM_RUBY_TEST_KEY=your_service_key]'
-
-# Alpine variant for specific architecture
-bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
-
-# Interactive mode (skip tests, get shell)
-bundle exec rake 'docker_tests[3.1-bullseye,false,,APM_RUBY_TEST_KEY=your_service_key]'
-```
-
-### Development Container
-
-For persistent development environment with all tools:
-
-```bash
-# Start dev container
-bundle exec rake docker_dev
-
-# Inside container:
-rbenv global 3.1.2
-bundle install
-# Make changes, run tests, etc.
-```
-
-To resume an existing dev container:
-
-```bash
-bundle exec rake docker_con
-```
+For comprehensive testing instructions, see [CONTRIBUTING.md](CONTRIBUTING.md#testing-your-changes).
 
 ### Test File Patterns
 
@@ -184,22 +126,9 @@ end
 
 ### Linting
 
-Run RuboCop to check code style:
-
-```bash
-# Check style
-bundle exec rake rubocop
-
-# Auto-fix safe issues
-bundle exec rake rubocop auto-safe
-
-# Auto-fix all issues (use with caution)
-bundle exec rake rubocop auto-all
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md#code-quality) for details.
 
 **All linting issues must be resolved before submitting PR.**
-
-Configuration: `.rubocop.yml` with custom rules for this project.
 
 ## Build and Deployment
 
@@ -241,30 +170,16 @@ Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.
 
 ## Pull Request Guidelines
 
-### Before Submitting
+For complete PR guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-1. **Run all checks:**
-   ```bash
-   bundle exec rake rubocop
-   test/run_tests.sh
-   ```
+**Before submitting:**
 
-2. **All RuboCop issues resolved** - No warnings or errors
-3. **All tests passing** - 100% success rate required
-4. **Add tests for changes** - Even if not specifically requested
+1. Run all checks: `bundle exec rake rubocop && test/run_tests.sh`
+2. All RuboCop issues resolved
+3. All tests passing
+4. Add tests for changes
 
-### PR Title Format
-
-Use descriptive titles that explain the change:
-- `Fix sampling decision for parent-based traces`
-- `Add support for custom transaction naming`
-- `Update OpenTelemetry SDK to 1.2.0`
-
-### Commit Messages
-
-- Use clear, descriptive commit messages
-- Reference issue numbers when applicable: `Fixes #123`
-- Explain the "why" not just the "what"
+**PR titles:** Use descriptive titles that explain the change (e.g., `Fix sampling decision for parent-based traces`)
 
 ## Additional Context
 
@@ -284,11 +199,13 @@ Use descriptive titles that explain the change:
 ### OpenTelemetry Integration Patterns
 
 Access current span:
+
 ```ruby
 current_span = ::OpenTelemetry::Trace.current_span
 ```
 
 Create spans:
+
 ```ruby
 tracer.in_span('span_name', attributes: {...}, kind: :span_kind) do |span|
   # your code
@@ -296,6 +213,7 @@ end
 ```
 
 Work with context:
+
 ```ruby
 ::OpenTelemetry::Context.with_current(context) do
   # code with context
@@ -318,6 +236,7 @@ ENV['SW_APM_ENABLED'] || SolarWindsAPM::Config[:enabled]
 ### Thread Safety
 
 Use mutexes for shared mutable state:
+
 ```ruby
 @mutex = ::Mutex.new
 @mutex.synchronize do

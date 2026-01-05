@@ -14,22 +14,24 @@ When generating code for this repository:
 
 Before generating code, scan the codebase to identify:
 
-1. **Language Versions**: 
+1. **Language Versions**:
    - Ruby version: **>= 3.1.0** (as specified in solarwinds_apm.gemspec)
    - Never use Ruby features beyond version 3.1 unless the gemspec is updated
    - Always include `# frozen_string_literal: true` as the first line in every Ruby file
 
 2. **Framework Versions**:
-   - OpenTelemetry SDK: **>= 1.2.0**
-   - OpenTelemetry Instrumentation All: **>= 0.31.0**
-   - OpenTelemetry OTLP Exporter: **>= 0.29.1**
-   - OpenTelemetry Metrics SDK: **>= 0.2.0**
-   - OpenTelemetry Logs SDK: **>= 0.4.0**
+   - [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-ruby/sdk): **>= 1.2.0**
+   - [OpenTelemetry Instrumentation All](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/all): **>= 0.31.0**
+   - [OpenTelemetry OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp): **>= 0.29.1**
+   - [OpenTelemetry Metrics OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp-metrics): **>= 0.3.0**
+   - [OpenTelemetry Logs OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp-logs): **>= 0.2.1**
+   - [OpenTelemetry Metrics SDK](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/metrics_sdk): **>= 0.2.0**
+   - [OpenTelemetry Logs SDK](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/logs_sdk): **>= 0.4.0**
    - Respect version constraints when generating code
    - Never suggest OpenTelemetry features not available in the detected versions
 
 3. **Library Versions**:
-   - OpenTelemetry Resource Detectors (AWS: **>= 0.1.0**, Azure: **>= 0.2.0**, Container: **>= 0.2.0**)
+   - OpenTelemetry Resource Detectors ([AWS](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/resources/aws): **>= 0.1.0**, [Azure](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/resources/azure): **>= 0.2.0**, [Container](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/resources/container): **>= 0.2.0**)
    - Test framework: Minitest (version **< 5.27.0** for compatibility)
    - Generate code compatible with these specific versions
    - Never use APIs or features not available in the detected versions
@@ -57,7 +59,7 @@ When context files don't provide specific guidance:
    - Logging approaches (SolarWindsAPM.logger usage)
    - Documentation style (YARD documentation format)
    - Testing patterns (Minitest describe/it blocks)
-   
+
 3. Follow the most consistent patterns found in the codebase
 4. When conflicting patterns exist, prioritize patterns in newer files or files with higher test coverage
 5. Never introduce patterns not found in the existing codebase
@@ -151,6 +153,7 @@ Follow the YARD documentation format found in the codebase:
 ## Ruby Coding Conventions
 
 For comprehensive Ruby coding standards including:
+
 - File headers and frozen string literals
 - Module and class organization
 - Naming conventions (methods, variables, constants)
@@ -183,7 +186,6 @@ For file-type specific guidance (Ruby files, YAML, Markdown, etc.), refer to the
 - Ruby gemspec files (`.gemspec`) - `ruby.instructions.md`
 - Test files (`*_test.rb`) - `ruby.instructions.md`
 - Configuration files (YAML, JSON) - `coding.instructions.md`
-- Documentation files (Markdown) - `markdown.instructions.md`
 
 **Note**: These instruction files are automatically applied by GitHub Copilot based on the `applyTo` glob patterns specified in their frontmatter.
 
