@@ -110,7 +110,6 @@ describe 'SolarWindsAPM::TokenBucket' do
 
     threads.each(&:join)
     # Should complete without errors
-    assert true
   end
 
   it 'handles concurrent updates and consumes safely' do

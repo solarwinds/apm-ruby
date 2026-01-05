@@ -16,7 +16,7 @@ module SolarWindsAPM
       @capacity = token_bucket_settings.capacity || 0
       @rate = token_bucket_settings.rate || 0
       @tokens = @capacity
-      @last_used = Time.now.to_f
+      @last_update_time = Time.now.to_f
       @type = token_bucket_settings.type
       @lock = Mutex.new
     end
@@ -62,8 +62,8 @@ module SolarWindsAPM
 
     def calculate_tokens
       now = Time.now.to_f
-      elapsed = now - @last_used
-      @last_used = now
+      elapsed = now - @last_update_time
+      @last_update_time = now
       @tokens += elapsed * @rate
       @tokens = [@tokens, @capacity].min
     end
@@ -90,7 +90,6 @@ module SolarWindsAPM
       tb_hash = {}
       tb_hash[:capacity] = settings.capacity if settings.respond_to?(:capacity)
       tb_hash[:rate] = settings.rate if settings.respond_to?(:rate)
-      tb_hash[:interval] = settings.interval if settings.respond_to?(:interval)
       tb_hash[:type] = settings.type if settings.respond_to?(:type)
       tb_hash
     end
