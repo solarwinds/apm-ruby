@@ -20,7 +20,7 @@ Before generating code, scan the codebase to identify:
    - Always include `# frozen_string_literal: true` as the first line in every Ruby file
 
 2. **Framework Versions**:
-   - [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-ruby/sdk): **>= 1.2.0**
+   - [OpenTelemetry SDK](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/sdk): **>= 1.2.0**
    - [OpenTelemetry Instrumentation All](https://github.com/open-telemetry/opentelemetry-ruby-contrib/tree/main/instrumentation/all): **>= 0.31.0**
    - [OpenTelemetry OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp): **>= 0.29.1**
    - [OpenTelemetry Metrics OTLP Exporter](https://github.com/open-telemetry/opentelemetry-ruby/tree/main/exporter/otlp-metrics): **>= 0.3.0**
