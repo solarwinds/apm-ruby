@@ -44,7 +44,7 @@ jobs:
           GITHUB_SECRET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem
           path: builds/solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: builds
