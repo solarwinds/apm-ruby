@@ -49,7 +49,7 @@ end
 - Use snake_case for method names: `set_transaction_name`, `should_sample?`, `parent_based_algo`
 - Use `?` suffix for predicate methods that return boolean: `ready?`, `valid?`, `running?`, `boolean?`
 - Use `!` suffix sparingly for destructive methods or methods with side effects
-- Use `=` suffix for setter methods: `capacity=`, `tokens=`, `interval=`
+- Use `=` suffix for setter methods: `capacity=`, `tokens=`
 
 ### Variables
 - Use snake_case: `sample_state`, `trace_flags`, `parent_span`, `service_name`
@@ -58,7 +58,7 @@ end
 - Class variables: `@@config` (use sparingly, prefer class instance variables)
 
 ### Constants
-- Use SCREAMING_SNAKE_CASE: `SAMPLE_RATE_ATTRIBUTE`, `MAX_INTERVAL`, `OTEL_SAMPLING_DECISION`
+- Use SCREAMING_SNAKE_CASE: `SAMPLE_RATE_ATTRIBUTE`, `OTEL_SAMPLING_DECISION`
 - Freeze constant collections: `SW_LOG_LEVEL_MAPPING.freeze`, `EXEC_ISH_METHODS.freeze`
 - Group related constants at the top of the class or module
 
@@ -280,7 +280,7 @@ end
 
 - Use `Struct.new` for simple data containers:
 ```ruby
-TokenBucketSettings = Struct.new(:capacity, :rate, :interval, :type)
+TokenBucketSettings = Struct.new(:capacity, :rate, :type)
 ```
 
 - Add methods to Struct subclasses when needed

@@ -24,7 +24,6 @@ ATTR_HTTP_SCHEME = OpenTelemetry::SemanticConventions::Trace::HTTP_SCHEME
 ATTR_NET_HOST_NAME = OpenTelemetry::SemanticConventions::Trace::NET_HOST_NAME
 ATTR_HTTP_TARGET = OpenTelemetry::SemanticConventions::Trace::HTTP_TARGET
 TEST_OTEL_SAMPLING_DECISION = OpenTelemetry::SDK::Trace::Samplers::Decision
-BUCKET_INTERVAL = 1000
 
 class TestSampler < SolarWindsAPM::Sampler
   def initialize(options)

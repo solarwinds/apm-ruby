@@ -49,7 +49,7 @@ module SolarWindsAPM
         calculate_tokens
         if @tokens >= token
           @tokens -= token
-          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Consumed #{token} from total #{@tokens} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
+          SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Consumed #{token} (#{(@tokens.to_f / @capacity * 100).round(1)}% remaining)" }
           true
         else
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] #{@type} Token consumption failed: requested=#{token}, available=#{@tokens}, capacity=#{@capacity}" }

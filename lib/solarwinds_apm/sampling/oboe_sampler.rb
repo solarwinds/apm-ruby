@@ -18,7 +18,6 @@ module SolarWindsAPM
     TRIGGERED_TRACE_ATTRIBUTE = 'TriggeredTrace'
 
     TRACESTATE_REGEXP = /^[0-9a-f]{16}-[0-9a-f]{2}$/
-    BUCKET_INTERVAL = 1000
     DICE_SCALE = 1_000_000
 
     OTEL_SAMPLING_DECISION = ::OpenTelemetry::SDK::Trace::Samplers::Decision
@@ -30,11 +29,11 @@ module SolarWindsAPM
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
         SolarWindsAPM::BucketType::DEFAULT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'DEFUALT')),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'DEFUALT')),
         SolarWindsAPM::BucketType::TRIGGER_RELAXED =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_RELAXED')),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'TRIGGER_RELAXED')),
         SolarWindsAPM::BucketType::TRIGGER_STRICT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_STRICT'))
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'TRIGGER_STRICT'))
       }
       @settings = {} # parsed setting from swo backend
       @settings_mutex = ::Mutex.new

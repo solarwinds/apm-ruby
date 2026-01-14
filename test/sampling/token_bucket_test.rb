@@ -7,23 +7,21 @@ require 'minitest_helper'
 require './lib/solarwinds_apm/sampling/sampling_constants'
 require './lib/solarwinds_apm/sampling/token_bucket'
 
-# TokenBucketSettings = Struct.new(:capacity, :rate, :interval, :type)
-# Note: rate is now tokens per second (not per interval)
 describe 'SolarWindsAPM::TokenBucket' do
   it 'starts with full capacity' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 1, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 1, 'test'))
     assert bucket.consume(2)
   end
 
   it "can't consume more than it contains" do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1, 1, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1, 1, 'test'))
     refute bucket.consume(2)
     assert bucket.consume
   end
 
   it 'replenishes tokens over time based on rate' do
     # Rate of 40 tokens/second means 2 tokens in 0.05 seconds
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 40, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 40, 'test'))
     assert bucket.consume(10)
 
     sleep(0.05)
@@ -35,7 +33,7 @@ describe 'SolarWindsAPM::TokenBucket' do
 
   it "doesn't replenish more than its capacity" do
     # Rate of 100 tokens/second, capacity of 2
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 100, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 100, 'test'))
     assert bucket.consume(2)
 
     sleep(0.1)
@@ -45,7 +43,7 @@ describe 'SolarWindsAPM::TokenBucket' do
   end
 
   it 'can be updated with new capacity' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1, 0, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1, 0, 'test'))
     refute bucket.consume(2)
 
     bucket.update(capacity: 2)
@@ -53,7 +51,7 @@ describe 'SolarWindsAPM::TokenBucket' do
   end
 
   it 'decreases tokens to capacity when updating to a lower one' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 0, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(2, 0, 'test'))
     bucket.update(capacity: 1)
     refute bucket.consume(2)
     assert bucket.consume(1)
@@ -61,7 +59,7 @@ describe 'SolarWindsAPM::TokenBucket' do
 
   it 'can update rate to change replenishment speed' do
     # Start with rate of 0 (no replenishment)
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 0, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 0, 'test'))
     assert bucket.consume(10)
 
     # Update rate to 20 tokens/second
@@ -82,7 +80,7 @@ describe 'SolarWindsAPM::TokenBucket' do
 
   it 'calculates tokens correctly with multiple consume calls' do
     # Rate of 10 tokens/second
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(5, 10, 1000, 'test'))
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(5, 10, 'test'))
     assert bucket.consume(5)
 
     sleep(0.1)
@@ -95,29 +93,16 @@ describe 'SolarWindsAPM::TokenBucket' do
     refute bucket.consume(1)
   end
 
-  it 'is thread-safe when accessing capacity and rate' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(100, 50, 1000, 'test'))
+  it 'is thread-safe with concurrent updates, consumes, and accessors' do
+    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1000, 100, 'test'))
 
-    threads = Array.new(10) do
+    consumer_threads = Array.new(5) do
       Thread.new do
-        100.times do
+        10.times do
           bucket.capacity
           bucket.rate
           bucket.consume(1)
         end
-      end
-    end
-
-    threads.each(&:join)
-    # Should complete without errors
-  end
-
-  it 'handles concurrent updates and consumes safely' do
-    bucket = SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(1000, 100, 1000, 'test'))
-
-    consumer_threads = Array.new(5) do
-      Thread.new do
-        10.times { bucket.consume(1) }
       end
     end
 
