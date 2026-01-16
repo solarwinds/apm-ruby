@@ -18,7 +18,6 @@ module SolarWindsAPM
     TRIGGERED_TRACE_ATTRIBUTE = 'TriggeredTrace'
 
     TRACESTATE_REGEXP = /^[0-9a-f]{16}-[0-9a-f]{2}$/
-    BUCKET_INTERVAL = 1000
     DICE_SCALE = 1_000_000
 
     OTEL_SAMPLING_DECISION = ::OpenTelemetry::SDK::Trace::Samplers::Decision
@@ -30,16 +29,14 @@ module SolarWindsAPM
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
         SolarWindsAPM::BucketType::DEFAULT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'DEFUALT')),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'DEFUALT')),
         SolarWindsAPM::BucketType::TRIGGER_RELAXED =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_RELAXED')),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'TRIGGER_RELAXED')),
         SolarWindsAPM::BucketType::TRIGGER_STRICT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, BUCKET_INTERVAL, 'TRIGGER_STRICT'))
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'TRIGGER_STRICT'))
       }
       @settings = {} # parsed setting from swo backend
       @settings_mutex = ::Mutex.new
-
-      @buckets.each_value(&:start)
     end
 
     # return sampling result
@@ -289,9 +286,9 @@ module SolarWindsAPM
     end
 
     def update_settings(settings)
-      return unless settings[:timestamp] > (@settings[:timestamp] || 0)
-
       @settings_mutex.synchronize do
+        return unless settings[:timestamp] > (@settings[:timestamp] || 0)
+
         @settings = settings
         @buckets.each do |type, bucket|
           bucket.update(@settings[:buckets][type]) if @settings[:buckets][type]
@@ -324,18 +321,20 @@ module SolarWindsAPM
     end
 
     def get_settings(params)
-      return if @settings.empty?
+      @settings_mutex.synchronize do
+        return if @settings.empty?
 
-      expiry = (@settings[:timestamp] + @settings[:ttl]) * 1000
-      time_now = Time.now.to_i * 1000
-      if time_now > expiry
-        @logger.debug { "[#{self.class}/#{__method__}] settings expired, removing" }
-        @settings = {}
-        return
+        expiry = (@settings[:timestamp] + @settings[:ttl]) * 1000
+        time_now = Time.now.to_i * 1000
+        if time_now > expiry
+          @logger.debug { "[#{self.class}/#{__method__}] settings expired, removing" }
+          @settings = {}
+          return
+        end
+        sampling_setting = SolarWindsAPM::SamplingSettings.merge(@settings, local_settings(params))
+        @logger.debug { "[#{self.class}/#{__method__}] sampling_setting: #{sampling_setting.inspect}" }
+        sampling_setting
       end
-      sampling_setting = SolarWindsAPM::SamplingSettings.merge(@settings, local_settings(params))
-      @logger.debug { "[#{self.class}/#{__method__}] sampling_setting: #{sampling_setting.inspect}" }
-      sampling_setting
     end
   end
 end

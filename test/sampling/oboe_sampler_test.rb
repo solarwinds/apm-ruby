@@ -425,8 +425,8 @@ describe 'OboeSampler' do
               sample_source: SolarWindsAPM::SampleSource::LOCAL_DEFAULT,
               flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
               buckets: {
-                SolarWindsAPM::BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 5, BUCKET_INTERVAL)),
-                SolarWindsAPM::BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(0, 0, BUCKET_INTERVAL))
+                SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 10, rate: 5 },
+                SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 0, rate: 0 }
               },
               timestamp: Time.now.to_i,
               ttl: 10
@@ -464,8 +464,8 @@ describe 'OboeSampler' do
               sample_source: SolarWindsAPM::SampleSource::LOCAL_DEFAULT,
               flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
               buckets: {
-                SolarWindsAPM::BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(0, 0, BUCKET_INTERVAL)),
-                SolarWindsAPM::BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(20, 10, BUCKET_INTERVAL))
+                SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 0, rate: 0 },
+                SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 20, rate: 10 }
               },
               timestamp: Time.now.to_i,
               ttl: 10
@@ -502,8 +502,8 @@ describe 'OboeSampler' do
               sample_source: SolarWindsAPM::SampleSource::LOCAL_DEFAULT,
               flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
               buckets: {
-                SolarWindsAPM::BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(0, 0, BUCKET_INTERVAL)),
-                SolarWindsAPM::BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(20, 10, BUCKET_INTERVAL))
+                SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 0, rate: 0 },
+                SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 20, rate: 10 }
               },
               signature_key: 'key',
               timestamp: Time.now.to_i,
@@ -546,8 +546,8 @@ describe 'OboeSampler' do
               sample_source: SolarWindsAPM::SampleSource::LOCAL_DEFAULT,
               flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
               buckets: {
-                SolarWindsAPM::BucketType::TRIGGER_STRICT => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(10, 5, BUCKET_INTERVAL)),
-                SolarWindsAPM::BucketType::TRIGGER_RELAXED => SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(0, 0, BUCKET_INTERVAL))
+                SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 10, rate: 5 },
+                SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 0, rate: 0 }
               },
               signature_key: 'key',
               timestamp: Time.now.to_i,
