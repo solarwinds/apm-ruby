@@ -36,11 +36,16 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - ruby:3.1.0-slim-bullseye
-          - ruby:3.2.2-slim-bullseye
-          - ruby:3.3.0-slim-bullseye
-          - ruby:3.2.2-alpine3.17
+          - ruby:3.1.6-slim-bookworm
+          - ruby:3.2.2-slim-bookworm
+          - ruby:3.3.2-slim-bookworm
+          - ruby:3.4.2-slim-bookworm
+          - ruby:4.0.0-slim-bookworm
           - ruby:3.1.0-alpine3.15
+          - ruby:3.2.2-alpine3.17
+          - ruby:3.3.3-alpine3.19
+          - ruby:3.4.2-alpine3.20
+          - ruby:4.0.0-alpine3.22
           - amazonlinux:2023
           - ubuntu:24.04
           - ubuntu:25.04
@@ -84,6 +89,7 @@ jobs:
         ruby-version:
           - '3.2'
           - '3.3'
+          - '4.0'
 
     name: ${{ matrix.os }} - Ruby ${{ matrix.ruby-version }}
     runs-on: ${{ matrix.os }}
