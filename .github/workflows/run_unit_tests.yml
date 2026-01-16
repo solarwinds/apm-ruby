@@ -22,9 +22,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ['3.4.2', '3.3.2', '3.2.2','3.1.0']
-        os: ['bullseye']
+        ruby: ['4.0.0', '3.4.2', '3.3.2', '3.2.2', '3.1.6']
+        os: ['slim-bookworm']
         include:
+          - ruby: '4.0.0'
+            os: 'alpine3.22'
           - ruby: '3.4.2'
             os: 'alpine3.21'
           - ruby: '3.3.3'
