@@ -127,6 +127,17 @@ task :build_and_publish_gem do
   exit 1 if ENV['GEM_HOST_API_KEY'] && !system('gem', 'push', gem_file)
 end
 
+desc 'Build and publish to Rubygems (alias for GitHub Actions compatibility)'
+task :release do
+  gemspec_file = 'solarwinds_apm.gemspec'
+  gemspec = Gem::Specification.load(gemspec_file)
+  gem_file = "#{gemspec.full_name}.gem"
+
+  exit 1 unless system('gem', 'build', gemspec_file)
+
+  exit 1 unless system('gem', 'push', gem_file)
+end
+
 desc 'Build gem locally for testing'
 task :build_gem do
   puts "\n=== building for MRI ===\n"
