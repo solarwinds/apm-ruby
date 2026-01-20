@@ -128,7 +128,7 @@ task :build_and_publish_gem do
 end
 
 desc 'Build and publish to Rubygems (alias for GitHub Actions compatibility)'
-task release: do
+task :release do
   gemspec_file = 'solarwinds_apm.gemspec'
   gemspec = Gem::Specification.load(gemspec_file)
   gem_file = "#{gemspec.full_name}.gem"
