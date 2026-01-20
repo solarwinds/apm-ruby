@@ -7,11 +7,17 @@ on:
   push:
     branches-ignore:
       - main
-    paths-ignore:
-      - 'test/Dockerfile'
-      - '.github/*'
-      - 'lambda/*'
+    paths:
+      - '**/*.rb'
+      - '**/*.gemspec'
+      - '**/Gemfile*'
+      - 'test/**'
+      - '.github/workflows/run_unit_tests.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # run act to test locally: act -j unit_test --container-architecture linux/arm64 -s SW_APM_SERVICE_KEY=your_key
