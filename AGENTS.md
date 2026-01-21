@@ -168,7 +168,8 @@ bundle exec rake push_gem_to_github_package[7.1.0]
 **For maintainers only:**
 
 ```bash
-bundle exec rake build_and_publish_gem
+gem build solarwinds_apm.gemspec
+gem push solarwinds_apm-{version}.gem
 ```
 
 Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.

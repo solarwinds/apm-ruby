@@ -14,6 +14,7 @@ require 'optparse'
 require 'digest'
 require 'open-uri'
 require 'bundler/setup'
+require 'bundler/gem_tasks'
 require 'rake/testtask'
 
 Rake::TestTask.new do |t|
@@ -113,31 +114,6 @@ def docker_cmd_execute(cmd)
 end
 
 ################ Build Gem Task ################
-
-desc 'Build and publish to Rubygems'
-# !!! publishing requires gem >=3.0.5 !!!
-# Don't run with Ruby versions < 2.7 they have gem < 3.0.5
-task :build_and_publish_gem do
-  gemspec_file = 'solarwinds_apm.gemspec'
-  gemspec = Gem::Specification.load(gemspec_file)
-  gem_file = "#{gemspec.full_name}.gem"
-
-  exit 1 unless system('gem', 'build', gemspec_file)
-
-  exit 1 if ENV['GEM_HOST_API_KEY'] && !system('gem', 'push', gem_file)
-end
-
-desc 'Build and publish to Rubygems (alias for GitHub Actions compatibility)'
-task :release do
-  gemspec_file = 'solarwinds_apm.gemspec'
-  gemspec = Gem::Specification.load(gemspec_file)
-  gem_file = "#{gemspec.full_name}.gem"
-
-  exit 1 unless system('gem', 'build', gemspec_file)
-
-  exit 1 unless system('gem', 'push', gem_file)
-end
-
 desc 'Build gem locally for testing'
 task :build_gem do
   puts "\n=== building for MRI ===\n"
