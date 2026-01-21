@@ -113,69 +113,6 @@ def docker_cmd_execute(cmd)
   end
 end
 
-################ Build Gem Task ################
-desc 'Build gem locally for testing'
-task :build_gem do
-  puts "\n=== building for MRI ===\n"
-  FileUtils.mkdir_p('builds') if Dir['builds'].empty?
-  File.delete('Gemfile.lock') if Dir['Gemfile.lock'].size == 1
-
-  puts "\n=== install required dependencies ===\n"
-  system('bundle install --without development --without test')
-
-  puts "\n=== clean & compile & build ===\n"
-  system('gem build solarwinds_apm.gemspec')
-
-  gemname = Dir['solarwinds_apm*.gem'].first
-  FileUtils.mv(gemname, 'builds/')
-
-  built_gem = Dir['builds/solarwinds_apm*.gem']
-
-  puts "\n=== last 5 built gems ===\n"
-  puts built_gem
-
-  puts "\n=== SHA256 ===\n"
-  system("shasum -a256 #{built_gem.first}")
-
-  puts "\n=== Finished ===\n"
-end
-
-def find_or_build_gem(version)
-  abort('No version specified.') if version.to_s.empty?
-
-  gems = Dir["builds/solarwinds_apm-#{version}.gem"]
-  gem_to_push = nil
-  if gems.empty?
-    Rake::Task['build_gem'].execute
-    gem_to_push = Dir['builds/solarwinds_apm*.gem'].first
-  else
-    gem_to_push = gems.first
-  end
-
-  puts "\n=== Gem will be pushed #{gem_to_push} ==="
-  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*/).to_s.delete!('-')
-  gem_to_push_version = gem_to_push&.match(/-\d*.\d*.\d*.prev[0-9]*/).to_s.delete!('-') if version.include? 'prev'
-
-  abort('Could not find the required gem file.') if gem_to_push.nil? || gem_to_push_version != version
-
-  gem_to_push
-end
-
-# need set the credentials under ~/.gem/credentials
-# for download, easiest way is to set BUNDLE_RUBYGEMS__PKG__GITHUB__COM
-# but there are other auth methods. see more on https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-rubygems-registry
-desc 'Push to github package. Run as bundle exec rake build_gem_push_to_github_package[<version>]'
-task :push_gem_to_github_package, [:version] do |_, args|
-  exit 1 unless system('gem', 'push', '--key', 'github', '--host', 'https://rubygems.pkg.github.com/solarwinds',
-                       "builds/solarwinds_apm-#{args[:version]}.gem")
-  puts "\n=== Finished ===\n"
-end
-
-desc 'Build gem for github package'
-task :build_gem_for_github_package, [:version] do |_, args|
-  find_or_build_gem(args[:version])
-end
-
 desc 'Run rubocop and generate result. Run as bundle exec rake rubocop
       If want to safely autocorrect enabled, just use bundle exec rake rubocop auto-safe
       If want to all autocorrect enabled, just use bundle exec rake rubocop auto-all

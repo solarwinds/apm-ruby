@@ -142,25 +142,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md#code-quality) for details.
 For local testing:
 
 ```bash
-bundle exec rake build_gem
+bundle exec rake build
 ```
 
-Output: `builds/solarwinds_apm-X.Y.Z.gem`
+Output: `pkg/solarwinds_apm-X.Y.Z.gem`
 
 The script shows SHA256 checksum and lists the last 5 built gems.
-
-### Build for GitHub Packages
-
-```bash
-bundle exec rake build_gem_for_github_package[7.1.0]
-```
 
 ### Push to GitHub Packages
 
 Requires credentials in `~/.gem/credentials`:
 
 ```bash
-bundle exec rake push_gem_to_github_package[7.1.0]
+gem push --key github --host https://rubygems.pkg.github.com/solarwinds pkg/solarwinds_apm-7.1.0.gem
 ```
 
 ### Build and Publish to RubyGems
@@ -168,8 +162,8 @@ bundle exec rake push_gem_to_github_package[7.1.0]
 **For maintainers only:**
 
 ```bash
-gem build solarwinds_apm.gemspec
-gem push solarwinds_apm-{version}.gem
+bundle exec rake build
+gem push pkg/solarwinds_apm-{version}.gem
 ```
 
 Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.
