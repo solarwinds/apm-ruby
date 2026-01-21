@@ -147,26 +147,23 @@ bundle exec rake build
 
 Output: `pkg/solarwinds_apm-X.Y.Z.gem`
 
-The script shows SHA256 checksum and lists the last 5 built gems.
-
 ### Push to GitHub Packages
 
 Requires credentials in `~/.gem/credentials`:
 
 ```bash
-gem push --key github --host https://rubygems.pkg.github.com/solarwinds pkg/solarwinds_apm-7.1.0.gem
+gem push --key github --host https://rubygems.pkg.github.com/solarwinds pkg/solarwinds_apm-{version}.gem
 ```
 
-### Build and Publish to RubyGems
+### Publish to RubyGems
 
 **For maintainers only:**
 
+Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.
+
 ```bash
-bundle exec rake build
 gem push pkg/solarwinds_apm-{version}.gem
 ```
-
-Requires `GEM_HOST_API_KEY` environment variable and gem >= 3.0.5.
 
 ## Pull Request Guidelines
 
