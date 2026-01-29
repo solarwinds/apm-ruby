@@ -91,8 +91,7 @@ task :rubocop do
   _arg1, arg2 = ARGV
 
   rubocop_file = "#{__dir__}/rubocop_result.txt"
-  new_file = File.new(rubocop_file, 'w')
-  new_file.close
+  File.write(rubocop_file, '')
 
   `bundle exec rubocop --auto-correct` if arg2 == 'auto-safe'
   `bundle exec rubocop --auto-correct-all` if arg2 == 'auto-all'
