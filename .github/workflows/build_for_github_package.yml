@@ -48,7 +48,7 @@ jobs:
           GITHUB_SECRET_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem
           path: pkg/solarwinds_apm-${{ steps.version.outputs.gem_version }}.gem

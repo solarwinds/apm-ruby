@@ -67,7 +67,7 @@ jobs:
         working-directory: lambda/
 
       - name: Upload to artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ruby-layer-${{ matrix.arch }}.zip
           path: lambda/build/ruby-layer-${{ matrix.arch }}.zip
