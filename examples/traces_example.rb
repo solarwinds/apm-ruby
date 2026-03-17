@@ -30,9 +30,7 @@ puts
 # solarwinds_apm replaces the default OTel sampler with a custom HttpSampler that fetches
 # settings over HTTP on startup. Until settings arrive, all spans are dropped. This call
 # blocks until the sampler is ready (or the timeout elapses).
-unless SolarWindsAPM::API.solarwinds_ready?(10_000)
-  warn '[solarwinds_apm] Not ready after 10 seconds — spans may not be sampled.'
-end
+warn '[solarwinds_apm] Not ready after 10 seconds — spans may not be sampled.' unless SolarWindsAPM::API.solarwinds_ready?(10_000)
 
 # --- Using the SolarWindsAPM convenience API ---
 # SolarWindsAPM::API.in_span acquires the correct Tracer automatically.

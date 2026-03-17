@@ -30,12 +30,12 @@ puts
 # --- Using the OpenTelemetry Logs API directly ---
 # Access a Logger from the LoggerProvider configured by solarwinds_apm.
 
-otel_logger = ::OpenTelemetry.logger_provider.logger(name: 'logs-example', version: '0.1.0')
+otel_logger = OpenTelemetry.logger_provider.logger(name: 'logs-example', version: '0.1.0')
 
 # Emit log records within a trace span for correlation
-tracer = ::OpenTelemetry.tracer_provider.tracer(ENV.fetch('OTEL_SERVICE_NAME', 'logs-example'))
+tracer = OpenTelemetry.tracer_provider.tracer(ENV.fetch('OTEL_SERVICE_NAME', 'logs-example'))
 
-tracer.in_span('example.logs_demo') do |span|
+tracer.in_span('example.logs_demo') do |_span|
   # Emit an INFO log record
   otel_logger.on_emit(
     timestamp: Time.now,

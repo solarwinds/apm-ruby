@@ -27,7 +27,7 @@ puts '--- solarwinds_apm Metrics Example ---'
 puts
 
 # Acquire a Meter from the globally-configured MeterProvider
-meter = ::OpenTelemetry.meter_provider.meter('metrics-example')
+meter = OpenTelemetry.meter_provider.meter('metrics-example')
 
 # --- Counter ---
 # Counts the number of times an event occurs.

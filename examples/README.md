@@ -91,19 +91,19 @@ See [CONFIGURATION.md](../CONFIGURATION.md) for the full configuration reference
 
 After running an example, sign in to [SolarWinds Observability](https://my.na-01.cloud.solarwinds.com/) and navigate as follows:
 
-### Traces and Custom Instrumentation
+### Verify Traces and Custom Instrumentation
 
 **APM → \<your-service-name\> → Traces**
 
 Spans created by `traces_example.rb` and `custom_instrumentation_example.rb` appear here within a few seconds of the script completing.
 
-### Logs
+### Verify Logs
 
 **Logs → search** `program:"<your-service-name>"`
 
 Log records emitted by `logs_example.rb` appear here.
 
-### Metrics
+### Verify Metrics
 
 **APM → \<your-service-name\> → Metrics**
 
