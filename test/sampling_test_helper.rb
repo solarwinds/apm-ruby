@@ -9,6 +9,7 @@ require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
 require 'simplecov'
 SimpleCov.start
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
 ENV['OTEL_METRICS_EXPORTER'] = 'none'
 

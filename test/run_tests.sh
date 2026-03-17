@@ -66,7 +66,7 @@ run_test_file() {
     local output
     local status
 
-    if output=$(bundle exec ruby -I test "$test_file"); then
+    if output=$(SIMPLECOV_COMMAND_NAME="$test_file" bundle exec ruby -I test "$test_file"); then
         status=0
     else
         status=$?
@@ -81,6 +81,9 @@ export TEST_RUNS_FILE_NAME="./log/testrun_$time.log"
 
 # Remove previous log files
 rm -f ./log/*.log
+
+# Clear SimpleCov resultset so coverage merges fresh across all test files
+rm -f coverage/.resultset.json
 
 log_message "=== SolarWinds APM Ruby Test Runner ==="
 log_message "Test pattern: $test_pattern"

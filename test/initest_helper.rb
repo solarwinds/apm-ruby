@@ -10,6 +10,7 @@ require 'minitest/reporters'
 require './lib/solarwinds_apm/logger'
 require 'simplecov'
 SimpleCov.start
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
 

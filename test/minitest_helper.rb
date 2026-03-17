@@ -27,6 +27,7 @@ require 'opentelemetry-exporter-otlp-metrics'
 
 require 'simplecov'
 SimpleCov.start
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
 # needed by most tests
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
