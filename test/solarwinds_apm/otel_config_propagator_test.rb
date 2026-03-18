@@ -15,6 +15,7 @@ describe 'Loading Opentelemetry Test' do
     SolarWindsAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config, {})
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, {})
+    SolarWindsAPM::OTelConfig.class_variable_set(:@@initialized, false)
   end
 
   # propagation in_code testing

@@ -27,6 +27,13 @@ module SolarWindsAPM
       @service_name = nil
     end
 
+    # Configures OTLP token and endpoint ENV variables for all signal types.
+    # This method sets the following ENV variables when not already set by the user:
+    #   - OTEL_EXPORTER_OTLP_{TRACES,METRICS,LOGS}_HEADERS  (bearer token)
+    #   - OTEL_EXPORTER_OTLP_HEADERS                         (fallback bearer token)
+    #   - OTEL_EXPORTER_OTLP_{TRACES,METRICS,LOGS}_ENDPOINT  (SWO OTLP endpoint)
+    #   - SW_APM_COLLECTOR                                    (APM collector endpoint)
+    # User-set ENV values are never overwritten.
     def config_otlp_token_and_endpoint
       matches = ENV['SW_APM_COLLECTOR'].to_s.match(SWO_APM_ENDPOINT_REGEX)
 
@@ -45,6 +52,8 @@ module SolarWindsAPM
     # APM Libraries should only set the bearer token header as a convenience if:
     # The OTEL config for exporter OTLP headers is not already set, i.e. explicitly configured by the end user, AND
     # The OTLP export endpoint is SWO, i.e. host is otel.collector.*.*.solarwinds.com
+    # Sets bearer token headers for the given signal type.
+    # Only sets ENV if the user has not already configured headers and the endpoint is SWO.
     def config_token(data_type)
       data_type_upper = data_type.upcase
 
@@ -59,6 +68,8 @@ module SolarWindsAPM
       ENV['OTEL_EXPORTER_OTLP_HEADERS'] = "authorization=Bearer #{@token}" if ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty? && ENV["OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"].to_s.empty?
     end
 
+    # Sets the OTLP endpoint for the given signal type.
+    # Only sets ENV if neither signal-specific nor general endpoint is configured by the user.
     def configure_otlp_endpoint(data_type, matches)
       data_type_upper = data_type.upcase
       data_type_lower = data_type.downcase

@@ -32,7 +32,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     result = @processor.send(:calculate_span_time, start_time: span_data.start_timestamp,
                                                    end_time: span_data.end_timestamp)
-    _(result).must_equal 44_853
+    _(result).must_equal 45
 
     result = @processor.send(:calculate_span_time, start_time: span_data.start_timestamp, end_time: nil)
     _(result).must_equal 0

@@ -53,6 +53,6 @@ begin
     end
   end
 rescue StandardError => e
-  warn "[solarwinds_apm/error] Problem loading: #{e.inspect}"
-  warn e.backtrace
+  SolarWindsAPM.logger.error { "[solarwinds_apm/error] Problem loading: #{e.inspect}" }
+  SolarWindsAPM.logger.error { e.backtrace&.join("\n") }
 end

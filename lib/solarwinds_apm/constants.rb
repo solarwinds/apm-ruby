@@ -13,6 +13,9 @@ module SolarWindsAPM
     HTTP_ROUTE                       = 'http.route'
     HTTP_STATUS_CODE                 = 'http.status_code'
     HTTP_URL                         = 'http.url'
+    HTTP_REQUEST_METHOD              = 'http.request.method'
+    HTTP_RESPONSE_STATUS_CODE        = 'http.response.status_code'
+    INVALID_HTTP_STATUS_CODE         = 0
     INTL_SWO_AO_COLLECTOR            = 'collector.appoptics.com'
     INTL_SWO_AO_STG_COLLECTOR        = 'collector-stg.appoptics.com'
     INTL_SWO_COMMA                   = ','

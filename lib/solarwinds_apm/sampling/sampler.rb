@@ -10,10 +10,10 @@ module SolarWindsAPM
   class Sampler < OboeSampler
     RUBY_SEM_CON = ::OpenTelemetry::SemanticConventions::Trace
 
-    ATTR_HTTP_REQUEST_METHOD = 'http.request.method'
-    ATTR_HTTP_METHOD = RUBY_SEM_CON::HTTP_METHOD
-    ATTR_HTTP_RESPONSE_STATUS_CODE = 'http.response.status_code'
-    ATTR_HTTP_STATUS_CODE = RUBY_SEM_CON::HTTP_STATUS_CODE
+    ATTR_HTTP_REQUEST_METHOD = SolarWindsAPM::Constants::HTTP_REQUEST_METHOD
+    ATTR_HTTP_METHOD = SolarWindsAPM::Constants::HTTP_METHOD
+    ATTR_HTTP_RESPONSE_STATUS_CODE = SolarWindsAPM::Constants::HTTP_RESPONSE_STATUS_CODE
+    ATTR_HTTP_STATUS_CODE = SolarWindsAPM::Constants::HTTP_STATUS_CODE
     ATTR_URL_SCHEME = 'url.scheme'
     ATTR_HTTP_SCHEME = RUBY_SEM_CON::HTTP_SCHEME
     ATTR_SERVER_ADDRESS = 'server.address'
@@ -38,8 +38,9 @@ module SolarWindsAPM
       deadline = Time.now + timeout
       while Time.now < deadline
         # The @settings hash is populated by another thread (e.g., HttpSampler)
-        unless @settings.empty?
-          @ready = !@settings[:signature_key].nil?
+        settings_snapshot = @settings_mutex.synchronize { @settings.dup }
+        unless settings_snapshot.empty?
+          @ready = !settings_snapshot[:signature_key].nil?
           return @ready
         end
         sleep 0.1

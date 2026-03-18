@@ -16,15 +16,15 @@ module SolarWindsAPM
       SW_IS_ENTRY_SPAN    = 'sw.is_entry_span'
       SW_IS_ERROR         = 'sw.is_error'
 
-      HTTP_METHOD         = 'http.method'
-      HTTP_ROUTE          = 'http.route'
-      HTTP_STATUS_CODE    = 'http.status_code'
-      HTTP_URL            = 'http.url'
+      HTTP_METHOD         = SolarWindsAPM::Constants::HTTP_METHOD
+      HTTP_ROUTE          = SolarWindsAPM::Constants::HTTP_ROUTE
+      HTTP_STATUS_CODE    = SolarWindsAPM::Constants::HTTP_STATUS_CODE
+      HTTP_URL            = SolarWindsAPM::Constants::HTTP_URL
 
-      HTTP_RESPONSE_STATUS_CODE = 'http.response.status_code'
-      HTTP_REQUEST_METHOD = 'http.request.method'
+      HTTP_RESPONSE_STATUS_CODE = SolarWindsAPM::Constants::HTTP_RESPONSE_STATUS_CODE
+      HTTP_REQUEST_METHOD = SolarWindsAPM::Constants::HTTP_REQUEST_METHOD
 
-      INVALID_HTTP_STATUS_CODE = 0
+      INVALID_HTTP_STATUS_CODE = SolarWindsAPM::Constants::INVALID_HTTP_STATUS_CODE
 
       def initialize(txn_manager)
         @txn_manager = txn_manager
@@ -155,17 +155,16 @@ module SolarWindsAPM
       def record_request_metrics(span)
         meter_attrs = meter_attributes(span)
         span_time = calculate_span_time(start_time: span.start_timestamp, end_time: span.end_timestamp)
-        span_time = (span_time / 1e3).round
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] entry span, response_time: #{span_time}." }
         @metrics[:response_time].record(span_time, attributes: meter_attrs)
       end
 
-      # Calculate span time in microseconds (us) using start and end time
+      # Calculate span time in milliseconds (ms) using start and end time
       # in nanoseconds (ns). OTel span start/end_time are optional.
       def calculate_span_time(start_time: nil, end_time: nil)
         return 0 if start_time.nil? || end_time.nil?
 
-        ((end_time.to_i - start_time.to_i) / 1e3).round
+        ((end_time.to_i - start_time.to_i) / 1_000_000.0).round
       end
 
       # Calculate if this span instance has_error

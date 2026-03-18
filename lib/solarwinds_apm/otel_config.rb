@@ -17,11 +17,17 @@ module SolarWindsAPM
     @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = false
+    @@initialized      = false
 
     RESOURCE_ATTRIBUTES = 'RESOURCE_ATTRIBUTES'
 
     def self.initialize
       return unless defined?(::OpenTelemetry::SDK::Configurator)
+
+      if @@initialized
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] OTelConfig already initialized. Skipping re-initialization." }
+        return
+      end
 
       is_lambda = SolarWindsAPM::Utils.determine_lambda
 
@@ -39,7 +45,7 @@ module SolarWindsAPM
         return if otlp_endpoint.token.nil?
       end
 
-      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV.fetch('OTEL_SERVICE_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s
+      ENV['OTEL_RESOURCE_ATTRIBUTES'] = "sw.apm.version=#{SolarWindsAPM::Version::STRING},sw.data.module=apm,service.name=#{ENV.fetch('OTEL_SERVICE_NAME', nil)}," + ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s unless ENV['OTEL_RESOURCE_ATTRIBUTES'].to_s.include?('sw.apm.version=')
 
       # resource attributes
       mandatory_resource = SolarWindsAPM::ResourceDetector.detect
@@ -114,6 +120,7 @@ module SolarWindsAPM
       )
 
       @@agent_enabled = true
+      @@initialized = true
 
       nil
     end

@@ -29,7 +29,7 @@ module SolarWindsAPM
       @counters = SolarWindsAPM::Metrics::Counter.new
       @buckets = {
         SolarWindsAPM::BucketType::DEFAULT =>
-          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'DEFUALT')),
+          SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'DEFAULT')),
         SolarWindsAPM::BucketType::TRIGGER_RELAXED =>
           SolarWindsAPM::TokenBucket.new(SolarWindsAPM::TokenBucketSettings.new(nil, nil, 'TRIGGER_RELAXED')),
         SolarWindsAPM::BucketType::TRIGGER_STRICT =>
