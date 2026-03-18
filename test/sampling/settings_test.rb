@@ -121,10 +121,8 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
       end
     end
   end
-end
 
-describe 'SamplingSettings.merge remote/local flag merging and tracing mode precedence' do
-  describe 'merge' do
+  describe 'merge additional' do
     it 'merges remote and local settings with trigger mode enabled' do
       remote = {
         sample_rate: 500_000,
@@ -195,9 +193,7 @@ describe 'SamplingSettings.merge remote/local flag merging and tracing mode prec
       assert result[:flags].anybits?(SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS)
     end
   end
-end
 
-describe 'SpanType classification (ROOT/ENTRY/LOCAL) and trace_id/span_id validation' do
   describe 'SpanType' do
     it 'returns ROOT for nil parent span context' do
       result = SolarWindsAPM::SpanType.span_type(nil)

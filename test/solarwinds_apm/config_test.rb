@@ -136,13 +136,13 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
     end
 
-    it 'with wrong env, use default true ' do
+    it 'with wrong env, use default true' do
       ENV['DUMMY_KEY'] = 'foo'
       SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, true, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal true
     end
 
-    it 'with wrong env, use default true ' do
+    it 'with wrong env, use default false' do
       ENV['DUMMY_KEY'] = 'foo'
       SolarWindsAPM::Config.enable_disable_config('DUMMY_KEY', :dummy_key, true, false, bool: true)
       _(SolarWindsAPM::Config[:dummy_key]).must_equal false
@@ -297,10 +297,8 @@ describe 'Config Test' do
       ENV.delete('SW_APM_TAG_SQL')
     end
   end
-end
 
-describe 'Config env var precedence, type coercion, deprecated keys, and log level' do
-  describe 'enable_disable_config' do
+  describe 'enable_disable_config tested via []= assignment' do
     it 'uses env var when valid enabled/disabled value' do
       original = ENV['SW_APM_TRIGGER_TRACING_MODE']
       ENV['SW_APM_TRIGGER_TRACING_MODE'] = 'disabled'
@@ -542,53 +540,6 @@ describe 'Config env var precedence, type coercion, deprecated keys, and log lev
     end
   end
 
-  describe 'set_log_level' do
-    it 'sets logger level based on SW_APM_DEBUG_LEVEL' do
-      original = ENV['SW_APM_DEBUG_LEVEL']
-      ENV['SW_APM_DEBUG_LEVEL'] = '4'
-      SolarWindsAPM::Config.set_log_level
-      assert_equal ::Logger::DEBUG, SolarWindsAPM.logger.level
-    ensure
-      if original
-        ENV['SW_APM_DEBUG_LEVEL'] = original
-      else
-        ENV.delete('SW_APM_DEBUG_LEVEL')
-      end
-      SolarWindsAPM.logger.level = 1
-    end
-
-    it 'uses default INFO for unknown log level' do
-      original_env = ENV['SW_APM_DEBUG_LEVEL']
-      original_config = SolarWindsAPM::Config[:debug_level]
-      ENV['SW_APM_DEBUG_LEVEL'] = '99'
-      SolarWindsAPM::Config.set_log_level
-      assert_equal ::Logger::INFO, SolarWindsAPM.logger.level
-    ensure
-      if original_env
-        ENV['SW_APM_DEBUG_LEVEL'] = original_env
-      else
-        ENV.delete('SW_APM_DEBUG_LEVEL')
-      end
-      SolarWindsAPM::Config[:debug_level] = original_config if original_config
-      SolarWindsAPM.logger.level = 1
-    end
-
-    it 'creates nil logger for level -1' do
-      original = ENV['SW_APM_DEBUG_LEVEL']
-      old_logger = SolarWindsAPM.logger
-      ENV['SW_APM_DEBUG_LEVEL'] = '-1'
-      SolarWindsAPM::Config.set_log_level
-    ensure
-      if original
-        ENV['SW_APM_DEBUG_LEVEL'] = original
-      else
-        ENV.delete('SW_APM_DEBUG_LEVEL')
-      end
-      SolarWindsAPM.logger = old_logger
-      SolarWindsAPM.logger.level = 1
-    end
-  end
-
   describe 'config_file_from_env' do
     it 'returns nil for non-existent file' do
       original = ENV['SW_APM_CONFIG_RUBY']
@@ -601,44 +552,6 @@ describe 'Config env var precedence, type coercion, deprecated keys, and log lev
       else
         ENV.delete('SW_APM_CONFIG_RUBY')
       end
-    end
-
-    it 'returns file path when file exists' do
-      require 'tempfile'
-      tmp = Tempfile.new(['solarwinds_apm_config', '.rb'])
-      tmp.write("# test config\n")
-      tmp.close
-
-      original = ENV['SW_APM_CONFIG_RUBY']
-      ENV['SW_APM_CONFIG_RUBY'] = tmp.path
-      result = SolarWindsAPM::Config.config_file_from_env
-      assert_equal tmp.path, result
-    ensure
-      if original
-        ENV['SW_APM_CONFIG_RUBY'] = original
-      else
-        ENV.delete('SW_APM_CONFIG_RUBY')
-      end
-      tmp&.unlink
-    end
-
-    it 'returns file from directory when dir contains config file' do
-      require 'tmpdir'
-      dir = Dir.mktmpdir
-      config_file = File.join(dir, 'solarwinds_apm_config.rb')
-      File.write(config_file, "# test config\n")
-
-      original = ENV['SW_APM_CONFIG_RUBY']
-      ENV['SW_APM_CONFIG_RUBY'] = dir
-      result = SolarWindsAPM::Config.config_file_from_env
-      assert_equal config_file, result
-    ensure
-      if original
-        ENV['SW_APM_CONFIG_RUBY'] = original
-      else
-        ENV.delete('SW_APM_CONFIG_RUBY')
-      end
-      FileUtils.rm_rf(dir) if dir
     end
   end
 

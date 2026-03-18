@@ -24,6 +24,7 @@ describe 'JsonSampler Test' do
   after do
     OpenTelemetry::TestHelpers.reset_opentelemetry
     @memory_exporter.reset
+    FileUtils.rm_f(@temp_path)
   end
 
   describe 'valid file' do
@@ -144,31 +145,6 @@ describe 'JsonSampler Test' do
       assert_equal span.attributes.keys, %w[SampleRate SampleSource BucketCapacity BucketRate]
     end
   end
-end
-
-describe 'JsonSampler settings file reading with malformed/missing/expired input handling' do
-  before do
-    @temp_path = '/tmp/solarwinds-apm-test-settings.json'
-    ENV['OTEL_TRACES_EXPORTER'] = 'none'
-    OpenTelemetry::SDK.configure
-
-    @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
-    OpenTelemetry.tracer_provider.add_span_processor(
-      OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter)
-    )
-  end
-
-  after do
-    OpenTelemetry::TestHelpers.reset_opentelemetry
-    @memory_exporter.reset
-    File.delete(@temp_path) if File.exist?(@temp_path)
-  end
-
-  it 'handles missing settings file gracefully' do
-    File.delete(@temp_path) if File.exist?(@temp_path)
-    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
-    refute_nil sampler
-  end
 
   it 'handles invalid JSON file content' do
     File.write(@temp_path, 'not valid json{{{')
@@ -184,12 +160,6 @@ describe 'JsonSampler settings file reading with malformed/missing/expired input
 
   it 'handles empty array in settings file' do
     File.write(@temp_path, JSON.dump([]))
-    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
-    refute_nil sampler
-  end
-
-  it 'handles non-array in settings file' do
-    File.write(@temp_path, JSON.dump({ 'key' => 'value' }))
     sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
     refute_nil sampler
   end

@@ -93,9 +93,7 @@ describe 'Resource Detector Test' do
     WebMock.reset!
     WebMock.allow_net_connect!
   end
-end
 
-describe 'ResourceDetector UAMS client ID, K8s/EC2/Azure/container detection, and utility methods' do
   describe 'detect' do
     it 'returns resource with uuid attribute' do
       WebMock.enable!
@@ -119,47 +117,6 @@ describe 'ResourceDetector UAMS client ID, K8s/EC2/Azure/container detection, an
   end
 
   describe 'detect_uams_client_id' do
-    it 'reads uams client id from file when available' do
-      tmpfile = Tempfile.new('uamsclientid')
-      tmpfile.write('test-uams-id')
-      tmpfile.close
-
-      stub_const = SolarWindsAPM::ResourceDetector
-      original_path = stub_const.const_get(:UAMS_CLIENT_PATH)
-      stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
-      stub_const.const_set(:UAMS_CLIENT_PATH, tmpfile.path)
-
-      result = stub_const.detect_uams_client_id
-      attrs = result.instance_variable_get(:@attributes)
-
-      assert_equal 'test-uams-id', attrs['sw.uams.client.id']
-    ensure
-      stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
-      stub_const.const_set(:UAMS_CLIENT_PATH, original_path)
-      tmpfile&.unlink
-    end
-
-    it 'falls back to API when file not found' do
-      WebMock.enable!
-      WebMock.stub_request(:get, SolarWindsAPM::ResourceDetector::UAMS_CLIENT_URL)
-             .to_return(status: 200, body: '{"uamsclient_id": "api-client-id"}',
-                        headers: { 'Content-Type' => 'application/json' })
-
-      stub_const = SolarWindsAPM::ResourceDetector
-      original_path = stub_const.const_get(:UAMS_CLIENT_PATH)
-      stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
-      stub_const.const_set(:UAMS_CLIENT_PATH, '/nonexistent/path/uamsclientid')
-
-      result = stub_const.detect_uams_client_id
-      attrs = result.instance_variable_get(:@attributes)
-
-      assert_equal 'api-client-id', attrs['sw.uams.client.id']
-    ensure
-      stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
-      stub_const.const_set(:UAMS_CLIENT_PATH, original_path)
-      WebMock.disable!
-    end
-
     it 'handles API failure gracefully' do
       WebMock.enable!
       WebMock.stub_request(:get, SolarWindsAPM::ResourceDetector::UAMS_CLIENT_URL)
@@ -182,15 +139,6 @@ describe 'ResourceDetector UAMS client ID, K8s/EC2/Azure/container detection, an
   end
 
   describe 'detect_k8s_attributes' do
-    it 'returns empty resource when not in k8s' do
-      ENV.delete('KUBERNETES_SERVICE_HOST')
-      ENV.delete('KUBERNETES_SERVICE_PORT')
-
-      result = SolarWindsAPM::ResourceDetector.detect_k8s_attributes
-      attrs = result.instance_variable_get(:@attributes)
-      assert_empty attrs
-    end
-
     it 'reads pod name from env variable' do
       ENV['KUBERNETES_SERVICE_HOST'] = '10.96.0.1'
       ENV['KUBERNETES_SERVICE_PORT'] = '443'
@@ -219,21 +167,6 @@ describe 'ResourceDetector UAMS client ID, K8s/EC2/Azure/container detection, an
       ENV.delete('KUBERNETES_SERVICE_HOST')
       ENV.delete('KUBERNETES_SERVICE_PORT')
       ENV.delete('SW_K8S_POD_NAMESPACE')
-    end
-
-    it 'reads pod uid from env variable' do
-      ENV['KUBERNETES_SERVICE_HOST'] = '10.96.0.1'
-      ENV['KUBERNETES_SERVICE_PORT'] = '443'
-      ENV['SW_K8S_POD_UID'] = 'b4683374-c415-4136-99bf-7fd72a0aa885'
-
-      result = SolarWindsAPM::ResourceDetector.detect_k8s_attributes
-      attrs = result.instance_variable_get(:@attributes)
-
-      assert_equal 'b4683374-c415-4136-99bf-7fd72a0aa885', attrs['k8s.pod.uid']
-    ensure
-      ENV.delete('KUBERNETES_SERVICE_HOST')
-      ENV.delete('KUBERNETES_SERVICE_PORT')
-      ENV.delete('SW_K8S_POD_UID')
     end
   end
 

@@ -795,138 +795,8 @@ describe 'OboeSampler' do
       check_counters(@metric_exporter, ['trace.service.request_count'])
     end
   end
-end
-
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /spanType/
-describe 'SolarWindsAPM OboeSampler Test' do
-  describe 'spanType' do
-    it 'identifies no parent as ROOT' do
-      type = SolarWindsAPM::SpanType.span_type(nil)
-      assert_equal SolarWindsAPM::SpanType::ROOT, type
-    end
-
-    # isSpanContextValid may have more restrict then ruby valid?
-    # js isSpanContextValid test if trace_id and span_id is valid format and not invalid like 00000...
-    # need to have our own isSpanContextValid function
-    it 'identifies invalid parent as ROOT' do
-      parent = make_span({ id: 'woops' })
-
-      type = SolarWindsAPM::SpanType.span_type(parent)
-      assert_equal SolarWindsAPM::SpanType::ROOT, type
-    end
-
-    it 'identifies remote parent as ENTRY' do
-      parent = make_span({ remote: true })
-
-      type = SolarWindsAPM::SpanType.span_type(parent)
-      assert_equal SolarWindsAPM::SpanType::ENTRY, type
-    end
-
-    it 'identifies local parent as LOCAL' do
-      parent = make_span({ remote: false })
-
-      type = SolarWindsAPM::SpanType.span_type(parent)
-      assert_equal SolarWindsAPM::SpanType::LOCAL, type
-    end
-  end
-end
-
-describe 'OboeSampler sampling algorithms (parent-based, trigger-trace, dice-roll, disabled) and settings lifecycle' do
-  before do
-    OpenTelemetry::SDK.configure
-    @metric_exporter = OpenTelemetry::SDK::Metrics::Export::InMemoryMetricPullExporter.new
-    OpenTelemetry.meter_provider.add_metric_reader(@metric_exporter)
-  end
 
   describe 'parent_based_algo' do
-    it 'records and samples when SAMPLE_THROUGH_ALWAYS set and parent sampled' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: true, sw: true })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
-    end
-
-    it 'records only when SAMPLE_THROUGH_ALWAYS set and parent not sampled' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false, sw: true })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-    end
-
-    it 'drops when SAMPLE_THROUGH_ALWAYS unset and SAMPLE_START unset' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::OK,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::NEVER },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: true, sw: true })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-    end
-
-    it 'records only when SAMPLE_THROUGH_ALWAYS unset and SAMPLE_START set' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: nil },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: true, sw: true })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-    end
-
     it 'ignores trigger trace in parent-based algo' do
       sig_key = SecureRandom.random_bytes(8)
       headers = make_request_headers(trigger_trace: true, signature: true, signature_key: sig_key)
@@ -1017,267 +887,9 @@ describe 'OboeSampler sampling algorithms (parent-based, trigger-trace, dice-rol
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
       assert_equal true, result.attributes['TriggeredTrace']
     end
-
-    it 'records only when TRIGGERED_TRACE flag unset' do
-      headers = make_request_headers(trigger_trace: true)
-
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: headers
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-      assert_includes result.tracestate['xtrace_options_response'], 'trigger-trace:trigger-tracing-disabled'
-    end
-
-    it 'records only when trigger trace bucket rate exceeded' do
-      headers = make_request_headers(trigger_trace: true)
-
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
-          buckets: {
-            SolarWindsAPM::BucketType::DEFAULT => { capacity: 0, rate: 0 },
-            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 0, rate: 0 },
-            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 0, rate: 0 }
-          },
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
-        request_headers: headers
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-      assert_includes result.tracestate['xtrace_options_response'], 'trigger-trace:rate-exceeded'
-    end
-  end
-
-  describe 'dice_roll_algo' do
-    it 'records and samples when dice roll succeeds and bucket has capacity' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {
-            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
-          },
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
-      assert_equal 1_000_000, result.attributes['SampleRate']
-      assert_equal SolarWindsAPM::SampleSource::REMOTE, result.attributes['SampleSource']
-    end
-
-    it 'records only when dice roll succeeds but bucket exhausted' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {
-            SolarWindsAPM::BucketType::DEFAULT => { capacity: 0, rate: 0 },
-            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
-          },
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-    end
-
-    it 'records only when dice roll fails' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {
-            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
-          },
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-    end
-  end
-
-  describe 'disabled_algo' do
-    it 'drops when SAMPLE_THROUGH_ALWAYS unset' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::OK,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::NEVER },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-    end
-
-    it 'records only when SAMPLE_THROUGH_ALWAYS set' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: nil },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
-    end
-
-    it 'reports tracing disabled for trigger trace in disabled algo' do
-      headers = make_request_headers(trigger_trace: true)
-
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 0,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::OK,
-          buckets: {},
-          timestamp: Time.now.to_i,
-          ttl: 120,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::NEVER },
-        request_headers: headers
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-      assert_includes result.tracestate['xtrace_options_response'], 'trigger-trace:tracing-disabled'
-    end
   end
 
   describe 'settings management' do
-    it 'drops when settings are unavailable' do
-      sampler = OboeTestSampler.new(
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-    end
-
-    it 'reports settings not available for trigger trace when settings missing' do
-      headers = make_request_headers(trigger_trace: true)
-
-      sampler = OboeTestSampler.new(
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: headers
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-      assert_includes result.tracestate['xtrace_options_response'], 'trigger-trace:settings-not-available'
-    end
-
-    it 'expires old settings' do
-      sampler = OboeTestSampler.new(
-        settings: {
-          sample_rate: 1_000_000,
-          sample_source: SolarWindsAPM::SampleSource::REMOTE,
-          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
-          buckets: {},
-          timestamp: Time.now.to_i - 200,
-          ttl: 10,
-          signature_key: nil
-        },
-        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
-        request_headers: {}
-      )
-
-      parent = make_span({ remote: true, sampled: false })
-      params = make_sample_params(parent: parent)
-
-      result = sampler.should_sample?(params)
-      assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, result.instance_variable_get(:@decision)
-    end
-
     it 'rejects older settings' do
       sampler = OboeTestSampler.new(
         settings: {
@@ -1424,6 +1036,34 @@ describe 'OboeSampler sampling algorithms (parent-based, trigger-trace, dice-rol
 
       result = sampler.should_sample?(params)
       refute_nil result.tracestate['sw']
+    end
+  end
+
+  describe 'spanType' do
+    it 'identifies no parent as ROOT' do
+      type = SolarWindsAPM::SpanType.span_type(nil)
+      assert_equal SolarWindsAPM::SpanType::ROOT, type
+    end
+
+    it 'identifies invalid parent as ROOT' do
+      parent = make_span({ id: 'woops' })
+
+      type = SolarWindsAPM::SpanType.span_type(parent)
+      assert_equal SolarWindsAPM::SpanType::ROOT, type
+    end
+
+    it 'identifies remote parent as ENTRY' do
+      parent = make_span({ remote: true })
+
+      type = SolarWindsAPM::SpanType.span_type(parent)
+      assert_equal SolarWindsAPM::SpanType::ENTRY, type
+    end
+
+    it 'identifies local parent as LOCAL' do
+      parent = make_span({ remote: false })
+
+      type = SolarWindsAPM::SpanType.span_type(parent)
+      assert_equal SolarWindsAPM::SpanType::LOCAL, type
     end
   end
 

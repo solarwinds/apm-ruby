@@ -222,6 +222,16 @@ describe 'parseTraceOptions' do
     _(result.custom['custom-something']).must_equal 'value_thing'
     _(result.ignored).must_equal [['1', nil], ['2', nil], ['3', nil], ['4', nil], ['5', nil]]
   end
+
+  it 'parses all option types in single header' do
+    header = "trigger-trace;sw-keys=check-id:123;custom-foo=bar;ts=#{Time.now.to_i}"
+    result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
+
+    assert result.trigger_trace
+    assert_equal 'check-id:123', result.sw_keys
+    assert_equal 'bar', result.custom['custom-foo']
+    refute_nil result.timestamp
+  end
 end
 
 describe 'stringifyTraceOptionsResponse' do
@@ -233,6 +243,23 @@ describe 'stringifyTraceOptionsResponse' do
   it 'appends ignored keys to the response string' do
     result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(SolarWindsAPM::TraceOptionsResponse.new(SolarWindsAPM::Auth::OK, SolarWindsAPM::TriggerTrace::TRIGGER_TRACING_DISABLED, %w[invalid-key1 invalid_key2]))
     _(result).must_equal('auth:ok;trigger-trace:trigger-tracing-disabled;ignored:invalid-key1,invalid_key2')
+  end
+
+  it 'returns nil for nil response' do
+    assert_nil SolarWindsAPM::TraceOptions.stringify_trace_options_response(nil)
+  end
+
+  it 'omits nil fields' do
+    response = SolarWindsAPM::TraceOptionsResponse.new(nil, 'ok', [])
+    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
+    refute_includes result, 'auth'
+    assert_includes result, 'trigger-trace:ok'
+  end
+
+  it 'returns empty string when all nil and empty' do
+    response = SolarWindsAPM::TraceOptionsResponse.new(nil, nil, [])
+    result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
+    assert_equal '', result
   end
 end
 
@@ -268,169 +295,16 @@ describe 'validateSignature' do
   end
 end
 
-describe 'TraceOptions signature validation, response stringification, and header parsing' do
-  let(:logger) { Logger.new($stdout) }
-
-  describe 'validate_signature' do
-    it 'returns ok for valid signature' do
-      key = SecureRandom.random_bytes(16)
-      header = 'trigger-trace;ts=12345'
-      timestamp = Time.now.to_i
-      digest = OpenSSL::HMAC.hexdigest('SHA1', key, header)
-
-      result = SolarWindsAPM::TraceOptions.validate_signature(header, digest, key, timestamp)
-      assert_equal SolarWindsAPM::Auth::OK, result
-    end
-
-    it 'returns no-signature-key when key is nil' do
-      result = SolarWindsAPM::TraceOptions.validate_signature('header', 'sig', nil, Time.now.to_i)
-      assert_equal SolarWindsAPM::Auth::NO_SIGNATURE_KEY, result
-    end
-
-    it 'returns bad-timestamp when timestamp is nil' do
-      result = SolarWindsAPM::TraceOptions.validate_signature('header', 'sig', 'key', nil)
-      assert_equal SolarWindsAPM::Auth::BAD_TIMESTAMP, result
-    end
-
-    it 'returns bad-timestamp when timestamp is too old' do
-      old_timestamp = Time.now.to_i - (6 * 60)
-      result = SolarWindsAPM::TraceOptions.validate_signature('header', 'sig', 'key', old_timestamp)
-      assert_equal SolarWindsAPM::Auth::BAD_TIMESTAMP, result
-    end
-
-    it 'returns bad-signature for wrong signature' do
-      key = SecureRandom.random_bytes(16)
-      result = SolarWindsAPM::TraceOptions.validate_signature('header', 'wrong_signature', key, Time.now.to_i)
-      assert_equal SolarWindsAPM::Auth::BAD_SIGNATURE, result
-    end
+describe 'numeric_integer?' do
+  it 'returns true for valid integer strings' do
+    assert SolarWindsAPM::TraceOptions.numeric_integer?('12345')
+    assert SolarWindsAPM::TraceOptions.numeric_integer?('-1')
+    assert SolarWindsAPM::TraceOptions.numeric_integer?('0')
   end
 
-  describe 'stringify_trace_options_response' do
-    it 'returns nil for nil response' do
-      assert_nil SolarWindsAPM::TraceOptions.stringify_trace_options_response(nil)
-    end
-
-    it 'stringifies auth and trigger trace' do
-      response = SolarWindsAPM::TraceOptionsResponse.new('ok', 'ok', [])
-      result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
-      assert_includes result, 'auth:ok'
-      assert_includes result, 'trigger-trace:ok'
-    end
-
-    it 'stringifies ignored keys' do
-      response = SolarWindsAPM::TraceOptionsResponse.new(nil, nil, %w[key1 key2])
-      result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
-      assert_includes result, 'ignored:key1,key2'
-    end
-
-    it 'omits nil fields' do
-      response = SolarWindsAPM::TraceOptionsResponse.new(nil, 'ok', [])
-      result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
-      refute_includes result, 'auth'
-      assert_includes result, 'trigger-trace:ok'
-    end
-
-    it 'returns empty string when all nil and empty' do
-      response = SolarWindsAPM::TraceOptionsResponse.new(nil, nil, [])
-      result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
-      assert_equal '', result
-    end
-  end
-
-  describe 'numeric_integer?' do
-    it 'returns true for valid integer strings' do
-      assert SolarWindsAPM::TraceOptions.numeric_integer?('12345')
-      assert SolarWindsAPM::TraceOptions.numeric_integer?('-1')
-      assert SolarWindsAPM::TraceOptions.numeric_integer?('0')
-    end
-
-    it 'returns false for non-integer strings' do
-      refute SolarWindsAPM::TraceOptions.numeric_integer?('abc')
-      refute SolarWindsAPM::TraceOptions.numeric_integer?('12.34')
-      refute SolarWindsAPM::TraceOptions.numeric_integer?('')
-    end
-  end
-
-  describe 'parse_trace_options' do
-    it 'parses all option types in single header' do
-      header = "trigger-trace;sw-keys=check-id:123;custom-foo=bar;ts=#{Time.now.to_i}"
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert result.trigger_trace
-      assert_equal 'check-id:123', result.sw_keys
-      assert_equal 'bar', result.custom['custom-foo']
-      refute_nil result.timestamp
-    end
-
-    it 'ignores duplicate sw-keys' do
-      header = 'sw-keys=first;sw-keys=second'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_equal 'first', result.sw_keys
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores duplicate custom keys' do
-      header = 'custom-key=first;custom-key=second'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_equal 'first', result.custom['custom-key']
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores unknown keys' do
-      header = 'unknown-key=value'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_equal 1, result.ignored.size
-      assert_equal 'unknown-key', result.ignored[0][0]
-    end
-
-    it 'ignores sw-keys with nil value' do
-      header = 'sw-keys'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_nil result.sw_keys
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores custom key with nil value' do
-      header = 'custom-key'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_empty result.custom
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores non-integer timestamp' do
-      header = 'ts=notanumber'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_nil result.timestamp
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores duplicate timestamps' do
-      header = 'ts=100;ts=200'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_equal 100, result.timestamp
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'ignores timestamp without value' do
-      header = 'ts'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_nil result.timestamp
-      assert_equal 1, result.ignored.size
-    end
-
-    it 'handles values with equals signs' do
-      header = 'custom-key=value=with=equals'
-      result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
-
-      assert_equal 'value=with=equals', result.custom['custom-key']
-    end
+  it 'returns false for non-integer strings' do
+    refute SolarWindsAPM::TraceOptions.numeric_integer?('abc')
+    refute SolarWindsAPM::TraceOptions.numeric_integer?('12.34')
+    refute SolarWindsAPM::TraceOptions.numeric_integer?('')
   end
 end

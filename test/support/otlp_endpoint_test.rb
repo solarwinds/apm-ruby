@@ -250,25 +250,6 @@ describe 'OTLP Endpoint Test' do
     _(ENV.fetch('SW_APM_COLLECTOR', nil)).must_equal 'apm.collector.na-01.cloud.solarwinds.com:443'
     assert_signal_endpoint_default
   end
-end
-
-describe 'OTLPEndPoint collector resolution, endpoint configuration, and token header injection' do
-  before do
-    # Save original env vars
-    @saved_env = {}
-    %w[SW_APM_COLLECTOR SW_APM_SERVICE_KEY OTEL_SERVICE_NAME
-       OTEL_RESOURCE_ATTRIBUTES OTEL_EXPORTER_OTLP_HEADERS
-       OTEL_EXPORTER_OTLP_ENDPOINT
-       OTEL_EXPORTER_OTLP_TRACES_HEADERS OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-       OTEL_EXPORTER_OTLP_METRICS_HEADERS OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-       OTEL_EXPORTER_OTLP_LOGS_HEADERS OTEL_EXPORTER_OTLP_LOGS_ENDPOINT].each do |key|
-      @saved_env[key] = ENV[key]
-    end
-  end
-
-  after do
-    @saved_env.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
-  end
 
   describe 'initialize' do
     it 'initializes with nil token and service_name' do

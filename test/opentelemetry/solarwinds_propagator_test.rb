@@ -15,6 +15,7 @@ require './lib/solarwinds_apm/opentelemetry/solarwinds_propagator'
 describe 'SolarWindsPropagatorTest' do
   before do
     @text_map_propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
+    @propagator = @text_map_propagator
     @mock = Minitest::Mock.new
   end
 
@@ -119,12 +120,6 @@ describe 'SolarWindsPropagatorTest' do
 
     _(@mock.verify).must_equal true
   end
-end
-
-describe 'SolarWindsPropagator extract x-trace-options and inject sw tracestate' do
-  before do
-    @propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
-  end
 
   describe 'extract' do
     it 'extracts x-trace-options header into context' do
@@ -132,17 +127,6 @@ describe 'SolarWindsPropagator extract x-trace-options and inject sw tracestate'
       context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
 
       assert_equal 'trigger-trace;ts=12345', context.value('sw_xtraceoptions')
-    end
-
-    it 'extracts x-trace-options-signature header into context' do
-      carrier = {
-        'x-trace-options' => 'trigger-trace',
-        'x-trace-options-signature' => 'abc123'
-      }
-      context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
-
-      assert_equal 'trigger-trace', context.value('sw_xtraceoptions')
-      assert_equal 'abc123', context.value('sw_signature')
     end
 
     it 'returns context unchanged when no headers present' do

@@ -380,14 +380,6 @@ describe 'SolarWindsOTLPProcessor' do
       _(result['sw.is_error']).must_equal false
     end
   end
-end
-
-describe 'OTLPProcessor lifecycle, entry span detection, transaction naming, and metric attributes' do
-  before do
-    SolarWindsAPM::OpenTelemetry::OTLPProcessor.prepend(DisableAddView)
-    @txn_manager = SolarWindsAPM::TxnNameManager.new
-    @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(@txn_manager)
-  end
 
   describe 'force_flush' do
     it 'returns SUCCESS' do
@@ -474,137 +466,50 @@ describe 'OTLPProcessor lifecycle, entry span detection, transaction naming, and
     end
   end
 
-  describe 'private methods via send' do
-    describe 'calculate_span_time' do
-      it 'returns 0 when start_time is nil' do
-        result = @processor.send(:calculate_span_time, start_time: nil, end_time: 1000)
-        assert_equal 0, result
-      end
-
-      it 'returns 0 when end_time is nil' do
-        result = @processor.send(:calculate_span_time, start_time: 1000, end_time: nil)
-        assert_equal 0, result
-      end
-
-      it 'calculates time difference in microseconds' do
-        result = @processor.send(:calculate_span_time, start_time: 1_000_000_000, end_time: 2_000_000_000)
-        assert result > 0
-      end
+  describe 'calculate_span_time' do
+    it 'calculates time difference in microseconds' do
+      result = @processor.send(:calculate_span_time, start_time: 1_000_000_000, end_time: 2_000_000_000)
+      assert result > 0
     end
+  end
 
-    describe 'error?' do
-      it 'returns 1 for error status' do
-        span_data = create_span_data
-        # Override status to error
-        error_status = OpenTelemetry::Trace::Status.error('error')
-        span_data_with_error = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, error_status,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          {}, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
+  describe 'error?' do
+    it 'returns 1 for error status' do
+      span_data = create_span_data
+      # Override status to error
+      error_status = OpenTelemetry::Trace::Status.error('error')
+      span_data_with_error = OpenTelemetry::SDK::Trace::SpanData.new(
+        'test', :internal, error_status,
+        ("\0" * 8).b, 2, 2, 0,
+        1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
+        {}, nil, nil,
+        OpenTelemetry::SDK::Resources::Resource.create({}),
+        OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
+        Random.bytes(8), Random.bytes(16),
+        OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
+        OpenTelemetry::Trace::Tracestate::DEFAULT
+      )
 
-        result = @processor.send(:error?, span_data_with_error)
-        assert_equal 1, result
-      end
-
-      it 'returns 0 for ok status' do
-        span_data = create_span_data
-        result = @processor.send(:error?, span_data)
-        assert_equal 0, result
-      end
+      result = @processor.send(:error?, span_data_with_error)
+      assert_equal 1, result
     end
+  end
 
-    describe 'span_http?' do
-      it 'returns true for server span with http.method' do
-        span_data = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, OpenTelemetry::Trace::Status.ok,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          { 'http.method' => 'GET' }, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
-        # Override kind to SERVER
-        span_data.define_singleton_method(:kind) { ::OpenTelemetry::Trace::SpanKind::SERVER }
-
-        result = @processor.send(:span_http?, span_data)
-        assert result
-      end
-
-      it 'returns true for server span with http.request.method' do
-        span_data = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, OpenTelemetry::Trace::Status.ok,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          { 'http.request.method' => 'POST' }, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
-        span_data.define_singleton_method(:kind) { ::OpenTelemetry::Trace::SpanKind::SERVER }
-
-        result = @processor.send(:span_http?, span_data)
-        assert result
-      end
-
-      it 'returns false for non-server span' do
-        span_data = create_span_data
-        result = @processor.send(:span_http?, span_data)
-        refute result
-      end
-    end
-
-    describe 'get_http_status_code' do
-      it 'returns http.response.status_code when present' do
-        span_data = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, OpenTelemetry::Trace::Status.ok,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          { 'http.response.status_code' => 201 }, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
-
-        result = @processor.send(:get_http_status_code, span_data)
-        assert_equal 201, result
-      end
-
-      it 'returns http.status_code fallback' do
-        span_data = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, OpenTelemetry::Trace::Status.ok,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          { 'http.status_code' => 404 }, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
-
-        result = @processor.send(:get_http_status_code, span_data)
-        assert_equal 404, result
-      end
-
-      it 'returns INVALID_HTTP_STATUS_CODE when no status code' do
-        span_data = create_span_data
-        result = @processor.send(:get_http_status_code, span_data)
-        assert_equal 0, result
-      end
+  describe 'get_http_status_code additional' do
+    it 'returns http.status_code fallback' do
+      span_data = OpenTelemetry::SDK::Trace::SpanData.new(
+        'test', :internal, OpenTelemetry::Trace::Status.ok,
+        ("\0" * 8).b, 2, 2, 0,
+        1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
+        { 'http.status_code' => 404 }, nil, nil,
+        OpenTelemetry::SDK::Resources::Resource.create({}),
+        OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
+        Random.bytes(8), Random.bytes(16),
+        OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
+        OpenTelemetry::Trace::Tracestate::DEFAULT
+      )
+      result = @processor.send(:get_http_status_code, span_data)
+      assert_equal 404, result
     end
 
     describe 'non_entry_span' do
@@ -673,31 +578,6 @@ describe 'OTLPProcessor lifecycle, entry span detection, transaction naming, and
         assert_equal '/api/v1/users', result
       end
 
-      it 'falls back to span name when no http.route' do
-        span_context = OpenTelemetry::Trace::SpanContext.new(
-          span_id: Random.bytes(8),
-          trace_id: Random.bytes(16)
-        )
-        span = OpenTelemetry::SDK::Trace::Span.new(
-          span_context,
-          OpenTelemetry::Context.empty,
-          OpenTelemetry::Trace::Span::INVALID,
-          'my_span_name',
-          OpenTelemetry::Trace::SpanKind::SERVER,
-          nil,
-          OpenTelemetry::SDK::Trace::SpanLimits.new,
-          [],
-          {},
-          nil,
-          Time.now,
-          nil,
-          nil
-        )
-
-        result = @processor.send(:calculate_transaction_names, span)
-        assert_equal 'my_span_name', result
-      end
-
       it 'uses lambda transaction name in lambda mode' do
         @processor.instance_variable_set(:@is_lambda, true)
         ENV['AWS_LAMBDA_FUNCTION_NAME'] = 'my-lambda'
@@ -740,28 +620,6 @@ describe 'OTLPProcessor lifecycle, entry span detection, transaction naming, and
     end
 
     describe 'meter_attributes' do
-      it 'includes http status code and method for http spans' do
-        @processor.instance_variable_set(:@transaction_name, 'test_txn')
-
-        span_data = OpenTelemetry::SDK::Trace::SpanData.new(
-          'test', :internal, OpenTelemetry::Trace::Status.ok,
-          ("\0" * 8).b, 2, 2, 0,
-          1_669_317_386_253_789_212, 1_669_317_386_298_642_087,
-          { 'http.method' => 'GET', 'http.status_code' => 200, 'sw.is_entry_span' => true }, nil, nil,
-          OpenTelemetry::SDK::Resources::Resource.create({}),
-          OpenTelemetry::SDK::InstrumentationScope.new('test', '1.0'),
-          Random.bytes(8), Random.bytes(16),
-          OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
-          OpenTelemetry::Trace::Tracestate::DEFAULT
-        )
-        span_data.define_singleton_method(:kind) { ::OpenTelemetry::Trace::SpanKind::SERVER }
-
-        result = @processor.send(:meter_attributes, span_data)
-        assert_equal 200, result['http.status_code']
-        assert_equal 'GET', result['http.method']
-        assert_equal 'test_txn', result['sw.transaction']
-      end
-
       it 'uses http.request.method over http.method' do
         @processor.instance_variable_set(:@transaction_name, 'test_txn')
 

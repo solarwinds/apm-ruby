@@ -465,45 +465,10 @@ describe 'SamplerTest' do
       _(spans[0].attributes['BucketRate']).must_equal 0.1
     end
   end
-end
 
-describe 'Sampler settings parsing, tracing mode resolution, HTTP metadata, and readiness' do
   describe 'parse_settings' do
     before do
       @sampler = TestSampler.new({ local_settings: {} })
-    end
-
-    it 'parses valid settings with all fields' do
-      unparsed = {
-        'value' => 500_000,
-        'timestamp' => Time.now.to_i,
-        'ttl' => 120,
-        'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE,OVERRIDE',
-        'arguments' => {
-          'BucketCapacity' => 100,
-          'BucketRate' => 10,
-          'TriggerRelaxedBucketCapacity' => 50,
-          'TriggerRelaxedBucketRate' => 5,
-          'TriggerStrictBucketCapacity' => 25,
-          'TriggerStrictBucketRate' => 2,
-          'SignatureKey' => 'test-key'
-        },
-        'warning' => 'Test warning message'
-      }
-
-      result = @sampler.parse_settings(unparsed)
-      refute_nil result
-      assert_equal 500_000, result[:sample_rate]
-      assert_equal SolarWindsAPM::SampleSource::REMOTE, result[:sample_source]
-      assert result[:flags].anybits?(SolarWindsAPM::Flags::SAMPLE_START)
-      assert result[:flags].anybits?(SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS)
-      assert result[:flags].anybits?(SolarWindsAPM::Flags::TRIGGERED_TRACE)
-      assert result[:flags].anybits?(SolarWindsAPM::Flags::OVERRIDE)
-      assert_equal 'test-key', result[:signature_key]
-      assert_equal 'Test warning message', result[:warning]
-      assert_equal({ capacity: 100, rate: 10 }, result[:buckets][SolarWindsAPM::BucketType::DEFAULT])
-      assert_equal({ capacity: 50, rate: 5 }, result[:buckets]['trigger_relaxed'])
-      assert_equal({ capacity: 25, rate: 2 }, result[:buckets]['trigger_strict'])
     end
 
     it 'returns nil for non-hash input' do
@@ -658,55 +623,9 @@ describe 'Sampler settings parsing, tracing mode resolution, HTTP metadata, and 
     end
   end
 
-  describe 'http_span_metadata' do
+  describe 'http_span_metadata additional' do
     before do
       @sampler = TestSampler.new({ local_settings: {} })
-    end
-
-    it 'returns http false for non-server spans' do
-      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::CLIENT,
-                                           { 'http.request.method' => 'GET' })
-      assert_equal({ http: false }, result)
-    end
-
-    it 'returns http false for server spans without http method' do
-      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER,
-                                           { 'network.transport' => 'udp' })
-      assert_equal({ http: false }, result)
-    end
-
-    it 'returns full metadata for new semconv server http spans' do
-      attrs = {
-        'http.request.method' => 'POST',
-        'http.response.status_code' => 201,
-        'url.scheme' => 'https',
-        'server.address' => 'example.com',
-        'url.path' => '/api/v1/items'
-      }
-
-      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
-      assert result[:http]
-      assert_equal 'POST', result[:method]
-      assert_equal 201, result[:status]
-      assert_equal 'https', result[:scheme]
-      assert_equal 'example.com', result[:hostname]
-      assert_equal '/api/v1/items', result[:path]
-      assert_equal 'https://example.com/api/v1/items', result[:url]
-    end
-
-    it 'returns full metadata for old semconv server http spans' do
-      attrs = {
-        OpenTelemetry::SemanticConventions::Trace::HTTP_METHOD => 'GET',
-        OpenTelemetry::SemanticConventions::Trace::HTTP_STATUS_CODE => 200,
-        OpenTelemetry::SemanticConventions::Trace::HTTP_SCHEME => 'http',
-        OpenTelemetry::SemanticConventions::Trace::NET_HOST_NAME => 'old.example.com',
-        OpenTelemetry::SemanticConventions::Trace::HTTP_TARGET => '/old/path'
-      }
-
-      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
-      assert result[:http]
-      assert_equal 'GET', result[:method]
-      assert_equal 200, result[:status]
     end
 
     it 'uses defaults when attributes are missing' do
