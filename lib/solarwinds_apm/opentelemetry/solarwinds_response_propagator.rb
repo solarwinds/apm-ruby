@@ -62,15 +62,20 @@ module SolarWindsAPM
 
         private
 
+        W3C_UNSANITIZE_MAP = {
+          SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED => SolarWindsAPM::Constants::INTL_SWO_EQUALS,
+          ':' => SolarWindsAPM::Constants::INTL_SWO_EQUALS,
+          SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED => SolarWindsAPM::Constants::INTL_SWO_COMMA
+        }.freeze
+
+        W3C_UNSANITIZE_PATTERN = Regexp.union(W3C_UNSANITIZE_MAP.keys).freeze
+
         # SW_XTRACEOPTIONS_RESPONSE_KEY -> xtrace_options_response
         def recover_response_from_tracestate(span_context)
           sanitized = span_context.tracestate.value(SW_XTRACEOPTIONS_RESPONSE_KEY)
-          sanitized = '' if sanitized.nil?
-          sanitized = sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED,
-                                     SolarWindsAPM::Constants::INTL_SWO_EQUALS)
-          sanitized = sanitized.gsub(':', SolarWindsAPM::Constants::INTL_SWO_EQUALS)
-          sanitized.gsub(SolarWindsAPM::Constants::INTL_SWO_COMMA_W3C_SANITIZED,
-                         SolarWindsAPM::Constants::INTL_SWO_COMMA)
+          return '' if sanitized.nil?
+
+          sanitized.gsub(W3C_UNSANITIZE_PATTERN, W3C_UNSANITIZE_MAP)
         end
       end
     end

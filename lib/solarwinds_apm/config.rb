@@ -26,6 +26,16 @@ module SolarWindsAPM
                              6 => { stdlib: ::Logger::DEBUG, otel: 'debug' } }.freeze
 
     @@config = {}
+    @@config_mutex = ::Mutex.new
+
+    # Type expectations for known configuration keys
+    CONFIG_TYPE_VALIDATORS = {
+      transaction_settings: [Array, NilClass],
+      debug_level: [Integer, NilClass],
+      tracing_mode: [Symbol, NilClass],
+      trigger_tracing_mode: [Symbol, NilClass],
+      tag_sql: [TrueClass, FalseClass, NilClass]
+    }.freeze
 
     ##
     # load_config_file
@@ -49,7 +59,8 @@ module SolarWindsAPM
       config_files << config_file if File.exist?(config_file)
 
       # Check for file set by env variable
-      config_files << config_file_from_env if ENV.key?('SW_APM_CONFIG_RUBY')
+      config_file_env = config_file_from_env if ENV.key?('SW_APM_CONFIG_RUBY')
+      config_files << config_file_env if config_file_env
 
       # Check for default config file
       config_file = File.join(Dir.pwd, 'solarwinds_apm_config.rb')
@@ -68,15 +79,15 @@ module SolarWindsAPM
 
     def self.config_file_from_env
       if File.exist?(ENV.fetch('SW_APM_CONFIG_RUBY', nil)) && !File.directory?(ENV.fetch('SW_APM_CONFIG_RUBY', nil))
-        config_file = ENV.fetch('SW_APM_CONFIG_RUBY', nil)
+        ENV.fetch('SW_APM_CONFIG_RUBY', nil)
       elsif File.exist?(File.join(ENV.fetch('SW_APM_CONFIG_RUBY', nil), 'solarwinds_apm_config.rb'))
-        config_file = File.join(ENV.fetch('SW_APM_CONFIG_RUBY', nil), 'solarwinds_apm_config.rb')
+        File.join(ENV.fetch('SW_APM_CONFIG_RUBY', nil), 'solarwinds_apm_config.rb')
       else
         SolarWindsAPM.logger.warn do
           "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable:  #{ENV.fetch('SW_APM_CONFIG_RUBY', nil)}"
         end
+        nil
       end
-      config_file
     end
 
     def self.set_log_level
@@ -99,7 +110,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn do
           "[#{name}/#{__method__}] #{env_var} must be #{valid_env_values.join('/')} (current setting is #{raw_env_value}). Using default value: #{default}."
         end
-        return @@config[key] = default
+        return @@config_mutex.synchronize { @@config[key] = default }
       end
 
       # Validate final value efficiently
@@ -109,10 +120,10 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn do
           "[#{name}/#{__method__}] :#{key} must be #{valid_env_values.join('/')}. Using default value: #{default}."
         end
-        return @@config[key] = default
+        return @@config_mutex.synchronize { @@config[key] = default }
       end
 
-      @@config[key] = value
+      @@config_mutex.synchronize { @@config[key] = value }
     end
 
     def self.true?(obj)
@@ -134,10 +145,12 @@ module SolarWindsAPM
     # to create an output similar to the content of the config file
     #
     def self.print_config
-      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] General configurations list blow:" }
-      @@config.each do |k, v|
-        SolarWindsAPM.logger.debug do
-          "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] General configurations listed below:" }
+      @@config_mutex.synchronize do
+        @@config.each do |k, v|
+          SolarWindsAPM.logger.debug do
+            "[#{name}/#{__method__}] Config Key/Value: #{k}, #{v.inspect}"
+          end
         end
       end
       nil
@@ -151,7 +164,7 @@ module SolarWindsAPM
     # This will be called when require 'solarwinds_apm/config' happen
     #
     def self.initialize
-      @@config[:transaction_name] = {}
+      @@config_mutex.synchronize { @@config[:transaction_name] = {} }
 
       # Always load the template, it has all the keys and defaults defined,
       # no guarantee of completeness in the user's config file
@@ -175,7 +188,7 @@ module SolarWindsAPM
     end
 
     def self.[](key)
-      @@config[key.to_sym]
+      @@config_mutex.synchronize { @@config[key.to_sym] }
     end
 
     ##
@@ -187,7 +200,19 @@ module SolarWindsAPM
     #
     def self.[]=(key, value)
       key = key.to_sym
-      @@config[key] = value
+
+      # Validate type for known configuration keys
+      if CONFIG_TYPE_VALIDATORS.key?(key)
+        allowed = CONFIG_TYPE_VALIDATORS[key]
+        unless allowed.any? { |type| value.is_a?(type) }
+          SolarWindsAPM.logger.warn do
+            "[#{name}/#{__method__}] Invalid type for :#{key}: expected #{allowed.map(&:name).join('/')}, got #{value.class}. Ignoring."
+          end
+          return
+        end
+      end
+
+      @@config_mutex.synchronize { @@config[key] = value }
 
       case key
       when :sampling_rate
@@ -225,7 +250,7 @@ module SolarWindsAPM
         SolarWindsAPM.logger.warn { ':log_args is deprecated' }
 
       else
-        @@config[key.to_sym] = value
+        @@config_mutex.synchronize { @@config[key.to_sym] = value }
 
       end
     end

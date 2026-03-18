@@ -14,6 +14,7 @@ describe 'SolarWinds Set Transaction Name Test' do
     @span = create_span
     @dummy_span = create_span
     @dummy_span.context.instance_variable_set(:@span_id, 'fake_span_id') # with fake span_id, should still find the right root span
+    SolarWindsAPM::OTelConfig.class_variable_set(:@@initialized, false)
     SolarWindsAPM::OTelConfig.initialize
     @solarwinds_processor = SolarWindsAPM::OTelConfig[:metrics_processor]
   end

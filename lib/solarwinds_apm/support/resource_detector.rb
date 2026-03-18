@@ -64,7 +64,10 @@ module SolarWindsAPM
 
           response = nil
           ::OpenTelemetry::Common::Utilities.untraced do
-            response = Net::HTTP.get_response(url)
+            http = Net::HTTP.new(url.host, url.port)
+            http.open_timeout = 2
+            http.read_timeout = 2
+            response = http.get(url.request_uri)
           end
 
           raise 'Response returned non-200 status code' unless response&.code.to_i == 200

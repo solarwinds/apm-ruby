@@ -64,8 +64,9 @@ module SolarWindsAPM
       now = Time.now.to_f
       elapsed = now - @last_update_time
       @last_update_time = now
-      @tokens += elapsed * @rate
-      @tokens = [@tokens, @capacity].min
+      # Recompute tokens from elapsed time rather than accumulating
+      # to avoid floating-point drift over many calls
+      @tokens = [@tokens + (elapsed * @rate), @capacity].min
     end
 
     # settings is from json sampler

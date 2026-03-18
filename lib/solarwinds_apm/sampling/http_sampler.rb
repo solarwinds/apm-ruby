@@ -99,9 +99,10 @@ module SolarWindsAPM
       loop do
         response = fetch_with_timeout(@setting_url)
 
-        # Check for nil response from timeout
+        # Check for nil response from timeout or non-success response
         unless response.is_a?(Net::HTTPSuccess)
-          @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve settings due to timeout." }
+          @logger.warn { "[#{self.class}/#{__method__}] Failed to retrieve settings: #{response.nil? ? 'timeout' : "HTTP #{response.code}"}" }
+          sleep(sleep_duration)
           next
         end
 

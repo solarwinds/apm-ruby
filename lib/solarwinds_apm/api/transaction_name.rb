@@ -57,13 +57,15 @@ module SolarWindsAPM
 
           if current_span.context.valid?
             current_trace_id = current_span.context.hex_trace_id
-            entry_span_id, trace_flags = solarwinds_processor.txn_manager.get_root_context_h(current_trace_id)&.split('-')
-            if entry_span_id.to_s.empty? || trace_flags.to_s.empty?
+            root_context = solarwinds_processor.txn_manager.get_root_context_h(current_trace_id)
+            parts = root_context&.split('-')
+            if parts.nil? || parts.length != 2
               SolarWindsAPM.logger.warn do
-                "[#{name}/#{__method__}] Set transaction name failed: record not found in the transaction manager."
+                "[#{name}/#{__method__}] Set transaction name failed: record not found or malformed in the transaction manager."
               end
               status = false
             else
+              entry_span_id, _trace_flags = parts
               solarwinds_processor.txn_manager.set("#{current_trace_id}-#{entry_span_id}", custom_name)
               SolarWindsAPM.logger.debug do
                 "[#{name}/#{__method__}] Cached custom transaction name for #{current_trace_id}-#{entry_span_id} as #{custom_name}"
