@@ -384,14 +384,14 @@ describe 'SolarWindsOTLPProcessor' do
   describe 'force_flush' do
     it 'returns SUCCESS' do
       result = @processor.force_flush
-      assert_equal ::OpenTelemetry::SDK::Trace::Export::SUCCESS, result
+      assert_equal OpenTelemetry::SDK::Trace::Export::SUCCESS, result
     end
   end
 
   describe 'shutdown' do
     it 'returns SUCCESS' do
       result = @processor.shutdown
-      assert_equal ::OpenTelemetry::SDK::Trace::Export::SUCCESS, result
+      assert_equal OpenTelemetry::SDK::Trace::Export::SUCCESS, result
     end
   end
 
@@ -469,13 +469,13 @@ describe 'SolarWindsOTLPProcessor' do
   describe 'calculate_span_time' do
     it 'calculates time difference in microseconds' do
       result = @processor.send(:calculate_span_time, start_time: 1_000_000_000, end_time: 2_000_000_000)
-      assert result > 0
+      assert result.positive?
     end
   end
 
   describe 'error?' do
     it 'returns 1 for error status' do
-      span_data = create_span_data
+      create_span_data
       # Override status to error
       error_status = OpenTelemetry::Trace::Status.error('error')
       span_data_with_error = OpenTelemetry::SDK::Trace::SpanData.new(
@@ -634,7 +634,7 @@ describe 'SolarWindsOTLPProcessor' do
           OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
           OpenTelemetry::Trace::Tracestate::DEFAULT
         )
-        span_data.define_singleton_method(:kind) { ::OpenTelemetry::Trace::SpanKind::SERVER }
+        span_data.define_singleton_method(:kind) { OpenTelemetry::Trace::SpanKind::SERVER }
 
         result = @processor.send(:meter_attributes, span_data)
         assert_equal 'POST', result['http.method']
@@ -654,7 +654,7 @@ describe 'SolarWindsOTLPProcessor' do
           OpenTelemetry::Trace::TraceFlags.from_byte(0x01),
           OpenTelemetry::Trace::Tracestate::DEFAULT
         )
-        span_data.define_singleton_method(:kind) { ::OpenTelemetry::Trace::SpanKind::SERVER }
+        span_data.define_singleton_method(:kind) { OpenTelemetry::Trace::SpanKind::SERVER }
 
         result = @processor.send(:meter_attributes, span_data)
         refute result.key?('http.status_code')

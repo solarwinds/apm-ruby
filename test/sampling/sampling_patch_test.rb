@@ -12,13 +12,13 @@ describe 'MetricsExporter::Patch#export returns SUCCESS for empty data points' d
     metric1 = Minitest::Mock.new
     metric1.expect(:data_points, [])
 
-    metrics = [metric1]
+    [metric1]
     # After reject!, empty metrics remain so we need the exporter
     # The patch calls super if any data_points are present
     # When all are empty it should return SUCCESS
-    exporter = ::OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new
+    exporter = OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new
     result = exporter.export([])
-    assert_equal ::OpenTelemetry::SDK::Metrics::Export::SUCCESS, result
+    assert_equal OpenTelemetry::SDK::Metrics::Export::SUCCESS, result
   end
 end
 

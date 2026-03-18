@@ -213,7 +213,7 @@ describe 'Resource Detector Test' do
     end
 
     it 'returns false for unsafe integers' do
-      refute SolarWindsAPM::ResourceDetector.safe_integer?((2**53))
+      refute SolarWindsAPM::ResourceDetector.safe_integer?(2**53)
       refute SolarWindsAPM::ResourceDetector.safe_integer?(-(2**53))
     end
   end

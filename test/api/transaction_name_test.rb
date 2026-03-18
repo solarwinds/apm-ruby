@@ -11,7 +11,7 @@ require './lib/solarwinds_apm/api'
 
 describe 'API::TransactionName#set_transaction_name input validation and early returns' do
   before do
-    @original_enabled = ENV['SW_APM_ENABLED']
+    @original_enabled = ENV.fetch('SW_APM_ENABLED', nil)
   end
 
   after do

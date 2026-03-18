@@ -261,9 +261,9 @@ describe 'SolarWindsAPM SamplingSettings Merge Test' do
 
   describe 'Structs' do
     it 'TriggerTraceOptions has the right members' do
-      opts = SolarWindsAPM::TriggerTraceOptions.new(true, 12345, 'keys', {}, [], nil)
+      opts = SolarWindsAPM::TriggerTraceOptions.new(true, 12_345, 'keys', {}, [], nil)
       assert opts.trigger_trace
-      assert_equal 12345, opts.timestamp
+      assert_equal 12_345, opts.timestamp
       assert_equal 'keys', opts.sw_keys
     end
 

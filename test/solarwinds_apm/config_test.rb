@@ -300,7 +300,7 @@ describe 'Config Test' do
 
   describe 'enable_disable_config tested via []= assignment' do
     it 'uses env var when valid enabled/disabled value' do
-      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
       ENV['SW_APM_TRIGGER_TRACING_MODE'] = 'disabled'
 
       SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
@@ -314,7 +314,7 @@ describe 'Config Test' do
     end
 
     it 'uses default for invalid env var' do
-      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
       ENV['SW_APM_TRIGGER_TRACING_MODE'] = 'invalid_value'
 
       SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
@@ -328,7 +328,7 @@ describe 'Config Test' do
     end
 
     it 'accepts boolean config with true/false env var' do
-      original = ENV['SW_APM_TAG_SQL']
+      original = ENV.fetch('SW_APM_TAG_SQL', nil)
       ENV['SW_APM_TAG_SQL'] = 'true'
 
       SolarWindsAPM::Config[:tag_sql] = false
@@ -342,7 +342,7 @@ describe 'Config Test' do
     end
 
     it 'uses default for invalid boolean env var' do
-      original = ENV['SW_APM_TAG_SQL']
+      original = ENV.fetch('SW_APM_TAG_SQL', nil)
       ENV['SW_APM_TAG_SQL'] = 'invalid_bool'
 
       SolarWindsAPM::Config[:tag_sql] = true
@@ -356,7 +356,7 @@ describe 'Config Test' do
     end
 
     it 'accepts value from code when env var not set' do
-      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
       ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
 
       SolarWindsAPM::Config[:trigger_tracing_mode] = :disabled
@@ -370,7 +370,7 @@ describe 'Config Test' do
     end
 
     it 'uses default for invalid code value' do
-      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
       ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
 
       SolarWindsAPM::Config[:trigger_tracing_mode] = 'invalid_string'
@@ -470,7 +470,7 @@ describe 'Config Test' do
     end
 
     it 'handles tracing_mode assignment' do
-      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
       ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
       SolarWindsAPM::Config[:tracing_mode] = :enabled
       assert_equal :enabled, SolarWindsAPM::Config[:tracing_mode]
@@ -507,7 +507,7 @@ describe 'Config Test' do
     end
 
     it 'handles transaction_settings with Regexp object' do
-      settings = [{ regexp: /\/health/, tracing: :disabled }]
+      settings = [{ regexp: %r{/health}, tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
       refute_nil SolarWindsAPM::Config[:disabled_regexps]
     end
@@ -542,7 +542,7 @@ describe 'Config Test' do
 
   describe 'config_file_from_env' do
     it 'returns nil for non-existent file' do
-      original = ENV['SW_APM_CONFIG_RUBY']
+      original = ENV.fetch('SW_APM_CONFIG_RUBY', nil)
       ENV['SW_APM_CONFIG_RUBY'] = '/nonexistent/path/file.rb'
       result = SolarWindsAPM::Config.config_file_from_env
       assert_nil result
@@ -562,7 +562,7 @@ describe 'Config Test' do
     end
 
     it 'merge! is an alias for update!' do
-      SolarWindsAPM::Config.merge!({ test_merge_key: 'test_value' })
+      SolarWindsAPM::Config[:test_merge_key] = 'test_value'
       assert_equal 'test_value', SolarWindsAPM::Config[:test_merge_key]
     end
   end

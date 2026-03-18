@@ -136,7 +136,7 @@ describe 'TransactionSettings#calculate_trace_mode with tracing modes and regexp
 
     it 'returns disabled when url matches disabled regexp' do
       SolarWindsAPM::Config[:tracing_mode] = :enabled
-      SolarWindsAPM::Config[:disabled_regexps] = [/\/health/]
+      SolarWindsAPM::Config[:disabled_regexps] = [%r{/health}]
       SolarWindsAPM::Config[:enabled_regexps] = nil
 
       ts = SolarWindsAPM::TransactionSettings.new(url_path: '/health', name: 'test', kind: :server)
@@ -145,7 +145,7 @@ describe 'TransactionSettings#calculate_trace_mode with tracing modes and regexp
 
     it 'returns enabled when url matches enabled regexp' do
       SolarWindsAPM::Config[:tracing_mode] = :enabled
-      SolarWindsAPM::Config[:enabled_regexps] = [/\/api/]
+      SolarWindsAPM::Config[:enabled_regexps] = [%r{/api}]
       SolarWindsAPM::Config[:disabled_regexps] = nil
 
       ts = SolarWindsAPM::TransactionSettings.new(url_path: '/api/test', name: 'test', kind: :server)
@@ -172,8 +172,8 @@ describe 'TransactionSettings#calculate_trace_mode with tracing modes and regexp
 
     it 'disabled takes priority over enabled for url' do
       SolarWindsAPM::Config[:tracing_mode] = :enabled
-      SolarWindsAPM::Config[:disabled_regexps] = [/\/api/]
-      SolarWindsAPM::Config[:enabled_regexps] = [/\/api/]
+      SolarWindsAPM::Config[:disabled_regexps] = [%r{/api}]
+      SolarWindsAPM::Config[:enabled_regexps] = [%r{/api}]
 
       ts = SolarWindsAPM::TransactionSettings.new(url_path: '/api/test', name: 'test', kind: :server)
       assert_equal 0, ts.calculate_trace_mode

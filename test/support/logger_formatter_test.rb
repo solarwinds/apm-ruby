@@ -10,7 +10,7 @@ require './lib/solarwinds_apm/support/logger_formatter'
 
 describe 'Logger::Formatter trace ID injection, deduplication, and message edge cases' do
   before do
-    @formatter = ::Logger::Formatter.new
+    @formatter = Logger::Formatter.new
   end
 
   it 'passes through when log_traceId is :never' do

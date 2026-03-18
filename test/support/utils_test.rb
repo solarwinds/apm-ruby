@@ -9,7 +9,7 @@ require './lib/solarwinds_apm/support/utils'
 describe 'Utils tracestate formatting, traceparent construction, and Lambda detection' do
   it 'builds W3C traceparent string from span context' do
     span_context = OpenTelemetry::Trace::SpanContext.new(trace_id: "\xDD\x95\xC5l\xE3\x83\xCA\xF0\x95;S\x98i\xF9:{",
-                                                          span_id: "\x8D\xB5\xDC?$l\x84W")
+                                                         span_id: "\x8D\xB5\xDC?$l\x84W")
     result = SolarWindsAPM::Utils.traceparent_from_context(span_context)
     _(result).must_equal '00-dd95c56ce383caf0953b539869f93a7b-8db5dc3f246c8457-00'
   end
@@ -63,8 +63,8 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
 
   describe 'determine_lambda' do
     it 'returns false when not in lambda' do
-      original_task_root = ENV['LAMBDA_TASK_ROOT']
-      original_func_name = ENV['AWS_LAMBDA_FUNCTION_NAME']
+      original_task_root = ENV.fetch('LAMBDA_TASK_ROOT', nil)
+      original_func_name = ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)
       ENV.delete('LAMBDA_TASK_ROOT')
       ENV.delete('AWS_LAMBDA_FUNCTION_NAME')
 
@@ -75,7 +75,7 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
     end
 
     it 'returns true when LAMBDA_TASK_ROOT is set' do
-      original = ENV['LAMBDA_TASK_ROOT']
+      original = ENV.fetch('LAMBDA_TASK_ROOT', nil)
       ENV['LAMBDA_TASK_ROOT'] = '/var/task'
 
       assert SolarWindsAPM::Utils.determine_lambda
@@ -84,8 +84,8 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
     end
 
     it 'returns true when AWS_LAMBDA_FUNCTION_NAME is set' do
-      original_task_root = ENV['LAMBDA_TASK_ROOT']
-      original_func_name = ENV['AWS_LAMBDA_FUNCTION_NAME']
+      original_task_root = ENV.fetch('LAMBDA_TASK_ROOT', nil)
+      original_func_name = ENV.fetch('AWS_LAMBDA_FUNCTION_NAME', nil)
       ENV.delete('LAMBDA_TASK_ROOT')
       ENV['AWS_LAMBDA_FUNCTION_NAME'] = 'my-function'
 

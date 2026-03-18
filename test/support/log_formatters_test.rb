@@ -36,7 +36,7 @@ describe 'Logging::LogEvent trace ID injection based on log_traceId config' do
     original = SolarWindsAPM::Config[:log_traceId]
     SolarWindsAPM::Config[:log_traceId] = :always
 
-    logger = Logging.logger['test_logger']
+    Logging.logger['test_logger']
     event = Logging::LogEvent.new('test_logger', Logging::LEVELS['info'], 'test log message', false)
     assert_includes event.data, 'trace_id='
   ensure
