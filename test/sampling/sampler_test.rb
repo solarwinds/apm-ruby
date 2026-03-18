@@ -466,3 +466,304 @@ describe 'SamplerTest' do
     end
   end
 end
+
+describe 'Sampler settings parsing, tracing mode resolution, HTTP metadata, and readiness' do
+  describe 'parse_settings' do
+    before do
+      @sampler = TestSampler.new({ local_settings: {} })
+    end
+
+    it 'parses valid settings with all fields' do
+      unparsed = {
+        'value' => 500_000,
+        'timestamp' => Time.now.to_i,
+        'ttl' => 120,
+        'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS,TRIGGER_TRACE,OVERRIDE',
+        'arguments' => {
+          'BucketCapacity' => 100,
+          'BucketRate' => 10,
+          'TriggerRelaxedBucketCapacity' => 50,
+          'TriggerRelaxedBucketRate' => 5,
+          'TriggerStrictBucketCapacity' => 25,
+          'TriggerStrictBucketRate' => 2,
+          'SignatureKey' => 'test-key'
+        },
+        'warning' => 'Test warning message'
+      }
+
+      result = @sampler.parse_settings(unparsed)
+      refute_nil result
+      assert_equal 500_000, result[:sample_rate]
+      assert_equal SolarWindsAPM::SampleSource::REMOTE, result[:sample_source]
+      assert result[:flags].anybits?(SolarWindsAPM::Flags::SAMPLE_START)
+      assert result[:flags].anybits?(SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS)
+      assert result[:flags].anybits?(SolarWindsAPM::Flags::TRIGGERED_TRACE)
+      assert result[:flags].anybits?(SolarWindsAPM::Flags::OVERRIDE)
+      assert_equal 'test-key', result[:signature_key]
+      assert_equal 'Test warning message', result[:warning]
+      assert_equal({ capacity: 100, rate: 10 }, result[:buckets][SolarWindsAPM::BucketType::DEFAULT])
+      assert_equal({ capacity: 50, rate: 5 }, result[:buckets]['trigger_relaxed'])
+      assert_equal({ capacity: 25, rate: 2 }, result[:buckets]['trigger_strict'])
+    end
+
+    it 'returns nil for non-hash input' do
+      assert_nil @sampler.parse_settings('not a hash')
+      assert_nil @sampler.parse_settings(nil)
+      assert_nil @sampler.parse_settings(42)
+    end
+
+    it 'returns nil for missing numeric fields' do
+      assert_nil @sampler.parse_settings({ 'value' => 'not_a_number', 'timestamp' => 1, 'ttl' => 1, 'flags' => 'SAMPLE_START' })
+      assert_nil @sampler.parse_settings({ 'value' => 1, 'timestamp' => 'bad', 'ttl' => 1, 'flags' => 'SAMPLE_START' })
+      assert_nil @sampler.parse_settings({ 'value' => 1, 'timestamp' => 1, 'ttl' => 'bad', 'flags' => 'SAMPLE_START' })
+    end
+
+    it 'returns nil for non-string flags' do
+      assert_nil @sampler.parse_settings({ 'value' => 1, 'timestamp' => 1, 'ttl' => 1, 'flags' => 123 })
+    end
+
+    it 'handles unknown flags gracefully' do
+      result = @sampler.parse_settings({ 'value' => 1, 'timestamp' => 1, 'ttl' => 1, 'flags' => 'UNKNOWN_FLAG' })
+      refute_nil result
+      assert_equal SolarWindsAPM::Flags::OK, result[:flags]
+    end
+
+    it 'handles empty arguments hash' do
+      result = @sampler.parse_settings({
+                                         'value' => 1,
+                                         'timestamp' => 1,
+                                         'ttl' => 1,
+                                         'flags' => 'SAMPLE_START',
+                                         'arguments' => {}
+                                       })
+      refute_nil result
+      assert_empty result[:buckets]
+      assert_nil result[:signature_key]
+    end
+
+    it 'handles non-hash arguments' do
+      result = @sampler.parse_settings({
+                                         'value' => 1,
+                                         'timestamp' => 1,
+                                         'ttl' => 1,
+                                         'flags' => 'SAMPLE_START',
+                                         'arguments' => 'not_a_hash'
+                                       })
+      refute_nil result
+      assert_empty result[:buckets]
+    end
+
+    it 'parses settings without warning' do
+      result = @sampler.parse_settings({
+                                         'value' => 1,
+                                         'timestamp' => 1,
+                                         'ttl' => 1,
+                                         'flags' => 'SAMPLE_START'
+                                       })
+      refute_nil result
+      assert_nil result[:warning]
+    end
+  end
+
+  describe 'update_settings' do
+    before do
+      @sampler = TestSampler.new({ local_settings: {} })
+    end
+
+    it 'updates with valid settings and returns parsed' do
+      result = @sampler.update_settings({
+                                          'value' => 500_000,
+                                          'timestamp' => Time.now.to_i,
+                                          'ttl' => 120,
+                                          'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS'
+                                        })
+      refute_nil result
+      assert_equal 500_000, result[:sample_rate]
+    end
+
+    it 'returns nil for invalid settings' do
+      result = @sampler.update_settings('invalid')
+      assert_nil result
+    end
+
+    it 'logs warning from parsed settings' do
+      result = @sampler.update_settings({
+                                          'value' => 1,
+                                          'timestamp' => Time.now.to_i,
+                                          'ttl' => 120,
+                                          'flags' => 'SAMPLE_START',
+                                          'warning' => 'Some warning'
+                                        })
+      refute_nil result
+      assert_equal 'Some warning', result[:warning]
+    end
+  end
+
+  describe 'resolve_tracing_mode' do
+    it 'returns ALWAYS when tracing_mode is true' do
+      sampler = TestSampler.new({ local_settings: { tracing_mode: true } })
+      assert_equal SolarWindsAPM::TracingMode::ALWAYS, sampler.instance_variable_get(:@tracing_mode)
+    end
+
+    it 'returns NEVER when tracing_mode is false' do
+      sampler = TestSampler.new({ local_settings: { tracing_mode: false } })
+      assert_equal SolarWindsAPM::TracingMode::NEVER, sampler.instance_variable_get(:@tracing_mode)
+    end
+
+    it 'returns nil when tracing_mode not in config' do
+      sampler = TestSampler.new({ local_settings: {} })
+      assert_nil sampler.instance_variable_get(:@tracing_mode)
+    end
+
+    it 'returns nil when tracing_mode is nil' do
+      sampler = TestSampler.new({ local_settings: { tracing_mode: nil } })
+      assert_nil sampler.instance_variable_get(:@tracing_mode)
+    end
+  end
+
+  describe 'local_settings with transaction_settings' do
+    it 'uses default settings when no transaction_settings configured' do
+      sampler = TestSampler.new({ local_settings: { tracing_mode: true } })
+      params = make_sample_params
+      settings = sampler.local_settings(params)
+      assert_equal SolarWindsAPM::TracingMode::ALWAYS, settings[:tracing_mode]
+    end
+
+    it 'applies transaction settings filter for http spans' do
+      SolarWindsAPM::Config[:tracing_mode] = :enabled
+      SolarWindsAPM::Config[:transaction_settings] = [
+        { regexp: '/health', tracing: :disabled }
+      ]
+
+      sampler = TestSampler.new({
+                                  local_settings: {
+                                    tracing_mode: true,
+                                    transaction_settings: SolarWindsAPM::Config[:transaction_settings]
+                                  }
+                                })
+
+      attrs = {
+        'http.request.method' => 'GET',
+        'url.scheme' => 'https',
+        'server.address' => 'localhost',
+        'url.path' => '/health'
+      }
+      params = make_sample_params(kind: OpenTelemetry::Trace::SpanKind::SERVER)
+      params[:attributes] = attrs
+
+      settings = sampler.local_settings(params)
+      refute_nil settings[:tracing_mode]
+    ensure
+      SolarWindsAPM::Config[:transaction_settings] = nil
+    end
+  end
+
+  describe 'http_span_metadata' do
+    before do
+      @sampler = TestSampler.new({ local_settings: {} })
+    end
+
+    it 'returns http false for non-server spans' do
+      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::CLIENT,
+                                           { 'http.request.method' => 'GET' })
+      assert_equal({ http: false }, result)
+    end
+
+    it 'returns http false for server spans without http method' do
+      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER,
+                                           { 'network.transport' => 'udp' })
+      assert_equal({ http: false }, result)
+    end
+
+    it 'returns full metadata for new semconv server http spans' do
+      attrs = {
+        'http.request.method' => 'POST',
+        'http.response.status_code' => 201,
+        'url.scheme' => 'https',
+        'server.address' => 'example.com',
+        'url.path' => '/api/v1/items'
+      }
+
+      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
+      assert result[:http]
+      assert_equal 'POST', result[:method]
+      assert_equal 201, result[:status]
+      assert_equal 'https', result[:scheme]
+      assert_equal 'example.com', result[:hostname]
+      assert_equal '/api/v1/items', result[:path]
+      assert_equal 'https://example.com/api/v1/items', result[:url]
+    end
+
+    it 'returns full metadata for old semconv server http spans' do
+      attrs = {
+        OpenTelemetry::SemanticConventions::Trace::HTTP_METHOD => 'GET',
+        OpenTelemetry::SemanticConventions::Trace::HTTP_STATUS_CODE => 200,
+        OpenTelemetry::SemanticConventions::Trace::HTTP_SCHEME => 'http',
+        OpenTelemetry::SemanticConventions::Trace::NET_HOST_NAME => 'old.example.com',
+        OpenTelemetry::SemanticConventions::Trace::HTTP_TARGET => '/old/path'
+      }
+
+      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
+      assert result[:http]
+      assert_equal 'GET', result[:method]
+      assert_equal 200, result[:status]
+    end
+
+    it 'uses defaults when attributes are missing' do
+      attrs = { 'http.request.method' => 'GET' }
+      result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
+      assert result[:http]
+      assert_equal 'http', result[:scheme]
+      assert_equal 'localhost', result[:hostname]
+      assert_equal 0, result[:status]
+    end
+  end
+
+  describe 'wait_until_ready' do
+    it 'returns false on timeout when no settings' do
+      sampler = TestSampler.new({ local_settings: {} })
+      result = sampler.wait_until_ready(0.1)
+      refute result
+    end
+
+    it 'returns true when settings are available with signature_key' do
+      sampler = TestSampler.new({
+                                  local_settings: {},
+                                  settings: {
+                                    'value' => 1_000_000,
+                                    'timestamp' => Time.now.to_i,
+                                    'ttl' => 120,
+                                    'flags' => 'SAMPLE_START',
+                                    'arguments' => { 'SignatureKey' => 'test-key' }
+                                  }
+                                })
+      result = sampler.wait_until_ready(1)
+      assert result
+    end
+  end
+
+  describe 'request_headers' do
+    it 'extracts trace options from parent context' do
+      sampler = TestSampler.new({ local_settings: {} })
+      context = OpenTelemetry::Context.empty
+      context = context.set_value('sw_xtraceoptions', 'trigger-trace;ts=12345')
+      context = context.set_value('sw_signature', 'abc123')
+
+      params = { parent_context: context }
+      headers = sampler.request_headers(params)
+
+      assert_equal 'trigger-trace;ts=12345', headers['X-Trace-Options']
+      assert_equal 'abc123', headers['X-Trace-Options-Signature']
+    end
+
+    it 'returns nil values when context has no trace options' do
+      sampler = TestSampler.new({ local_settings: {} })
+      context = OpenTelemetry::Context.empty
+      params = { parent_context: context }
+      headers = sampler.request_headers(params)
+
+      assert_nil headers['X-Trace-Options']
+      assert_nil headers['X-Trace-Options-Signature']
+    end
+  end
+end

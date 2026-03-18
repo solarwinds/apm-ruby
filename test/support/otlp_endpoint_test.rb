@@ -251,3 +251,150 @@ describe 'OTLP Endpoint Test' do
     assert_signal_endpoint_default
   end
 end
+
+describe 'OTLPEndPoint collector resolution, endpoint configuration, and token header injection' do
+  before do
+    # Save original env vars
+    @saved_env = {}
+    %w[SW_APM_COLLECTOR SW_APM_SERVICE_KEY OTEL_SERVICE_NAME
+       OTEL_RESOURCE_ATTRIBUTES OTEL_EXPORTER_OTLP_HEADERS
+       OTEL_EXPORTER_OTLP_ENDPOINT
+       OTEL_EXPORTER_OTLP_TRACES_HEADERS OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+       OTEL_EXPORTER_OTLP_METRICS_HEADERS OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+       OTEL_EXPORTER_OTLP_LOGS_HEADERS OTEL_EXPORTER_OTLP_LOGS_ENDPOINT].each do |key|
+      @saved_env[key] = ENV[key]
+    end
+  end
+
+  after do
+    @saved_env.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
+  end
+
+  describe 'initialize' do
+    it 'initializes with nil token and service_name' do
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      assert_nil endpoint.token
+      assert_nil endpoint.service_name
+    end
+  end
+
+  describe 'resolve_get_setting_endpoint' do
+    it 'keeps valid collector endpoint' do
+      ENV['SW_APM_COLLECTOR'] = 'apm.collector.na-01.cloud.solarwinds.com:443'
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      matches = ENV['SW_APM_COLLECTOR'].match(SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_REGEX)
+      endpoint.send(:resolve_get_setting_endpoint, matches)
+      assert_equal 'apm.collector.na-01.cloud.solarwinds.com:443', ENV['SW_APM_COLLECTOR']
+    end
+
+    it 'falls back to default for invalid collector' do
+      ENV['SW_APM_COLLECTOR'] = 'invalid-endpoint'
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      matches = ENV['SW_APM_COLLECTOR'].match(SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_REGEX)
+      endpoint.send(:resolve_get_setting_endpoint, matches)
+      assert_equal SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_DEFAULT, ENV['SW_APM_COLLECTOR']
+    end
+
+    it 'falls back to default for empty collector' do
+      ENV.delete('SW_APM_COLLECTOR')
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.send(:resolve_get_setting_endpoint, nil)
+      assert_equal SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_DEFAULT, ENV['SW_APM_COLLECTOR']
+    end
+  end
+
+  describe 'configure_otlp_endpoint' do
+    it 'sets endpoint from matched collector when no existing endpoint' do
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')
+      ENV.delete('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      matches = 'apm.collector.eu-01.cloud.solarwinds.com:443'.match(SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_REGEX)
+
+      endpoint.configure_otlp_endpoint('TRACES', matches)
+      assert_equal 'https://otel.collector.eu-01.cloud.solarwinds.com:443/v1/traces', ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']
+    end
+
+    it 'sets default endpoint when no matches and no endpoint' do
+      ENV.delete('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT')
+      ENV.delete('OTEL_EXPORTER_OTLP_ENDPOINT')
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.configure_otlp_endpoint('METRICS', nil)
+      assert_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/metrics', ENV['OTEL_EXPORTER_OTLP_METRICS_ENDPOINT']
+    end
+
+    it 'does not override existing signal endpoint' do
+      ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT'] = 'https://custom.endpoint/v1/logs'
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.configure_otlp_endpoint('LOGS', nil)
+      assert_equal 'https://custom.endpoint/v1/logs', ENV['OTEL_EXPORTER_OTLP_LOGS_ENDPOINT']
+    end
+
+    it 'does not override when general endpoint is set' do
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')
+      ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'https://custom.general/endpoint'
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.configure_otlp_endpoint('TRACES', nil)
+      refute_equal 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces', ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT']
+    end
+  end
+
+  describe 'config_token' do
+    it 'sets token on general headers when matching SWO endpoint' do
+      ENV.delete('OTEL_EXPORTER_OTLP_HEADERS')
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_HEADERS')
+      ENV['OTEL_EXPORTER_OTLP_ENDPOINT'] = 'https://otel.collector.na-01.cloud.solarwinds.com:443'
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.instance_variable_set(:@token, 'my-token')
+      endpoint.config_token('TRACES')
+
+      assert_includes ENV['OTEL_EXPORTER_OTLP_HEADERS'], 'Bearer my-token'
+    end
+
+    it 'sets token on signal headers when signal endpoint matches' do
+      ENV.delete('OTEL_EXPORTER_OTLP_HEADERS')
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_HEADERS')
+      ENV.delete('OTEL_EXPORTER_OTLP_ENDPOINT')
+      ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'] = 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.instance_variable_set(:@token, 'my-token')
+      endpoint.config_token('TRACES')
+
+      assert_includes ENV['OTEL_EXPORTER_OTLP_TRACES_HEADERS'], 'Bearer my-token'
+    end
+
+    it 'does not set token when no token available' do
+      ENV.delete('OTEL_EXPORTER_OTLP_HEADERS')
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.config_token('TRACES')
+      assert_nil ENV['OTEL_EXPORTER_OTLP_HEADERS']
+    end
+
+    it 'does not override existing headers' do
+      ENV['OTEL_EXPORTER_OTLP_TRACES_HEADERS'] = 'existing=header'
+      ENV['OTEL_EXPORTER_OTLP_TRACES_ENDPOINT'] = 'https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces'
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.instance_variable_set(:@token, 'my-token')
+      endpoint.config_token('TRACES')
+
+      assert_equal 'existing=header', ENV['OTEL_EXPORTER_OTLP_TRACES_HEADERS']
+    end
+
+    it 'sets fallback token when no endpoints configured' do
+      ENV.delete('OTEL_EXPORTER_OTLP_HEADERS')
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_HEADERS')
+      ENV.delete('OTEL_EXPORTER_OTLP_ENDPOINT')
+      ENV.delete('OTEL_EXPORTER_OTLP_TRACES_ENDPOINT')
+
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      endpoint.instance_variable_set(:@token, 'my-token')
+      endpoint.config_token('TRACES')
+
+      assert_includes ENV['OTEL_EXPORTER_OTLP_HEADERS'], 'Bearer my-token'
+    end
+  end
+end

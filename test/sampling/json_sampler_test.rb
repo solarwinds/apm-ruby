@@ -145,3 +145,88 @@ describe 'JsonSampler Test' do
     end
   end
 end
+
+describe 'JsonSampler settings file reading with malformed/missing/expired input handling' do
+  before do
+    @temp_path = '/tmp/solarwinds-apm-test-settings.json'
+    ENV['OTEL_TRACES_EXPORTER'] = 'none'
+    OpenTelemetry::SDK.configure
+
+    @memory_exporter = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new
+    OpenTelemetry.tracer_provider.add_span_processor(
+      OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(@memory_exporter)
+    )
+  end
+
+  after do
+    OpenTelemetry::TestHelpers.reset_opentelemetry
+    @memory_exporter.reset
+    File.delete(@temp_path) if File.exist?(@temp_path)
+  end
+
+  it 'handles missing settings file gracefully' do
+    File.delete(@temp_path) if File.exist?(@temp_path)
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    refute_nil sampler
+  end
+
+  it 'handles invalid JSON file content' do
+    File.write(@temp_path, 'not valid json{{{')
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    refute_nil sampler
+  end
+
+  it 'handles invalid settings structure (not single element array)' do
+    File.write(@temp_path, JSON.dump([{ flags: 'a' }, { flags: 'b' }]))
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    refute_nil sampler
+  end
+
+  it 'handles empty array in settings file' do
+    File.write(@temp_path, JSON.dump([]))
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    refute_nil sampler
+  end
+
+  it 'handles non-array in settings file' do
+    File.write(@temp_path, JSON.dump({ 'key' => 'value' }))
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    refute_nil sampler
+  end
+
+  it 'skips loop_check when settings not expired' do
+    File.write(@temp_path, JSON.dump([
+                                       {
+                                         'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS',
+                                         'value' => 1_000_000,
+                                         'arguments' => { 'BucketCapacity' => 100, 'BucketRate' => 10 },
+                                         'timestamp' => Time.now.to_i,
+                                         'ttl' => 600
+                                       }
+                                     ]))
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+
+    # Second call should skip due to not expired
+    params = make_sample_params
+    sampler.should_sample?(params)
+  end
+
+  it 'does not re-read when file mtime unchanged' do
+    File.write(@temp_path, JSON.dump([
+                                       {
+                                         'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS',
+                                         'value' => 500_000,
+                                         'arguments' => { 'BucketCapacity' => 50, 'BucketRate' => 5 },
+                                         'timestamp' => Time.now.to_i - 60,
+                                         'ttl' => 10
+                                       }
+                                     ]))
+    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+    sleep(0.1)
+
+    # Force expired to re-read, but mtime is the same
+    sampler.instance_variable_set(:@expiry, Time.now.to_i - 100)
+    params = make_sample_params
+    sampler.should_sample?(params)
+  end
+end

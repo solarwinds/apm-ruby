@@ -40,21 +40,21 @@ describe 'Test solarwinds_ready API call' do
     @memory_exporter.reset
   end
 
-  it 'default_test_solarwinds_ready' do
+  it 'returns true with valid default configuration' do
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)
     _(SolarWindsAPM::API.solarwinds_ready?).must_equal true
   end
 
-  it 'solarwinds_ready_with_5000_wait_time' do
+  it 'returns true when given a 5000ms wait time' do
     new_config = @config.dup
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)
     _(SolarWindsAPM::API.solarwinds_ready?(5000)).must_equal true
   end
 
-  it 'solarwinds_ready_with_invalid_collector' do
+  it 'returns false when collector endpoint is invalid' do
     new_config = @config.merge(collector: URI('https://collector.invalid'))
     sampler = SolarWindsAPM::HttpSampler.new(new_config)
     replace_sampler(sampler)

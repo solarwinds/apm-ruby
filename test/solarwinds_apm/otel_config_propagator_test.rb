@@ -18,7 +18,7 @@ describe 'Loading Opentelemetry Test' do
   end
 
   # propagation in_code testing
-  it 'test_propagators_with_default' do
+  it 'configures TraceContext, Baggage, and SolarWinds propagators by default' do
     SolarWindsAPM::OTelConfig.initialize
 
     _(SolarWindsAPM::OTelConfig.class_variable_get(:@@agent_enabled)).must_equal true
@@ -29,7 +29,7 @@ describe 'Loading Opentelemetry Test' do
   end
 
   # propagation in_code testing
-  it 'test_propagators_with_extra_propagators_from_otel' do
+  it 'appends SolarWinds propagator after OTEL_PROPAGATORS-specified propagators' do
     ENV['OTEL_PROPAGATORS'] = 'b3,tracecontext,baggage'
     SolarWindsAPM::OTelConfig.initialize
 
@@ -41,7 +41,7 @@ describe 'Loading Opentelemetry Test' do
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[3].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
   end
 
-  it 'test_propagators_with_wrong_otel_propagation' do
+  it 'uses NoopTextMapPropagator for unrecognized OTEL_PROPAGATORS entries' do
     ENV['OTEL_PROPAGATORS'] = 'tracecontext,baggage,abcd'
     SolarWindsAPM::OTelConfig.initialize
 

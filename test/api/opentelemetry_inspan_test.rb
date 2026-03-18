@@ -39,7 +39,7 @@ describe 'SolarWinds API in_span Test' do
   end
 
   describe 'test_in_span_wrapper_from_solarwinds_apm' do
-    it 'test_in_span' do
+    it 'creates child spans with correct names and attributes via in_span wrapper' do
       skip if finished_spans.empty?
 
       _(finished_spans.size).must_equal(4)

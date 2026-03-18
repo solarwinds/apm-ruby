@@ -6,7 +6,7 @@
 require 'initest_helper'
 
 describe 'solarwinds_apm_init_2' do
-  it 'SW_APM_SERVICE_KEY_is_invalid' do
+  it 'logs token format error and enters noop mode when service key is invalid' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 

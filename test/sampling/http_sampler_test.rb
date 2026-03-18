@@ -73,7 +73,7 @@ describe 'HttpSampler' do
   end
 
   describe 'invalid collector' do
-    it 'does not sample created spans xuan' do
+    it 'does not sample spans when collector endpoint is invalid' do
       new_config = @config.merge(collector: URI('https://collector.invalid'))
       sampler = SolarWindsAPM::HttpSampler.new(new_config)
       replace_sampler(sampler)
@@ -87,7 +87,7 @@ describe 'HttpSampler' do
       assert_empty spans
     end
 
-    it 'retries with backoff' do
+    it 'retries failed settings requests with backoff delay' do
       sleep 1 # Simulating backoff delay
     end
   end

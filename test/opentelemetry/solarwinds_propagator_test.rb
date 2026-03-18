@@ -9,6 +9,8 @@ require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/support/utils'
 require './lib/solarwinds_apm/support/transaction_settings'
 require './lib/solarwinds_apm/config'
+require './lib/solarwinds_apm/constants'
+require './lib/solarwinds_apm/opentelemetry/solarwinds_propagator'
 
 describe 'SolarWindsPropagatorTest' do
   before do
@@ -16,13 +18,13 @@ describe 'SolarWindsPropagatorTest' do
     @mock = Minitest::Mock.new
   end
 
-  it 'test extract for empty carrier' do
+  it 'returns a valid context when carrier is empty' do
     carrier = {}
     result = @text_map_propagator.extract(carrier)
     _(result.class.to_s).must_equal 'OpenTelemetry::Context'
   end
 
-  it 'test extract for non-empty carrier' do
+  it 'extracts x-trace-options and signature from carrier into context' do
     carrier = {}
     carrier['x-trace-options'] = 'foo'
     carrier['x-trace-options-signature'] = 'bar'
@@ -32,7 +34,7 @@ describe 'SolarWindsPropagatorTest' do
     _(result.value('sw_signature')).must_equal 'bar'
   end
 
-  it 'test extract for non-empty carrier and context' do
+  it 'overwrites existing context values with new carrier headers' do
     carrier = {}
     carrier['x-trace-options'] = 'foo'
     carrier['x-trace-options-signature'] = 'bar'
@@ -48,7 +50,7 @@ describe 'SolarWindsPropagatorTest' do
     _(result.value('sw_signature')).must_equal 'bar'
   end
 
-  it 'test inject for empty carrier and valid context' do
+  it 'calls current_span with context when injecting into empty carrier' do
     @mock.expect(:call, nil, [OpenTelemetry::Context])
 
     OpenTelemetry::Trace.stub(:current_span, @mock) do
@@ -65,7 +67,7 @@ describe 'SolarWindsPropagatorTest' do
     _(@mock.verify).must_equal true
   end
 
-  it 'test inject for trace_state_header is nil (create new trace state)' do
+  it 'creates new tracestate when no tracestate header exists' do
     @mock.expect(:call, OpenTelemetry::Trace::Tracestate.create({}), [Hash])
 
     OpenTelemetry::Trace::Tracestate.stub(:create, @mock) do
@@ -82,7 +84,7 @@ describe 'SolarWindsPropagatorTest' do
     _(@mock.verify).must_equal true
   end
 
-  it 'test inject for trace_state_header is not nil trace state set_values' do
+  it 'parses existing tracestate header and updates sw value' do
     @mock.expect(:call, OpenTelemetry::Trace::Tracestate.create({}), [String])
 
     OpenTelemetry::Trace::Tracestate.stub(:from_string, @mock) do
@@ -100,7 +102,7 @@ describe 'SolarWindsPropagatorTest' do
     _(@mock.verify).must_equal true
   end
 
-  it 'test inject for check setter' do
+  it 'uses text_map_setter to set tracestate on carrier' do
     @mock.expect(:call, nil, [Hash, String, String])
 
     OpenTelemetry::Context::Propagation.text_map_setter.stub(:set, @mock) do
@@ -116,5 +118,130 @@ describe 'SolarWindsPropagatorTest' do
     end
 
     _(@mock.verify).must_equal true
+  end
+end
+
+describe 'SolarWindsPropagator extract x-trace-options and inject sw tracestate' do
+  before do
+    @propagator = SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator.new
+  end
+
+  describe 'extract' do
+    it 'extracts x-trace-options header into context' do
+      carrier = { 'x-trace-options' => 'trigger-trace;ts=12345' }
+      context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
+
+      assert_equal 'trigger-trace;ts=12345', context.value('sw_xtraceoptions')
+    end
+
+    it 'extracts x-trace-options-signature header into context' do
+      carrier = {
+        'x-trace-options' => 'trigger-trace',
+        'x-trace-options-signature' => 'abc123'
+      }
+      context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
+
+      assert_equal 'trigger-trace', context.value('sw_xtraceoptions')
+      assert_equal 'abc123', context.value('sw_signature')
+    end
+
+    it 'returns context unchanged when no headers present' do
+      carrier = {}
+      original_context = OpenTelemetry::Context.empty
+      context = @propagator.extract(carrier, context: original_context)
+
+      assert_nil context.value('sw_xtraceoptions')
+      assert_nil context.value('sw_signature')
+    end
+
+    it 'handles nil context gracefully' do
+      carrier = { 'x-trace-options' => 'trigger-trace' }
+      context = @propagator.extract(carrier, context: nil)
+      refute_nil context
+    end
+
+    it 'handles exceptions gracefully' do
+      carrier = nil
+      context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
+      refute_nil context
+    end
+  end
+
+  describe 'inject' do
+    it 'injects sw tracestate when no existing tracestate' do
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: Random.bytes(8),
+        trace_id: Random.bytes(16),
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
+      )
+      span = OpenTelemetry::Trace.non_recording_span(span_context)
+      context = OpenTelemetry::Trace.context_with_span(span)
+
+      carrier = {}
+      @propagator.inject(carrier, context: context)
+
+      refute_nil carrier['tracestate']
+      assert_includes carrier['tracestate'], 'sw='
+    end
+
+    it 'updates existing tracestate with sw value' do
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: Random.bytes(8),
+        trace_id: Random.bytes(16),
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
+      )
+      span = OpenTelemetry::Trace.non_recording_span(span_context)
+      context = OpenTelemetry::Trace.context_with_span(span)
+
+      carrier = { 'tracestate' => 'other=value' }
+      @propagator.inject(carrier, context: context)
+
+      assert_includes carrier['tracestate'], 'sw='
+      assert_includes carrier['tracestate'], 'other=value'
+    end
+
+    it 'does not inject when span context is invalid' do
+      context = OpenTelemetry::Context.empty
+      carrier = {}
+      @propagator.inject(carrier, context: context)
+
+      assert_nil carrier['tracestate']
+    end
+
+    it 'sets trace flag 01 for sampled spans' do
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: Random.bytes(8),
+        trace_id: Random.bytes(16),
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
+      )
+      span = OpenTelemetry::Trace.non_recording_span(span_context)
+      context = OpenTelemetry::Trace.context_with_span(span)
+
+      carrier = {}
+      @propagator.inject(carrier, context: context)
+
+      assert_includes carrier['tracestate'], '-01'
+    end
+
+    it 'sets trace flag 00 for non-sampled spans' do
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: Random.bytes(8),
+        trace_id: Random.bytes(16),
+        trace_flags: OpenTelemetry::Trace::TraceFlags::DEFAULT
+      )
+      span = OpenTelemetry::Trace.non_recording_span(span_context)
+      context = OpenTelemetry::Trace.context_with_span(span)
+
+      carrier = {}
+      @propagator.inject(carrier, context: context)
+
+      assert_includes carrier['tracestate'], '-00'
+    end
+  end
+
+  describe 'fields' do
+    it 'returns tracestate' do
+      assert_equal 'tracestate', @propagator.fields
+    end
   end
 end

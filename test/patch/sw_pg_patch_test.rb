@@ -12,7 +12,7 @@ require './lib/solarwinds_apm/otel_config'
 describe 'pg patch test' do
   puts "\n\033[1m=== TEST RUN PG PATCH TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
 
-  it 'pg_patch_order_test_when_tag_sql_is_false' do
+  it 'places OTel patch before PG::Connection in ancestors when tag_sql is false' do
     SolarWindsAPM::Config[:tag_sql] = false
     SolarWindsAPM::OTelConfig.initialize
 

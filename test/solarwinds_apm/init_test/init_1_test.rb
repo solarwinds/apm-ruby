@@ -6,7 +6,7 @@
 require 'initest_helper'
 
 describe 'solarwinds_apm_init_1' do
-  it 'SW_APM_ENABLED_set_to_disabled' do
+  it 'logs disabled message and enters noop mode when SW_APM_ENABLED is false' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 

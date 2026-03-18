@@ -27,7 +27,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
     ENV.delete('OTEL_SERVICE_NAME')
   end
 
-  it 'test_custom_instrumentation_simple_case' do
+  it 'creates a span with default name and internal kind when add_tracer wraps a method' do
     class MyClass
       include SolarWindsAPM::API::Tracer
 
@@ -52,7 +52,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
     _(finished_spans[0].kind).must_equal(:internal)
   end
 
-  it 'test_custom_instrumentation_simple_case_with_custom_name_and_options' do
+  it 'creates a span with custom name, attributes, and kind when options are provided' do
     class MyClass
       include SolarWindsAPM::API::Tracer
 
@@ -77,7 +77,7 @@ describe 'SolarWinds Custom Instrumentation Test' do
     _(finished_spans[0].kind).must_equal(:consumer)
   end
 
-  it 'test_custom_instrumentation_instance_method' do
+  it 'wraps a class method with add_tracer and applies custom span options' do
     class MyClass
       def self.new_method(param1, param2)
         param1 + param2

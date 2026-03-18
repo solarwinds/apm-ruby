@@ -28,7 +28,7 @@ describe 'mysql2 patch integrate test' do
   let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
   let(:finished_spans) { exporter.finished_spans }
 
-  it 'tag_sql_mysql2_integrate_test' do
+  it 'injects traceparent comment into MySQL2 queries and sets sw.query_tag attribute' do
     require './lib/solarwinds_apm/patch/tag_sql/sw_mysql2_patch'
 
     OpenTelemetry::SDK.configure(&:use_all)

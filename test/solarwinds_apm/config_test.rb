@@ -272,7 +272,7 @@ describe 'Config Test' do
       SolarWindsAPM::Config.initialize
     end
 
-    it 'check default setting' do
+    it 'initializes with correct default values for all configuration keys' do
       assert_nil(SolarWindsAPM::Config[:sampling_rate])
       assert_nil(SolarWindsAPM::Config[:sample_rate])
       _(SolarWindsAPM::Config[:transaction_settings].class).must_equal Array
@@ -295,6 +295,369 @@ describe 'Config Test' do
       SolarWindsAPM::Config.initialize
       _(SolarWindsAPM::Config[:tag_sql]).must_equal true
       ENV.delete('SW_APM_TAG_SQL')
+    end
+  end
+end
+
+describe 'Config env var precedence, type coercion, deprecated keys, and log level' do
+  describe 'enable_disable_config' do
+    it 'uses env var when valid enabled/disabled value' do
+      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      ENV['SW_APM_TRIGGER_TRACING_MODE'] = 'disabled'
+
+      SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
+      assert_equal :disabled, SolarWindsAPM::Config[:trigger_tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRIGGER_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      end
+    end
+
+    it 'uses default for invalid env var' do
+      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      ENV['SW_APM_TRIGGER_TRACING_MODE'] = 'invalid_value'
+
+      SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
+      assert_equal :enabled, SolarWindsAPM::Config[:trigger_tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRIGGER_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      end
+    end
+
+    it 'accepts boolean config with true/false env var' do
+      original = ENV['SW_APM_TAG_SQL']
+      ENV['SW_APM_TAG_SQL'] = 'true'
+
+      SolarWindsAPM::Config[:tag_sql] = false
+      assert_equal true, SolarWindsAPM::Config[:tag_sql]
+    ensure
+      if original
+        ENV['SW_APM_TAG_SQL'] = original
+      else
+        ENV.delete('SW_APM_TAG_SQL')
+      end
+    end
+
+    it 'uses default for invalid boolean env var' do
+      original = ENV['SW_APM_TAG_SQL']
+      ENV['SW_APM_TAG_SQL'] = 'invalid_bool'
+
+      SolarWindsAPM::Config[:tag_sql] = true
+      assert_equal false, SolarWindsAPM::Config[:tag_sql]
+    ensure
+      if original
+        ENV['SW_APM_TAG_SQL'] = original
+      else
+        ENV.delete('SW_APM_TAG_SQL')
+      end
+    end
+
+    it 'accepts value from code when env var not set' do
+      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+
+      SolarWindsAPM::Config[:trigger_tracing_mode] = :disabled
+      assert_equal :disabled, SolarWindsAPM::Config[:trigger_tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRIGGER_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      end
+    end
+
+    it 'uses default for invalid code value' do
+      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+
+      SolarWindsAPM::Config[:trigger_tracing_mode] = 'invalid_string'
+      assert_equal :enabled, SolarWindsAPM::Config[:trigger_tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRIGGER_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      end
+    end
+  end
+
+  describe 'true?' do
+    it 'returns true for string true' do
+      assert SolarWindsAPM::Config.true?('true')
+    end
+
+    it 'returns true for string TRUE' do
+      assert SolarWindsAPM::Config.true?('TRUE')
+    end
+
+    it 'returns false for string false' do
+      refute SolarWindsAPM::Config.true?('false')
+    end
+  end
+
+  describe 'boolean?' do
+    it 'returns true for true' do
+      assert SolarWindsAPM::Config.boolean?(true)
+    end
+
+    it 'returns true for false' do
+      assert SolarWindsAPM::Config.boolean?(false)
+    end
+
+    it 'returns false for string' do
+      refute SolarWindsAPM::Config.boolean?('true')
+    end
+  end
+
+  describe 'symbol?' do
+    it 'returns true for :enabled' do
+      assert SolarWindsAPM::Config.symbol?(:enabled)
+    end
+
+    it 'returns true for :disabled' do
+      assert SolarWindsAPM::Config.symbol?(:disabled)
+    end
+
+    it 'returns false for string' do
+      refute SolarWindsAPM::Config.symbol?('enabled')
+    end
+  end
+
+  describe '[]= key handling' do
+    it 'warns on deprecated sampling_rate' do
+      original = SolarWindsAPM::Config[:sampling_rate]
+      SolarWindsAPM::Config[:sampling_rate] = 100
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:sampling_rate] = original
+    end
+
+    it 'warns on deprecated sample_rate' do
+      original = SolarWindsAPM::Config[:sample_rate]
+      SolarWindsAPM::Config[:sample_rate] = 100
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:sample_rate] = original
+    end
+
+    it 'warns on deprecated ec2_metadata_timeout' do
+      original = SolarWindsAPM::Config[:ec2_metadata_timeout]
+      SolarWindsAPM::Config[:ec2_metadata_timeout] = 1000
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:ec2_metadata_timeout] = original
+    end
+
+    it 'warns on deprecated http_proxy' do
+      original = SolarWindsAPM::Config[:http_proxy]
+      SolarWindsAPM::Config[:http_proxy] = 'http://proxy'
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:http_proxy] = original
+    end
+
+    it 'warns on deprecated hostname_alias' do
+      original = SolarWindsAPM::Config[:hostname_alias]
+      SolarWindsAPM::Config[:hostname_alias] = 'alias'
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:hostname_alias] = original
+    end
+
+    it 'warns on deprecated log_args' do
+      original = SolarWindsAPM::Config[:log_args]
+      SolarWindsAPM::Config[:log_args] = true
+    ensure
+      SolarWindsAPM::Config.class_variable_get(:@@config)[:log_args] = original
+    end
+
+    it 'handles tracing_mode assignment' do
+      original = ENV['SW_APM_TRIGGER_TRACING_MODE']
+      ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      SolarWindsAPM::Config[:tracing_mode] = :enabled
+      assert_equal :enabled, SolarWindsAPM::Config[:tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRIGGER_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      end
+    end
+
+    it 'handles transaction_settings with disabled regexp' do
+      settings = [{ regexp: '/health', tracing: :disabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+      refute_nil SolarWindsAPM::Config[:disabled_regexps]
+    end
+
+    it 'handles transaction_settings with enabled regexp' do
+      settings = [{ regexp: '/api', tracing: :enabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+      refute_nil SolarWindsAPM::Config[:enabled_regexps]
+    end
+
+    it 'handles empty transaction_settings' do
+      SolarWindsAPM::Config[:transaction_settings] = []
+      assert_nil SolarWindsAPM::Config[:enabled_regexps]
+      assert_nil SolarWindsAPM::Config[:disabled_regexps]
+    end
+
+    it 'handles non-array transaction_settings' do
+      SolarWindsAPM::Config[:transaction_settings] = 'invalid'
+      assert_nil SolarWindsAPM::Config[:enabled_regexps]
+      assert_nil SolarWindsAPM::Config[:disabled_regexps]
+    end
+
+    it 'handles transaction_settings with Regexp object' do
+      settings = [{ regexp: /\/health/, tracing: :disabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+      refute_nil SolarWindsAPM::Config[:disabled_regexps]
+    end
+
+    it 'handles transaction_settings with invalid regexp string' do
+      settings = [{ regexp: '(invalid[', tracing: :disabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+      # Invalid regexp is ignored
+    end
+
+    it 'handles transaction_settings with empty regexp string' do
+      settings = [{ regexp: '', tracing: :disabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+    end
+
+    it 'handles transaction_settings with empty Regexp' do
+      settings = [{ regexp: Regexp.new(''), tracing: :disabled }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+    end
+
+    it 'handles transaction_settings without tracing key' do
+      settings = [{ regexp: '/test' }]
+      SolarWindsAPM::Config[:transaction_settings] = settings
+      # No tracing key defaults to disabled
+    end
+
+    it 'handles generic key assignment' do
+      SolarWindsAPM::Config[:custom_key] = 'custom_value'
+      assert_equal 'custom_value', SolarWindsAPM::Config[:custom_key]
+    end
+  end
+
+  describe 'set_log_level' do
+    it 'sets logger level based on SW_APM_DEBUG_LEVEL' do
+      original = ENV['SW_APM_DEBUG_LEVEL']
+      ENV['SW_APM_DEBUG_LEVEL'] = '4'
+      SolarWindsAPM::Config.set_log_level
+      assert_equal ::Logger::DEBUG, SolarWindsAPM.logger.level
+    ensure
+      if original
+        ENV['SW_APM_DEBUG_LEVEL'] = original
+      else
+        ENV.delete('SW_APM_DEBUG_LEVEL')
+      end
+      SolarWindsAPM.logger.level = 1
+    end
+
+    it 'uses default INFO for unknown log level' do
+      original_env = ENV['SW_APM_DEBUG_LEVEL']
+      original_config = SolarWindsAPM::Config[:debug_level]
+      ENV['SW_APM_DEBUG_LEVEL'] = '99'
+      SolarWindsAPM::Config.set_log_level
+      assert_equal ::Logger::INFO, SolarWindsAPM.logger.level
+    ensure
+      if original_env
+        ENV['SW_APM_DEBUG_LEVEL'] = original_env
+      else
+        ENV.delete('SW_APM_DEBUG_LEVEL')
+      end
+      SolarWindsAPM::Config[:debug_level] = original_config if original_config
+      SolarWindsAPM.logger.level = 1
+    end
+
+    it 'creates nil logger for level -1' do
+      original = ENV['SW_APM_DEBUG_LEVEL']
+      old_logger = SolarWindsAPM.logger
+      ENV['SW_APM_DEBUG_LEVEL'] = '-1'
+      SolarWindsAPM::Config.set_log_level
+    ensure
+      if original
+        ENV['SW_APM_DEBUG_LEVEL'] = original
+      else
+        ENV.delete('SW_APM_DEBUG_LEVEL')
+      end
+      SolarWindsAPM.logger = old_logger
+      SolarWindsAPM.logger.level = 1
+    end
+  end
+
+  describe 'config_file_from_env' do
+    it 'returns nil for non-existent file' do
+      original = ENV['SW_APM_CONFIG_RUBY']
+      ENV['SW_APM_CONFIG_RUBY'] = '/nonexistent/path/file.rb'
+      result = SolarWindsAPM::Config.config_file_from_env
+      assert_nil result
+    ensure
+      if original
+        ENV['SW_APM_CONFIG_RUBY'] = original
+      else
+        ENV.delete('SW_APM_CONFIG_RUBY')
+      end
+    end
+
+    it 'returns file path when file exists' do
+      require 'tempfile'
+      tmp = Tempfile.new(['solarwinds_apm_config', '.rb'])
+      tmp.write("# test config\n")
+      tmp.close
+
+      original = ENV['SW_APM_CONFIG_RUBY']
+      ENV['SW_APM_CONFIG_RUBY'] = tmp.path
+      result = SolarWindsAPM::Config.config_file_from_env
+      assert_equal tmp.path, result
+    ensure
+      if original
+        ENV['SW_APM_CONFIG_RUBY'] = original
+      else
+        ENV.delete('SW_APM_CONFIG_RUBY')
+      end
+      tmp&.unlink
+    end
+
+    it 'returns file from directory when dir contains config file' do
+      require 'tmpdir'
+      dir = Dir.mktmpdir
+      config_file = File.join(dir, 'solarwinds_apm_config.rb')
+      File.write(config_file, "# test config\n")
+
+      original = ENV['SW_APM_CONFIG_RUBY']
+      ENV['SW_APM_CONFIG_RUBY'] = dir
+      result = SolarWindsAPM::Config.config_file_from_env
+      assert_equal config_file, result
+    ensure
+      if original
+        ENV['SW_APM_CONFIG_RUBY'] = original
+      else
+        ENV.delete('SW_APM_CONFIG_RUBY')
+      end
+      FileUtils.rm_rf(dir) if dir
+    end
+  end
+
+  describe 'update! and merge!' do
+    it 'updates config with hash data' do
+      SolarWindsAPM::Config.update!({ test_update_key: 'test_value' })
+      assert_equal 'test_value', SolarWindsAPM::Config[:test_update_key]
+    end
+
+    it 'merge! is an alias for update!' do
+      SolarWindsAPM::Config.merge!({ test_merge_key: 'test_value' })
+      assert_equal 'test_value', SolarWindsAPM::Config[:test_merge_key]
+    end
+  end
+
+  describe 'print_config' do
+    it 'prints config without error' do
+      result = SolarWindsAPM::Config.print_config
+      assert_nil result
     end
   end
 end

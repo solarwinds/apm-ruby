@@ -6,7 +6,7 @@
 require 'initest_helper'
 
 describe 'solarwinds_apm_init_4' do
-  it 'everything_default' do
+  it 'logs current version string during default initialization' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 
