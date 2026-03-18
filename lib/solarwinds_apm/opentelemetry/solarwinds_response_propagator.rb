@@ -60,8 +60,6 @@ module SolarWindsAPM
           SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] Injection failed: #{e.message}" }
         end
 
-        private
-
         W3C_UNSANITIZE_MAP = {
           SolarWindsAPM::Constants::INTL_SWO_EQUALS_W3C_SANITIZED => SolarWindsAPM::Constants::INTL_SWO_EQUALS,
           ':' => SolarWindsAPM::Constants::INTL_SWO_EQUALS,
