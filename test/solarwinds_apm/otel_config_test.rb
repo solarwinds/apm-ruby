@@ -10,6 +10,7 @@ require './lib/solarwinds_apm/otel_config'
 describe 'OTelConfig response propagator resolution, initialization validation, and config accessor' do
   describe 'resolve_response_propagator' do
     it 'creates new rack setting when none exists' do
+      config_map = nil
       config_map = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)
       original = config_map['OpenTelemetry::Instrumentation::Rack']
       config_map.delete('OpenTelemetry::Instrumentation::Rack')
@@ -21,14 +22,15 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
       assert rack_setting[:response_propagators].is_a?(Array)
       assert_equal 1, rack_setting[:response_propagators].length
     ensure
-      if original
+      if config_map && original
         config_map['OpenTelemetry::Instrumentation::Rack'] = original
-      else
+      elsif config_map
         config_map.delete('OpenTelemetry::Instrumentation::Rack')
       end
     end
 
     it 'appends to existing array of response_propagators' do
+      config_map = nil
       config_map = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)
       original = config_map['OpenTelemetry::Instrumentation::Rack']
 
@@ -41,14 +43,15 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
       assert_equal 2, rack_setting[:response_propagators].length
       assert_equal existing_propagator, rack_setting[:response_propagators][0]
     ensure
-      if original
+      if config_map && original
         config_map['OpenTelemetry::Instrumentation::Rack'] = original
-      else
+      elsif config_map
         config_map.delete('OpenTelemetry::Instrumentation::Rack')
       end
     end
 
     it 'sets response_propagators when nil in existing rack setting' do
+      config_map = nil
       config_map = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)
       original = config_map['OpenTelemetry::Instrumentation::Rack']
 
@@ -60,14 +63,15 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
       assert rack_setting[:response_propagators].is_a?(Array)
       assert_equal 1, rack_setting[:response_propagators].length
     ensure
-      if original
+      if config_map && original
         config_map['OpenTelemetry::Instrumentation::Rack'] = original
-      else
+      elsif config_map
         config_map.delete('OpenTelemetry::Instrumentation::Rack')
       end
     end
 
     it 'warns when response_propagators is not an Array' do
+      config_map = nil
       config_map = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)
       original = config_map['OpenTelemetry::Instrumentation::Rack']
 
@@ -79,9 +83,9 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
       rack_setting = config_map['OpenTelemetry::Instrumentation::Rack']
       assert_equal 'not_an_array', rack_setting[:response_propagators]
     ensure
-      if original
+      if config_map && original
         config_map['OpenTelemetry::Instrumentation::Rack'] = original
-      else
+      elsif config_map
         config_map.delete('OpenTelemetry::Instrumentation::Rack')
       end
     end
@@ -94,6 +98,8 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
     end
 
     it 'warns and returns for empty config_map' do
+      nil
+      original_map = nil
       config_map = SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)
       original_map = config_map.dup
 
@@ -105,17 +111,18 @@ describe 'OTelConfig response propagator resolution, initialization validation, 
 
       assert_nil result
     ensure
-      SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, original_map)
+      SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, original_map) if original_map
     end
   end
 
   describe '[] accessor' do
     it 'returns value for given key' do
+      config = nil
       config = SolarWindsAPM::OTelConfig.class_variable_get(:@@config)
       config[:test_key_otel] = 'test_value'
       assert_equal 'test_value', SolarWindsAPM::OTelConfig[:test_key_otel]
     ensure
-      config.delete(:test_key_otel)
+      config&.delete(:test_key_otel)
     end
 
     it 'returns nil for missing key' do

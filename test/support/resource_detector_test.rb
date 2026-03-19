@@ -118,6 +118,9 @@ describe 'Resource Detector Test' do
 
   describe 'detect_uams_client_id' do
     it 'handles API failure gracefully' do
+      stub_const = nil
+      original_path = nil
+
       WebMock.enable!
       WebMock.stub_request(:get, SolarWindsAPM::ResourceDetector::UAMS_CLIENT_URL)
              .to_return(status: 500, body: 'error')
@@ -132,8 +135,10 @@ describe 'Resource Detector Test' do
 
       assert_nil attrs['sw.uams.client.id']
     ensure
-      stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
-      stub_const.const_set(:UAMS_CLIENT_PATH, original_path)
+      if stub_const && original_path
+        stub_const.send(:remove_const, :UAMS_CLIENT_PATH)
+        stub_const.const_set(:UAMS_CLIENT_PATH, original_path)
+      end
       WebMock.disable!
     end
   end

@@ -57,3 +57,5 @@ Style/StringLiterals:
     - 'Gemfile'
 Naming/PredicateMethod:
   Enabled: false
+Style/OneClassPerFile:
+  Enabled: false
