@@ -11,6 +11,10 @@ require './lib/solarwinds_apm/otel_config'
 
 describe 'Log Bridge Initialization Test' do
   describe 'check if log bridge is enabled' do
+    before do
+      SolarWindsAPM::OTelConfig.class_variable_set(:@@agent_enabled, false)
+    end
+
     after do
       ENV.delete('OTEL_RUBY_INSTRUMENTATION_LOGGER_ENABLED')
     end

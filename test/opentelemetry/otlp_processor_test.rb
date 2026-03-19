@@ -215,7 +215,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     it 'test_meter_attributes_with_old_http_method' do
       span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
-      attributes = { 'http.method' => 'GET', 'http.status_code' => 200 }
+      attributes = { 'http.method' => 'GET', 'http.status_code' => 200, 'sw.transaction' => 'test_transaction' }
       span_context = OpenTelemetry::Trace::SpanContext.new(
         span_id: "1\xE1u\x12\x8E\xFC@\x18",
         trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
@@ -236,7 +236,6 @@ describe 'SolarWindsOTLPProcessor' do
         nil
       )
       span_data = span.to_span_data
-      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
 
       result = @processor.send(:meter_attributes, span_data)
       _(result['http.method']).must_equal 'GET'
@@ -247,7 +246,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     it 'test_meter_attributes_with_new_http_request_method' do
       span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
-      attributes = { 'http.request.method' => 'POST', 'http.response.status_code' => 201 }
+      attributes = { 'http.request.method' => 'POST', 'http.response.status_code' => 201, 'sw.transaction' => 'test_transaction' }
       span_context = OpenTelemetry::Trace::SpanContext.new(
         span_id: "1\xE1u\x12\x8E\xFC@\x18",
         trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
@@ -268,7 +267,6 @@ describe 'SolarWindsOTLPProcessor' do
         nil
       )
       span_data = span.to_span_data
-      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
 
       result = @processor.send(:meter_attributes, span_data)
       _(result['http.method']).must_equal 'POST'
@@ -279,7 +277,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     it 'test_meter_attributes_with_new_and_old_status_code_as_same_code' do
       span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
-      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 201, 'http.response.status_code' => 201 }
+      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 201, 'http.response.status_code' => 201, 'sw.transaction' => 'test_transaction' }
       span_context = OpenTelemetry::Trace::SpanContext.new(
         span_id: "1\xE1u\x12\x8E\xFC@\x18",
         trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
@@ -300,7 +298,6 @@ describe 'SolarWindsOTLPProcessor' do
         nil
       )
       span_data = span.to_span_data
-      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
 
       result = @processor.send(:meter_attributes, span_data)
       _(result['http.method']).must_equal 'POST'
@@ -311,7 +308,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     it 'test_meter_attributes_with_new_and_old_status_code_as_different_code' do
       span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
-      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 200, 'http.response.status_code' => 201 }
+      attributes = { 'http.request.method' => 'POST', 'http.status_code' => 200, 'http.response.status_code' => 201, 'sw.transaction' => 'test_transaction' }
       span_context = OpenTelemetry::Trace::SpanContext.new(
         span_id: "1\xE1u\x12\x8E\xFC@\x18",
         trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
@@ -332,7 +329,6 @@ describe 'SolarWindsOTLPProcessor' do
         nil
       )
       span_data = span.to_span_data
-      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
 
       result = @processor.send(:meter_attributes, span_data)
       _(result['http.method']).must_equal 'POST'
@@ -343,7 +339,7 @@ describe 'SolarWindsOTLPProcessor' do
 
     it 'test_meter_attributes_non_http_span' do
       span_limits = OpenTelemetry::SDK::Trace::SpanLimits.new
-      attributes = {}
+      attributes = { 'sw.transaction' => 'test_transaction' }
       span_context = OpenTelemetry::Trace::SpanContext.new(
         span_id: "1\xE1u\x12\x8E\xFC@\x18",
         trace_id: "w\xCBl\xCCR-1\x06\x11M\xD6\xEC\xBBp\x03j"
@@ -364,7 +360,6 @@ describe 'SolarWindsOTLPProcessor' do
         nil
       )
       span_data = span.to_span_data
-      @processor.instance_variable_set(:@transaction_name, 'test_transaction')
 
       result = @processor.send(:span_http?, span_data)
       _(result).must_equal false

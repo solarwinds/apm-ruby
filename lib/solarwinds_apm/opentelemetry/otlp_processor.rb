@@ -30,7 +30,6 @@ module SolarWindsAPM
         @txn_manager = txn_manager
         @metrics     = init_response_time_metrics
         @is_lambda   = SolarWindsAPM::Utils.determine_lambda
-        @transaction_name = nil
       end
 
       # @param [Span] span the (mutable) {Span} that just started.
@@ -52,8 +51,8 @@ module SolarWindsAPM
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing span attributes: #{span.attributes}" }
         return if non_entry_span(span: span)
 
-        @transaction_name = calculate_transaction_names(span)
-        span.set_attribute(SW_TRANSACTION_NAME, @transaction_name)
+        transaction_name = calculate_transaction_names(span)
+        span.set_attribute(SW_TRANSACTION_NAME, transaction_name)
         @txn_manager.delete_root_context_h(span.context.hex_trace_id)
         SolarWindsAPM.logger.debug { "[#{self.class}/#{__method__}] processor on_finishing end" }
       end
@@ -108,7 +107,7 @@ module SolarWindsAPM
       def meter_attributes(span)
         meter_attrs = {
           SW_IS_ERROR => error?(span) == 1,
-          SW_TRANSACTION_NAME => @transaction_name
+          SW_TRANSACTION_NAME => span.attributes[SW_TRANSACTION_NAME]
         }
 
         is_http_span = span_http?(span)

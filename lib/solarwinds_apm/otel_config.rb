@@ -17,10 +17,12 @@ module SolarWindsAPM
     @@config           = {}
     @@config_map       = {}
     @@agent_enabled    = false
+    @@mutex            = ::Mutex.new
 
     RESOURCE_ATTRIBUTES = 'RESOURCE_ATTRIBUTES'
 
     def self.initialize
+      @@mutex.synchronize { return if @@agent_enabled }
       return unless defined?(::OpenTelemetry::SDK::Configurator)
 
       is_lambda = SolarWindsAPM::Utils.determine_lambda
@@ -87,7 +89,7 @@ module SolarWindsAPM
       txn_manager = TxnNameManager.new
       otlp_processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
 
-      @@config[:metrics_processor] = otlp_processor
+      @@mutex.synchronize { @@config[:metrics_processor] = otlp_processor }
       ::OpenTelemetry.tracer_provider.add_span_processor(otlp_processor)
 
       # collector, service and headers are used for http sampler get settings
@@ -113,17 +115,17 @@ module SolarWindsAPM
         remote_parent_not_sampled: sampler
       )
 
-      @@agent_enabled = true
+      @@mutex.synchronize { @@agent_enabled = true }
 
       nil
     end
 
     def self.[](key)
-      @@config[key.to_sym]
+      @@mutex.synchronize { @@config[key.to_sym] }
     end
 
     def self.agent_enabled
-      @@agent_enabled
+      @@mutex.synchronize { @@agent_enabled }
     end
 
     def self.resolve_response_propagator
