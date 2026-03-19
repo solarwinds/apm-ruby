@@ -12,7 +12,7 @@ require './lib/solarwinds_apm/otel_config'
 describe 'Loading Opentelemetry Test' do
   before do
     clean_old_setting
-    SolarWindsAPM::OTelConfig.class_variable_set(:@@agent_enabled, true)
+    SolarWindsAPM::OTelConfig.class_variable_set(:@@agent_enabled, false)
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config, {})
     SolarWindsAPM::OTelConfig.class_variable_set(:@@config_map, {})
   end

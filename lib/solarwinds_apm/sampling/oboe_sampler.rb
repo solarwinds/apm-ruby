@@ -51,15 +51,7 @@ module SolarWindsAPM
       @logger.debug { "[#{self.class}/#{__method__}] should_sample? params: #{params.inspect}; span type is #{type}" }
 
       # For local spans, we always trust the parent
-      if type == SolarWindsAPM::SpanType::LOCAL
-        if parent_span.context.trace_flags.sampled?
-          return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE,
-                                          tracestate: DEFAULT_TRACESTATE)
-        else
-          return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                          tracestate: DEFAULT_TRACESTATE)
-        end
-      end
+      return handle_local_span(parent_span) if type == SolarWindsAPM::SpanType::LOCAL
 
       sample_state = SampleState.new(OTEL_SAMPLING_DECISION::DROP,
                                      attributes || {},
@@ -73,58 +65,90 @@ module SolarWindsAPM
 
       @counters[:request_count].add(1)
 
-      # adding trigger trace attributes to sample_state attribute as part of decision
-      if sample_state.headers['X-Trace-Options']
+      # Parse and validate trace options; may return early on invalid signature
+      early_result = apply_trace_options(sample_state, parent_span)
+      return early_result if early_result
 
-        # TraceOptions.parse_trace_options return TriggerTraceOptions
-        sample_state.trace_options = ::SolarWindsAPM::TraceOptions.parse_trace_options(sample_state.headers['X-Trace-Options'], @logger)
+      # Check settings availability
+      early_result = check_settings_available(sample_state, parent_span)
+      return early_result if early_result
 
-        @logger.debug { "[#{self.class}/#{__method__}] sample_state.trace_options: #{sample_state.trace_options.inspect}" }
+      resolve_sampling_algorithm(sample_state)
 
-        if sample_state.headers['X-Trace-Options-Signature']
+      xtracestate = generate_new_tracestate(parent_span, sample_state)
+      @logger.debug { "[#{self.class}/#{__method__}] final sampling state: #{sample_state.inspect}" }
 
-          # this validate_signature is the function from trace_options file
-          sample_state.trace_options.response.auth = TraceOptions.validate_signature(
-            sample_state.headers['X-Trace-Options'],
-            sample_state.headers['X-Trace-Options-Signature'],
-            sample_state.settings[:signature_key],
-            sample_state.trace_options.timestamp
-          )
+      OTEL_SAMPLING_RESULT.new(decision: sample_state.decision,
+                               tracestate: xtracestate,
+                               attributes: sample_state.attributes)
+    end
 
-          # If the request has an invalid signature, drop the trace
-          if sample_state.trace_options.response.auth != Auth::OK
-            @logger.debug { "[#{self.class}/#{__method__}] signature invalid; tracing disabled (auth=#{sample_state.trace_options.response.auth})" }
+    private
 
-            xtracestate = generate_new_tracestate(parent_span, sample_state)
-            return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                            tracestate: xtracestate,
-                                            attributes: sample_state.attributes)
-          end
+    def handle_local_span(parent_span)
+      if parent_span.context.trace_flags.sampled?
+        OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE,
+                                 tracestate: DEFAULT_TRACESTATE)
+      else
+        OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
+                                 tracestate: DEFAULT_TRACESTATE)
+      end
+    end
+
+    # Parses X-Trace-Options, validates signature, and applies trace option
+    # attributes. Returns an early OTEL_SAMPLING_RESULT on invalid signature,
+    # or nil to continue normal processing.
+    def apply_trace_options(sample_state, parent_span)
+      return unless sample_state.headers['X-Trace-Options']
+
+      sample_state.trace_options = ::SolarWindsAPM::TraceOptions.parse_trace_options(sample_state.headers['X-Trace-Options'], @logger)
+      @logger.debug { "[#{self.class}/#{__method__}] sample_state.trace_options: #{sample_state.trace_options.inspect}" }
+
+      if sample_state.headers['X-Trace-Options-Signature']
+        sample_state.trace_options.response.auth = TraceOptions.validate_signature(
+          sample_state.headers['X-Trace-Options'],
+          sample_state.headers['X-Trace-Options-Signature'],
+          sample_state.settings[:signature_key],
+          sample_state.trace_options.timestamp
+        )
+
+        if sample_state.trace_options.response.auth != Auth::OK
+          @logger.debug { "[#{self.class}/#{__method__}] signature invalid; tracing disabled (auth=#{sample_state.trace_options.response.auth})" }
+          xtracestate = generate_new_tracestate(parent_span, sample_state)
+          return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
+                                          tracestate: xtracestate,
+                                          attributes: sample_state.attributes)
         end
-
-        # Apply trace options to span attributes and list ignored keys in response
-        sample_state.trace_options.response.trigger_trace = TriggerTrace::NOT_REQUESTED unless sample_state.trace_options.trigger_trace
-        sample_state.attributes[SW_KEYS_ATTRIBUTE] = sample_state.trace_options[:sw_keys] if sample_state.trace_options[:sw_keys]
-        sample_state.trace_options.custom.each { |k, v| sample_state.attributes[k] = v }
-        sample_state.trace_options.response.ignored = sample_state.trace_options[:ignored].map { |k, _| k } if sample_state.trace_options[:ignored].any?
       end
 
-      unless sample_state.settings
-        @logger.debug { "[#{self.class}/#{__method__}] settings unavailable; sampling disabled" }
+      # Apply trace options to span attributes and list ignored keys in response
+      sample_state.trace_options.response.trigger_trace = TriggerTrace::NOT_REQUESTED unless sample_state.trace_options.trigger_trace
+      sample_state.attributes[SW_KEYS_ATTRIBUTE] = sample_state.trace_options[:sw_keys] if sample_state.trace_options[:sw_keys]
+      sample_state.trace_options.custom.each { |k, v| sample_state.attributes[k] = v }
+      sample_state.trace_options.response.ignored = sample_state.trace_options[:ignored].map { |k, _| k } if sample_state.trace_options[:ignored].any?
 
-        sample_state.trace_options.response.trigger_trace = TriggerTrace::SETTINGS_NOT_AVAILABLE if sample_state.trace_options&.trigger_trace
+      nil
+    end
 
-        xtracestate = generate_new_tracestate(parent_span, sample_state)
+    # Returns an early OTEL_SAMPLING_RESULT when settings are unavailable,
+    # or nil to continue normal processing.
+    def check_settings_available(sample_state, parent_span)
+      return if sample_state.settings
 
-        return OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
-                                        tracestate: xtracestate,
-                                        attributes: sample_state.attributes)
-      end
+      @logger.debug { "[#{self.class}/#{__method__}] settings unavailable; sampling disabled" }
+      sample_state.trace_options.response.trigger_trace = TriggerTrace::SETTINGS_NOT_AVAILABLE if sample_state.trace_options&.trigger_trace
+      xtracestate = generate_new_tracestate(parent_span, sample_state)
 
+      OTEL_SAMPLING_RESULT.new(decision: OTEL_SAMPLING_DECISION::DROP,
+                               tracestate: xtracestate,
+                               attributes: sample_state.attributes)
+    end
+
+    # Decide which sampling algo to use based on tracestate and flags
+    # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
+    def resolve_sampling_algorithm(sample_state)
       @logger.debug { "[#{self.class}/#{__method__}] sample_state before deciding sampling algo: #{sample_state.inspect}" }
 
-      # Decide which sampling algo to use and add sampling attribute to decision attributes
-      # https://swicloud.atlassian.net/wiki/spaces/NIT/pages/3815473156/Tracing+Decision+Tree
       if sample_state.trace_state && TRACESTATE_REGEXP.match?(sample_state.trace_state)
         parent_based_algo(sample_state)
       elsif sample_state.settings[:flags].anybits?(Flags::SAMPLE_START)
@@ -136,14 +160,9 @@ module SolarWindsAPM
       else
         disabled_algo(sample_state)
       end
-
-      xtracestate = generate_new_tracestate(parent_span, sample_state)
-      @logger.debug { "[#{self.class}/#{__method__}] final sampling state: #{sample_state.inspect}" }
-
-      OTEL_SAMPLING_RESULT.new(decision: sample_state.decision,
-                               tracestate: xtracestate,
-                               attributes: sample_state.attributes)
     end
+
+    public
 
     def parent_based_algo(sample_state)
       @logger.debug { "[#{self.class}/#{__method__}] parent_based_algo start" }
