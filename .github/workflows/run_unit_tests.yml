@@ -78,3 +78,4 @@ jobs:
         files: coverage/coverage.xml
         flags: ruby-${{ matrix.ruby }}-${{ matrix.os }}
         fail_ci_if_error: false
+        skip_validation: true
