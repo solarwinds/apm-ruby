@@ -11,9 +11,9 @@ require 'simplecov'
 require 'simplecov-cobertura'
 SimpleCov.start do
   formatter SimpleCov::Formatter::MultiFormatter.new([
-    SimpleCov::Formatter::HTMLFormatter,
-    SimpleCov::Formatter::CoberturaFormatter
-  ])
+                                                       SimpleCov::Formatter::HTMLFormatter,
+                                                       SimpleCov::Formatter::CoberturaFormatter
+                                                     ])
 end
 SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
