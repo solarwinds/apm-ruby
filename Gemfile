@@ -32,6 +32,7 @@ group :development, :test do
   gem 'rubocop-rake', require: false
   gem 'code-scanning-rubocop', '~> 0.6.1'
   gem 'simplecov', require: false, group: :test
+  gem 'simplecov-cobertura', require: false, group: :test
   gem 'simplecov-console', require: false, group: :test
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
   gem 'base64' if RUBY_VERSION >= '3.4.0'

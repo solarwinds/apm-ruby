@@ -70,3 +70,11 @@ jobs:
         export RUN_TESTS=1
         echo "testing with ruby version: $RUBY_VERSION"
         test/test_setup.sh
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: coverage/coverage.xml
+        flags: ruby-${{ matrix.ruby }}-${{ matrix.os }}
+        fail_ci_if_error: false
