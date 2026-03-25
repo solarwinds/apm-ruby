@@ -184,7 +184,7 @@ describe 'JsonSampler Test' do
     assert_equal expiry_before, sampler.instance_variable_get(:@expiry)
   end
 
-  it 'does not re-read when file mtime unchanged xuan' do
+  it 'does not re-read when file mtime unchanged' do
     File.write(@temp_path, JSON.dump([
                                        {
                                          'flags' => 'SAMPLE_START,SAMPLE_THROUGH_ALWAYS',
