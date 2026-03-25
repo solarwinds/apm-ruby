@@ -10,11 +10,15 @@ require './lib/solarwinds_apm/api'
 
 describe 'API::OpenTelemetry#in_span delegation to OpenTelemetry tracer' do
   it 'returns nil and warns when block is nil' do
-    result = SolarWindsAPM::API.in_span('test_span')
-    assert_nil result
+    warned = false
+    SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('please provide block') }) do
+      result = SolarWindsAPM::API.in_span('test_span')
+      assert_nil result
+    end
+    assert warned, 'Expected a warning to be logged when block is nil'
   end
 
-  it 'calls OpenTelemetry tracer in_span with a block' do
+  it 'calls in_span with a block and asserts the return value' do
     OpenTelemetry::SDK.configure
     result = SolarWindsAPM::API.in_span('test_span') do |span|
       refute_nil span

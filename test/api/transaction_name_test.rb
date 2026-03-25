@@ -74,62 +74,69 @@ describe 'API::TransactionName#set_transaction_name input validation and early r
     original_proc = SolarWindsAPM::OTelConfig[:metrics_processor]
     SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = stub_processor
 
-    # Without an active span, the span context is invalid
-    result = SolarWindsAPM::API.set_transaction_name('valid_name')
+    OpenTelemetry::SDK.configure
+    invalid_span = OpenTelemetry::Trace.non_recording_span(OpenTelemetry::Trace::SpanContext::INVALID)
+    context = OpenTelemetry::Trace.context_with_span(invalid_span)
+    result = nil
+    OpenTelemetry::Context.with_current(context) do
+      refute OpenTelemetry::Trace.current_span.context.valid?
+      result = SolarWindsAPM::API.set_transaction_name('valid_name')
+    end
     assert_equal false, result
   ensure
     SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = original_proc
   end
 
-  it 'sets transaction name within a valid span context' do
-    ENV['SW_APM_ENABLED'] = 'true'
+  describe 'set_transaction_name with valid span context and processor' do
+    before do
+      ENV['SW_APM_ENABLED'] = 'true'
+      @set_calls = []
+      set_calls = @set_calls
+      @mock_txn_manager = Object.new
+      @mock_txn_manager.define_singleton_method(:get_root_context_h) { |_trace_id| 'abcdef1234567890-01' }
+      @mock_txn_manager.define_singleton_method(:set) { |key, value| set_calls << [key, value] }
 
-    mock_txn_manager = Object.new
-    def mock_txn_manager.get_root_context_h(_trace_id)
-      'abcdef1234567890-01'
+      mock_txn_manager = @mock_txn_manager
+      @mock_processor = Object.new
+      @mock_processor.define_singleton_method(:txn_manager) { mock_txn_manager }
     end
 
-    def mock_txn_manager.set(_key, _value); end
+    it 'sets transaction name within a valid span context' do
+      original_proc = SolarWindsAPM::OTelConfig[:metrics_processor]
+      SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = @mock_processor
 
-    mock_processor = Object.new
-    mock_processor.define_singleton_method(:txn_manager) { mock_txn_manager }
-
-    original_proc = SolarWindsAPM::OTelConfig[:metrics_processor]
-    SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = mock_processor
-
-    OpenTelemetry::SDK.configure
-    tracer = OpenTelemetry.tracer_provider.tracer('test')
-    result = nil
-    tracer.in_span('test_span') do
-      result = SolarWindsAPM::API.set_transaction_name('custom_txn')
-    end
-    assert_equal true, result
-  ensure
-    SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = original_proc
-  end
-
-  it 'returns false when root context record not found in txn_manager' do
-    ENV['SW_APM_ENABLED'] = 'true'
-
-    mock_txn_manager = Object.new
-    def mock_txn_manager.get_root_context_h(_trace_id)
-      nil
+      OpenTelemetry::SDK.configure
+      tracer = OpenTelemetry.tracer_provider.tracer('test')
+      result = nil
+      tracer.in_span('test_span') do |span|
+        # set_transaction_name will call :set which is mocked that inject kv into set_calls array.
+        result = SolarWindsAPM::API.set_transaction_name('custom_txn')
+        expected_key = "#{span.context.hex_trace_id}-abcdef1234567890"
+        assert_equal 1, @set_calls.length
+        assert_equal expected_key, @set_calls[0][0]
+        assert_equal 'custom_txn', @set_calls[0][1]
+      end
+      assert_equal true, result
+    ensure
+      SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = original_proc
     end
 
-    mock_processor = Object.new
-    mock_processor.define_singleton_method(:txn_manager) { mock_txn_manager }
+    it 'returns false when root context record not found in txn_manager' do
+      @mock_txn_manager.define_singleton_method(:get_root_context_h) { |_trace_id| nil }
+      original_proc = SolarWindsAPM::OTelConfig[:metrics_processor]
+      SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = @mock_processor
 
-    original_proc = SolarWindsAPM::OTelConfig[:metrics_processor]
-    SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = mock_processor
-
-    OpenTelemetry::SDK.configure
-    tracer = OpenTelemetry.tracer_provider.tracer('test')
-    result = nil
-    tracer.in_span('test_span') do
-      result = SolarWindsAPM::API.set_transaction_name('custom_txn')
+      OpenTelemetry::SDK.configure
+      tracer = OpenTelemetry.tracer_provider.tracer('test')
+      result = nil
+      tracer.in_span('test_span') do
+        # :get_root_context_h is mocked to return nil so no record found, set_transaction_name should return false.
+        result = SolarWindsAPM::API.set_transaction_name('custom_txn')
+      end
+      assert_equal false, result
+      assert_empty @set_calls
+    ensure
+      SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = original_proc
     end
-    assert_equal false, result
-  ensure
-    SolarWindsAPM::OTelConfig.class_variable_get(:@@config)[:metrics_processor] = original_proc
   end
 end

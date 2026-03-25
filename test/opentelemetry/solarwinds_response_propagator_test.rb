@@ -24,9 +24,11 @@ describe 'SolarWindsResponsePropagator extract passthrough and inject x-trace he
 
   describe 'inject' do
     it 'injects x-trace header for valid span context' do
+      raw_span_id  = Random.bytes(8)
+      raw_trace_id = Random.bytes(16)
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: raw_span_id,
+        trace_id: raw_trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED,
         tracestate: OpenTelemetry::Trace::Tracestate.from_hash({})
       )
@@ -36,19 +38,22 @@ describe 'SolarWindsResponsePropagator extract passthrough and inject x-trace he
       carrier = {}
       @propagator.inject(carrier, context: context)
 
+      expected_x_trace = "00-#{raw_trace_id.unpack1('H*')}-#{raw_span_id.unpack1('H*')}-01"
       assert carrier.key?('x-trace')
-      assert_includes carrier['x-trace'], '00-'
+      assert_equal expected_x_trace, carrier['x-trace']
       assert carrier.key?('Access-Control-Expose-Headers')
       assert_includes carrier['Access-Control-Expose-Headers'], 'x-trace'
     end
 
     it 'injects x-trace-options-response when xtrace_options_response in tracestate' do
+      raw_span_id  = Random.bytes(8)
+      raw_trace_id = Random.bytes(16)
       tracestate = OpenTelemetry::Trace::Tracestate.from_hash({
                                                                 'xtrace_options_response' => 'auth:ok;trigger-trace:ok'
                                                               })
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: raw_span_id,
+        trace_id: raw_trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED,
         tracestate: tracestate
       )
@@ -59,6 +64,7 @@ describe 'SolarWindsResponsePropagator extract passthrough and inject x-trace he
       @propagator.inject(carrier, context: context)
 
       assert carrier.key?('x-trace-options-response')
+      assert_equal 'auth=ok;trigger-trace=ok', carrier['x-trace-options-response']
       assert_includes carrier['Access-Control-Expose-Headers'], 'x-trace-options-response'
     end
 

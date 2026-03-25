@@ -36,9 +36,9 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
 
       trace = SolarWindsAPM::API.current_trace_info
       result = trace.for_log
-      assert_includes result, 'trace_id='
-      assert_includes result, 'span_id='
-      assert_includes result, 'trace_flags='
+      assert_match(/trace_id=[0-9a-f]{32}/, result)
+      assert_match(/span_id=[0-9a-f]{16}/, result)
+      assert_match(/trace_flags=[0-9a-f]{2}/, result)
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
     end
@@ -88,7 +88,7 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
       tracer.in_span('test_span') do
         trace = SolarWindsAPM::API.current_trace_info
         result = trace.for_log
-        assert_includes result, 'trace_id='
+        assert_match(/trace_id=[0-9a-f]{32}/, result)
       end
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
@@ -104,7 +104,7 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
         trace = SolarWindsAPM::API.current_trace_info
         result = trace.for_log
         # The default sampler records & samples, so this should have trace info
-        assert_includes result, 'trace_id='
+        assert_match(/trace_id=[0-9a-f]{32}/, result)
       end
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
