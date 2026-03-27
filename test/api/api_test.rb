@@ -39,17 +39,40 @@ end
 
 describe 'API::CustomMetrics deprecated methods return false' do
   it 'increment_metric returns false with deprecation' do
-    result = SolarWindsAPM::API.increment_metric('test_metric', 1, false, {})
-    assert_equal false, result
+    warned = false
+    SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('increment_metric is deprecated') }) do
+      result = SolarWindsAPM::API.increment_metric('test_metric', 1, false, {})
+      assert_equal false, result
+    end
+    assert warned, 'Expected a deprecation warning to be logged for increment_metric'
   end
 
   it 'summary_metric returns false with deprecation' do
-    result = SolarWindsAPM::API.summary_metric('test_metric', 5.0, 1, false, {})
-    assert_equal false, result
+    warned = false
+    SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('summary_metric is deprecated') }) do
+      result = SolarWindsAPM::API.summary_metric('test_metric', 5.0, 1, false, {})
+      assert_equal false, result
+    end
+    assert warned, 'Expected a deprecation warning to be logged for summary_metric'
   end
 end
 
 describe 'API::Tracer#add_tracer method wrapping with span instrumentation' do
+  let(:sdk) { OpenTelemetry::SDK }
+  let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
+  let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
+
+  before do
+    ENV['OTEL_SERVICE_NAME'] = __FILE__
+    OpenTelemetry.tracer_provider = sdk::Trace::TracerProvider.new.tap do |provider|
+      provider.add_span_processor(span_processor)
+    end
+  end
+
+  after do
+    ENV.delete('OTEL_SERVICE_NAME')
+  end
+
   it 'add_tracer wraps an instance method with in_span' do
     klass = Class.new do
       include SolarWindsAPM::API::Tracer
@@ -60,11 +83,15 @@ describe 'API::Tracer#add_tracer method wrapping with span instrumentation' do
       add_tracer :greeting, 'greeting_span'
     end
 
-    OpenTelemetry::SDK.configure
-
     instance = klass.new
     result = instance.greeting
     assert_equal 'hello', result
+
+    spans = exporter.finished_spans
+    skip if spans.empty?
+    assert_equal 1, spans.size
+    assert_equal 'greeting_span', spans[0].name
+    assert_equal :internal, spans[0].kind
   end
 
   it 'add_tracer uses default span name when nil' do
@@ -77,11 +104,15 @@ describe 'API::Tracer#add_tracer method wrapping with span instrumentation' do
       add_tracer :work
     end
 
-    OpenTelemetry::SDK.configure
-
     instance = klass.new
     result = instance.work
     assert_equal 'done', result
+
+    spans = exporter.finished_spans
+    skip if spans.empty?
+    assert_equal 1, spans.size
+    assert spans[0].name.end_with?('/add_tracer'), "Expected span name to end with '/add_tracer', got #{spans[0].name}"
+    assert_equal :internal, spans[0].kind
   end
 
   it 'add_tracer passes options to in_span' do
@@ -94,10 +125,15 @@ describe 'API::Tracer#add_tracer method wrapping with span instrumentation' do
       add_tracer :compute, 'compute_span', { attributes: { 'foo' => 'bar' }, kind: :consumer }
     end
 
-    OpenTelemetry::SDK.configure
-
     instance = klass.new
     result = instance.compute
     assert_equal 100, result
+
+    spans = exporter.finished_spans
+    skip if spans.empty?
+    assert_equal 1, spans.size
+    assert_equal 'compute_span', spans[0].name
+    assert_equal :consumer, spans[0].kind
+    assert_equal 'bar', spans[0].attributes['foo']
   end
 end

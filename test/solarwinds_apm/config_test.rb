@@ -429,42 +429,66 @@ describe 'Config Test' do
   describe '[]= key handling' do
     it 'warns on deprecated sampling_rate' do
       original = SolarWindsAPM::Config[:sampling_rate]
-      SolarWindsAPM::Config[:sampling_rate] = 100
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('[Deprecated] sampling_rate') }) do
+        SolarWindsAPM::Config[:sampling_rate] = 100
+      end
+      assert warned, 'Expected a deprecation warning for sampling_rate'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:sampling_rate] = original
     end
 
     it 'warns on deprecated sample_rate' do
       original = SolarWindsAPM::Config[:sample_rate]
-      SolarWindsAPM::Config[:sample_rate] = 100
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('[Deprecated] sample_rate') }) do
+        SolarWindsAPM::Config[:sample_rate] = 100
+      end
+      assert warned, 'Expected a deprecation warning for sample_rate'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:sample_rate] = original
     end
 
     it 'warns on deprecated ec2_metadata_timeout' do
       original = SolarWindsAPM::Config[:ec2_metadata_timeout]
-      SolarWindsAPM::Config[:ec2_metadata_timeout] = 1000
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?(':ec2_metadata_timeout is deprecated') }) do
+        SolarWindsAPM::Config[:ec2_metadata_timeout] = 1000
+      end
+      assert warned, 'Expected a deprecation warning for ec2_metadata_timeout'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:ec2_metadata_timeout] = original
     end
 
     it 'warns on deprecated http_proxy' do
       original = SolarWindsAPM::Config[:http_proxy]
-      SolarWindsAPM::Config[:http_proxy] = 'http://proxy'
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?(':http_proxy is deprecated') }) do
+        SolarWindsAPM::Config[:http_proxy] = 'http://proxy'
+      end
+      assert warned, 'Expected a deprecation warning for http_proxy'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:http_proxy] = original
     end
 
     it 'warns on deprecated hostname_alias' do
       original = SolarWindsAPM::Config[:hostname_alias]
-      SolarWindsAPM::Config[:hostname_alias] = 'alias'
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?(':hostname_alias is deprecated') }) do
+        SolarWindsAPM::Config[:hostname_alias] = 'alias'
+      end
+      assert warned, 'Expected a deprecation warning for hostname_alias'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:hostname_alias] = original
     end
 
     it 'warns on deprecated log_args' do
       original = SolarWindsAPM::Config[:log_args]
-      SolarWindsAPM::Config[:log_args] = true
+      warned = false
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?(':log_args is deprecated') }) do
+        SolarWindsAPM::Config[:log_args] = true
+      end
+      assert warned, 'Expected a deprecation warning for log_args'
     ensure
       SolarWindsAPM::Config.class_variable_get(:@@config)[:log_args] = original
     end
@@ -485,13 +509,13 @@ describe 'Config Test' do
     it 'handles transaction_settings with disabled regexp' do
       settings = [{ regexp: '/health', tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
-      refute_nil SolarWindsAPM::Config[:disabled_regexps]
+      assert_equal [Regexp.new('/health')], SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles transaction_settings with enabled regexp' do
       settings = [{ regexp: '/api', tracing: :enabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
-      refute_nil SolarWindsAPM::Config[:enabled_regexps]
+      assert_equal [Regexp.new('/api')], SolarWindsAPM::Config[:enabled_regexps]
     end
 
     it 'handles empty transaction_settings' do
@@ -509,29 +533,35 @@ describe 'Config Test' do
     it 'handles transaction_settings with Regexp object' do
       settings = [{ regexp: %r{/health}, tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
-      refute_nil SolarWindsAPM::Config[:disabled_regexps]
+      assert_equal [%r{/health}], SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles transaction_settings with invalid regexp string' do
       settings = [{ regexp: '(invalid[', tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
-      # Invalid regexp is ignored
+      # Invalid regexp is ignored, so disabled_regexps should be nil
+      assert_nil SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles transaction_settings with empty regexp string' do
       settings = [{ regexp: '', tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
+      # Empty regexp string is filtered out
+      assert_nil SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles transaction_settings with empty Regexp' do
       settings = [{ regexp: Regexp.new(''), tracing: :disabled }]
       SolarWindsAPM::Config[:transaction_settings] = settings
+      # Empty Regexp (inspects as //) is filtered out
+      assert_nil SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles transaction_settings without tracing key' do
       settings = [{ regexp: '/test' }]
       SolarWindsAPM::Config[:transaction_settings] = settings
       # No tracing key defaults to disabled
+      assert_equal [Regexp.new('/test')], SolarWindsAPM::Config[:disabled_regexps]
     end
 
     it 'handles generic key assignment' do

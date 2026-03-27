@@ -9,14 +9,23 @@ require 'opentelemetry-metrics-sdk'
 require './lib/solarwinds_apm/sampling'
 
 describe 'Metrics::Counter initialization and key access' do
+  before do
+    @original_meter_provider = OpenTelemetry.meter_provider
+    OpenTelemetry.meter_provider = OpenTelemetry::SDK::Metrics::MeterProvider.new
+  end
+
+  after do
+    OpenTelemetry.meter_provider = @original_meter_provider
+  end
+
   it 'initializes counters' do
     counter = SolarWindsAPM::Metrics::Counter.new
-    refute_nil counter[:request_count]
-    refute_nil counter[:sample_count]
-    refute_nil counter[:trace_count]
-    refute_nil counter[:through_trace_count]
-    refute_nil counter[:triggered_trace_count]
-    refute_nil counter[:token_bucket_exhaustion_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:request_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:sample_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:trace_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:through_trace_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:triggered_trace_count]
+    assert_instance_of OpenTelemetry::SDK::Metrics::Instrument::Counter, counter[:token_bucket_exhaustion_count]
   end
 
   it 'returns nil for unknown key' do

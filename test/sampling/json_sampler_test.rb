@@ -148,20 +148,35 @@ describe 'JsonSampler Test' do
 
   it 'handles invalid JSON file content' do
     File.write(@temp_path, 'not valid json{{{')
-    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
-    refute_nil sampler
+    logged_msg = nil
+    SolarWindsAPM.logger.stub(:error, ->(_msg = nil, &block) { logged_msg = block&.call }) do
+      sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+      refute_nil sampler
+    end
+    refute_nil logged_msg
+    assert_match(/JSON parsing error in #{Regexp.escape(@temp_path)}/, logged_msg)
   end
 
   it 'handles invalid settings structure (not single element array)' do
     File.write(@temp_path, JSON.dump([{ flags: 'a' }, { flags: 'b' }]))
-    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
-    refute_nil sampler
+    logged_msg = nil
+    SolarWindsAPM.logger.stub(:error, ->(_msg = nil, &block) { logged_msg = block&.call }) do
+      sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+      refute_nil sampler
+    end
+    refute_nil logged_msg
+    assert_match(/Invalid settings file content/, logged_msg)
   end
 
   it 'handles empty array in settings file' do
     File.write(@temp_path, JSON.dump([]))
-    sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
-    refute_nil sampler
+    logged_msg = nil
+    SolarWindsAPM.logger.stub(:error, ->(_msg = nil, &block) { logged_msg = block&.call }) do
+      sampler = SolarWindsAPM::JsonSampler.new({}, @temp_path)
+      refute_nil sampler
+    end
+    refute_nil logged_msg
+    assert_match(/Invalid settings file content/, logged_msg)
   end
 
   it 'skips loop_check when settings not expired' do

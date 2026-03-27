@@ -31,8 +31,9 @@ describe 'Span::Patch on_finishing callback and double-finish warning' do
     tracer.in_span('test_span') do |s|
       span = s
     end
-    # Span should have finished
-    refute_nil span
+    # Span should have finished with expected name and kind
+    assert_equal 'test_span', span.name
+    assert_equal :internal, span.kind
   end
 
   it 'warns on double finish of span' do
@@ -43,7 +44,12 @@ describe 'Span::Patch on_finishing callback and double-finish warning' do
     tracer.in_span('test_span') do |s|
       span = s
     end
-    # Calling finish again should just warn
-    span.finish
+    assert_equal 'test_span', span.name
+
+    warned = false
+    OpenTelemetry.logger.stub(:warn, ->(_msg = nil) { warned = true }) do
+      span.finish
+    end
+    assert warned, 'Expected a warning to be logged on double finish'
   end
 end

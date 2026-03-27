@@ -46,15 +46,18 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
     it 'returns hash for hash_for_log when log_traceId is :always' do
       original = SolarWindsAPM::Config[:log_traceId]
       SolarWindsAPM::Config[:log_traceId] = :always
+      original_service_name = ENV.fetch('OTEL_SERVICE_NAME', nil)
+      ENV['OTEL_SERVICE_NAME'] = 'test-service-name'
 
       trace = SolarWindsAPM::API.current_trace_info
       result = trace.hash_for_log
-      assert result.key?('trace_id')
-      assert result.key?('span_id')
-      assert result.key?('trace_flags')
-      assert result.key?('resource.service.name')
+      assert_match(/^[0-9a-f]{32}$/, result['trace_id'])
+      assert_match(/^[0-9a-f]{16}$/, result['span_id'])
+      assert_match(/^[0-9a-f]{2}$/, result['trace_flags'])
+      assert_equal 'test-service-name', result['resource.service.name']
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
+      ENV['OTEL_SERVICE_NAME'] = original_service_name
     end
 
     it 'returns empty for_log when :traced and no active trace' do
@@ -115,7 +118,7 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
       SolarWindsAPM::Config[:log_traceId] = :always
 
       trace = SolarWindsAPM::API.current_trace_info
-      assert trace.do_log
+      assert_equal true, trace.do_log
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
     end

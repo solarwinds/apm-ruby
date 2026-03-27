@@ -141,21 +141,23 @@ describe 'SolarWindsPropagatorTest' do
     it 'handles nil context gracefully' do
       carrier = { 'x-trace-options' => 'trigger-trace' }
       context = @propagator.extract(carrier, context: nil)
-      refute_nil context
+      assert_instance_of OpenTelemetry::Context, context
     end
 
     it 'handles exceptions gracefully' do
       carrier = nil
       context = @propagator.extract(carrier, context: OpenTelemetry::Context.empty)
-      refute_nil context
+      assert_instance_of OpenTelemetry::Context, context
     end
   end
 
   describe 'inject' do
     it 'injects sw tracestate when no existing tracestate' do
+      span_id = Random.bytes(8)
+      trace_id = Random.bytes(16)
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: span_id,
+        trace_id: trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
       )
       span = OpenTelemetry::Trace.non_recording_span(span_context)
@@ -164,14 +166,16 @@ describe 'SolarWindsPropagatorTest' do
       carrier = {}
       @propagator.inject(carrier, context: context)
 
-      refute_nil carrier['tracestate']
-      assert_includes carrier['tracestate'], 'sw='
+      expected_sw = "#{span_id.unpack1('H*')}-01"
+      assert_equal "sw=#{expected_sw}", carrier['tracestate']
     end
 
     it 'updates existing tracestate with sw value' do
+      span_id = Random.bytes(8)
+      trace_id = Random.bytes(16)
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: span_id,
+        trace_id: trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
       )
       span = OpenTelemetry::Trace.non_recording_span(span_context)
@@ -180,8 +184,8 @@ describe 'SolarWindsPropagatorTest' do
       carrier = { 'tracestate' => 'other=value' }
       @propagator.inject(carrier, context: context)
 
-      assert_includes carrier['tracestate'], 'sw='
-      assert_includes carrier['tracestate'], 'other=value'
+      expected_sw = "#{span_id.unpack1('H*')}-01"
+      assert_equal "other=value,sw=#{expected_sw}", carrier['tracestate']
     end
 
     it 'does not inject when span context is invalid' do
@@ -193,9 +197,11 @@ describe 'SolarWindsPropagatorTest' do
     end
 
     it 'sets trace flag 01 for sampled spans' do
+      span_id = Random.bytes(8)
+      trace_id = Random.bytes(16)
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: span_id,
+        trace_id: trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
       )
       span = OpenTelemetry::Trace.non_recording_span(span_context)
@@ -204,13 +210,16 @@ describe 'SolarWindsPropagatorTest' do
       carrier = {}
       @propagator.inject(carrier, context: context)
 
-      assert_includes carrier['tracestate'], '-01'
+      expected_sw = "#{span_id.unpack1('H*')}-01"
+      assert_equal "sw=#{expected_sw}", carrier['tracestate']
     end
 
     it 'sets trace flag 00 for non-sampled spans' do
+      span_id = Random.bytes(8)
+      trace_id = Random.bytes(16)
       span_context = OpenTelemetry::Trace::SpanContext.new(
-        span_id: Random.bytes(8),
-        trace_id: Random.bytes(16),
+        span_id: span_id,
+        trace_id: trace_id,
         trace_flags: OpenTelemetry::Trace::TraceFlags::DEFAULT
       )
       span = OpenTelemetry::Trace.non_recording_span(span_context)
@@ -219,7 +228,8 @@ describe 'SolarWindsPropagatorTest' do
       carrier = {}
       @propagator.inject(carrier, context: context)
 
-      assert_includes carrier['tracestate'], '-00'
+      expected_sw = "#{span_id.unpack1('H*')}-00"
+      assert_equal "sw=#{expected_sw}", carrier['tracestate']
     end
   end
 

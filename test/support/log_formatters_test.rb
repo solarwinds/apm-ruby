@@ -15,7 +15,9 @@ describe 'Lumberjack::LogEntry trace ID injection based on log_traceId config' d
     SolarWindsAPM::Config[:log_traceId] = :always
 
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, 'test message', 'TestProg', Process.pid, nil)
-    assert_includes entry.message, 'trace_id='
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_equal "test message #{expected_trace_info}", entry.message
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end
@@ -25,7 +27,7 @@ describe 'Lumberjack::LogEntry trace ID injection based on log_traceId config' d
     SolarWindsAPM::Config[:log_traceId] = :never
 
     entry = Lumberjack::LogEntry.new(Time.now, Lumberjack::Severity::INFO, 'test message', 'TestProg', Process.pid, nil)
-    refute_includes entry.message, 'trace_id='
+    assert_equal 'test message', entry.message
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end
@@ -38,7 +40,9 @@ describe 'Logging::LogEvent trace ID injection based on log_traceId config' do
 
     Logging.logger['test_logger']
     event = Logging::LogEvent.new('test_logger', Logging::LEVELS['info'], 'test log message', false)
-    assert_includes event.data, 'trace_id='
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_equal "test log message #{expected_trace_info}", event.data
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end
@@ -48,7 +52,7 @@ describe 'Logging::LogEvent trace ID injection based on log_traceId config' do
     SolarWindsAPM::Config[:log_traceId] = :never
 
     event = Logging::LogEvent.new('test_logger', Logging::LEVELS['info'], 'test log message', false)
-    refute_includes event.data.to_s, 'trace_id='
+    assert_equal 'test log message', event.data
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end

@@ -42,7 +42,7 @@ describe 'SolarWindsResponsePropagator extract passthrough and inject x-trace he
       assert carrier.key?('x-trace')
       assert_equal expected_x_trace, carrier['x-trace']
       assert carrier.key?('Access-Control-Expose-Headers')
-      assert_includes carrier['Access-Control-Expose-Headers'], 'x-trace'
+      assert_equal 'x-trace', carrier['Access-Control-Expose-Headers']
     end
 
     it 'injects x-trace-options-response when xtrace_options_response in tracestate' do
@@ -65,7 +65,7 @@ describe 'SolarWindsResponsePropagator extract passthrough and inject x-trace he
 
       assert carrier.key?('x-trace-options-response')
       assert_equal 'auth=ok;trigger-trace=ok', carrier['x-trace-options-response']
-      assert_includes carrier['Access-Control-Expose-Headers'], 'x-trace-options-response'
+      assert_equal 'x-trace,x-trace-options-response', carrier['Access-Control-Expose-Headers']
     end
 
     it 'does not inject for invalid span context' do

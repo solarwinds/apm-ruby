@@ -36,4 +36,12 @@ applyTo: "**/*.rb,**/*.yml,**/*.sh,Rakefile"
 - One way to improve the readability and clarity of functions is to encapsulate nested if/else statements into other functions.
 - Encapsulating such logic into a function with a descriptive name clarifies its purpose and simplifies code comprehension.
 
+## Testing assertion preferences
+- Always use `assert_equal` (or `must_equal`) to assert exact expected values. Never use `assert_includes` for partial string matching when the full expected value is deterministic.
+- If `assert_includes` must be used due to non-deterministic output, add a comment explaining why partial matching is necessary.
+- Use `assert_instance_of` to verify object types instead of `refute_nil`.
+- Assert full object content (e.g., exact string values, complete attribute values) rather than just checking for key existence or non-nil.
+- When code logs warnings or errors, add logger stubbing in the test to capture and assert the exact log message via `assert_equal` or `assert_match`.
+- Use `assert_equal` consistently instead of mixing `_(x).must_equal y` and `assert_equal y, x` within the same test file.
+
 <!-- the source of this file is https://github.com/solarwinds-sandbox/copilot/blob/main/.github/instructions/coding.instructions.md -->

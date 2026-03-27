@@ -109,8 +109,7 @@ describe 'Resource Detector Test' do
       result = SolarWindsAPM::ResourceDetector.detect
       attrs = result.instance_variable_get(:@attributes)
 
-      assert attrs.key?('service.instance.id')
-      refute_nil attrs['service.instance.id']
+      assert_match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, attrs['service.instance.id'])
     ensure
       WebMock.disable!
     end
@@ -251,9 +250,13 @@ describe 'Resource Detector Test' do
         end
       end
 
-      result = SolarWindsAPM::ResourceDetector.run_opentelemetry_detector(mock_detector)
-      attrs = result.instance_variable_get(:@attributes)
-      assert_empty attrs
+      error_logged = false
+      SolarWindsAPM.logger.stub(:error, ->(_msg = nil, &block) { error_logged = true if block&.call&.include?('failed. Error: detector failed') }) do
+        result = SolarWindsAPM::ResourceDetector.run_opentelemetry_detector(mock_detector)
+        attrs = result.instance_variable_get(:@attributes)
+        assert_empty attrs
+      end
+      assert error_logged, 'Expected error to be logged when detector fails'
     end
   end
 end

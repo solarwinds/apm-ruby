@@ -224,13 +224,14 @@ describe 'parseTraceOptions' do
   end
 
   it 'parses all option types in single header' do
-    header = "trigger-trace;sw-keys=check-id:123;custom-foo=bar;ts=#{Time.now.to_i}"
+    ts = Time.now.to_i
+    header = "trigger-trace;sw-keys=check-id:123;custom-foo=bar;ts=#{ts}"
     result = SolarWindsAPM::TraceOptions.parse_trace_options(header, logger)
 
-    assert result.trigger_trace
+    assert_equal true, result.trigger_trace
     assert_equal 'check-id:123', result.sw_keys
     assert_equal 'bar', result.custom['custom-foo']
-    refute_nil result.timestamp
+    assert_equal ts, result.timestamp
   end
 end
 
@@ -252,8 +253,7 @@ describe 'stringifyTraceOptionsResponse' do
   it 'omits nil fields' do
     response = SolarWindsAPM::TraceOptionsResponse.new(nil, 'ok', [])
     result = SolarWindsAPM::TraceOptions.stringify_trace_options_response(response)
-    refute_includes result, 'auth'
-    assert_includes result, 'trigger-trace:ok'
+    assert_equal 'trigger-trace:ok', result
   end
 
   it 'returns empty string when all nil and empty' do

@@ -29,8 +29,9 @@ describe 'Logger::Formatter trace ID injection, deduplication, and message edge 
     SolarWindsAPM::Config[:log_traceId] = :always
 
     output = @formatter.call('INFO', Time.now, 'TestProg', 'hello world')
-    refute_nil output
-    assert_includes output, 'trace_id='
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_equal "hello world #{expected_trace_info}", output.split(' -- TestProg: ', 2).last.strip
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end
@@ -61,8 +62,9 @@ describe 'Logger::Formatter trace ID injection, deduplication, and message edge 
     SolarWindsAPM::Config[:log_traceId] = :always
 
     output = @formatter.call('ERROR', Time.now, 'TestProg', 'test error (StandardError)')
-    refute_nil output
-    assert_includes output, 'trace_id='
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_equal "test error (StandardError) #{expected_trace_info}", output.split(' -- TestProg: ', 2).last.strip
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end
@@ -72,8 +74,9 @@ describe 'Logger::Formatter trace ID injection, deduplication, and message edge 
     SolarWindsAPM::Config[:log_traceId] = :always
 
     output = @formatter.call('INFO', Time.now, 'TestProg', "hello\n\n")
-    refute_nil output
-    assert_includes output, 'trace_id='
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_equal "hello #{expected_trace_info}\n\n", output.split(' -- TestProg: ', 2).last.chomp
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end

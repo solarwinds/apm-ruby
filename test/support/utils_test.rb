@@ -11,13 +11,13 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
     span_context = OpenTelemetry::Trace::SpanContext.new(trace_id: "\xDD\x95\xC5l\xE3\x83\xCA\xF0\x95;S\x98i\xF9:{",
                                                          span_id: "\x8D\xB5\xDC?$l\x84W")
     result = SolarWindsAPM::Utils.traceparent_from_context(span_context)
-    _(result).must_equal '00-dd95c56ce383caf0953b539869f93a7b-8db5dc3f246c8457-00'
+    assert_equal '00-dd95c56ce383caf0953b539869f93a7b-8db5dc3f246c8457-00', result
   end
 
   it 'formats tracestate hash into key=value header string' do
     tracestate = OpenTelemetry::Trace::Tracestate.from_hash({ 'sw' => '0000000000000000-01' })
     result = SolarWindsAPM::Utils.trace_state_header(tracestate)
-    _(result).must_equal 'sw=0000000000000000-01'
+    assert_equal 'sw=0000000000000000-01', result
   end
 
   describe 'trace_state_header' do
@@ -33,8 +33,7 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
     it 'formats multiple tracestate entries' do
       tracestate = OpenTelemetry::Trace::Tracestate.from_hash({ 'sw' => '1234-01', 'other' => 'value' })
       result = SolarWindsAPM::Utils.trace_state_header(tracestate)
-      assert_includes result, 'sw=1234-01'
-      assert_includes result, 'other=value'
+      assert_equal 'sw=1234-01,other=value', result
     end
   end
 
@@ -46,8 +45,7 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
         trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
       )
       result = SolarWindsAPM::Utils.traceparent_from_context(span_context)
-      assert result.start_with?('00-')
-      assert result.end_with?('-01')
+      assert_equal '00-dd95c56ce383caf0953b539869f93a7b-8db5dc3f246c8457-01', result
     end
 
     it 'formats non-sampled span context' do
@@ -57,7 +55,7 @@ describe 'Utils tracestate formatting, traceparent construction, and Lambda dete
         trace_flags: OpenTelemetry::Trace::TraceFlags::DEFAULT
       )
       result = SolarWindsAPM::Utils.traceparent_from_context(span_context)
-      assert result.end_with?('-00')
+      assert_equal '00-dd95c56ce383caf0953b539869f93a7b-8db5dc3f246c8457-00', result
     end
   end
 

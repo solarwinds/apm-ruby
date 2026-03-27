@@ -617,7 +617,7 @@ describe 'SamplerTest' do
       params[:attributes] = attrs
 
       settings = sampler.local_settings(params)
-      refute_nil settings[:tracing_mode]
+      assert_equal SolarWindsAPM::TracingMode::NEVER, settings[:tracing_mode]
     ensure
       SolarWindsAPM::Config[:transaction_settings] = nil
     end

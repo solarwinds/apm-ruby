@@ -36,13 +36,13 @@ describe 'SolarWindsOTLPProcessor' do
 
     result = @processor.send(:calculate_span_time, start_time: span_data.start_timestamp,
                                                    end_time: span_data.end_timestamp)
-    _(result).must_equal 44_853
+    assert_equal 44_853, result
 
     result = @processor.send(:calculate_span_time, start_time: span_data.start_timestamp, end_time: nil)
-    _(result).must_equal 0
+    assert_equal 0, result
 
     result = @processor.send(:calculate_span_time, start_time: nil, end_time: span_data.end_timestamp)
-    _(result).must_equal 0
+    assert_equal 0, result
   end
 
   it 'returns the span name as the default transaction name' do
@@ -442,12 +442,16 @@ describe 'SolarWindsOTLPProcessor' do
     end
 
     it 'handles exceptions gracefully' do
-      # Pass something that would cause an error
-      span = create_span
+      # Pass nil span to trigger NoMethodError inside on_start
+      span = nil
       bad_context = nil
 
-      # Should not raise, should handle gracefully
-      @processor.on_start(span, bad_context)
+      logged_msg = nil
+      SolarWindsAPM.logger.stub(:info, ->(_msg = nil, &block) { logged_msg = block&.call }) do
+        @processor.on_start(span, bad_context)
+      end
+      refute_nil logged_msg
+      assert_match(/processor on_start error:/, logged_msg)
     end
   end
 
@@ -638,6 +642,8 @@ describe 'SolarWindsOTLPProcessor' do
 
         result = @processor.send(:meter_attributes, span_data)
         assert_equal 'POST', result['http.method']
+        assert_equal false, result['sw.is_error']
+        assert_equal 'test_txn', result['sw.transaction']
       end
 
       it 'omits http status code when 0' do

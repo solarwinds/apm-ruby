@@ -24,12 +24,13 @@ describe 'SWODboUtils#annotate_span_and_sql traceparent injection based on sampl
     tracer = OpenTelemetry.tracer_provider.tracer('test')
 
     result = nil
-    tracer.in_span('test_span') do
+    tracer.in_span('test_span') do |span|
+      trace_id = span.context.hex_trace_id
+      span_id = span.context.hex_span_id
+      expected_traceparent = "00-#{trace_id}-#{span_id}-01"
       result = SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql('SELECT 1')
+      assert_equal "SELECT 1 /*traceparent='#{expected_traceparent}'*/", result
     end
-
-    assert_includes result, 'SELECT 1'
-    assert_includes result, "/*traceparent='"
   end
 
   it 'returns sql unchanged when span is not sampled' do
