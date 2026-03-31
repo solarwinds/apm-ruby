@@ -815,7 +815,6 @@ describe 'OboeSampler' do
       params = make_sample_params(parent: parent)
 
       result = sampler.should_sample?(params)
-      puts "result: #{result.inspect}"
       assert_equal 'auth:ok;trigger-trace:ignored', result.tracestate['xtrace_options_response']
     end
   end
@@ -879,6 +878,35 @@ describe 'OboeSampler' do
       result = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
       assert_equal true, result.attributes['TriggeredTrace']
+    end
+
+    it 'honours trigger-trace header when there is no parent (ROOT span)' do
+      headers = make_request_headers(trigger_trace: true)
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      params = make_sample_params(parent: false)
+
+      result = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      assert_equal true, result.attributes['TriggeredTrace']
+      assert_equal 'trigger-trace:ok', result.tracestate['xtrace_options_response']
     end
   end
 

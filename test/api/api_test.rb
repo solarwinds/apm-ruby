@@ -22,6 +22,9 @@ describe 'API::OpenTelemetry#in_span delegation to OpenTelemetry tracer' do
     OpenTelemetry::SDK.configure
     result = SolarWindsAPM::API.in_span('test_span') do |span|
       refute_nil span
+      assert_equal 'test_span', span.name
+      assert span.attributes.empty?
+      assert_equal :internal, span.kind
       42
     end
     assert_equal 42, result
@@ -31,6 +34,9 @@ describe 'API::OpenTelemetry#in_span delegation to OpenTelemetry tracer' do
     OpenTelemetry::SDK.configure
     result = SolarWindsAPM::API.in_span('test_span', attributes: { 'key' => 'value' }, kind: :internal) do |span|
       refute_nil span
+      assert_equal 'test_span', span.name
+      assert_equal 'value', span.attributes['key']
+      assert_equal :internal, span.kind
       'done'
     end
     assert_equal 'done', result

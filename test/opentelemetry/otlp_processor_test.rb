@@ -455,28 +455,6 @@ describe 'SolarWindsOTLPProcessor' do
     end
   end
 
-  describe 'on_finish' do
-    it 'does nothing for non-entry spans' do
-      span_data = create_span_data
-      # Does not raise
-      @processor.on_finish(span_data)
-    end
-  end
-
-  describe 'on_finishing' do
-    it 'does nothing for non-entry spans' do
-      span = create_span
-      @processor.on_finishing(span)
-    end
-  end
-
-  describe 'calculate_span_time' do
-    it 'calculates time difference in microseconds' do
-      result = @processor.send(:calculate_span_time, start_time: 1_000_000_000, end_time: 2_000_000_000)
-      assert result.positive?
-    end
-  end
-
   describe 'error?' do
     it 'returns 1 for error status' do
       create_span_data

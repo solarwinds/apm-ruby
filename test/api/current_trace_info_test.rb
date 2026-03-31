@@ -138,7 +138,7 @@ describe 'API::CurrentTraceInfo#for_log and #hash_for_log with log_traceId confi
       trace = SolarWindsAPM::API.current_trace_info
       result1 = trace.for_log
       result2 = trace.for_log
-      assert_equal result1, result2
+      assert_same result1, result2
     ensure
       SolarWindsAPM::Config[:log_traceId] = original
     end
