@@ -23,7 +23,7 @@ group :development, :test do
   gem 'minitest-debugger', require: false
   gem 'minitest-focus', '>= 1.1.2'
   gem 'minitest-hooks', '>= 1.5.0'
-  gem 'minitest-reporters', '< 1.7.2'
+  gem 'minitest-reporters', '< 1.8.1'
   gem 'mocha'
   gem 'rack-cache'
   gem 'rack-test'
