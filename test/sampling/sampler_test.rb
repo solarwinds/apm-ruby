@@ -551,7 +551,7 @@ describe 'SamplerTest' do
       assert_nil result
     end
 
-    it 'logs warning from parsed settings' do
+    it 'updates with warning from parsed settings' do
       result = @sampler.update_settings({
                                           'value' => 1,
                                           'timestamp' => Time.now.to_i,

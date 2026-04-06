@@ -832,7 +832,7 @@ describe 'OboeSampler' do
           buckets: {
             SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
             SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 0, rate: 0 }
           },
           timestamp: Time.now.to_i,
           ttl: 120,
@@ -842,6 +842,8 @@ describe 'OboeSampler' do
         request_headers: headers
       )
 
+      # a parent decision is available but ignored because it is not from us
+      # i.e. no sw tracestate
       parent = make_span({ remote: true, sampled: false })
       params = make_sample_params(parent: parent)
 
@@ -861,7 +863,7 @@ describe 'OboeSampler' do
           flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
           buckets: {
             SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
-            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 0, rate: 0 },
             SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
           },
           timestamp: Time.now.to_i,
@@ -878,6 +880,7 @@ describe 'OboeSampler' do
       result = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
       assert_equal true, result.attributes['TriggeredTrace']
+      assert_equal 'trigger-trace:ok', result.tracestate['xtrace_options_response']
     end
 
     it 'honours trigger-trace header when there is no parent (ROOT span)' do
