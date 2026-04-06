@@ -816,6 +816,8 @@ describe 'OboeSampler' do
 
       result = sampler.should_sample?(params)
       assert_equal 'auth:ok;trigger-trace:ignored', result.tracestate['xtrace_options_response']
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      refute result.attributes['TriggeredTrace']
     end
   end
 
@@ -1033,7 +1035,7 @@ describe 'OboeSampler' do
 
       result = sampler.should_sample?(params)
       refute_nil result.tracestate
-      assert_match(/^[0-9a-f]{16}-01$/, result.tracestate['sw'])
+      assert_equal '0000000000000000-01', result.tracestate['sw']
     end
 
     it 'updates existing tracestate for valid parent' do
@@ -1059,7 +1061,7 @@ describe 'OboeSampler' do
       params = make_sample_params(parent: parent)
 
       result = sampler.should_sample?(params)
-      assert_match(/^[0-9a-f]{16}-01$/, result.tracestate['sw'])
+      assert_equal "#{parent.context.hex_span_id}-01", result.tracestate['sw']
     end
   end
 

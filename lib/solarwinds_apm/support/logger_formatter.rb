@@ -21,7 +21,8 @@ module SolarWindsAPM
       private
 
       def insert_trace_id(msg)
-        return msg if msg.include?('trace_id=')
+        msg_text = msg.is_a?(::Exception) ? msg.message : msg.to_s
+        return msg if msg_text.include?('trace_id=')
 
         current_trace = SolarWindsAPM::API.current_trace_info
         if current_trace.do_log

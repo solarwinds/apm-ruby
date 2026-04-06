@@ -632,8 +632,8 @@ describe 'SamplerTest' do
       attrs = { 'http.request.method' => 'GET' }
       result = @sampler.http_span_metadata(OpenTelemetry::Trace::SpanKind::SERVER, attrs)
       assert result[:http]
-      assert_equal 'http', result[:scheme]
-      assert_equal 'localhost', result[:hostname]
+      assert_equal '', result[:scheme]
+      assert_equal '', result[:hostname]
       assert_equal 0, result[:status]
     end
   end

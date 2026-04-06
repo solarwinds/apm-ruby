@@ -57,14 +57,27 @@ describe 'Logger::Formatter trace ID injection, deduplication, and message edge 
     SolarWindsAPM::Config[:log_traceId] = original
   end
 
-  it 'handles string message with error-like content' do
+  it 'handles string message' do
     original = SolarWindsAPM::Config[:log_traceId]
     SolarWindsAPM::Config[:log_traceId] = :always
 
-    output = @formatter.call('ERROR', Time.now, 'TestProg', 'test error (StandardError)')
+    output = @formatter.call('ERROR', Time.now, 'TestProg', 'test error')
     trace = SolarWindsAPM::API.current_trace_info
     expected_trace_info = trace.for_log
-    assert_equal "test error (StandardError) #{expected_trace_info}", output.split(' -- TestProg: ', 2).last.strip
+    assert_equal "test error #{expected_trace_info}", output.split(' -- TestProg: ', 2).last.strip
+  ensure
+    SolarWindsAPM::Config[:log_traceId] = original
+  end
+
+  it 'handles Exception object message' do
+    original = SolarWindsAPM::Config[:log_traceId]
+    SolarWindsAPM::Config[:log_traceId] = :always
+
+    error = StandardError.new('test error')
+    output = @formatter.call('ERROR', Time.now, 'TestProg', error)
+    trace = SolarWindsAPM::API.current_trace_info
+    expected_trace_info = trace.for_log
+    assert_includes output, "test error (StandardError) #{expected_trace_info}"
   ensure
     SolarWindsAPM::Config[:log_traceId] = original
   end

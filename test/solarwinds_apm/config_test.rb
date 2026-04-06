@@ -494,10 +494,23 @@ describe 'Config Test' do
     end
 
     it 'handles tracing_mode assignment' do
-      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
-      ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      original = ENV.fetch('SW_APM_TRACING_MODE', nil)
+      ENV.delete('SW_APM_TRACING_MODE')
       SolarWindsAPM::Config[:tracing_mode] = :enabled
       assert_equal :enabled, SolarWindsAPM::Config[:tracing_mode]
+    ensure
+      if original
+        ENV['SW_APM_TRACING_MODE'] = original
+      else
+        ENV.delete('SW_APM_TRACING_MODE')
+      end
+    end
+
+    it 'handles trigger_tracing_mode assignment' do
+      original = ENV.fetch('SW_APM_TRIGGER_TRACING_MODE', nil)
+      ENV.delete('SW_APM_TRIGGER_TRACING_MODE')
+      SolarWindsAPM::Config[:trigger_tracing_mode] = :enabled
+      assert_equal :enabled, SolarWindsAPM::Config[:trigger_tracing_mode]
     ensure
       if original
         ENV['SW_APM_TRIGGER_TRACING_MODE'] = original

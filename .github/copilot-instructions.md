@@ -167,18 +167,6 @@ For comprehensive Ruby coding standards including:
 
 **Refer to [.github/instructions/ruby.instructions.md](.github/instructions/ruby.instructions.md)** which is automatically applied to all Ruby files based on the `applyTo` glob pattern.
 
-## Test Assertion Preferences
-
-When generating or modifying test code:
-
-- **Always use `assert_equal`** for exact value matching. Never use `assert_includes` for partial string matching when the full expected value is deterministic.
-- If `assert_includes` is unavoidable due to non-deterministic output, add a comment explaining why.
-- Use **`assert_instance_of`** instead of `refute_nil` when verifying object types.
-- Assert **full object content** (exact string values, complete attributes) rather than just checking key existence.
-- When code under test logs warnings or errors, **stub the logger** to capture and assert the log message.
-- Use `assert_equal expected, actual` form consistently. Avoid mixing `_(x).must_equal y` and `assert_equal` in the same file.
-- Use `assert_match` with regex for format patterns (e.g., UUIDs, hex strings).
-
 ## Versioning and Releases
 
 This project uses Semantic Versioning:

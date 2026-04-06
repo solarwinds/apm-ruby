@@ -9,31 +9,63 @@ require './lib/solarwinds_apm/sampling/sampling_patch'
 
 describe 'MetricsExporter::Patch#export returns SUCCESS for empty data points' do
   it 'returns SUCCESS when all metrics have empty data_points' do
-    metric1 = Minitest::Mock.new
-    metric1.expect(:data_points, [])
+    metric_data = Minitest::Mock.new
+    metric_data.expect(:data_points, [])
 
-    [metric1]
-    # After reject!, empty metrics remain so we need the exporter
-    # The patch calls super if any data_points are present
-    # When all are empty it should return SUCCESS
     exporter = OpenTelemetry::Exporter::OTLP::Metrics::MetricsExporter.new
-    result = exporter.export([])
+    result = exporter.export([metric_data])
     assert_equal OpenTelemetry::SDK::Metrics::Export::SUCCESS, result
   end
 end
 
 describe 'Span::Patch on_finishing callback and double-finish warning' do
-  it 'calls on_finishing on processors that respond to it' do
-    OpenTelemetry::SDK.configure
+  before do
+    # rubocop:disable Lint/EmptyBlock
+    @custom_processor = Object.new
+    @custom_processor.define_singleton_method(:on_start) { |_, _| }
+    @custom_processor.define_singleton_method(:on_finish) { |_| }
+    @custom_processor.define_singleton_method(:force_flush) { |**| }
+    @custom_processor.define_singleton_method(:shutdown) { |**| }
+    # rubocop:enable Lint/EmptyBlock
+  end
+
+  it 'avoids deadlock when processor calls span.set_attribute in on_finishing' do
+    attribute_set = false
+    @custom_processor.define_singleton_method(:on_finishing) do |span|
+      span.set_attribute('hello', 'world')
+      attribute_set = true
+    end
+
+    OpenTelemetry::SDK.configure { |c| c.add_span_processor(@custom_processor) }
 
     tracer = OpenTelemetry.tracer_provider.tracer('test')
     span = nil
-    tracer.in_span('test_span') do |s|
-      span = s
+    tracer.in_span('test_span') { |s| span = s }
+
+    assert attribute_set, 'Expected on_finishing to set attribute without deadlock'
+    assert_equal 'world', span.attributes['hello']
+  end
+
+  it 'raises ThreadError without patch when processor calls set_attribute in on_finishing' do
+    thread_error_raised = false
+    @custom_processor.define_singleton_method(:on_finishing) do |span|
+      span.set_attribute('hello', 'world')
+    rescue ThreadError
+      thread_error_raised = true
     end
-    # Span should have finished with expected name and kind
-    assert_equal 'test_span', span.name
-    assert_equal :internal, span.kind
+
+    OpenTelemetry::SDK.configure { |c| c.add_span_processor(@custom_processor) }
+
+    span = OpenTelemetry.tracer_provider.tracer('test').start_span('test_span')
+
+    # Retrieve the original (unpatched) finish via super_method on the prepended method,
+    # then bind and call it on the real span to exercise the original SDK locking behaviour.
+    original_finish = OpenTelemetry::SDK::Trace::Span.instance_method(:finish).super_method
+    # verify that the original_finish is indeed from method from original span.rb
+    assert_includes original_finish.to_s, 'lib/opentelemetry/sdk/trace/span.rb'
+
+    original_finish.bind_call(span)
+    assert thread_error_raised, 'Expected ThreadError from recursive mutex lock in original SDK finish'
   end
 
   it 'warns on double finish of span' do
