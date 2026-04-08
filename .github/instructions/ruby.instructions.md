@@ -236,6 +236,29 @@ end
 - Use Minitest expectations: `assert`, `refute`, `assert_equal`
 - Prefer `assert` and `refute` over `assert_equal true/false`
 
+### Test assertion preferences
+
+- **Always use `assert_equal`** to assert exact expected values. Never use `assert_includes` for partial string matching when the full expected value is deterministic.
+- If `assert_includes` must be used due to non-deterministic output, add a comment explaining why partial matching is necessary (e.g., `# assert_includes used because order is non-deterministic`).
+- Use **`assert_instance_of`** to verify object types instead of `refute_nil` (e.g., `assert_instance_of OpenTelemetry::Context, context` instead of `refute_nil context`).
+- Assert **full object content** (exact string values, complete attribute values) rather than just checking for key existence or non-nil.
+- When code under test logs warnings or errors, **add logger stubbing** to capture and assert the exact log message:
+
+```ruby
+warned = false
+SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { warned = true if block&.call&.include?('expected message') }) do
+  # code under test
+end
+assert warned, 'Expected warning to be logged'
+```
+
+- Use `assert_equal` consistently instead of mixing `_(x).must_equal y` and `assert_equal y, x` within the same test file. Prefer `assert_equal expected, actual` form.
+- Use `assert_match` with regex when asserting format patterns (e.g., UUID format, hex strings):
+
+```ruby
+assert_match(/^[0-9a-f]{32}$/, result['trace_id'])
+```
+
 Example:
 ```ruby
 describe 'SolarWindsAPM::TokenBucket' do

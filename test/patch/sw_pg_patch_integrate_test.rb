@@ -35,7 +35,7 @@ describe 'pg patch integrate test' do
   let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
   let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
 
-  it 'tag_sql_pg_integrate_test' do
+  it 'injects traceparent comment into PG queries across query, exec, sync_exec, and exec_params' do
     require './lib/solarwinds_apm/patch/tag_sql/sw_pg_patch'
 
     OpenTelemetry::SDK.configure(&:use_all)

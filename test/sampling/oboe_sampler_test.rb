@@ -97,7 +97,7 @@ describe 'OboeSampler' do
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
       assert_empty sample.attributes
-      assert_includes sample.tracestate['xtrace_options_response'], 'auth:no-signature-key'
+      assert_equal 'auth:no-signature-key', sample.tracestate['xtrace_options_response']
 
       check_counters(@metric_exporter, ['trace.service.request_count'])
     end
@@ -129,7 +129,7 @@ describe 'OboeSampler' do
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
       assert_empty sample.attributes
-      assert_includes sample.tracestate['xtrace_options_response'], 'auth:bad-timestamp'
+      assert_equal 'auth:bad-timestamp', sample.tracestate['xtrace_options_response']
 
       check_counters(@metric_exporter, ['trace.service.request_count'])
     end
@@ -161,7 +161,7 @@ describe 'OboeSampler' do
       sample = sampler.should_sample?(params)
       assert_equal TEST_OTEL_SAMPLING_DECISION::DROP, sample.instance_variable_get(:@decision)
       assert_empty sample.attributes
-      assert_includes sample.tracestate['xtrace_options_response'], 'auth:bad-signature'
+      assert_equal 'auth:bad-signature', sample.tracestate['xtrace_options_response']
 
       check_counters(@metric_exporter, ['trace.service.request_count'])
     end
@@ -219,7 +219,7 @@ describe 'OboeSampler' do
       params = make_sample_params(parent: false)
       sample = sampler.should_sample?(params)
       assert_equal sample.attributes, { 'custom-key' => 'value', 'SWKeys' => 'sw-values' }
-      assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:not-requested'
+      assert_equal 'trigger-trace:not-requested', sample.tracestate['xtrace_options_response']
     end
 
     it 'ignores trigger-trace' do
@@ -235,8 +235,7 @@ describe 'OboeSampler' do
       params = make_sample_params(parent: false)
       sample = sampler.should_sample?(params)
       assert_equal sample.attributes, { 'custom-key' => 'value' }
-      assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:settings-not-available'
-      assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+      assert_equal 'trigger-trace:settings-not-available;ignored:invalid-key', sample.tracestate['xtrace_options_response']
     end
   end
 
@@ -265,7 +264,7 @@ describe 'OboeSampler' do
         sample = sampler.should_sample?(params)
         _(sample.attributes['custom-key']).must_equal 'value'
         _(sample.attributes['SWKeys']).must_equal 'sw-values'
-        assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:not-requested'
+        assert_equal 'trigger-trace:not-requested', sample.tracestate['xtrace_options_response']
       end
 
       it 'ignores trigger-trace' do
@@ -290,8 +289,7 @@ describe 'OboeSampler' do
 
         sample = sampler.should_sample?(params)
         _(sample.attributes['custom-key']).must_equal 'value'
-        assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:ignored'
-        assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+        assert_equal 'trigger-trace:ignored;ignored:invalid-key', sample.tracestate['xtrace_options_response']
       end
     end
 
@@ -448,7 +446,7 @@ describe 'OboeSampler' do
           _(sample.attributes['BucketCapacity']).must_equal 10
           _(sample.attributes['BucketRate']).must_equal 5
 
-          assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:ok'
+          assert_equal 'trigger-trace:ok', sample.tracestate['xtrace_options_response']
 
           check_counters(@metric_exporter, [
                            'trace.service.request_count',
@@ -487,8 +485,7 @@ describe 'OboeSampler' do
           _(sample.attributes['BucketCapacity']).must_equal 0
           _(sample.attributes['BucketRate']).must_equal 0
 
-          assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:rate-exceeded'
-          assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+          assert_equal 'trigger-trace:rate-exceeded;ignored:invalid-key', sample.tracestate['xtrace_options_response']
 
           check_counters(@metric_exporter, ['trace.service.request_count'])
         end
@@ -529,8 +526,7 @@ describe 'OboeSampler' do
           _(sample.attributes['BucketCapacity']).must_equal 20
           _(sample.attributes['BucketRate']).must_equal 10
 
-          assert_includes sample.tracestate['xtrace_options_response'], 'auth:ok'
-          assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:ok'
+          assert_equal 'auth:ok;trigger-trace:ok', sample.tracestate['xtrace_options_response']
 
           check_counters(@metric_exporter, [
                            'trace.service.request_count',
@@ -572,9 +568,7 @@ describe 'OboeSampler' do
           _(sample.attributes['BucketCapacity']).must_equal 0
           _(sample.attributes['BucketRate']).must_equal 0
 
-          assert_includes sample.tracestate['xtrace_options_response'], 'auth:ok'
-          assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:rate-exceeded'
-          assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+          assert_equal 'auth:ok;trigger-trace:rate-exceeded;ignored:invalid-key', sample.tracestate['xtrace_options_response']
 
           check_counters(@metric_exporter, ['trace.service.request_count'])
         end
@@ -605,8 +599,7 @@ describe 'OboeSampler' do
         sample = sampler.should_sample?(params)
         assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, sample.instance_variable_get(:@decision)
         assert_equal sample.attributes, { 'custom-key' => 'value' }
-        assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:trigger-tracing-disabled'
-        assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+        assert_equal 'trigger-trace:trigger-tracing-disabled;ignored:invalid-key', sample.tracestate['xtrace_options_response']
 
         check_counters(@metric_exporter, ['trace.service.request_count'])
       end
@@ -636,7 +629,7 @@ describe 'OboeSampler' do
       _(sample.attributes['custom-key']).must_equal 'value'
       _(sample.attributes['SWKeys']).must_equal 'sw-values'
 
-      assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:not-requested'
+      assert_equal 'trigger-trace:not-requested', sample.tracestate['xtrace_options_response']
     end
 
     it 'records and samples when dice success and sufficient capacity' do
@@ -747,8 +740,7 @@ describe 'OboeSampler' do
 
       _(sample.attributes['custom-key']).must_equal 'value'
 
-      assert_includes sample.tracestate['xtrace_options_response'], 'trigger-trace:tracing-disabled'
-      assert_includes sample.tracestate['xtrace_options_response'], 'ignored:invalid-key'
+      assert_equal 'trigger-trace:tracing-disabled;ignored:invalid-key', sample.tracestate['xtrace_options_response']
     end
 
     it 'records when SAMPLE_THROUGH_ALWAYS set' do
@@ -795,19 +787,290 @@ describe 'OboeSampler' do
       check_counters(@metric_exporter, ['trace.service.request_count'])
     end
   end
-end
 
-# BUNDLE_GEMFILE=gemfiles/unit.gemfile bundle exec ruby -I test test/sampling/oboe_sampler_test.rb -n /spanType/
-describe 'SolarWindsAPM OboeSampler Test' do
+  describe 'parent_based_algo' do
+    it 'ignores trigger trace in parent-based algo' do
+      sig_key = SecureRandom.random_bytes(8)
+      headers = make_request_headers(trigger_trace: true, signature: true, signature_key: sig_key)
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: sig_key
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      parent = make_span({ remote: true, sampled: true, sw: true })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal 'auth:ok;trigger-trace:ignored', result.tracestate['xtrace_options_response']
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      refute result.attributes['TriggeredTrace']
+    end
+  end
+
+  describe 'trigger_trace_algo' do
+    it 'records and samples with signed trigger trace (relaxed bucket)' do
+      sig_key = SecureRandom.random_bytes(8)
+      headers = make_request_headers(trigger_trace: true, signature: true, signature_key: sig_key)
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 0, rate: 0 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: sig_key
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      # a parent decision is available but ignored because it is not from us
+      # i.e. no sw tracestate
+      parent = make_span({ remote: true, sampled: false })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      assert_equal true, result.attributes['TriggeredTrace']
+      assert_equal 'auth:ok;trigger-trace:ok', result.tracestate['xtrace_options_response']
+    end
+
+    it 'records and samples with unsigned trigger trace (strict bucket)' do
+      headers = make_request_headers(trigger_trace: true)
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 0, rate: 0 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      parent = make_span({ remote: true, sampled: false })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      assert_equal true, result.attributes['TriggeredTrace']
+      assert_equal 'trigger-trace:ok', result.tracestate['xtrace_options_response']
+    end
+
+    it 'honours trigger-trace header when there is no parent (ROOT span)' do
+      headers = make_request_headers(trigger_trace: true)
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      params = make_sample_params(parent: false)
+
+      result = sampler.should_sample?(params)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE, result.instance_variable_get(:@decision)
+      assert_equal true, result.attributes['TriggeredTrace']
+      assert_equal 'trigger-trace:ok', result.tracestate['xtrace_options_response']
+    end
+  end
+
+  describe 'settings management' do
+    it 'rejects older settings' do
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START,
+          buckets: {},
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
+        request_headers: {}
+      )
+
+      # Attempt to update with older timestamp
+      sampler.update_settings({
+                                sample_rate: 0,
+                                sample_source: SolarWindsAPM::SampleSource::LOCAL_DEFAULT,
+                                flags: SolarWindsAPM::Flags::OK,
+                                buckets: {},
+                                timestamp: 1,
+                                ttl: 1,
+                                signature_key: nil
+                              })
+
+      parent = make_span({ remote: true, sampled: false })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      # Should still use the original settings (SAMPLE_START set)
+      assert_equal TEST_OTEL_SAMPLING_DECISION::RECORD_ONLY, result.instance_variable_get(:@decision)
+    end
+  end
+
+  describe 'X-Trace-Options with sw-keys and custom keys' do
+    it 'sets sw_keys and custom attributes' do
+      headers = make_request_headers(trigger_trace: true, kvs: { 'sw-keys' => 'check-id:123,website:google', 'custom-key1' => 'value1' })
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 0,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::TRIGGERED_TRACE,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS, trigger_mode: :enabled },
+        request_headers: headers
+      )
+
+      parent = make_span({ remote: true, sampled: false })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal 'check-id:123,website:google', result.attributes['SWKeys']
+      assert_equal 'value1', result.attributes['custom-key1']
+    end
+
+    it 'sets not-requested trigger trace when no trigger-trace header' do
+      headers = make_request_headers(kvs: { 'sw-keys' => 'check-id:123' })
+
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
+        request_headers: headers
+      )
+
+      parent = make_span({ remote: true, sampled: false })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal 'trigger-trace:not-requested', result.tracestate['xtrace_options_response']
+    end
+  end
+
+  describe 'generate_new_tracestate' do
+    it 'creates new tracestate for invalid parent' do
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
+        request_headers: {}
+      )
+
+      # ROOT span (no valid parent)
+      params = make_sample_params(parent: nil)
+
+      result = sampler.should_sample?(params)
+      refute_nil result.tracestate
+      assert_equal '0000000000000000-01', result.tracestate['sw']
+    end
+
+    it 'updates existing tracestate for valid parent' do
+      sampler = OboeTestSampler.new(
+        settings: {
+          sample_rate: 1_000_000,
+          sample_source: SolarWindsAPM::SampleSource::REMOTE,
+          flags: SolarWindsAPM::Flags::SAMPLE_START | SolarWindsAPM::Flags::SAMPLE_THROUGH_ALWAYS,
+          buckets: {
+            SolarWindsAPM::BucketType::DEFAULT => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_RELAXED => { capacity: 100, rate: 10 },
+            SolarWindsAPM::BucketType::TRIGGER_STRICT => { capacity: 100, rate: 10 }
+          },
+          timestamp: Time.now.to_i,
+          ttl: 120,
+          signature_key: nil
+        },
+        local_settings: { tracing_mode: SolarWindsAPM::TracingMode::ALWAYS },
+        request_headers: {}
+      )
+
+      parent = make_span({ remote: true, sampled: true, sw: true })
+      params = make_sample_params(parent: parent)
+
+      result = sampler.should_sample?(params)
+      assert_equal "#{parent.context.hex_span_id}-01", result.tracestate['sw']
+    end
+  end
+
   describe 'spanType' do
     it 'identifies no parent as ROOT' do
       type = SolarWindsAPM::SpanType.span_type(nil)
       assert_equal SolarWindsAPM::SpanType::ROOT, type
     end
 
-    # isSpanContextValid may have more restrict then ruby valid?
-    # js isSpanContextValid test if trace_id and span_id is valid format and not invalid like 00000...
-    # need to have our own isSpanContextValid function
     it 'identifies invalid parent as ROOT' do
       parent = make_span({ id: 'woops' })
 
@@ -827,6 +1090,30 @@ describe 'SolarWindsAPM OboeSampler Test' do
 
       type = SolarWindsAPM::SpanType.span_type(parent)
       assert_equal SolarWindsAPM::SpanType::LOCAL, type
+    end
+  end
+
+  describe 'sw_from_span_and_decision' do
+    it 'formats span_id-01 for RECORD_AND_SAMPLE' do
+      sampler = OboeTestSampler.new(
+        local_settings: {},
+        request_headers: {}
+      )
+      parent = make_span({ remote: true, sampled: true })
+      decision = TEST_OTEL_SAMPLING_DECISION::RECORD_AND_SAMPLE
+      result = sampler.sw_from_span_and_decision(parent, decision)
+      assert_equal "#{parent.context.hex_span_id}-01", result
+    end
+
+    it 'formats span_id-00 for DROP' do
+      sampler = OboeTestSampler.new(
+        local_settings: {},
+        request_headers: {}
+      )
+      parent = make_span({ remote: true, sampled: false })
+      decision = TEST_OTEL_SAMPLING_DECISION::DROP
+      result = sampler.sw_from_span_and_decision(parent, decision)
+      assert_equal "#{parent.context.hex_span_id}-00", result
     end
   end
 end

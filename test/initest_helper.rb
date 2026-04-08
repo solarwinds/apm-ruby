@@ -9,7 +9,14 @@ require 'minitest/spec'
 require 'minitest/reporters'
 require './lib/solarwinds_apm/logger'
 require 'simplecov'
-SimpleCov.start
+require 'simplecov-cobertura'
+SimpleCov.start do
+  formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                       SimpleCov::Formatter::HTMLFormatter,
+                                                       SimpleCov::Formatter::CoberturaFormatter
+                                                     ])
+end
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'
 

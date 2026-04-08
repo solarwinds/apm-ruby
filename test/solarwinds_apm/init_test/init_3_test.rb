@@ -6,7 +6,7 @@
 require 'initest_helper'
 
 describe 'solarwinds_apm_init_3' do
-  it 'SW_APM_AUTO_CONFIGURE_set_to_false' do
+  it 'logs message and enters noop mode when SW_APM_AUTO_CONFIGURE is false' do
     log_output = StringIO.new
     SolarWindsAPM.logger = Logger.new(log_output)
 

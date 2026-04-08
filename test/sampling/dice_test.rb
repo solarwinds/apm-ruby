@@ -7,6 +7,8 @@
 
 require 'minitest_helper'
 require './lib/solarwinds_apm/sampling/dice'
+require './lib/solarwinds_apm/sampling/sampling_constants'
+require './lib/solarwinds_apm/sampling/token_bucket'
 
 describe 'SolarWindsAPM Dice Test' do
   it 'gives sensible rate over time' do
@@ -47,5 +49,27 @@ describe 'SolarWindsAPM Dice Test' do
 
     dice.update(rate: 0)
     500.times { refute dice.roll }
+  end
+
+  it 'rate setter clamps to scale' do
+    dice = SolarWindsAPM::Dice.new(scale: 100, rate: 50)
+    dice.rate = 200
+    assert_equal 100, dice.rate
+
+    dice.rate = -10
+    assert_equal 0, dice.rate
+  end
+
+  it 'update changes both rate and scale' do
+    dice = SolarWindsAPM::Dice.new(scale: 100, rate: 50)
+    dice.update(scale: 200, rate: 150)
+    assert_equal 200, dice.scale
+    assert_equal 150, dice.rate
+  end
+
+  it 'defaults to scale 1_000_000' do
+    dice = SolarWindsAPM::Dice.new({})
+    assert_equal 1_000_000, dice.scale
+    assert_equal 0, dice.rate
   end
 end

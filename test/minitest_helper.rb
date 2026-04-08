@@ -3,6 +3,16 @@
 # Copyright (c) 2016 SolarWinds, LLC.
 # All rights reserved.
 
+require 'simplecov'
+require 'simplecov-cobertura'
+SimpleCov.start do
+  formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                       SimpleCov::Formatter::HTMLFormatter,
+                                                       SimpleCov::Formatter::CoberturaFormatter
+                                                     ])
+end
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
+
 require 'minitest/autorun'
 require 'minitest/spec'
 require 'minitest/reporters'
@@ -24,9 +34,6 @@ require './lib/solarwinds_apm/version'
 require './lib/solarwinds_apm/logger'
 require './lib/solarwinds_apm/constants'
 require 'opentelemetry-exporter-otlp-metrics'
-
-require 'simplecov'
-SimpleCov.start
 
 # needed by most tests
 ENV['SW_APM_SERVICE_KEY'] = 'this-is-a-dummy-api-token-for-testing-111111111111111111111111111111111:test-service'

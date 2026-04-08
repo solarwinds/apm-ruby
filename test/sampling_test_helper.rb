@@ -8,7 +8,14 @@ require 'opentelemetry-exporter-otlp-metrics'
 require 'opentelemetry-test-helpers'
 require './lib/solarwinds_apm/sampling'
 require 'simplecov'
-SimpleCov.start
+require 'simplecov-cobertura'
+SimpleCov.start do
+  formatter SimpleCov::Formatter::MultiFormatter.new([
+                                                       SimpleCov::Formatter::HTMLFormatter,
+                                                       SimpleCov::Formatter::CoberturaFormatter
+                                                     ])
+end
+SimpleCov.command_name ENV.fetch('SIMPLECOV_COMMAND_NAME', 'minitest')
 
 ENV['OTEL_METRICS_EXPORTER'] = 'none'
 

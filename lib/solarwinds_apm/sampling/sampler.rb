@@ -107,8 +107,8 @@ module SolarWindsAPM
 
       method_ = (attributes[ATTR_HTTP_REQUEST_METHOD] || attributes[ATTR_HTTP_METHOD]).to_s
       status = (attributes[ATTR_HTTP_RESPONSE_STATUS_CODE] || attributes[ATTR_HTTP_STATUS_CODE] || 0).to_i
-      scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME] || 'http').to_s
-      hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME] || 'localhost').to_s
+      scheme = (attributes[ATTR_URL_SCHEME] || attributes[ATTR_HTTP_SCHEME]).to_s
+      hostname = (attributes[ATTR_SERVER_ADDRESS] || attributes[ATTR_NET_HOST_NAME]).to_s
       path = (attributes[ATTR_URL_PATH] || attributes[ATTR_HTTP_TARGET]).to_s
       url = "#{scheme}://#{hostname}#{path}"
 

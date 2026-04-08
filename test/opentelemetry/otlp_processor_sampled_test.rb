@@ -19,11 +19,11 @@ describe 'otlp processor sampled test' do
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
   end
 
-  it 'initializes_metrics' do
+  it 'initializes with exactly one metric instrument' do
     _(@processor.instance_variable_get(:@metrics).size).must_equal 1
   end
 
-  it 'ensure_both_span_and_metrics_have_transaction_name' do
+  it 'sets sw.transaction on both span data and metric data points for sampled spans' do
     OpenTelemetry::SDK.configure
     metric_exporter = OpenTelemetry::SDK::Metrics::Export::InMemoryMetricPullExporter.new
     trace_exporter  = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new

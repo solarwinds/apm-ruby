@@ -19,7 +19,7 @@ describe 'otlp processor unsampled test' do
     @processor = SolarWindsAPM::OpenTelemetry::OTLPProcessor.new(txn_manager)
   end
 
-  it 'unsampled_span_but_metrics_have_transaction_name' do
+  it 'records sw.transaction in metrics even when span is unsampled and not exported' do
     OpenTelemetry::SDK.configure
     metric_exporter = OpenTelemetry::SDK::Metrics::Export::InMemoryMetricPullExporter.new
     trace_exporter  = OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new

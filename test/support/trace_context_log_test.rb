@@ -23,7 +23,7 @@ describe 'Trace Context in Log Test' do
     SolarWindsAPM.logger.level = Logger::INFO
   end
 
-  it 'test_log_traceId_with_debug_always' do
+  it 'Logger includes trace context in debug output when log_traceId is :always' do
     SolarWindsAPM.logger.level = Logger::DEBUG
     SolarWindsAPM::Config[:log_traceId] = :always
     SolarWindsAPM.logger.debug 'Sample debug message'
@@ -32,7 +32,7 @@ describe 'Trace Context in Log Test' do
                     'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
   end
 
-  it 'test_log_traceId_with_info_always' do
+  it 'Logger omits debug messages when log level is INFO' do
     SolarWindsAPM.logger.level = Logger::INFO
     SolarWindsAPM::Config[:log_traceId] = :always
     SolarWindsAPM.logger.debug 'Sample debug message'
@@ -40,7 +40,7 @@ describe 'Trace Context in Log Test' do
     assert_empty(@log_output.read)
   end
 
-  it 'test_logging_traceId_with_default' do
+  it 'Logging gem omits trace context when log_traceId is :sampled and no active trace' do
     SolarWindsAPM.logger.level = Logger::DEBUG
     SolarWindsAPM::Config[:log_traceId] = :sampled
     SolarWindsAPM.logger.debug 'Sample debug message'
@@ -49,7 +49,7 @@ describe 'Trace Context in Log Test' do
                     'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00')
   end
 
-  it 'test_logging_traceId_with_debug_always' do
+  it 'Logging gem includes trace context when log_traceId is :always' do
     SolarWindsAPM::Config[:log_traceId] = :always
     logger = Logging.logger(@log_output)
     logger.level = :debug
@@ -59,7 +59,7 @@ describe 'Trace Context in Log Test' do
                     'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
   end
 
-  it 'test_logging_traceId_with_debug_sampled' do
+  it 'Logging gem omits trace context when log_traceId is :sampled' do
     SolarWindsAPM::Config[:log_traceId] = :sampled
     logger = Logging.logger(@log_output)
     logger.level = :debug
@@ -71,7 +71,7 @@ describe 'Trace Context in Log Test' do
 
   # lumberjack can't work in prepend Formatter anymore.
   # use logger.tag(context: lambda {SolarWindsAPM::API.current_trace_info.for_log})
-  it 'test_lumberjack_with_tag_debug_sampled' do
+  it 'Lumberjack includes trace context via tag lambda when log_traceId is :always' do
     SolarWindsAPM::Config[:log_traceId] = :always
     logger = Lumberjack::Logger.new(@log_output, level: :debug)
     logger.tag(tracecontext: -> { SolarWindsAPM::API.current_trace_info.for_log })
@@ -81,7 +81,7 @@ describe 'Trace Context in Log Test' do
                     'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
   end
 
-  it 'test_lumberjack_with_debug_sampled' do
+  it 'Lumberjack auto-injects trace context when log_traceId is :always' do
     SolarWindsAPM::Config[:log_traceId] = :always
     logger = Lumberjack::Logger.new(@log_output, level: :debug)
     logger.debug('Sample debug message')
@@ -90,7 +90,7 @@ describe 'Trace Context in Log Test' do
                     'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
   end
 
-  it 'test_lumberjack_with_debug_sampled_valid_span' do
+  it 'Lumberjack includes real trace/span IDs within an active sampled span' do
     SolarWindsAPM::Config[:log_traceId] = :always
     logger = Lumberjack::Logger.new(@log_output, level: :debug)
 
@@ -123,7 +123,7 @@ describe 'Trace Context in Log Test' do
     refute_includes(log_output, 'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00')
   end
 
-  it 'test_log_traceId_with_debug_always_valid_span' do
+  it 'Logger includes real trace/span IDs when log_traceId is :sampled and span is active' do
     SolarWindsAPM.logger.level = Logger::DEBUG
     SolarWindsAPM::Config[:log_traceId] = :sampled
 
@@ -154,7 +154,7 @@ describe 'Trace Context in Log Test' do
     assert_equal(trace_flags[1]&.size, 2)
   end
 
-  it 'test_log_traceId_with_debug_never_valid_span' do
+  it 'Logger omits trace context when log_traceId is :never even with active span' do
     SolarWindsAPM.logger.level = Logger::DEBUG
     SolarWindsAPM::Config[:log_traceId] = :never
 
@@ -178,7 +178,7 @@ describe 'Trace Context in Log Test' do
     assert_nil(trace_flags)
   end
 
-  it 'test_log_traceId_with_debug_never_valid_span_untraced' do
+  it 'Logger omits trace context when log_traceId is :sampled and span trace flags are unset' do
     SolarWindsAPM.logger.level = Logger::DEBUG
     SolarWindsAPM::Config[:log_traceId] = :sampled
 
@@ -201,57 +201,5 @@ describe 'Trace Context in Log Test' do
     assert_nil(trace_id)
     assert_nil(span_id)
     assert_nil(trace_flags)
-  end
-
-  # lumberjack can't work in prepend Formatter anymore.
-  # use logger.tag(context: lambda {SolarWindsAPM::API.current_trace_info.for_log})
-  it 'test_lumberjack_with_tag_debug_sampled' do
-    SolarWindsAPM::Config[:log_traceId] = :always
-    logger = Lumberjack::Logger.new(@log_output, level: :debug)
-    logger.tag(tracecontext: -> { SolarWindsAPM::API.current_trace_info.for_log })
-    logger.debug('Sample debug message')
-    @log_output.rewind
-    assert_includes @log_output.read, 'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
-  end
-
-  it 'test_lumberjack_with_debug_sampled' do
-    SolarWindsAPM::Config[:log_traceId] = :always
-    logger = Lumberjack::Logger.new(@log_output, level: :debug)
-    logger.debug('Sample debug message')
-    @log_output.rewind
-    assert_includes @log_output.read, 'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00 resource.service.name='
-  end
-
-  it 'test_lumberjack_with_debug_sampled_valid_span' do
-    SolarWindsAPM::Config[:log_traceId] = :always
-    logger = Lumberjack::Logger.new(@log_output, level: :debug)
-
-    OpenTelemetry::SDK.configure do |c|
-      c.service_name = 'my_service'
-      c.add_span_processor(OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(OpenTelemetry::SDK::Trace::Export::InMemorySpanExporter.new))
-    end
-
-    OpenTelemetry.tracer_provider.tracer('my_service').in_span('sample_span') do |span|
-      span.context.trace_flags.instance_variable_set(:@flags, 1)
-      logger.debug 'Sample debug message'
-    end
-
-    @log_output.rewind
-    log_output = @log_output.read
-
-    trace_id = log_output.match(/trace_id=([\da-fA-F]+)/)
-
-    assert_equal(trace_id&.size, 2)
-    assert_equal(trace_id[1]&.size, 32)
-
-    span_id = log_output.match(/span_id=([\da-fA-F]+)/)
-    assert_equal(span_id&.size, 2)
-    assert_equal(span_id[1]&.size, 16)
-
-    trace_flags = log_output.match(/trace_flags=([\da-fA-F]+)/)
-    assert_equal(trace_flags&.size, 2)
-    assert_equal(trace_flags[1]&.size, 2)
-
-    refute_includes(log_output, 'trace_id=00000000000000000000000000000000 span_id=0000000000000000 trace_flags=00')
   end
 end
