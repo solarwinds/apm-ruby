@@ -6,6 +6,9 @@ name: Ruby Gem to RubyGems
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # act -j publish_to_ruby_gem --container-architecture linux/arm64 --secret-file act.secrets
   publish_to_ruby_gem:
@@ -20,12 +23,12 @@ jobs:
       apm_ruby_version: ${{ steps.build.outputs.gem_version }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
 
       - name: Set up Ruby 3.3 and bundle
-        uses: ruby/setup-ruby@v1
+        uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
@@ -36,7 +39,7 @@ jobs:
           echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Build and publish gem using trusted publishing
-        uses: rubygems/release-gem@v1
+        uses: rubygems/release-gem@f0d7faff26625599a847d40d9fa28ace24c2aacc # v1
 
       - name: Calculate checksum
         id: checksum_step
@@ -66,7 +69,7 @@ jobs:
           exit 1
 
       - name: Create release draft that includes the checksum
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -80,7 +83,7 @@ jobs:
             })
 
       - name: Upload to artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
           path: solarwinds_apm-${{ steps.build.outputs.gem_version }}.gem
@@ -103,10 +106,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: extract layer zip from artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           path: ./
@@ -115,7 +118,7 @@ jobs:
 
       - name: Scan build artifact on the Portal
         id: rl-scan
-        uses: reversinglabs/gh-action-rl-scanner-cloud-only@v1
+        uses: reversinglabs/gh-action-rl-scanner-cloud-only@b61135055814f4da482de188fafe6c5d614f87a8 # v1
         with:
           artifact-to-scan: ./solarwinds_apm-${{ env.SOLARWINDS_APM_VERSION }}.gem
           rl-verbose: true
