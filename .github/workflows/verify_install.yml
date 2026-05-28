@@ -69,7 +69,7 @@ jobs:
         run: yum install -y tar gzip
 
       - name: Checkout ${{ github.ref }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Verify install
         working-directory: .github/workflows/scripts
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: Checkout ${{ github.ref }}
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup
         id: setup
@@ -107,7 +107,7 @@ jobs:
           echo "cache_key=mri" >> $GITHUB_OUTPUT
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@v1.215.0
+        uses: ruby/setup-ruby@2654679fe7f7c29875c669398a8ec0791b8a64a1 # v1.215.0
         with:
           ruby-version: ${{ matrix.ruby-version }}
           working-directory: "${{ steps.setup.outputs.gem_dir }}"
