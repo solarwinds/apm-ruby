@@ -107,7 +107,7 @@ jobs:
           echo "cache_key=mri" >> $GITHUB_OUTPUT
 
       - name: Setup Ruby
-        uses: ruby/setup-ruby@2654679fe7f7c29875c669398a8ec0791b8a64a1 # v1.215.0
+        uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1.310.0
         with:
           ruby-version: ${{ matrix.ruby-version }}
           working-directory: "${{ steps.setup.outputs.gem_dir }}"
