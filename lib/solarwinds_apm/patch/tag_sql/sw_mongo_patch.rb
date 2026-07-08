@@ -18,11 +18,17 @@ module SolarWindsAPM
         end
       end
 
-      module SWOMongoInstrumentationPatch
-        def build_command
-          traceparent = ::SolarWindsAPM::Patch::TagSql::SWODboUtils.annotated_traceparent
-          original = command['comment'].to_s
-          command['comment'] = original.empty? ? traceparent : "#{original}; #{traceparent}"
+      module SWOMongoPatchV2220
+        # from server/connection_base.rb in mongo 2.22.0
+        def deliver(message, context, options = {})
+          if message.is_a?(Mongo::Protocol::Msg)
+            main_doc = message.instance_variable_get(:@main_document)
+            if main_doc
+              traceparent = ::SolarWindsAPM::Patch::TagSql::SWODboUtils.annotated_traceparent
+              original = main_doc['comment'].to_s
+              main_doc['comment'] = original.empty? ? traceparent : "#{original}; #{traceparent}"
+            end
+          end
           super
         end
       end
@@ -33,5 +39,5 @@ end
 if defined?(Mongo::Tracing::OpenTelemetry::OperationTracer) && Gem::Version.new(Mongo::VERSION) >= Gem::Version.new('2.23.0')
   Mongo::Tracing::OpenTelemetry::OperationTracer.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoPatch)
 elsif defined?(OpenTelemetry::Instrumentation::Mongo::CommandSerializer) && Gem::Version.new(Mongo::VERSION) < Gem::Version.new('2.23.0')
-  OpenTelemetry::Instrumentation::Mongo::CommandSerializer.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoInstrumentationPatch)
+  Mongo::Server::ConnectionBase.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoPatchV2220)
 end
