@@ -50,10 +50,19 @@ module SolarWindsAPM
             traceparent
           when String
             original.empty? ? traceparent : "#{original}; #{traceparent}"
+          when Hash, BSON::Document
+            # Real document: add traceparent as a sibling key.
+            # Guard against clobbering a user key of the same name.
+            doc = BSON::Document.new(original)
+            if doc.key?('traceparent') || doc.key?(:traceparent)
+              doc['swo_traceparent'] = traceparent
+            else
+              doc['traceparent'] = traceparent
+            end
+            doc
           else
-            # MongoDB permits BSON values other than strings for comment.
-            # Wrap the value so instrumentation does not coerce or discard
-            # the user's original comment type and content.
+            # Scalar BSON value (ObjectId, Time, Integer, Float, true/false, ...).
+            # These have no fields to extend, so wrap them in a new document.
             BSON::Document.new(
               'swo_original_comment' => original,
               'traceparent' => traceparent
