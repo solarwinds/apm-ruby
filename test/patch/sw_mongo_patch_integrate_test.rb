@@ -4,6 +4,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'mongo'
 require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/opentelemetry'
 require './lib/solarwinds_apm/support/txn_name_manager'
@@ -21,33 +22,16 @@ module SolarWindsAPM
 end
 # rubocop:enable Naming/MethodName
 
-# MongoDB and its OpenTelemetry instrumentation are not available in the test
-# environment, so stub the two patch targets to exercise the real patch modules
-# without a live MongoDB connection.
-class FakeMongoOperationTracer
-  def execute_with_span(_span, operation)
-    operation
-  end
-end
-FakeMongoOperationTracer.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoPatch)
-
-# Stub the Mongo::Protocol::Msg class so the patch's type check passes.
-module Mongo
-  module Protocol
-    class Msg
-      def initialize(main_document = {})
-        @main_document = main_document
-      end
-    end
-  end
-end
-
+# ConnectionBase#deliver performs a live socket write, so exercise the real
+# patch module through a test double that returns the delivered message. The
+# mongo gem is installed for tests, so the real Mongo::Protocol::Msg is used.
 class FakeMongoConnectionBase
   def deliver(message, _context, _options = {})
     message
   end
+  private :deliver
 end
-FakeMongoConnectionBase.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoPatchV2220)
+FakeMongoConnectionBase.prepend(SolarWindsAPM::Patch::TagSql::SWOMongoPatch)
 
 describe 'mongo patch integrate test' do
   puts "\n\033[1m=== TEST RUN MONGO PATCH TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"
@@ -55,6 +39,7 @@ describe 'mongo patch integrate test' do
   let(:sdk) { OpenTelemetry::SDK }
   let(:exporter) { sdk::Trace::Export::InMemorySpanExporter.new }
   let(:span_processor) { sdk::Trace::Export::SimpleSpanProcessor.new(exporter) }
+  let(:traceparent_pattern) { %r{/\*traceparent='[\da-f-]+'*\*/$} }
 
   before do
     OpenTelemetry::SDK.configure
@@ -62,55 +47,69 @@ describe 'mongo patch integrate test' do
     @tracer = OpenTelemetry.tracer_provider.tracer('mongo-patch-test')
   end
 
-  it 'injects traceparent comment into the operation spec and sets sw.query_tag attribute' do
-    operation = Struct.new(:spec).new({})
-
+  def deliver_in_span(message)
     @tracer.in_span('mongo-op') do |_span|
-      FakeMongoOperationTracer.new.execute_with_span(nil, operation)
+      FakeMongoConnectionBase.new.send(:deliver, message, nil)
     end
-
-    finished_spans = exporter.finished_spans
-
-    pattern = %r{/\*traceparent='[\da-f-]+'*\*/$}
-    assert_match pattern, finished_spans[0].attributes['sw.query_tag'], "Doesn't match sw.query_tag"
-    assert_match pattern, operation.spec[:comment], "operation comment doesn't contain traceparent"
-  end
-
-  it 'appends traceparent comment when the operation already has a comment' do
-    operation = Struct.new(:spec).new({ comment: 'existing' })
-
-    @tracer.in_span('mongo-op') do |_span|
-      FakeMongoOperationTracer.new.execute_with_span(nil, operation)
-    end
-
-    pattern = %r{^existing; /\*traceparent='[\da-f-]+'*\*/$}
-    assert_match pattern, operation.spec[:comment], "operation comment doesn't append traceparent"
+    message.instance_variable_get(:@main_document)
   end
 
   it 'injects traceparent comment into the message main document and sets sw.query_tag attribute' do
-    message = Mongo::Protocol::Msg.new({})
+    message = Mongo::Protocol::Msg.new([], {}, {})
 
-    @tracer.in_span('mongo-op') do |_span|
-      FakeMongoConnectionBase.new.deliver(message, nil)
-    end
+    main_doc = deliver_in_span(message)
 
     finished_spans = exporter.finished_spans
-
-    main_doc = message.instance_variable_get(:@main_document)
-    pattern = %r{/\*traceparent='[\da-f-]+'*\*/$}
-    assert_match pattern, finished_spans[0].attributes['sw.query_tag'], "Doesn't match sw.query_tag"
-    assert_match pattern, main_doc['comment'], "message comment doesn't contain traceparent"
+    assert_match traceparent_pattern, finished_spans[0].attributes['sw.query_tag'], "Doesn't match sw.query_tag"
+    assert_match traceparent_pattern, main_doc['comment'], "message comment doesn't contain traceparent"
   end
 
-  it 'appends traceparent comment when the message main document already has a comment' do
-    message = Mongo::Protocol::Msg.new({ 'comment' => 'existing' })
+  it 'appends traceparent comment when the message main document already has a string comment' do
+    message = Mongo::Protocol::Msg.new([], {}, { 'comment' => 'existing' })
 
-    @tracer.in_span('mongo-op') do |_span|
-      FakeMongoConnectionBase.new.deliver(message, nil)
-    end
+    main_doc = deliver_in_span(message)
 
-    main_doc = message.instance_variable_get(:@main_document)
-    pattern = %r{^existing; /\*traceparent='[\da-f-]+'*\*/$}
-    assert_match pattern, main_doc['comment'], "message comment doesn't append traceparent"
+    assert_match %r{^existing; /\*traceparent='[\da-f-]+'*\*/$}, main_doc['comment'], "message comment doesn't append traceparent"
+  end
+
+  it 'appends traceparent comment when the main document uses a symbol comment key' do
+    message = Mongo::Protocol::Msg.new([], {}, { comment: 'existing' })
+
+    main_doc = deliver_in_span(message)
+
+    assert_match %r{^existing; /\*traceparent='[\da-f-]+'*\*/$}, main_doc[:comment], "message comment doesn't append traceparent"
+  end
+
+  it 'adds traceparent as a sibling key when the comment is a document' do
+    message = Mongo::Protocol::Msg.new([], {}, { 'comment' => { 'foo' => 'bar' } })
+
+    main_doc = deliver_in_span(message)
+
+    comment = main_doc['comment']
+    assert_instance_of BSON::Document, comment
+    assert_equal 'bar', comment['foo']
+    assert_match traceparent_pattern, comment['traceparent'], "document comment doesn't contain traceparent"
+  end
+
+  it 'preserves a user traceparent key by storing the trace under swo_traceparent' do
+    message = Mongo::Protocol::Msg.new([], {}, { 'comment' => { 'traceparent' => 'user-value' } })
+
+    main_doc = deliver_in_span(message)
+
+    comment = main_doc['comment']
+    assert_instance_of BSON::Document, comment
+    assert_equal 'user-value', comment['traceparent']
+    assert_match traceparent_pattern, comment['swo_traceparent'], "document comment doesn't preserve user traceparent"
+  end
+
+  it 'wraps a scalar comment in a document with the original value' do
+    message = Mongo::Protocol::Msg.new([], {}, { 'comment' => 42 })
+
+    main_doc = deliver_in_span(message)
+
+    comment = main_doc['comment']
+    assert_instance_of BSON::Document, comment
+    assert_equal 42, comment['swo_original_comment']
+    assert_match traceparent_pattern, comment['traceparent'], "scalar comment doesn't contain traceparent"
   end
 end
