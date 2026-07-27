@@ -78,8 +78,8 @@ end
 # serialization path in 2.23.0 and newer. Do not couple this patch to
 # either of the driver's OpenTelemetry integration implementations.
 if defined?(::Mongo::Server::ConnectionBase)
-  ::Mongo::Server::ConnectionBase.prepend(
-    ::SolarWindsAPM::Patch::TagSql::SWOMongoPatch
+  Mongo::Server::ConnectionBase.prepend(
+    SolarWindsAPM::Patch::TagSql::SWOMongoPatch
   )
 end
 
