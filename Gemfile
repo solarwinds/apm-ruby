@@ -36,6 +36,7 @@ group :development, :test do
   gem 'simplecov-console', require: false, group: :test
   gem 'webmock' if RUBY_VERSION >= '2.0.0'
   gem 'base64' if RUBY_VERSION >= '3.4.0'
+  gem 'mongo', '>= 2.24.1'
 
   gem 'opentelemetry-propagator-b3'
   gem 'opentelemetry-test-helpers'
