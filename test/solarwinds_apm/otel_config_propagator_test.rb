@@ -52,4 +52,24 @@ describe 'Loading Opentelemetry Test' do
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[2].class).must_equal OpenTelemetry::SDK::Configurator::NoopTextMapPropagator
     _(OpenTelemetry.propagation.instance_variable_get(:@propagators)[3].class).must_equal SolarWindsAPM::OpenTelemetry::SolarWindsPropagator::TextMapPropagator
   end
+
+  it 'applies a Hash of RESOURCE_ATTRIBUTES when initialized with in-code configuration' do
+    SolarWindsAPM::OTelConfig.initialize_with_config do |config|
+      config['RESOURCE_ATTRIBUTES'] = { 'custom.attr' => 'from-hash' }
+    end
+
+    _(SolarWindsAPM::OTelConfig.agent_enabled).must_equal true
+    _(OpenTelemetry.tracer_provider.resource.attribute_enumerator.to_h['custom.attr']).must_equal 'from-hash'
+    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)).wont_include 'RESOURCE_ATTRIBUTES'
+  end
+
+  it 'applies a Resource of RESOURCE_ATTRIBUTES when initialized with in-code configuration' do
+    SolarWindsAPM::OTelConfig.initialize_with_config do |config|
+      config['RESOURCE_ATTRIBUTES'] = OpenTelemetry::SDK::Resources::Resource.create({ 'custom.attr' => 'from-resource' })
+    end
+
+    _(SolarWindsAPM::OTelConfig.agent_enabled).must_equal true
+    _(OpenTelemetry.tracer_provider.resource.attribute_enumerator.to_h['custom.attr']).must_equal 'from-resource'
+    _(SolarWindsAPM::OTelConfig.class_variable_get(:@@config_map)).wont_include 'RESOURCE_ATTRIBUTES'
+  end
 end
