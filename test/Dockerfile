@@ -60,7 +60,7 @@ RUN echo 'alias be="bundle exec"' >> ~/.profile
 # install rubies to build our gem against
 RUN . ~/.profile \
     && cd /root/.rbenv/plugins/ruby-build && git pull && cd - \
-    && rbenv install 3.2.6
+    && rbenv install 3.4.1
 
 RUN echo 'gem: --no-document' >> ~/.gemrc
 

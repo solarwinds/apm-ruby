@@ -4,6 +4,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'minitest/mock'
 require './lib/solarwinds_apm/support/txn_name_manager'
 
 describe 'TxnNameManager CRUD operations, name length/cardinality limits, and root context tracking' do
@@ -33,6 +34,15 @@ describe 'TxnNameManager CRUD operations, name length/cardinality limits, and ro
       @txn_manager.set('key1', 'first')
       @txn_manager.set('key1', 'second')
       assert_equal 'second', @txn_manager.get('key1')
+    end
+
+    it 'reuses the pool entry when the same transaction name is set again' do
+      @txn_manager.set('key1', 'shared_name')
+      @txn_manager.set('key2', 'shared_name')
+
+      assert_equal 'shared_name', @txn_manager.get('key1')
+      assert_equal 'shared_name', @txn_manager.get('key2')
+      _(@txn_manager.instance_variable_get(:@transaction_name).size).must_equal 1
     end
 
     it 'returns default name when cardinality limit reached' do
@@ -74,6 +84,31 @@ describe 'TxnNameManager CRUD operations, name length/cardinality limits, and ro
 
     it 'returns nil for non-existent root context' do
       assert_nil @txn_manager.get_root_context_h('nonexistent')
+    end
+
+    it 'logs the root contexts at debug level' do
+      original_logger = SolarWindsAPM.logger
+      log_output = StringIO.new
+      SolarWindsAPM.logger = Logger.new(log_output)
+
+      @txn_manager.set_root_context_h('trace1', 'span1-01')
+
+      assert_includes log_output.string, 'txn manager current root_context_h'
+    ensure
+      SolarWindsAPM.logger = original_logger
+    end
+  end
+
+  describe 'cleanup_txn' do
+    it 'removes the transaction name from the pool once the ttl has elapsed' do
+      pool = @txn_manager.instance_variable_get(:@transaction_name)
+      pool['expiring'] = Thread.current
+
+      @txn_manager.stub(:sleep, nil) do
+        @txn_manager.cleanup_txn('key1', 'expiring')
+      end
+
+      refute pool.key?('expiring')
     end
   end
 

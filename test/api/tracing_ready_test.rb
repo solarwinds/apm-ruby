@@ -60,4 +60,24 @@ describe 'Test solarwinds_ready API call' do
     replace_sampler(sampler)
     _(SolarWindsAPM::API.solarwinds_ready?(100_000)).must_equal false
   end
+
+  it 'logs a deprecation warning when integer_response is given' do
+    root_sampler = Minitest::Mock.new
+    root_sampler.expect(:wait_until_ready, true, [0])
+    parent_based = Object.new
+    parent_based.instance_variable_set(:@root, root_sampler)
+
+    log_output = StringIO.new
+    original_logger = SolarWindsAPM.logger
+    SolarWindsAPM.logger = Logger.new(log_output)
+
+    OpenTelemetry.tracer_provider.stub(:sampler, parent_based) do
+      _(SolarWindsAPM::API.solarwinds_ready?(100, integer_response: true)).must_equal true
+    end
+
+    root_sampler.verify
+    assert_includes log_output.string, 'solarwinds_ready? no longer accepts integer_response'
+  ensure
+    SolarWindsAPM.logger = original_logger
+  end
 end

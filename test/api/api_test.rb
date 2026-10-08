@@ -41,6 +41,26 @@ describe 'API::OpenTelemetry#in_span delegation to OpenTelemetry tracer' do
     end
     assert_equal 'done', result
   end
+
+  it 'logs the OTEL_SERVICE_NAME at debug level' do
+    OpenTelemetry::SDK.configure
+    original_logger = SolarWindsAPM.logger
+    log_output = StringIO.new
+    SolarWindsAPM.logger = Logger.new(log_output)
+
+    SolarWindsAPM::API.in_span('test_span') { :ok }
+
+    assert_includes log_output.string, 'solarwinds_apm in_span with OTEL_SERVICE_NAME'
+  ensure
+    SolarWindsAPM.logger = original_logger
+  end
+end
+
+describe 'API::CustomMetrics private helpers' do
+  it 'make_tags returns nil' do
+    helper = Object.new.extend(SolarWindsAPM::API::CustomMetrics)
+    assert_nil helper.send(:make_tags, { 'key' => 'value' })
+  end
 end
 
 describe 'API::CustomMetrics deprecated methods return false' do

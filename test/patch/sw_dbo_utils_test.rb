@@ -4,6 +4,7 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'minitest/mock'
 require_relative '../../lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support'
 require './lib/solarwinds_apm/patch/tag_sql/sw_dbo_utils'
@@ -45,5 +46,20 @@ describe 'SWODboUtils#annotate_span_and_sql traceparent injection based on sampl
       result = SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql('SELECT 1')
       assert_equal 'SELECT 1', result
     end
+  end
+
+  it 'returns sql unchanged and logs an error when annotation fails' do
+    original_logger = SolarWindsAPM.logger
+    log_output = StringIO.new
+    SolarWindsAPM.logger = Logger.new(log_output)
+
+    OpenTelemetry::Trace.stub(:current_span, ->(*) { raise StandardError, 'boom' }) do
+      result = SolarWindsAPM::Patch::TagSql::SWODboUtils.annotate_span_and_sql('SELECT 1')
+      assert_equal 'SELECT 1', result
+    end
+
+    assert_includes log_output.string, 'Failed to annotated sql. Error: boom'
+  ensure
+    SolarWindsAPM.logger = original_logger
   end
 end

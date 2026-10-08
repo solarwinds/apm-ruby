@@ -4,10 +4,32 @@
 # All rights reserved.
 
 require 'minitest_helper'
+require 'minitest/mock'
 require './lib/solarwinds_apm/config'
 require './lib/solarwinds_apm/support/transaction_settings'
 
 describe 'SolarWinds Transaction Setting Test' do
+  it 'falls back to enabled tracing and warns when the regexp lookup fails' do
+    original_logger = SolarWindsAPM.logger
+    log_output = StringIO.new
+    SolarWindsAPM.logger = Logger.new(log_output)
+
+    config_lookup = lambda { |key|
+      raise StandardError, 'bad config' unless key == :tracing_mode
+
+      :enabled
+    }
+
+    SolarWindsAPM::Config.stub(:[], config_lookup) do
+      trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: '/search', name: 'HTTP GET', kind: :connect)
+      _(trans_settings.calculate_trace_mode).must_equal 1
+    end
+
+    assert_includes log_output.string, 'Could not determine tracing status'
+  ensure
+    SolarWindsAPM.logger = original_logger
+  end
+
   it 'test non transaction_settings' do
     SolarWindsAPM::Config[:transaction_settings] = []
     trans_settings = SolarWindsAPM::TransactionSettings.new(url_path: 'google.ca', name: 'HTTP GET', kind: :connect)

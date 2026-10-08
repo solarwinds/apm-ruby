@@ -233,6 +233,48 @@ describe 'SolarWindsPropagatorTest' do
     end
   end
 
+  describe 'inject logging and error handling' do
+    before do
+      @original_logger = SolarWindsAPM.logger
+      @log_output = StringIO.new
+      SolarWindsAPM.logger = Logger.new(@log_output)
+
+      span_context = OpenTelemetry::Trace::SpanContext.new(
+        span_id: Random.bytes(8),
+        trace_id: Random.bytes(16),
+        trace_flags: OpenTelemetry::Trace::TraceFlags::SAMPLED
+      )
+      span = OpenTelemetry::Trace.non_recording_span(span_context)
+      @context = OpenTelemetry::Trace.context_with_span(span)
+    end
+
+    after do
+      SolarWindsAPM.logger = @original_logger
+    end
+
+    it 'logs the new tracestate when carrier has no tracestate' do
+      @propagator.inject({}, context: @context)
+
+      assert_includes @log_output.string, 'sw_value:'
+      assert_includes @log_output.string, 'creating new trace state'
+    end
+
+    it 'logs the updated tracestate when carrier has a tracestate' do
+      @propagator.inject({ 'tracestate' => 'other=value' }, context: @context)
+
+      assert_includes @log_output.string, 'updating/adding trace state for injection'
+    end
+
+    it 'logs and swallows errors raised while injecting' do
+      failing_setter = Object.new
+      failing_setter.define_singleton_method(:set) { |*_args| raise StandardError, 'setter failed' }
+
+      @propagator.inject({}, context: @context, setter: failing_setter)
+
+      assert_includes @log_output.string, 'Injection failed: setter failed'
+    end
+  end
+
   describe 'fields' do
     it 'returns tracestate' do
       assert_equal 'tracestate', @propagator.fields
