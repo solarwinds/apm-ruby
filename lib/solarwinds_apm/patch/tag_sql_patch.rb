@@ -9,3 +9,4 @@
 require_relative 'tag_sql/sw_dbo_utils'
 require_relative 'tag_sql/sw_mysql2_patch'
 require_relative 'tag_sql/sw_pg_patch'
+require_relative 'tag_sql/sw_mongo_patch'
