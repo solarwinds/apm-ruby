@@ -33,6 +33,12 @@ Ideally all application gems are required by `Bundler.require`, which guarantees
 
 The only required configuration is the service key, which can be set in the `SW_APM_SERVICE_KEY` environment variable or in the configuration file as `:service_key`. See [CONFIGURATION.md](CONFIGURATION.md) for the complete reference.
 
+### Kubernetes Auto-Instrumentation
+
+An `autoinstrumentation-ruby` image for the [OpenTelemetry Operator](https://github.com/open-telemetry/opentelemetry-operator) is built from [docker/](docker/) and published to `ghcr.io/solarwinds/apm-ruby/autoinstrumentation-ruby:<version>` by [publish-autoinstrumentation-ruby.yml](.github/workflows/publish-autoinstrumentation-ruby.yml) (manual trigger only). The image tag matches the `solarwinds_apm` version in [version.rb](lib/solarwinds_apm/version.rb), so the gem must be released to Rubygems before the image is published.
+
+The operator copies the gems to `/otel-auto-instrumentation-ruby` and sets `RUBYOPT="-r /otel-auto-instrumentation-ruby/src/autoinstrumentation"`. `solarwinds_apm` is then required right after `Bundler.require`, so do not add `solarwinds_apm` or `opentelemetry-*` gems to the application Gemfile. For applications that don't call `Bundler.require`, set `OTEL_RUBY_REQUIRE_BUNDLER=true`.
+
 ## Custom Instrumentation
 
 `solarwinds_apm` supports the standard OpenTelemetry API and includes a few convenience methods for manual instrumentation.  Additionally, a set of SolarWindsAPM APIs are provided for features specific to SolarWinds Observability.

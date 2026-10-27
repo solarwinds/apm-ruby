@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+# SOLARWINDS_APM_VERSION is passed as docker build arg (see .github/workflows/publish-autoinstrumentation-ruby.yml)
+version = ENV['SOLARWINDS_APM_VERSION'].to_s
+gem 'solarwinds_apm', version.empty? ? '>= 0' : version
