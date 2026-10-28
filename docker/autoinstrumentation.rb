@@ -79,6 +79,12 @@ gem_path = Gem.dir unless Dir.exist?(gem_path)
 
 gem_entries = Dir.glob("#{gem_path}/gems/*")
 
+# google-protobuf has a native extension linked against the C library. The image ships the glibc build
+# in gems/ and the musl build in musl/gems/; use the musl build on musl based systems (e.g. Alpine)
+musl_gem_entries = Dir.glob("#{gem_path}/musl/gems/google-protobuf-*")
+use_musl_gems = RbConfig::CONFIG['host_os'].to_s.include?('musl') && !musl_gem_entries.empty?
+gem_entries = gem_entries.grep_v(%r{/google-protobuf-[^/]*\z}) + musl_gem_entries if use_musl_gems
+
 # googleapis-common-protos-types and google-protobuf are dependencies for otlp exporters
 sw_lib_path = gem_entries.select do |file_path|
   gem_dir_name = File.basename(file_path)

@@ -6,6 +6,26 @@ This directory holds the files for the SolarWinds APM `autoinstrumentation-ruby`
 - [Gemfile](./Gemfile) lists the gems installed into the image.
 - [autoinstrumentation.rb](./autoinstrumentation.rb) is the entry point. The application loads it through `RUBYOPT`, for example `RUBYOPT="-r /otel-auto-instrumentation-ruby/src/autoinstrumentation"`.
 
+## Supported application containers
+
+The image's gems are copied into the application's container and run on the application's Ruby. Only `google-protobuf` has a native extension, so it must match the application's C library, CPU architecture and Ruby version:
+
+- **C library:** the image includes a glibc build of `google-protobuf` in `gems/` and a musl build in `musl/gems/`. [autoinstrumentation.rb](./autoinstrumentation.rb) loads the musl build when `RbConfig::CONFIG['host_os']` contains `musl` (e.g. Alpine), and the glibc build otherwise. Images without either C library (e.g. static/scratch-based) are not supported.
+- **Architecture:** the image is multi-arch (`linux/amd64`, `linux/arm64`, `linux/s390x`, `linux/ppc64le`). The container runtime pulls the variant that matches the node. See [Platform support](#platform-support) for the Ruby versions supported on each architecture.
+- **Ruby version:** Bundler resolves the gems for the builder's Ruby (3.3), so the image targets applications on Ruby 3.3 or later; the current OpenTelemetry gems require Ruby >= 3.3. The gems are added to `$LOAD_PATH` directly, so RubyGems does not enforce `required_ruby_version`, and an older application Ruby fails at runtime instead of at install time. Keep the builder Ruby at the lowest Ruby version the image supports, and keep the glibc and musl build stages on the same Ruby version.
+- **Gems removed from the default gems:** `logger` is a bundled gem since Ruby 4.0, so it can't be required unless the application's Gemfile lists it. On Ruby 4.0 or later, add `gem 'logger'` to the application's Gemfile, otherwise `solarwinds_apm` fails to initialize with `cannot load such file -- logger`.
+
+### Platform support
+
+| Platform | C library | `google-protobuf` native extension | Application Ruby versions |
+|---|---|---|---|
+| `linux/amd64` | glibc, musl | Precompiled gem (`x86_64-linux-gnu`, `x86_64-linux-musl`) with binaries for each supported Ruby version | 3.3 to 4.0 |
+| `linux/arm64` | glibc, musl | Precompiled gem (`aarch64-linux-gnu`, `aarch64-linux-musl`) with binaries for each supported Ruby version | 3.3 to 4.0 |
+| `linux/s390x` | glibc, musl | Compiled from source for the builder's Ruby (3.3) | 3.3 only |
+| `linux/ppc64le` | glibc, musl | Compiled from source for the builder's Ruby (3.3) | 3.3 only |
+
+On `s390x` and `ppc64le`, `google-protobuf` doesn't publish a precompiled gem, so the extension is compiled during the image build and links against the builder's Ruby 3.3. Applications on any other Ruby version fail to load `google/protobuf_c` and `solarwinds_apm` doesn't initialize. The upper bound on `amd64` and `arm64` follows the Ruby versions that the bundled `google-protobuf` ships binaries for (3.2 to 4.0 for 4.36.x).
+
 ## Comparison with the upstream OpenTelemetry entry point
 
 [autoinstrumentation.rb](./autoinstrumentation.rb) is based on the upstream [opentelemetry-auto-instrumentation.rb](https://github.com/open-telemetry/opentelemetry-ruby-instrumentation/blob/main/lib/opentelemetry-auto-instrumentation.rb). Both use the same bootstrap pattern. The upstream file configures the OpenTelemetry SDK itself, while this file leaves that to `require 'solarwinds_apm'`.
