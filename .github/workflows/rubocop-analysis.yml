@@ -28,7 +28,7 @@ jobs:
     - name: Set up Ruby
       uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1
       with:
-        ruby-version: '3.1.0'
+        ruby-version: '3.3'
 
     - name: Install dependencies
       run: |
