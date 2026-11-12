@@ -65,6 +65,19 @@ export OTEL_TRACES_EXPORTER=otlp,console     # Multiple Exporters
 export OTEL_TRACES_EXPORTER=jaeger           # Third-party Exporters (e.g. jaeger, add gem opentelemetry-exporter-jaeger before solarwinds_apm)
 ```
 
+#### Custom OTLP Endpoint
+
+The token from `SW_APM_SERVICE_KEY` is added as an `authorization` header only for signals whose OTLP endpoint is a SolarWinds Observability endpoint (`https://otel.collector.*.*.solarwinds.com`), and only when no OTLP headers are configured. It is set on the signal-specific variable (e.g. `OTEL_EXPORTER_OTLP_TRACES_HEADERS`), never on `OTEL_EXPORTER_OTLP_HEADERS`.
+
+If you export to your own collector (via `OTEL_EXPORTER_OTLP_ENDPOINT` or `OTEL_EXPORTER_OTLP_<SIGNAL>_ENDPOINT`), the service key is not sent to it. If that collector forwards to SolarWinds Observability and relies on the header from the application, set it explicitly:
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://my-collector.example.com:4318
+export OTEL_EXPORTER_OTLP_HEADERS="authorization=Bearer <token-part-of-service-key>"
+```
+
+We recommend configuring the token on the collector's exporter instead, so the application never sends it over the collector link.
+
 #### Service Name
 
 By default the service name portion of the service key is used, e.g. `my-service` if the service key is `SW_APM_SERVICE_KEY=api-token:my-service`. If the `OTEL_SERVICE_NAME` or `OTEL_RESOURCE_ATTRIBUTES` environment variable is used to specify a service name, it will take precedence over the default. The precedence is as follows:
