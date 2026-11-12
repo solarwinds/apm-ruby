@@ -14,9 +14,6 @@ module SolarWindsAPM
   class OTLPEndPoint
     attr_reader :token, :service_name
 
-    # \A and \z (not ^ and $) so a value containing a newline cannot smuggle a second line past the check.
-    # The environment segment is restricted to hostname characters so values such as
-    # apm.collector.na-01.foo@evil.example:443/.solarwinds.com are rejected.
     SWO_APM_ENDPOINT_REGEX = /\Aapm\.collector\.([a-z]{2}-\d{2})\.([a-z0-9-]+)\.solarwinds\.com(?::\d+)?\z/
     SWO_APM_ENDPOINT_DEFAULT = 'apm.collector.na-01.cloud.solarwinds.com:443'
 
@@ -39,7 +36,6 @@ module SolarWindsAPM
       @token = service_key_checker.token
       @service_name = service_key_checker.service_name
 
-      # Resolve the endpoint first so the token decision is made against the endpoint the exporter will actually use.
       OTEL_SIGNAL_TYPE.each do |data_type|
         configure_otlp_endpoint(data_type, matches)
         config_token(data_type)
@@ -49,11 +45,6 @@ module SolarWindsAPM
     # APM Libraries should only set the bearer token header as a convenience if:
     # The OTEL config for exporter OTLP headers is not already set, i.e. explicitly configured by the end user, AND
     # The OTLP export endpoint is SWO, i.e. host is otel.collector.*.*.solarwinds.com
-    #
-    # The header is always set on the signal-specific variable (never on the general OTEL_EXPORTER_OTLP_HEADERS),
-    # so that it cannot be inherited by another signal that exports to a non-SWO endpoint.
-    # Users exporting to their own collector that forwards to SWO must set OTEL_EXPORTER_OTLP_HEADERS
-    # (or the signal-specific variant) themselves.
     def config_token(data_type)
       data_type_upper = data_type.upcase
       signal_headers_env = "OTEL_EXPORTER_OTLP_#{data_type_upper}_HEADERS"
