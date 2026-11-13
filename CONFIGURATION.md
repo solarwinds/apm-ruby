@@ -212,6 +212,15 @@ Override the default configuration file location:
 export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
 ```
 
+### Config File Selection
+
+At most one configuration file is loaded:
+
+1. If `SW_APM_CONFIG_RUBY` is set, only that file is used. If it can't be found, no configuration file is loaded; the agent doesn't fall back to the default locations.
+2. Otherwise, the agent looks in the application root for `config/initializers/solarwinds_apm.rb` first and then `solarwinds_apm_config.rb`. The application root is `Rails.root` when it's available, then the directory of the Gemfile in use (`BUNDLE_GEMFILE`), and finally the current working directory.
+
+Config files are executed as Ruby code with the application's privileges. The agent refuses to load a configuration file that is world-writable, or that is in a world-writable directory without the sticky bit.
+
 ## Configuration Topics
 
 ### Transaction Filtering
@@ -314,7 +323,7 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 | -------------------- | --------------- | ----------- | ------- |
 | `SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true` |
 | `SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443` |
-| `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None |
+| `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. When set, default locations are not searched. | None |
 | `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3 |
 | `SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true` |
 | `SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None |

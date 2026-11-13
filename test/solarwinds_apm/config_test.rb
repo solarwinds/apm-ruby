@@ -5,6 +5,8 @@
 
 require 'minitest_helper'
 require 'logger'
+require 'tmpdir'
+require 'fileutils'
 require './lib/solarwinds_apm/config'
 
 describe 'Config Test' do
@@ -595,6 +597,116 @@ describe 'Config Test' do
       else
         ENV.delete('SW_APM_CONFIG_RUBY')
       end
+    end
+  end
+
+  describe '#load_config_file' do
+    def write_config(path, marker)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "SolarWindsAPM::Config[:config_file_marker] = '#{marker}'\n")
+      File.chmod(0o644, path)
+      path
+    end
+
+    before do
+      @original_env = ENV.to_h.slice('SW_APM_CONFIG_RUBY', 'BUNDLE_GEMFILE')
+      ENV.delete('SW_APM_CONFIG_RUBY')
+      ENV.delete('BUNDLE_GEMFILE')
+      @tmpdir  = File.realpath(Dir.mktmpdir('sw_apm_config'))
+      @app_dir = File.join(@tmpdir, 'app').tap { |d| FileUtils.mkdir_p(d) }
+      @cwd     = File.join(@tmpdir, 'work').tap { |d| FileUtils.mkdir_p(d) }
+      @trusted = write_config(File.join(@tmpdir, 'trusted', 'trusted.rb'), 'trusted')
+      SolarWindsAPM::Config[:config_file_marker] = nil
+    end
+
+    after do
+      %w[SW_APM_CONFIG_RUBY BUNDLE_GEMFILE].each { |k| ENV.delete(k) }
+      ENV.update(@original_env)
+      FileUtils.rm_rf(@tmpdir)
+      SolarWindsAPM::Config[:config_file_marker] = nil
+    end
+
+    it 'loads only SW_APM_CONFIG_RUBY even when a cwd rails initializer exists' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'trusted'
+    end
+
+    it 'does not fall back to cwd files when SW_APM_CONFIG_RUBY is missing' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      ENV['SW_APM_CONFIG_RUBY'] = File.join(@tmpdir, 'missing.rb')
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'resolves default files against the Gemfile directory instead of cwd' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      ENV['BUNDLE_GEMFILE'] = File.join(@app_dir, 'Gemfile')
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'app_rails'
+    end
+
+    it 'does not load a cwd file outside the Gemfile directory' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      ENV['BUNDLE_GEMFILE'] = File.join(@app_dir, 'Gemfile')
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'falls back to cwd when no application root is known, preferring the rails initializer' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'cwd_rails'
+    end
+
+    it 'treats an empty SW_APM_CONFIG_RUBY as unset' do
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+      ENV['SW_APM_CONFIG_RUBY'] = ''
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'cwd_default'
+    end
+
+    it 'refuses to load a world-writable config file' do
+      File.chmod(0o666, @trusted)
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      SolarWindsAPM::Config.load_config_file
+
+      assert SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'refuses to load a config file in a world-writable non-sticky directory' do
+      File.chmod(0o777, File.dirname(@trusted))
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      SolarWindsAPM::Config.load_config_file
+
+      assert SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'loads a config file in a world-writable sticky directory' do
+      File.chmod(0o1777, File.dirname(@trusted))
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      SolarWindsAPM::Config.load_config_file
+
+      _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'trusted'
     end
   end
 
