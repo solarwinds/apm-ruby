@@ -53,15 +53,7 @@ module SolarWindsAPM
       return unless ENV[signal_headers_env].to_s.empty? && ENV['OTEL_EXPORTER_OTLP_HEADERS'].to_s.empty?
 
       endpoint = effective_endpoint(data_type_upper)
-      if swo_otlp_endpoint?(endpoint)
-        ENV[signal_headers_env] = "authorization=Bearer #{@token}"
-      else
-        SolarWindsAPM.logger.info do
-          "[#{self.class}/#{__method__}] #{data_type_upper} OTLP endpoint #{sanitize_endpoint(endpoint)} is not a SolarWinds Observability endpoint; " \
-            'SW_APM_SERVICE_KEY will not be sent as authorization header. If this collector forwards to SolarWinds Observability, ' \
-            "set #{signal_headers_env} or OTEL_EXPORTER_OTLP_HEADERS explicitly."
-        end
-      end
+      ENV[signal_headers_env] = "authorization=Bearer #{@token}" if swo_otlp_endpoint?(endpoint)
     end
 
     def configure_otlp_endpoint(data_type, matches)
