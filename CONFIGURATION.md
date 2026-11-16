@@ -219,7 +219,7 @@ At most one configuration file is loaded:
 1. If `SW_APM_CONFIG_RUBY` is set, only that file is used. If it can't be found, no configuration file is loaded; the agent doesn't fall back to the default locations.
 2. Otherwise, the agent looks in the application root for `config/initializers/solarwinds_apm.rb` first and then `solarwinds_apm_config.rb`. The application root is `Rails.root` when it's available, then the directory of the Gemfile in use (`BUNDLE_GEMFILE`), and finally the current working directory.
 
-Config files are executed as Ruby code with the application's privileges. The agent refuses to load a configuration file that is world-writable, or that is in a world-writable directory without the sticky bit.
+Config files are executed as Ruby code with the application's privileges. The agent currently warns, but still loads, a configuration file that is world-writable or that is in a world-writable directory without the sticky bit. Refusal to load these files is planned for the next release; secure the file and directory permissions now.
 
 ## Configuration Topics
 

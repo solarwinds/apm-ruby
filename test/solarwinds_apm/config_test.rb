@@ -682,22 +682,38 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'cwd_default'
     end
 
-    it 'refuses to load a world-writable config file' do
+    it 'warns but loads a world-writable config file' do
       File.chmod(0o666, @trusted)
       ENV['SW_APM_CONFIG_RUBY'] = @trusted
 
-      SolarWindsAPM::Config.load_config_file
+      warnings = []
+      SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
+        SolarWindsAPM::Config.load_config_file
+      end
 
-      assert SolarWindsAPM::Config[:config_file_marker]
+      expected_warning = "[SolarWindsAPM::Config/trusted_config_file?] The configuration file #{@trusted} is not trusted because the file is world-writable.\n" \
+                         "          The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).\n" \
+                         "          Please change the permissions to make it secure.\n" \
+                         '          In next release, apm-ruby will refuse to load configuration files from an insecure path.'
+      assert_equal [expected_warning], warnings
+      assert_equal 'trusted', SolarWindsAPM::Config[:config_file_marker]
     end
 
-    it 'refuses to load a config file in a world-writable non-sticky directory' do
+    it 'warns but loads a config file in a world-writable non-sticky directory' do
       File.chmod(0o777, File.dirname(@trusted))
       ENV['SW_APM_CONFIG_RUBY'] = @trusted
 
-      SolarWindsAPM::Config.load_config_file
+      warnings = []
+      SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
+        SolarWindsAPM::Config.load_config_file
+      end
 
-      assert SolarWindsAPM::Config[:config_file_marker]
+      expected_warning = "[SolarWindsAPM::Config/trusted_config_file?] The configuration file #{@trusted} is not trusted because its directory is world-writable.\n" \
+                         "          The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).\n" \
+                         "          Please change the permissions to make it secure.\n" \
+                         '          In next release, apm-ruby will refuse to load configuration files from an insecure path.'
+      assert_equal [expected_warning], warnings
+      assert_equal 'trusted', SolarWindsAPM::Config[:config_file_marker]
     end
 
     it 'loads a config file in a world-writable sticky directory' do

@@ -114,11 +114,12 @@ module SolarWindsAPM
 
     def self.trusted_config_file?(config_file)
       file_stat = File.stat(config_file)
-      dir_stat  = File.stat(File.dirname(File.expand_path(config_file)))
+      directories = [File.dirname(File.expand_path(config_file)), File.dirname(File.realpath(config_file))]
+      dir_stats = directories.uniq.map { |directory| File.stat(directory) }
 
       if file_stat.world_writable?
         reason = 'the file is world-writable'
-      elsif dir_stat.world_writable? && !dir_stat.sticky?
+      elsif dir_stats.any? { |stat| stat.world_writable? && !stat.sticky? }
         reason = 'its directory is world-writable'
       end
 
