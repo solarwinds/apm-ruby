@@ -90,7 +90,7 @@ module SolarWindsAPM
     def swo_otlp_endpoint?(endpoint)
       return false if endpoint.to_s.empty?
 
-      uri = URI.parse(endpoint.to_s.strip)
+      uri = URI.parse(endpoint.to_s)
       uri.scheme == 'https' && uri.userinfo.nil? && uri.host.to_s.downcase.match?(SWO_OTLP_HOST_REGEX)
     rescue URI::Error
       false
@@ -112,8 +112,11 @@ module SolarWindsAPM
       return if matches&.size == 3
 
       unless ENV['SW_APM_COLLECTOR'].to_s.empty?
+        # SW_APM_COLLECTOR is expected as host:port; add a scheme only if the user did not, so sanitize_endpoint can parse it.
+        collector_value = ENV.fetch('SW_APM_COLLECTOR', nil)
+        collector = sanitize_endpoint(collector_value.include?('://') ? collector_value : "https://#{collector_value}")
         SolarWindsAPM.logger.warn do
-          "[#{self.class}/#{__method__}] SW_APM_COLLECTOR format invalid: #{ENV.fetch('SW_APM_COLLECTOR', nil)}. Valid format: apm.collector.*.*.solarwinds.com"
+          "[#{self.class}/#{__method__}] SW_APM_COLLECTOR format invalid: #{collector}. Valid format: apm.collector.*.*.solarwinds.com"
         end
       end
       ENV['SW_APM_COLLECTOR'] = SWO_APM_ENDPOINT_DEFAULT

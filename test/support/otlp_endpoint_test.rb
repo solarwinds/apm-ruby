@@ -291,6 +291,16 @@ describe 'OTLP Endpoint Test' do
       assert_equal SolarWindsAPM::OTLPEndPoint::SWO_APM_ENDPOINT_DEFAULT, ENV.fetch('SW_APM_COLLECTOR', nil)
     end
 
+    it 'does not log credentials, path or query of an invalid collector' do
+      ENV['SW_APM_COLLECTOR'] = 'user:secret@collector.example.com:443/path?token=x'
+      endpoint = SolarWindsAPM::OTLPEndPoint.new
+      message = nil
+      SolarWindsAPM.logger.stub(:warn, ->(_msg = nil, &block) { message = block&.call }) do
+        endpoint.send(:resolve_get_setting_endpoint, nil)
+      end
+      assert_equal '[SolarWindsAPM::OTLPEndPoint/resolve_get_setting_endpoint] SW_APM_COLLECTOR format invalid: https://collector.example.com:443. Valid format: apm.collector.*.*.solarwinds.com', message
+    end
+
     it 'falls back to default for empty collector' do
       ENV.delete('SW_APM_COLLECTOR')
       endpoint = SolarWindsAPM::OTLPEndPoint.new
@@ -531,6 +541,8 @@ describe 'OTLP Endpoint Test' do
       'https://user@otel.collector.na-01.cloud.solarwinds.com/v1/traces',
       'https://evil.example/otel.collector.na-01.cloud.solarwinds.com',
       "https://evil.example\nhttps://otel.collector.na-01.cloud.solarwinds.com",
+      ' https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces',
+      "https://otel.collector.na-01.cloud.solarwinds.com:443/v1/traces\n",
       'https://collector.example.com:4318',
       'not a url'
     ].each do |url|
