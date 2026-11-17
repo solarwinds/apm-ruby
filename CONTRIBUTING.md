@@ -128,7 +128,7 @@ All linting issues must be resolved before submitting a pull request.
 For complex debugging or if you prefer working in a containerized environment, you can use Ubuntu containers with all necessary tools:
 
 ```bash
-bundle exec rake docker_dev
+bundle exec rake docker
 ```
 
 Once inside the container:
@@ -146,10 +146,10 @@ Run the complete test suite in containers (from host machine):
 
 ```bash
 # Run tests in Ruby 3.1.0 bullseye container
-bundle exec rake 'docker_tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
+bundle exec rake 'docker:tests[,,,APM_RUBY_TEST_KEY=your_service_key]'
 
 # Run tests in Ruby 3.2 Alpine container for ARM64
-bundle exec rake 'docker_tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
+bundle exec rake 'docker:tests[3.2-alpine,,linux/amd64,APM_RUBY_TEST_KEY=your_service_key]'
 ```
 
 Test logs are written to the `log/` directory.
