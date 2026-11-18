@@ -47,6 +47,7 @@ module SolarWindsAPM
     #
     # Files that are world-writable, or that live in a world-writable directory
     # without the sticky bit, are refused.
+    # NOTE: This permission check relies on POSIX file permissions and does not apply on Windows.
     #
     def self.load_config_file
       config_file = explicit_config_path? ? config_file_from_env : default_config_file
@@ -112,6 +113,7 @@ module SolarWindsAPM
       Dir.pwd
     end
 
+    # Checks POSIX world-writable permissions only; this check does not apply on Windows.
     def self.trusted_config_file?(config_file)
       file_stat = File.stat(config_file)
       directories = [File.dirname(File.expand_path(config_file)), File.dirname(File.realpath(config_file))]
@@ -123,17 +125,16 @@ module SolarWindsAPM
         reason = 'its directory is world-writable'
       end
 
-      # return true unless reason
+      return true unless reason
 
       if reason
         SolarWindsAPM.logger.warn do
           "[#{name}/#{__method__}] The configuration file #{config_file} is not trusted because #{reason}.
           The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).
-          Please change the permissions to make it secure.
-          In next release, apm-ruby will refuse to load configuration files from an insecure path."
+          Please change the permissions to make it secure."
         end
       end
-      true
+      false
     rescue SystemCallError => e
       SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Unable to inspect configuration file #{config_file}: #{e.message}" }
       false

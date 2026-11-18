@@ -12,13 +12,12 @@ require './lib/solarwinds_apm/api'
 require './lib/solarwinds_apm/support'
 require './lib/solarwinds_apm/patch/tag_sql/sw_dbo_utils'
 
-# rubocop:disable Naming/MethodName
+# rubocop:disable-next Naming/MethodName
 module SolarWindsAPM
   module Span
     def self.createSpan(trans_name, domain, span_time, has_error); end
   end
 end
-# rubocop:enable Naming/MethodName
 
 describe 'mysql2 patch integrate test' do
   puts "\n\033[1m=== TEST RUN MYSQL2 PATCH TEST: #{RUBY_VERSION} #{File.basename(__FILE__)} #{Time.now.strftime('%Y-%m-%d %H:%M')} ===\033[0m\n"

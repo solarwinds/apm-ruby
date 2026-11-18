@@ -12,13 +12,12 @@ require './lib/solarwinds_apm/api'
 require './lib/solarwinds_apm/support'
 require './lib/solarwinds_apm/patch/tag_sql/sw_dbo_utils'
 
-# rubocop:disable Naming/MethodName
+# rubocop:disable-next Naming/MethodName
 module SolarWindsAPM
   module Span
     def self.createSpan(trans_name, domain, span_time, has_error); end
   end
 end
-# rubocop:enable Naming/MethodName
 
 def pg_dbo_integration_verification(sql, finished_spans)
   pattern = %r{/\*traceparent='[\da-f-]+'*\*/$}

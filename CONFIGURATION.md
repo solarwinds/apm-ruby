@@ -221,6 +221,8 @@ At most one configuration file is loaded:
 
 Config files are executed as Ruby code with the application's privileges. The agent currently warns, but still loads, a configuration file that is world-writable or that is in a world-writable directory without the sticky bit. Refusal to load these files is planned for the next release; secure the file and directory permissions now.
 
+> **Note:** This permission check relies on POSIX file permissions and **does not apply on Windows**, where file permission bits are not meaningful. Secure the configuration file with Windows ACLs instead.
+
 ## Configuration Topics
 
 ### Transaction Filtering

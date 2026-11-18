@@ -54,7 +54,7 @@ end
 # Dummy Exporter for testing
 module Exporter
   class Dummy
-    def flush(); end
+    def flush; end
   end
 end
 
