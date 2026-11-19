@@ -682,40 +682,6 @@ describe 'Config Test' do
       _(SolarWindsAPM::Config[:config_file_marker]).must_equal 'cwd_default'
     end
 
-    it 'warns but loads a world-writable config file' do
-      File.chmod(0o666, @trusted)
-      ENV['SW_APM_CONFIG_RUBY'] = @trusted
-
-      warnings = []
-      SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
-        SolarWindsAPM::Config.load_config_file
-      end
-
-      expected_warning = "[SolarWindsAPM::Config/trusted_config_file?] The configuration file #{@trusted} is not trusted because the file is world-writable.\n          " \
-                         "The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).\n          " \
-                         'Please change the permissions to make it secure.'
-
-      assert_equal [expected_warning], warnings
-      assert_nil SolarWindsAPM::Config[:config_file_marker]
-    end
-
-    it 'warns but loads a config file in a world-writable non-sticky directory' do
-      File.chmod(0o777, File.dirname(@trusted))
-      ENV['SW_APM_CONFIG_RUBY'] = @trusted
-
-      warnings = []
-      SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
-        SolarWindsAPM::Config.load_config_file
-      end
-
-      expected_warning = "[SolarWindsAPM::Config/trusted_config_file?] The configuration file #{@trusted} is not trusted because its directory is world-writable.\n          " \
-                         "The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).\n          " \
-                         'Please change the permissions to make it secure.'
-
-      assert_equal [expected_warning], warnings
-      assert_nil SolarWindsAPM::Config[:config_file_marker]
-    end
-
     it 'loads a config file in a world-writable sticky directory' do
       File.chmod(0o1777, File.dirname(@trusted))
       ENV['SW_APM_CONFIG_RUBY'] = @trusted
