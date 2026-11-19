@@ -133,7 +133,7 @@ def check_counters(metric_exporter, counters = [])
   end
 end
 
-# rubocop:disable Lint/DuplicateMethods
+# rubocop:disable-next Lint/DuplicateMethods
 class OboeTestSampler < SolarWindsAPM::OboeSampler
   attr_accessor :response_headers, :local_settings, :request_headers
 
@@ -155,7 +155,6 @@ class OboeTestSampler < SolarWindsAPM::OboeSampler
     @request_headers
   end
 end
-# rubocop:enable Lint/DuplicateMethods
 
 def replace_sampler(sampler)
   OpenTelemetry.tracer_provider.sampler = OpenTelemetry::SDK::Trace::Samplers.parent_based(
