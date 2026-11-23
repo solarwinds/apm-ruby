@@ -658,9 +658,18 @@ describe 'Config Test' do
       write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
       ENV['BUNDLE_GEMFILE'] = File.join(@cwd, 'Gemfile')
 
-      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+      warnings = capture_logs(:warn) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
 
       assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ['[SolarWindsAPM::Config/rails_config_file] Set SW_APM_CONFIG_RUBY to its absolute path to load it. ' \
+                    'Legacy file solarwinds_apm_config.rb is no longer loaded.'],
+                   warnings
+    end
+
+    it 'does not resolve the rails initializer against the filesystem root for non-Rails applications' do
+      capture_logs(:warn) do
+        File.stub(:file?, true) { assert_nil SolarWindsAPM::Config.rails_config_file }
+      end
     end
 
     it 'warns about a legacy cwd config file when the Rails root cannot be determined' do
@@ -723,9 +732,22 @@ describe 'Config Test' do
       File.chmod(0o666, @trusted)
       ENV['SW_APM_CONFIG_RUBY'] = @trusted
 
-      SolarWindsAPM::Config.load_config_file
+      warnings = capture_logs(:warn) { SolarWindsAPM::Config.load_config_file }
 
       assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ["[SolarWindsAPM::SecurePath/trusted?] The file #{@trusted} is not trusted because the file is world-writable. " \
+                    'The file must be owned by root or by the user running the application, and neither the file nor its directory may be world-writable (e.g. file permission 600). ' \
+                    'Please change the ownership or permissions to make it secure.'],
+                   warnings
+    end
+
+    it 'loads the rails initializer without SecurePath checks' do
+      initializer = write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      File.chmod(0o666, initializer)
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal 'app_rails', SolarWindsAPM::Config[:config_file_marker]
     end
   end
 

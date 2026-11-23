@@ -227,13 +227,15 @@ At most one configuration file is loaded:
 
 ### Config File Security
 
-Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent refuses to load a configuration file, and logs a warning, if:
+Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent refuses to load the file set by `SW_APM_CONFIG_RUBY`, and logs a warning, if:
 
 - the file is world-writable,
 - the file isn't owned by `root` or by the effective user running the application, or
 - the file is in a world-writable directory without the sticky bit.
 
 Secure the file's ownership and permissions (e.g. owned by the application user with file permission `600`) so the file is loaded.
+
+These checks don't apply to the Rails initializer `config/initializers/solarwinds_apm.rb`, because Rails loads every file in `config/initializers` regardless. Protect it like the rest of your application code.
 
 > **Note:** On non-POSIX systems (Windows), file permission bits aren't meaningful, so the agent skips these checks. Secure the configuration file with Windows ACLs instead.
 

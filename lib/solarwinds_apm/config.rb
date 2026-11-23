@@ -44,7 +44,8 @@ module SolarWindsAPM
     # 2 - Otherwise, only for Rails applications, the prescribed Rails initializer
     #     <Rails root>/config/initializers/solarwinds_apm.rb (also loaded later by Rails itself).
     #
-    # The selected file is loaded only if SolarWindsAPM::SecurePath.trusted? accepts it.
+    # Only the SW_APM_CONFIG_RUBY file is checked with SolarWindsAPM::SecurePath.trusted?. The Rails
+    # initializer isn't, because Rails loads every file in config/initializers regardless.
     #
     def self.load_config_file
       env_path = ENV.fetch('SW_APM_CONFIG_RUBY', '').strip
@@ -55,12 +56,12 @@ module SolarWindsAPM
     end
 
     def self.config_file_from_env(env_path)
-      if File.absolute_path?(env_path)
-        return env_path if File.file?(env_path) && SolarWindsAPM::SecurePath.trusted?(env_path)
-
-        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
-      else
+      if !File.absolute_path?(env_path)
         SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file (current setting is #{env_path}). No configuration file will be loaded." }
+      elsif !File.file?(env_path)
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
+      elsif SolarWindsAPM::SecurePath.trusted?(env_path)
+        return env_path
       end
       nil
     end
@@ -80,12 +81,12 @@ module SolarWindsAPM
         rails_root = ::Rails.root.to_s
         gemfile = ENV.fetch('BUNDLE_GEMFILE', '').strip
         rails_root = File.dirname(gemfile) if rails_root.empty? && File.absolute_path?(gemfile)
+      end
 
-        if rails_root.empty?
-          legacy_file = File.join(Dir.pwd, LEGACY_CONFIG_FILE)
-          SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Set SW_APM_CONFIG_RUBY to its absolute path to load it. Legacy file #{LEGACY_CONFIG_FILE} is no longer loaded." } if File.file?(legacy_file)
-          return nil
-        end
+      if rails_root.empty?
+        legacy_file = File.join(Dir.pwd, LEGACY_CONFIG_FILE)
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Set SW_APM_CONFIG_RUBY to its absolute path to load it. Legacy file #{LEGACY_CONFIG_FILE} is no longer loaded." } if File.file?(legacy_file)
+        return nil
       end
 
       config_file = File.join(rails_root, RAILS_CONFIG_FILE)
