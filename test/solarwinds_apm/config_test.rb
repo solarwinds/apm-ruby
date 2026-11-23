@@ -11,22 +11,17 @@ require './lib/solarwinds_apm/config'
 
 describe 'Config Test' do
   describe '#config_file_from_env' do
-    after do
-      ENV.delete('SW_APM_CONFIG_RUBY')
-    end
-
     it 'returns the absolute path of an existing file' do
       config_path = File.expand_path('lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb')
-      ENV['SW_APM_CONFIG_RUBY'] = config_path
-      assert_equal config_path, SolarWindsAPM::Config.config_file_from_env
+      assert_equal config_path, SolarWindsAPM::Config.config_file_from_env(config_path)
     end
 
     it 'rejects a relative path even if the file exists' do
-      ENV['SW_APM_CONFIG_RUBY'] = 'lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'
+      relative_path = 'lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'
 
       warnings = []
       SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
-        assert_nil SolarWindsAPM::Config.config_file_from_env
+        assert_nil SolarWindsAPM::Config.config_file_from_env(relative_path)
       end
 
       assert_equal ['[SolarWindsAPM::Config/config_file_from_env] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file ' \
@@ -35,13 +30,11 @@ describe 'Config Test' do
     end
 
     it 'rejects a directory instead of searching it for a config file' do
-      ENV['SW_APM_CONFIG_RUBY'] = File.expand_path('lib/rails/generators/solarwinds_apm/templates')
-      assert_nil SolarWindsAPM::Config.config_file_from_env
+      assert_nil SolarWindsAPM::Config.config_file_from_env(File.expand_path('lib/rails/generators/solarwinds_apm/templates'))
     end
 
     it 'returns nil for a non-existent absolute path' do
-      ENV['SW_APM_CONFIG_RUBY'] = '/nonexistent/path/file.rb'
-      assert_nil SolarWindsAPM::Config.config_file_from_env
+      assert_nil SolarWindsAPM::Config.config_file_from_env('/nonexistent/path/file.rb')
     end
   end
 
@@ -665,10 +658,18 @@ describe 'Config Test' do
       write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
       ENV['BUNDLE_GEMFILE'] = File.join(@cwd, 'Gemfile')
 
-      warnings = capture_logs(:warn) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
 
       assert_nil SolarWindsAPM::Config[:config_file_marker]
-      assert_equal ['[SolarWindsAPM::Config/warn_legacy_config_file] Set SW_APM_CONFIG_RUBY to its absolute path to load it. ' \
+    end
+
+    it 'warns about a legacy cwd config file when the Rails root cannot be determined' do
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+
+      warnings = capture_logs(:warn) { with_rails_root(nil) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } } }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ['[SolarWindsAPM::Config/rails_config_file] Set SW_APM_CONFIG_RUBY to its absolute path to load it. ' \
                     'Legacy file solarwinds_apm_config.rb is no longer loaded.'],
                    warnings
     end

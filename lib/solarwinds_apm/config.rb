@@ -56,11 +56,9 @@ module SolarWindsAPM
 
     def self.config_file_from_env(env_path)
       if File.absolute_path?(env_path)
-        if File.file?(env_path) && SolarWindsAPM::SecurePath.trusted?(env_path)
-          return env_path
-        else
-          SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
-        end
+        return env_path if File.file?(env_path) && SolarWindsAPM::SecurePath.trusted?(env_path)
+
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
       else
         SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file (current setting is #{env_path}). No configuration file will be loaded." }
       end
