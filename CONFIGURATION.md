@@ -227,13 +227,37 @@ At most one configuration file is loaded:
 
 ### Config File Security
 
-Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent refuses to load the file set by `SW_APM_CONFIG_RUBY`, and logs a warning, if:
+Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent resolves symlinks in the path set by `SW_APM_CONFIG_RUBY`, then refuses to load the file, and logs a warning, if:
 
 - the file is world-writable,
-- the file isn't owned by `root` or by the effective user running the application, or
-- the file is in a world-writable directory without the sticky bit.
+- the file isn't owned by `root` or by the effective user running the application,
+- any directory in the resolved path, up to `/`, isn't owned by `root` or by the effective user, or
+- any directory in the resolved path is world-writable without the sticky bit.
 
-Secure the file's ownership and permissions (e.g. owned by the application user with file permission `600`) so the file is loaded.
+Secure the file's and its directories' ownership and permissions (e.g. owned by the application user with file permission `600`) so the file is loaded. The agent loads the resolved file, so a symlink can't be retargeted between the check and the load.
+
+For example, if the application runs as the user `app`, make the file owned by that user and readable only by it:
+
+```bash
+sudo chown app /etc/solarwinds_apm/config.rb
+sudo chmod 600 /etc/solarwinds_apm/config.rb
+```
+
+Or keep the file owned by `root` and let the application read it:
+
+```bash
+sudo chown root:root /etc/solarwinds_apm/config.rb
+sudo chmod 644 /etc/solarwinds_apm/config.rb
+```
+
+A `root`-owned file with permission `600` passes the checks, but only an application running as `root` can read it.
+
+Standard locations such as `/etc` or the application user's home directory already meet the directory requirements. Common reasons a file is rejected:
+
+- The file is owned by another user, such as a deploy or CI user. Change its owner to the application user or `root`.
+- The file is under a world-writable directory without the sticky bit, such as a shared mount with permission `777`. Move the file or fix that directory's permissions.
+
+The warning names the file or directory that failed the check and the reason.
 
 These checks don't apply to the Rails initializer `config/initializers/solarwinds_apm.rb`, because Rails loads every file in `config/initializers` regardless. Protect it like the rest of your application code.
 

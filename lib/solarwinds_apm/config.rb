@@ -44,8 +44,9 @@ module SolarWindsAPM
     # 2 - Otherwise, only for Rails applications, the prescribed Rails initializer
     #     <Rails root>/config/initializers/solarwinds_apm.rb (also loaded later by Rails itself).
     #
-    # Only the SW_APM_CONFIG_RUBY file is checked with SolarWindsAPM::SecurePath.trusted?. The Rails
-    # initializer isn't, because Rails loads every file in config/initializers regardless.
+    # Only the SW_APM_CONFIG_RUBY file is checked with SolarWindsAPM::SecurePath.trusted_path, and its
+    # validated real path is what gets loaded. The Rails initializer isn't checked, because Rails loads
+    # every file in config/initializers regardless.
     #
     def self.load_config_file
       env_path = ENV.fetch('SW_APM_CONFIG_RUBY', '').strip
@@ -56,14 +57,17 @@ module SolarWindsAPM
     end
 
     def self.config_file_from_env(env_path)
-      if !File.absolute_path?(env_path)
+      unless File.absolute_path?(env_path)
         SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file (current setting is #{env_path}). No configuration file will be loaded." }
-      elsif !File.file?(env_path)
-        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
-      elsif SolarWindsAPM::SecurePath.trusted?(env_path)
-        return env_path
+        return
       end
-      nil
+
+      unless File.file?(env_path)
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
+        return
+      end
+
+      SolarWindsAPM::SecurePath.trusted_path(env_path)
     end
 
     ##

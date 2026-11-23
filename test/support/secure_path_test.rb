@@ -16,18 +16,22 @@ describe 'SolarWindsAPM::SecurePath' do
     warnings
   end
 
-  # CI runs tests as root, so fake the owner/effective user instead of relying on real file ownership.
-  def with_file_owner(path, uid, euid, &test_block)
-    original_stat = File.method(:stat)
-    owned_stat = SimpleDelegator.new(original_stat.call(path))
-    owned_stat.define_singleton_method(:uid) { uid }
-    stat_stub = ->(file) { file == path ? owned_stat : original_stat.call(file) }
-    Process.stub(:euid, euid) { File.stub(:stat, stat_stub, &test_block) }
+  # CI runs tests as root, so fake the owner of the given paths instead of relying on real file ownership.
+  def with_owners(uids_by_path, &test_block)
+    original_lstat = File.method(:lstat)
+    lstat_stub = lambda do |file|
+      stat = original_lstat.call(file)
+      return stat unless uids_by_path.key?(file)
+
+      SimpleDelegator.new(stat).tap { |owned_stat| owned_stat.define_singleton_method(:uid) { uids_by_path[file] } }
+    end
+    File.stub(:lstat, lstat_stub, &test_block)
   end
 
   def untrusted_warning(path, reason)
-    "[SolarWindsAPM::SecurePath/trusted?] The file #{path} is not trusted because #{reason}. " \
-      'The file must be owned by root or by the user running the application, and neither the file nor its directory may be world-writable (e.g. file permission 600). ' \
+    "[SolarWindsAPM::SecurePath/trusted_path] The file #{path} is not trusted because #{reason}. " \
+      'The file and every directory in its path must be owned by root or by the user running the application, ' \
+      'the file must not be world-writable (e.g. file permission 600), and the directories must not be world-writable unless they have the sticky bit. ' \
       'Please change the ownership or permissions to make it secure.'
   end
 
@@ -43,14 +47,23 @@ describe 'SolarWindsAPM::SecurePath' do
     FileUtils.rm_rf(@tmpdir)
   end
 
-  it 'trusts a file owned by the current user that is not world-writable' do
-    assert SolarWindsAPM::SecurePath.trusted?(@file)
+  it 'returns the path of a file owned by the current user that is not world-writable' do
+    assert_equal @file, SolarWindsAPM::SecurePath.trusted_path(@file)
+  end
+
+  it 'returns the resolved target of a symlink so that the link cannot be retargeted before loading' do
+    shared_dir = File.join(@tmpdir, 'shared').tap { |d| FileUtils.mkdir_p(d) }
+    File.chmod(0o1777, shared_dir)
+    link = File.join(shared_dir, 'link.rb')
+    File.symlink(@file, link)
+
+    with_owners(link => 4242) { assert_equal @file, SolarWindsAPM::SecurePath.trusted_path(link) }
   end
 
   it 'rejects a world-writable file' do
     File.chmod(0o666, @file)
 
-    warnings = capture_warnings { refute SolarWindsAPM::SecurePath.trusted?(@file) }
+    warnings = capture_warnings { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
 
     assert_equal [untrusted_warning(@file, 'the file is world-writable')], warnings
   end
@@ -58,9 +71,17 @@ describe 'SolarWindsAPM::SecurePath' do
   it 'rejects a file in a world-writable non-sticky directory' do
     File.chmod(0o777, @dir)
 
-    warnings = capture_warnings { refute SolarWindsAPM::SecurePath.trusted?(@file) }
+    warnings = capture_warnings { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
 
-    assert_equal [untrusted_warning(@file, 'its directory is world-writable')], warnings
+    assert_equal [untrusted_warning(@file, "directory #{@dir} is world-writable")], warnings
+  end
+
+  it 'rejects a file below a world-writable non-sticky ancestor directory' do
+    File.chmod(0o777, @tmpdir)
+
+    warnings = capture_warnings { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
+
+    assert_equal [untrusted_warning(@file, "directory #{@tmpdir} is world-writable")], warnings
   end
 
   it 'rejects a symlink whose target is in a world-writable non-sticky directory' do
@@ -72,46 +93,61 @@ describe 'SolarWindsAPM::SecurePath' do
     link = File.join(@dir, 'link.rb')
     File.symlink(target, link)
 
-    warnings = capture_warnings { refute SolarWindsAPM::SecurePath.trusted?(link) }
+    warnings = capture_warnings { assert_nil SolarWindsAPM::SecurePath.trusted_path(link) }
 
-    assert_equal [untrusted_warning(link, 'its directory is world-writable')], warnings
+    assert_equal [untrusted_warning(link, "directory #{unsafe_dir} is world-writable")], warnings
   end
 
   it 'trusts a file in a world-writable sticky directory' do
     File.chmod(0o1777, @dir)
 
-    assert SolarWindsAPM::SecurePath.trusted?(@file)
+    assert_equal @file, SolarWindsAPM::SecurePath.trusted_path(@file)
   end
 
   it 'rejects a file owned by a user other than root or the effective user' do
     warnings = capture_warnings do
-      with_file_owner(@file, 4242, 1000) { refute SolarWindsAPM::SecurePath.trusted?(@file) }
+      with_owners(@file => 4242) { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
     end
 
-    assert_equal [untrusted_warning(@file, 'the file is owned by uid 4242, not by root or the effective user (uid 1000)')], warnings
+    assert_equal [untrusted_warning(@file, "the file #{@file} is owned by uid 4242, not by root or the effective user (uid #{Process.euid})")], warnings
   end
 
-  it 'trusts a file owned by the effective user' do
-    with_file_owner(@file, 1000, 1000) { assert SolarWindsAPM::SecurePath.trusted?(@file) }
+  it 'rejects a file in a directory owned by a user other than root or the effective user' do
+    warnings = capture_warnings do
+      with_owners(@dir => 4242) { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
+    end
+
+    assert_equal [untrusted_warning(@file, "directory #{@dir} is owned by uid 4242, not by root or the effective user (uid #{Process.euid})")], warnings
+  end
+
+  it 'rejects a file in a world-writable sticky directory owned by another user' do
+    File.chmod(0o1777, @dir)
+
+    warnings = capture_warnings do
+      with_owners(@dir => 4242) { assert_nil SolarWindsAPM::SecurePath.trusted_path(@file) }
+    end
+
+    assert_equal [untrusted_warning(@file, "directory #{@dir} is owned by uid 4242, not by root or the effective user (uid #{Process.euid})")], warnings
   end
 
   it 'trusts a file owned by root' do
-    with_file_owner(@file, 0, 1000) { assert SolarWindsAPM::SecurePath.trusted?(@file) }
+    with_owners(@file => 0) { assert_equal @file, SolarWindsAPM::SecurePath.trusted_path(@file) }
   end
 
   it 'rejects a file that cannot be inspected' do
     missing = File.join(@dir, 'missing.rb')
 
-    warnings = capture_warnings { refute SolarWindsAPM::SecurePath.trusted?(missing) }
+    warnings = capture_warnings { assert_nil SolarWindsAPM::SecurePath.trusted_path(missing) }
 
-    assert_equal ["[SolarWindsAPM::SecurePath/trusted?] Unable to inspect file #{missing}: No such file or directory @ rb_file_s_stat - #{missing}"], warnings
+    assert_equal 1, warnings.size
+    assert_match(%r{\A\[SolarWindsAPM::SecurePath/trusted_path\] Unable to inspect file #{Regexp.escape(missing)}: No such file or directory}, warnings.first)
   end
 
   it 'skips permission checks on Windows' do
     File.chmod(0o666, @file)
 
     warnings = capture_warnings do
-      Gem.stub(:win_platform?, true) { assert SolarWindsAPM::SecurePath.trusted?(@file) }
+      Gem.stub(:win_platform?, true) { assert_equal @file, SolarWindsAPM::SecurePath.trusted_path(@file) }
     end
 
     assert_empty warnings

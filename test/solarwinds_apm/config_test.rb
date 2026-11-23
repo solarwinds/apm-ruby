@@ -735,10 +735,22 @@ describe 'Config Test' do
       warnings = capture_logs(:warn) { SolarWindsAPM::Config.load_config_file }
 
       assert_nil SolarWindsAPM::Config[:config_file_marker]
-      assert_equal ["[SolarWindsAPM::SecurePath/trusted?] The file #{@trusted} is not trusted because the file is world-writable. " \
-                    'The file must be owned by root or by the user running the application, and neither the file nor its directory may be world-writable (e.g. file permission 600). ' \
+      assert_equal ["[SolarWindsAPM::SecurePath/trusted_path] The file #{@trusted} is not trusted because the file is world-writable. " \
+                    'The file and every directory in its path must be owned by root or by the user running the application, ' \
+                    'the file must not be world-writable (e.g. file permission 600), and the directories must not be world-writable unless they have the sticky bit. ' \
                     'Please change the ownership or permissions to make it secure.'],
                    warnings
+    end
+
+    it 'loads the validated real path of a symlinked SW_APM_CONFIG_RUBY' do
+      link = File.join(@tmpdir, 'link.rb')
+      File.symlink(@trusted, link)
+      ENV['SW_APM_CONFIG_RUBY'] = link
+      loaded = []
+
+      SolarWindsAPM::Config.stub(:load, ->(file) { loaded << file }) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal [@trusted], loaded
     end
 
     it 'loads the rails initializer without SecurePath checks' do
