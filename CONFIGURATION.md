@@ -195,18 +195,24 @@ This creates `config/initializers/solarwinds_apm.rb` with documented configurati
 
 #### Non-Rails Applications
 
-Create a file named `solarwinds_apm_config.rb` in your application's root directory:
+Create the configuration file anywhere (for example `/etc/solarwinds_apm/config.rb`) and set `SW_APM_CONFIG_RUBY` to its **absolute** path:
 
 ```ruby
-# solarwinds_apm_config.rb
+# /etc/solarwinds_apm/config.rb
 SolarWindsAPM::Config[:service_key] = 'your-token:your-service'
 SolarWindsAPM::Config[:debug_level] = 3
 SolarWindsAPM::Config[:tag_sql] = true
 ```
 
+```bash
+export SW_APM_CONFIG_RUBY=/etc/solarwinds_apm/config.rb
+```
+
+Configuration files are not auto-discovered for non-Rails applications. A `solarwinds_apm_config.rb` in the current working directory isn't loaded; the agent logs a warning instead.
+
 #### Custom Location
 
-Override the default configuration file location:
+Rails applications can also use a different file by setting `SW_APM_CONFIG_RUBY` to its absolute path:
 
 ```bash
 export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
@@ -216,12 +222,20 @@ export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
 
 At most one configuration file is loaded:
 
-1. If `SW_APM_CONFIG_RUBY` is set, only that file is used. If it can't be found, no configuration file is loaded; the agent doesn't fall back to the default locations.
-2. Otherwise, the agent looks in the application root for `config/initializers/solarwinds_apm.rb` first and then `solarwinds_apm_config.rb`. The application root is `Rails.root` when it's available, then the directory of the Gemfile in use (`BUNDLE_GEMFILE`), and finally the current working directory.
+1. If `SW_APM_CONFIG_RUBY` is set, only that file is used. It must be an absolute path to a file. A relative path, a directory, or a missing file means no configuration file is loaded, and the agent doesn't fall back to the Rails initializer.
+2. Otherwise, for Rails applications only, the agent loads `config/initializers/solarwinds_apm.rb` from the Rails application root. The root is `Rails.root` when it's available, or the directory of the absolute `BUNDLE_GEMFILE` set by the Rails `config/boot.rb`. The current working directory is never searched.
 
-Config files are executed as Ruby code with the application's privileges. The agent refuses to load, and logs a warning for, a configuration file that is world-writable or that is in a world-writable directory without the sticky bit. Secure the file and directory permissions (e.g. file permission `600`) so the file is loaded.
+### Config File Security
 
-> **Note:** This permission check relies on POSIX file permissions and **does not apply on Windows**, where file permission bits are not meaningful. Secure the configuration file with Windows ACLs instead.
+Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent refuses to load a configuration file, and logs a warning, if:
+
+- the file is world-writable,
+- the file isn't owned by `root` or by the effective user running the application, or
+- the file is in a world-writable directory without the sticky bit.
+
+Secure the file's ownership and permissions (e.g. owned by the application user with file permission `600`) so the file is loaded.
+
+> **Note:** On non-POSIX systems (Windows), file permission bits aren't meaningful, so the agent skips these checks. Secure the configuration file with Windows ACLs instead.
 
 ## Configuration Topics
 
@@ -325,7 +339,7 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 | -------------------- | --------------- | ----------- | ------- |
 | `SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true` |
 | `SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443` |
-| `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. When set, default locations are not searched. | None |
+| `SW_APM_CONFIG_RUBY` | N/A | Absolute path of the configuration file. Required to load a configuration file in non-Rails applications. Relative paths and directories are rejected. When set, the Rails initializer location is not searched. | None |
 | `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3 |
 | `SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true` |
 | `SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None |

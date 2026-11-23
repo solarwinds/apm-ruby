@@ -7,6 +7,7 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 require 'set'
+require_relative 'support/secure_path'
 
 module SolarWindsAPM
   ##
@@ -28,7 +29,7 @@ module SolarWindsAPM
     @@config = {}
 
     RAILS_CONFIG_FILE = 'config/initializers/solarwinds_apm.rb'
-    DEFAULT_CONFIG_FILE = 'solarwinds_apm_config.rb'
+    LEGACY_CONFIG_FILE = 'solarwinds_apm_config.rb'
 
     ##
     # load_config_file
@@ -38,108 +39,66 @@ module SolarWindsAPM
     #   e.g. ENV['SW_APM_SERVICE_KEY'] || SolarWindsAPM::Config[:service_key]
     #
     # Selection:
-    # 1 - If ENV['SW_APM_CONFIG_RUBY'] is set, only that file is considered.
-    #     If it can't be found, no other location is probed (fail closed).
-    # 2 - Otherwise, look in the application root (see app_root_dir) for:
-    #     a - Rails default: config/initializers/solarwinds_apm.rb
-    #         (also loaded by Rails, but we can't reliably determine if Rails is running)
-    #     b - Gem default: solarwinds_apm_config.rb
+    # 1 - If ENV['SW_APM_CONFIG_RUBY'] is set, it must be the absolute path of the config file.
+    #     If it is relative or can't be found, no other location is probed (fail closed).
+    # 2 - Otherwise, only for Rails applications, the prescribed Rails initializer
+    #     <Rails root>/config/initializers/solarwinds_apm.rb (also loaded later by Rails itself).
     #
-    # Files that are world-writable, or that live in a world-writable directory
-    # without the sticky bit, are refused.
-    # NOTE: This permission check relies on POSIX file permissions and does not apply on Windows.
+    # The selected file is loaded only if SolarWindsAPM::SecurePath.trusted? accepts it.
     #
     def self.load_config_file
-      config_file = explicit_config_path? ? config_file_from_env : default_config_file
-
-      load(config_file) if config_file && trusted_config_file?(config_file)
+      env_path = ENV.fetch('SW_APM_CONFIG_RUBY', '').strip
+      config_file = env_path.empty? ? rails_config_file : config_file_from_env(env_path)
+      load(config_file) if config_file
 
       set_log_level # sets SolarWindsAPM::Config[:debug_level], SolarWindsAPM.logger.level
     end
 
-    def self.explicit_config_path?
-      !ENV.fetch('SW_APM_CONFIG_RUBY', '').strip.empty?
-    end
-
-    def self.config_file_from_env
-      env_path = ENV.fetch('SW_APM_CONFIG_RUBY', '').strip
-
-      if !env_path.empty? && File.file?(env_path)
-        config_file = env_path
-      elsif !env_path.empty? && File.file?(File.join(env_path, DEFAULT_CONFIG_FILE))
-        config_file = File.join(env_path, DEFAULT_CONFIG_FILE)
+    def self.config_file_from_env(env_path)
+      if File.absolute_path?(env_path)
+        if File.file?(env_path) && SolarWindsAPM::SecurePath.trusted?(env_path)
+          return env_path
+        else
+          SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded." }
+        end
       else
-        SolarWindsAPM.logger.warn do
-          "[#{name}/#{__method__}] Could not find the configuration file set by the SW_APM_CONFIG_RUBY environment variable: #{env_path}. No configuration file will be loaded."
-        end
+        SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file (current setting is #{env_path}). No configuration file will be loaded." }
       end
-      config_file
-    end
-
-    def self.default_config_file
-      base_dir = app_root_dir
-      config_files = [RAILS_CONFIG_FILE, DEFAULT_CONFIG_FILE].map { |file| File.join(base_dir, file) }
-                                                             .select { |file| File.file?(file) }
-
-      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Available config_files: #{config_files.join(', ')}" }
-      if config_files.size > 1
-        SolarWindsAPM.logger.warn do
-          "[#{name}/#{__method__}] Multiple configuration files configured, using the first one listed: #{config_files.join(', ')}"
-        end
-      end
-      config_files.first
+      nil
     end
 
     ##
-    # app_root_dir
+    # rails_config_file
     #
-    # Directory used to resolve the default config file locations, in order:
-    # Rails.root (if the Rails application is already defined),
-    # the directory of the Gemfile in use (BUNDLE_GEMFILE, set by bundler and by Rails' config/boot.rb),
-    # and finally the current working directory.
+    # Path of <Rails root>/config/initializers/solarwinds_apm.rb, or nil when Rails is not loaded,
+    # its root can't be determined, or the file doesn't exist.
+    # When the gem is required by Bundler.require, the Rails application class isn't defined yet
+    # (Rails.root is nil), so fall back to the directory of the Gemfile that Rails' config/boot.rb
+    # sets in BUNDLE_GEMFILE. Only an absolute BUNDLE_GEMFILE is used, never the current directory.
     #
-    def self.app_root_dir
+    def self.rails_config_file
+      rails_root = ''
       if defined?(::Rails) && ::Rails.respond_to?(:root)
         rails_root = ::Rails.root.to_s
-        return rails_root unless rails_root.empty?
-      end
+        gemfile = ENV.fetch('BUNDLE_GEMFILE', '').strip
+        rails_root = File.dirname(gemfile) if rails_root.empty? && File.absolute_path?(gemfile)
 
-      gemfile = ENV.fetch('BUNDLE_GEMFILE', '').strip
-      return File.dirname(File.expand_path(gemfile)) unless gemfile.empty?
-
-      Dir.pwd
-    rescue StandardError => e
-      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Failed to determine application root: #{e.message}" }
-      Dir.pwd
-    end
-
-    # Checks POSIX world-writable permissions only; this check does not apply on Windows.
-    def self.trusted_config_file?(config_file)
-      file_stat = File.stat(config_file)
-      directories = [File.dirname(File.expand_path(config_file)), File.dirname(File.realpath(config_file))]
-      dir_stats = directories.uniq.map { |directory| File.stat(directory) }
-
-      if file_stat.world_writable?
-        reason = 'the file is world-writable'
-      elsif dir_stats.any? { |stat| stat.world_writable? && !stat.sticky? }
-        reason = 'its directory is world-writable'
-      end
-
-      return true unless reason
-
-      if reason
-        SolarWindsAPM.logger.warn do
-          "[#{name}/#{__method__}] The configuration file #{config_file} is not trusted because #{reason}.
-          The configuration file must come from a secure path: the file and its directory must not be world-writable (e.g. file permission 600).
-          Please change the permissions to make it secure."
+        if rails_root.empty?
+          legacy_file = File.join(Dir.pwd, LEGACY_CONFIG_FILE)
+          SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Set SW_APM_CONFIG_RUBY to its absolute path to load it. Legacy file #{LEGACY_CONFIG_FILE} is no longer loaded." } if File.file?(legacy_file)
+          return nil
         end
       end
-      false
-    rescue SystemCallError => e
-      SolarWindsAPM.logger.warn { "[#{name}/#{__method__}] Unable to inspect configuration file #{config_file}: #{e.message}" }
-      false
+
+      config_file = File.join(rails_root, RAILS_CONFIG_FILE)
+      return config_file if File.file?(config_file)
+
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Rails configuration file #{config_file} not found." }
+      nil
+    rescue StandardError => e
+      SolarWindsAPM.logger.debug { "[#{name}/#{__method__}] Failed to determine Rails root: #{e.message}" }
+      nil
     end
-    private_class_method :explicit_config_path?, :default_config_file, :app_root_dir, :trusted_config_file?
 
     def self.set_log_level
       log_level = (ENV['SW_APM_DEBUG_LEVEL'] || SolarWindsAPM::Config[:debug_level] || 3).to_i
