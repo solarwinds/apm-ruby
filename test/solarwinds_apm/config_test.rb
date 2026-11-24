@@ -12,8 +12,15 @@ require './lib/solarwinds_apm/config'
 describe 'Config Test' do
   describe '#config_file_from_env' do
     it 'returns the absolute path of an existing file' do
-      config_path = File.expand_path('lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb')
+      # The repo checkout may be owned by another user (e.g. CI containers running as root), which SecurePath rejects
+      tmpdir = File.realpath(Dir.mktmpdir('sw_apm_config'))
+      config_path = File.join(tmpdir, 'solarwinds_apm_config.rb')
+      File.write(config_path, '')
+      File.chmod(0o644, config_path)
+
       assert_equal config_path, SolarWindsAPM::Config.config_file_from_env(config_path)
+    ensure
+      FileUtils.rm_rf(tmpdir) if tmpdir
     end
 
     it 'rejects a relative path even if the file exists' do

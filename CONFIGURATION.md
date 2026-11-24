@@ -257,11 +257,85 @@ Standard locations such as `/etc` or the application user's home directory alrea
 - The file is owned by another user, such as a deploy or CI user. Change its owner to the application user or `root`.
 - The file is under a world-writable directory without the sticky bit, such as a shared mount with permission `777`. Move the file or fix that directory's permissions.
 
+For Docker and Kubernetes, see [Containers (Docker and Kubernetes)](#containers-docker-and-kubernetes).
+
 The warning names the file or directory that failed the check and the reason.
 
 These checks don't apply to the Rails initializer `config/initializers/solarwinds_apm.rb`, because Rails loads every file in `config/initializers` regardless. Protect it like the rest of your application code.
 
 > **Note:** On non-POSIX systems (Windows), file permission bits aren't meaningful, so the agent skips these checks. Secure the configuration file with Windows ACLs instead.
+
+### Containers (Docker and Kubernetes)
+
+Rails applications that use `config/initializers/solarwinds_apm.rb` without setting `SW_APM_CONFIG_RUBY` aren't affected by the [Config File Security](#config-file-security) checks. When `SW_APM_CONFIG_RUBY` is set in a container, the checks use the user the container runs as, which is often different from the user that owns the application files. The simplest setup that works for any container user is a file owned by `root` with permission `644`, in a directory owned by `root` that isn't world-writable, such as `/etc/solarwinds_apm`.
+
+#### Docker
+
+`COPY` creates files owned by `root` unless `--chown` is given, so copy the file outside the application directory and set its permission:
+
+```dockerfile
+COPY solarwinds_apm_config.rb /etc/solarwinds_apm/config.rb
+RUN chmod 644 /etc/solarwinds_apm/config.rb
+ENV SW_APM_CONFIG_RUBY=/etc/solarwinds_apm/config.rb
+```
+
+The file is rejected in these common cases:
+
+- The file is copied with `COPY --chown=<app user>` (or sits in an application directory owned by that user), but the container runs as a different user: as `root` because the image has no `USER` instruction, through `docker run --user`, or with an arbitrary user ID assigned by the platform (e.g. OpenShift). Keep the file owned by `root`, or run the container as the user that owns it.
+- The file is bind-mounted (`docker run -v`, Compose `volumes`) from a Linux host, where it keeps the host user's ID. It's trusted only if that ID is `0` or matches the container user. Docker Desktop on macOS presents bind-mounted files as owned by the container user.
+- The file or one of its directories was made world-writable, for example with `chmod -R 777` to work around permission errors.
+
+#### Kubernetes
+
+How the file is mounted determines whether it passes the checks:
+
+| Volume type | Result | Reason |
+|---|---|---|
+| `configMap` mounted as a directory | Rejected | The kubelet creates the mount directory with permission `777` and no sticky bit, even though the volume is mounted read-only. |
+| `configMap` mounted with `subPath` | Trusted | The file is mounted directly into a directory owned by `root`. |
+| `secret` or `projected` | Trusted | The mount directory is a `tmpfs` with permission `1777` (sticky bit set). |
+| `emptyDir` (e.g. populated by an init container) | Rejected | The directory has permission `777` and no sticky bit. |
+
+The file must also be owned by `root` or by the container user. ConfigMap, Secret and projected files are owned by `root`, so `runAsUser` and `fsGroup` don't affect them. Don't set `defaultMode` to a world-writable mode such as `0666` or `0777`.
+
+For example, mount a ConfigMap key with `subPath`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+    - name: app
+      image: my-app:latest
+      env:
+        - name: SW_APM_CONFIG_RUBY
+          value: /etc/solarwinds_apm/config.rb
+      volumeMounts:
+        - name: solarwinds-apm-config
+          mountPath: /etc/solarwinds_apm/config.rb
+          subPath: config.rb
+  volumes:
+    - name: solarwinds-apm-config
+      configMap:
+        name: solarwinds-apm-config
+```
+
+Files mounted with `subPath` don't receive ConfigMap updates. This doesn't matter here, because the configuration file is only read when the application starts.
+
+Or mount a Secret as a directory:
+
+```yaml
+      volumeMounts:
+        - name: solarwinds-apm-config
+          mountPath: /etc/solarwinds_apm
+          readOnly: true
+  volumes:
+    - name: solarwinds-apm-config
+      secret:
+        secretName: solarwinds-apm-config
+```
 
 ## Configuration Topics
 
