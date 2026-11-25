@@ -199,21 +199,146 @@ This creates `config/initializers/solarwinds_apm.rb` with documented configurati
 
 #### Non-Rails Applications
 
-Create a file named `solarwinds_apm_config.rb` in your application's root directory:
+Create the configuration file anywhere (for example `/etc/solarwinds_apm/config.rb`) and set `SW_APM_CONFIG_RUBY` to its **absolute** path:
 
 ```ruby
-# solarwinds_apm_config.rb
+# /etc/solarwinds_apm/config.rb
 SolarWindsAPM::Config[:service_key] = 'your-token:your-service'
 SolarWindsAPM::Config[:debug_level] = 3
 SolarWindsAPM::Config[:tag_sql] = true
 ```
 
+```bash
+export SW_APM_CONFIG_RUBY=/etc/solarwinds_apm/config.rb
+```
+
+Configuration files are not auto-discovered for non-Rails applications. A `solarwinds_apm_config.rb` in the current working directory isn't loaded; the agent logs a warning instead.
+
 #### Custom Location
 
-Override the default configuration file location:
+Rails applications can also use a different file by setting `SW_APM_CONFIG_RUBY` to its absolute path:
 
 ```bash
 export SW_APM_CONFIG_RUBY=/path/to/your/config.rb
+```
+
+### Config File Selection
+
+At most one configuration file is loaded:
+
+1. If `SW_APM_CONFIG_RUBY` is set, only that file is used. It must be an absolute path to a file. A relative path, a directory, or a missing file means no configuration file is loaded, and the agent doesn't fall back to the Rails initializer.
+2. Otherwise, for Rails applications only, the agent loads `config/initializers/solarwinds_apm.rb` from the Rails application root. The root is `Rails.root` when it's available, or the directory of the absolute `BUNDLE_GEMFILE` set by the Rails `config/boot.rb`. The current working directory is never searched.
+
+### Config File Security
+
+Config files are executed as Ruby code with the application's privileges. On POSIX systems (Linux, macOS), the agent resolves symlinks in the path set by `SW_APM_CONFIG_RUBY`, then refuses to load the file, and logs a warning, if:
+
+- the file is world-writable,
+- the file isn't owned by `root` or by the effective user running the application,
+- any directory in the resolved path, up to `/`, isn't owned by `root` or by the effective user, or
+- any directory in the resolved path is world-writable without the sticky bit.
+
+Secure the file's and its directories' ownership and permissions (e.g. owned by the application user with file permission `600`) so the file is loaded. The agent loads the resolved file, so a symlink can't be retargeted between the check and the load.
+
+For example, if the application runs as the user `app`, make the file owned by that user and readable only by it:
+
+```bash
+sudo chown app /etc/solarwinds_apm/config.rb
+sudo chmod 600 /etc/solarwinds_apm/config.rb
+```
+
+Or keep the file owned by `root` and let the application read it:
+
+```bash
+sudo chown root:root /etc/solarwinds_apm/config.rb
+sudo chmod 644 /etc/solarwinds_apm/config.rb
+```
+
+A `root`-owned file with permission `600` passes the checks, but only an application running as `root` can read it.
+
+Standard locations such as `/etc` or the application user's home directory already meet the directory requirements. Common reasons a file is rejected:
+
+- The file is owned by another user, such as a deploy or CI user. Change its owner to the application user or `root`.
+- The file is under a world-writable directory without the sticky bit, such as a shared mount with permission `777`. Move the file or fix that directory's permissions.
+
+For Docker and Kubernetes, see [Containers (Docker and Kubernetes)](#containers-docker-and-kubernetes).
+
+The warning names the file or directory that failed the check and the reason.
+
+These checks don't apply to the Rails initializer `config/initializers/solarwinds_apm.rb`, because Rails loads every file in `config/initializers` regardless. Protect it like the rest of your application code.
+
+> **Note:** On non-POSIX systems (Windows), file permission bits aren't meaningful, so the agent skips these checks. Secure the configuration file with Windows ACLs instead.
+
+### Containers (Docker and Kubernetes)
+
+Rails applications that use `config/initializers/solarwinds_apm.rb` without setting `SW_APM_CONFIG_RUBY` aren't affected by the [Config File Security](#config-file-security) checks. When `SW_APM_CONFIG_RUBY` is set in a container, the checks use the user the container runs as, which is often different from the user that owns the application files. The simplest setup that works for any container user is a file owned by `root` with permission `644`, in a directory owned by `root` that isn't world-writable, such as `/etc/solarwinds_apm`.
+
+#### Docker
+
+`COPY` creates files owned by `root` unless `--chown` is given, so copy the file outside the application directory and set its permission:
+
+```dockerfile
+COPY solarwinds_apm_config.rb /etc/solarwinds_apm/config.rb
+RUN chmod 644 /etc/solarwinds_apm/config.rb
+ENV SW_APM_CONFIG_RUBY=/etc/solarwinds_apm/config.rb
+```
+
+The file is rejected in these common cases:
+
+- The file is copied with `COPY --chown=<app user>` (or sits in an application directory owned by that user), but the container runs as a different user: as `root` because the image has no `USER` instruction, through `docker run --user`, or with an arbitrary user ID assigned by the platform (e.g. OpenShift). Keep the file owned by `root`, or run the container as the user that owns it.
+- The file is bind-mounted (`docker run -v`, Compose `volumes`) from a Linux host, where it keeps the host user's ID. It's trusted only if that ID is `0` or matches the container user. Docker Desktop on macOS presents bind-mounted files as owned by the container user.
+- The file or one of its directories was made world-writable, for example with `chmod -R 777` to work around permission errors.
+
+#### Kubernetes
+
+How the file is mounted determines whether it passes the checks:
+
+| Volume type | Result | Reason |
+|---|---|---|
+| `configMap` mounted as a directory | Rejected | The kubelet creates the mount directory with permission `777` and no sticky bit, even though the volume is mounted read-only. |
+| `configMap` mounted with `subPath` | Trusted | The file is mounted directly into a directory owned by `root`. |
+| `secret` or `projected` | Trusted | The mount directory is a `tmpfs` with permission `1777` (sticky bit set). |
+| `emptyDir` (e.g. populated by an init container) | Rejected | The directory has permission `777` and no sticky bit. |
+
+The file must also be owned by `root` or by the container user. ConfigMap, Secret and projected files are owned by `root`, so `runAsUser` and `fsGroup` don't affect them. Don't set `defaultMode` to a world-writable mode such as `0666` or `0777`.
+
+For example, mount a ConfigMap key with `subPath`:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app
+spec:
+  containers:
+    - name: app
+      image: my-app:latest
+      env:
+        - name: SW_APM_CONFIG_RUBY
+          value: /etc/solarwinds_apm/config.rb
+      volumeMounts:
+        - name: solarwinds-apm-config
+          mountPath: /etc/solarwinds_apm/config.rb
+          subPath: config.rb
+  volumes:
+    - name: solarwinds-apm-config
+      configMap:
+        name: solarwinds-apm-config
+```
+
+Files mounted with `subPath` don't receive ConfigMap updates. This doesn't matter here, because the configuration file is only read when the application starts.
+
+Or mount a Secret as a directory:
+
+```yaml
+      volumeMounts:
+        - name: solarwinds-apm-config
+          mountPath: /etc/solarwinds_apm
+          readOnly: true
+  volumes:
+    - name: solarwinds-apm-config
+      secret:
+        secretName: solarwinds-apm-config
 ```
 
 ## Configuration Topics
@@ -318,7 +443,7 @@ export SW_APM_TRANSACTION_NAME=my-lambda-function
 | -------------------- | --------------- | ----------- | ------- |
 | `SW_APM_AUTO_CONFIGURE` | N/A  | By default the library is configured to work out-of-the-box with all automatic instrumentation libraries enabled. Set this to `false` to custom initialize the library with configuration options for instrumentation, see [Programmatic Configuration](#programmatic-configuration) for details. | `true` |
 | `SW_APM_COLLECTOR` | N/A | Override the default collector endpoint to which the library connects and exports data. It should be defined using the format host:port. | `apm.collector.na-01.cloud.solarwinds.com:443` |
-| `SW_APM_CONFIG_RUBY` | N/A | Override the default location for the configuration file. This can be an absolute or relative filename, or the directory under which the `solarwinds_apm_config.rb` file would be looked for. | None |
+| `SW_APM_CONFIG_RUBY` | N/A | Absolute path of the configuration file. Required to load a configuration file in non-Rails applications. Relative paths and directories are rejected. When set, the Rails initializer location is not searched. | None |
 | `SW_APM_DEBUG_LEVEL` | `:debug_level` | Set the library's logging level, valid values are -1 through 6 (least to most verbose). <br> Setting -1 disables logging from the library. | 3 |
 | `SW_APM_ENABLED` | N/A | Enable/disable the library, setting `false` is an alternative to uninstalling `solarwinds_apm` since it will prevent the library from loading. | `true` |
 | `SW_APM_SERVICE_KEY` | `:service_key` | API token and service name in the form of `token:service_name`, **required**. | None |

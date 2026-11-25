@@ -5,36 +5,43 @@
 
 require 'minitest_helper'
 require 'logger'
+require 'tmpdir'
+require 'fileutils'
 require './lib/solarwinds_apm/config'
 
 describe 'Config Test' do
   describe '#config_file_from_env' do
-    after do
-      ENV.delete('SW_APM_CONFIG_RUBY')
+    it 'returns the absolute path of an existing file' do
+      # The repo checkout may be owned by another user (e.g. CI containers running as root), which SecurePath rejects
+      tmpdir = File.realpath(Dir.mktmpdir('sw_apm_config'))
+      config_path = File.join(tmpdir, 'solarwinds_apm_config.rb')
+      File.write(config_path, '')
+      File.chmod(0o644, config_path)
+
+      assert_equal config_path, SolarWindsAPM::Config.config_file_from_env(config_path)
+    ensure
+      FileUtils.rm_rf(tmpdir) if tmpdir
     end
 
-    it 'with empty SW_APM_CONFIG_RUBY should return nil' do
-      ENV['SW_APM_CONFIG_RUBY'] = 'tmp/'
-      config_file = SolarWindsAPM::Config.config_file_from_env
-      assert_nil(config_file)
+    it 'rejects a relative path even if the file exists' do
+      relative_path = 'lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'
+
+      warnings = []
+      SolarWindsAPM.logger.stub(:warn, ->(message = nil, &block) { warnings << (block ? block.call : message) }) do
+        assert_nil SolarWindsAPM::Config.config_file_from_env(relative_path)
+      end
+
+      assert_equal ['[SolarWindsAPM::Config/config_file_from_env] SW_APM_CONFIG_RUBY must be the absolute path of the configuration file ' \
+                    '(current setting is lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb). No configuration file will be loaded.'],
+                   warnings
     end
 
-    it 'with correct SW_APM_CONFIG_RUBY should return file' do
-      ENV['SW_APM_CONFIG_RUBY'] = 'lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'
-      config_file = SolarWindsAPM::Config.config_file_from_env
-      _(config_file).must_equal 'lib/rails/generators/solarwinds_apm/templates/solarwinds_apm_initializer.rb'
+    it 'rejects a directory instead of searching it for a config file' do
+      assert_nil SolarWindsAPM::Config.config_file_from_env(File.expand_path('lib/rails/generators/solarwinds_apm/templates'))
     end
 
-    it 'with correct SW_APM_CONFIG_RUBY path should return file path' do
-      ENV['SW_APM_CONFIG_RUBY'] = 'test/solarwinds_apm/'
-      config_file = SolarWindsAPM::Config.config_file_from_env
-      _(config_file).must_equal 'test/solarwinds_apm/solarwinds_apm_config.rb'
-    end
-
-    it 'with incorrect SW_APM_CONFIG_RUBY path should return nil' do
-      ENV['SW_APM_CONFIG_RUBY'] = 'test/opentelemetry/'
-      config_file = SolarWindsAPM::Config.config_file_from_env
-      assert_nil(config_file)
+    it 'returns nil for a non-existent absolute path' do
+      assert_nil SolarWindsAPM::Config.config_file_from_env('/nonexistent/path/file.rb')
     end
   end
 
@@ -583,18 +590,183 @@ describe 'Config Test' do
     end
   end
 
-  describe 'config_file_from_env' do
-    it 'returns nil for non-existent file' do
-      original = ENV.fetch('SW_APM_CONFIG_RUBY', nil)
-      ENV['SW_APM_CONFIG_RUBY'] = '/nonexistent/path/file.rb'
-      result = SolarWindsAPM::Config.config_file_from_env
-      assert_nil result
+  describe '#load_config_file' do
+    def write_config(path, marker)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "SolarWindsAPM::Config[:config_file_marker] = '#{marker}'\n")
+      File.chmod(0o644, path)
+      path
+    end
+
+    def capture_logs(level, &test_block)
+      messages = []
+      SolarWindsAPM.logger.stub(level, ->(message = nil, &block) { messages << (block ? block.call : message) }, &test_block)
+      messages
+    end
+
+    def with_rails_root(root)
+      original_rails = Object.send(:remove_const, :Rails) if defined?(Rails)
+      rails = Module.new
+      rails.define_singleton_method(:root) { root }
+      Object.const_set(:Rails, rails)
+      yield
     ensure
-      if original
-        ENV['SW_APM_CONFIG_RUBY'] = original
-      else
-        ENV.delete('SW_APM_CONFIG_RUBY')
+      Object.send(:remove_const, :Rails)
+      Object.const_set(:Rails, original_rails) if original_rails
+    end
+
+    before do
+      @original_env = ENV.to_h.slice('SW_APM_CONFIG_RUBY', 'BUNDLE_GEMFILE')
+      ENV.delete('SW_APM_CONFIG_RUBY')
+      ENV.delete('BUNDLE_GEMFILE')
+      @tmpdir  = File.realpath(Dir.mktmpdir('sw_apm_config'))
+      @app_dir = File.join(@tmpdir, 'app').tap { |d| FileUtils.mkdir_p(d) }
+      @cwd     = File.join(@tmpdir, 'work').tap { |d| FileUtils.mkdir_p(d) }
+      @trusted = write_config(File.join(@tmpdir, 'trusted', 'trusted.rb'), 'trusted')
+      SolarWindsAPM::Config[:config_file_marker] = nil
+    end
+
+    after do
+      %w[SW_APM_CONFIG_RUBY BUNDLE_GEMFILE].each { |k| ENV.delete(k) }
+      ENV.update(@original_env)
+      FileUtils.rm_rf(@tmpdir)
+      SolarWindsAPM::Config[:config_file_marker] = nil
+    end
+
+    it 'loads only SW_APM_CONFIG_RUBY even when a rails initializer exists' do
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal 'trusted', SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not load a relative SW_APM_CONFIG_RUBY resolved against cwd' do
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+      ENV['SW_APM_CONFIG_RUBY'] = 'solarwinds_apm_config.rb'
+
+      Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not fall back to other files when SW_APM_CONFIG_RUBY is missing' do
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      ENV['SW_APM_CONFIG_RUBY'] = File.join(@tmpdir, 'missing.rb')
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not auto-discover config files in cwd for non-Rails applications' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+      ENV['BUNDLE_GEMFILE'] = File.join(@cwd, 'Gemfile')
+
+      warnings = capture_logs(:warn) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ['[SolarWindsAPM::Config/rails_config_file] Set SW_APM_CONFIG_RUBY to its absolute path to load it. ' \
+                    'Legacy file solarwinds_apm_config.rb is no longer loaded.'],
+                   warnings
+    end
+
+    it 'does not resolve the rails initializer against the filesystem root for non-Rails applications' do
+      capture_logs(:warn) do
+        File.stub(:file?, true) { assert_nil SolarWindsAPM::Config.rails_config_file }
       end
+    end
+
+    it 'warns about a legacy cwd config file when the Rails root cannot be determined' do
+      write_config(File.join(@cwd, 'solarwinds_apm_config.rb'), 'cwd_default')
+
+      warnings = capture_logs(:warn) { with_rails_root(nil) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } } }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ['[SolarWindsAPM::Config/rails_config_file] Set SW_APM_CONFIG_RUBY to its absolute path to load it. ' \
+                    'Legacy file solarwinds_apm_config.rb is no longer loaded.'],
+                   warnings
+    end
+
+    it 'loads the rails initializer from Rails.root instead of cwd' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+
+      with_rails_root(@app_dir) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
+
+      assert_equal 'app_rails', SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not load the gem default file from the Rails root' do
+      write_config(File.join(@app_dir, 'solarwinds_apm_config.rb'), 'app_default')
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'resolves the rails root from an absolute BUNDLE_GEMFILE before the application is defined' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      ENV['BUNDLE_GEMFILE'] = File.join(@app_dir, 'Gemfile')
+
+      with_rails_root(nil) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
+
+      assert_equal 'app_rails', SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not resolve the rails root from a relative BUNDLE_GEMFILE' do
+      write_config(File.join(@cwd, 'config/initializers/solarwinds_apm.rb'), 'cwd_rails')
+      ENV['BUNDLE_GEMFILE'] = 'Gemfile'
+
+      with_rails_root(nil) { Dir.chdir(@cwd) { SolarWindsAPM::Config.load_config_file } }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'treats an empty SW_APM_CONFIG_RUBY as unset' do
+      write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      ENV['SW_APM_CONFIG_RUBY'] = ''
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal 'app_rails', SolarWindsAPM::Config[:config_file_marker]
+    end
+
+    it 'does not load a config file rejected by SecurePath' do
+      File.chmod(0o666, @trusted)
+      ENV['SW_APM_CONFIG_RUBY'] = @trusted
+
+      warnings = capture_logs(:warn) { SolarWindsAPM::Config.load_config_file }
+
+      assert_nil SolarWindsAPM::Config[:config_file_marker]
+      assert_equal ["[SolarWindsAPM::SecurePath/trusted_path] The file #{@trusted} is not trusted because the file is world-writable. " \
+                    'The file and every directory in its path must be owned by root or by the user running the application, ' \
+                    'the file must not be world-writable (e.g. file permission 600), and the directories must not be world-writable unless they have the sticky bit. ' \
+                    'Please change the ownership or permissions to make it secure.'],
+                   warnings
+    end
+
+    it 'loads the validated real path of a symlinked SW_APM_CONFIG_RUBY' do
+      link = File.join(@tmpdir, 'link.rb')
+      File.symlink(@trusted, link)
+      ENV['SW_APM_CONFIG_RUBY'] = link
+      loaded = []
+
+      SolarWindsAPM::Config.stub(:load, ->(file) { loaded << file }) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal [@trusted], loaded
+    end
+
+    it 'loads the rails initializer without SecurePath checks' do
+      initializer = write_config(File.join(@app_dir, 'config/initializers/solarwinds_apm.rb'), 'app_rails')
+      File.chmod(0o666, initializer)
+
+      with_rails_root(@app_dir) { SolarWindsAPM::Config.load_config_file }
+
+      assert_equal 'app_rails', SolarWindsAPM::Config[:config_file_marker]
     end
   end
 
