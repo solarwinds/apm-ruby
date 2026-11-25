@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Ruby 3.3 and bundle
-        uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1
+        uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
@@ -39,7 +39,7 @@ jobs:
           echo "gem_version=`ruby -e 'require "./lib/solarwinds_apm/version"; puts SolarWindsAPM::Version::STRING'`" >> $GITHUB_OUTPUT
 
       - name: Build and publish gem using trusted publishing
-        uses: rubygems/release-gem@7f9650160c1a4e7989fdc9855807bdbd421d8b6b # v1
+        uses: rubygems/release-gem@5c53f5308233b7c0f47411f0471b3faae6fa57b2 # v1
 
       - name: Calculate checksum
         id: checksum_step
